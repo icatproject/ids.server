@@ -16,7 +16,7 @@ import re
 from os import getcwd
 
 # Variables 
-APPLICATION_NAME = "IDS-1.0-SNAPSHOT"
+APPLICATION_NAME = "IDS-0.0"
 
 GF_PROPS_FILE = "ids_glassfish.props"
 GF_REQ_VALUES = ["connectionProperties", "driver", "glassfish", "requestTimeout"]
