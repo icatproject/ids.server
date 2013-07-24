@@ -60,7 +60,7 @@
 			<groupId>org.icatproject</groupId>
 			<artifactId>idsclient</artifactId>
 			<version>${ids.version}</version>
-			<scope>test</scope>
+			<!-- <scope>test</scope> -->
 		</dependency>
 	</dependencies>
 	<build>

@@ -60,7 +60,9 @@ public class WebService {
     @EJB
     private DownloadRequestHelper downloadRequestHelper;
 
-    public WebService() {}
+    public WebService() {
+    	logger.log(Level.SEVERE, "creating WebService");
+    }
 
     /**
      * Creates a new download request. Does not accept investigationIds or the zip parameter as all
@@ -85,7 +87,7 @@ public class WebService {
             @DefaultValue("false") @FormParam("compress") String compress,
             @FormParam("zip") String zip) {
         DownloadRequestEntity downloadRequestEntity = null;
-        
+        logger.log(Level.INFO, "prepareData received");
         // 501
         if (investigationIds != null) {
             throw new NotImplementedException("investigationIds are not supported");
@@ -454,6 +456,7 @@ public class WebService {
             @QueryParam("datasetIds") String datasetIds,
             @QueryParam("datafileIds") String datafilesIds) {
         Response status = null;
+        logger.log(Level.INFO, "received getStatus with preparedId = " + preparedId);
         if (preparedId != null) {
             status = getStatus(preparedId);
         } else {

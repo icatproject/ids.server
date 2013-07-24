@@ -73,6 +73,9 @@ public class ICATClient42 implements ICATClientBase {
         return results;
     }
 
+    /*
+     * TODO make fast by checking for dataset location
+     */
     @Override
     public ArrayList<DatafileEntity> getDatafilesInDataset(String sessionId, Long datasetId)
             throws ICATClientException {

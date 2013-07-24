@@ -1,17 +1,17 @@
 #
 # Derby Database Properties
 #
-dbType=derby
-driver=org.apache.derby.jdbc.ClientDataSource
-connectionProperties=Password=APP:User=APP:serverName=localhost:DatabaseName=ids:connectionAttributes=";"create"'"="'"true
+#dbType=derby
+#driver=org.apache.derby.jdbc.ClientDataSource
+#connectionProperties=Password=APP:User=APP:serverName=localhost:DatabaseName=ids:connectionAttributes=";"create"'"="'"true
 
 
 #
 # MySQL Database Properties
 #
-#dbType=mysql
-#driver=com.mysql.jdbc.jdbc2.optional.MysqlDataSource
-#connectionProperties=user=ids:password=password:databaseName=ids
+dbType=mysql
+driver=com.mysql.jdbc.jdbc2.optional.MysqlDataSource
+connectionProperties=user=root:password=pass:databaseName=ids
 
 
 #
@@ -25,7 +25,7 @@ connectionProperties=Password=APP:User=APP:serverName=localhost:DatabaseName=ids
 #
 # Glasfish home, must contain "glassfish/domains"
 #
-glassfish=/home/glassfish3/glassfish3
+glassfish=/home/wojtek/apps/glassfish3
 
 
 #

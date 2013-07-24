@@ -1,5 +1,6 @@
 package org.icatproject.ids;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,7 +41,7 @@ public class Setup {
     public Setup() throws MalformedURLException, IcatException_Exception {
         InputStream is = getClass().getResourceAsStream("/test.properties");
         try {
-          props.load(is);
+        	props.load(is);
         } catch (Exception e) {
             System.out.println("Problem loading test.properties\n" + e.getMessage());
         }
@@ -54,6 +55,8 @@ public class Setup {
         filenameMD5 = new HashMap<String, String>();
         filenameMD5.put(props.getProperty("df1_location"), props.getProperty("df1_md5"));
         filenameMD5.put(props.getProperty("df2_location"), props.getProperty("df2_md5"));
+        filenameMD5.put(props.getProperty("df3_location"), props.getProperty("df3_md5"));
+        filenameMD5.put(props.getProperty("df4_location"), props.getProperty("df4_md5"));
 
         datasetIds = new ArrayList<String>();
         datasetIds.add(props.getProperty("ds1_id"));
@@ -84,8 +87,9 @@ public class Setup {
         p.setKey("password");
         p.setValue(password);
         entries.add(p);
-
-        return icat.login("db", credentials);
+        System.out.println("user: " + username + " password: " + password);
+        String sessionId = icat.login("db", credentials);
+        return sessionId;
     }
     
     public String getCommaSepDatafileIds() {

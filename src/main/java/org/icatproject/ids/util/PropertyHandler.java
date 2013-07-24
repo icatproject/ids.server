@@ -9,6 +9,8 @@ import java.net.URLConnection;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.icatproject.ids.storage.StorageInterface;
+
 /*
  * Load the properties specified in the properties file ids.properties.
  */
@@ -23,8 +25,10 @@ public class PropertyHandler {
     private String storageType;
     private String localStorageSystemPath;
     private int numberOfDaysToKeepFilesInCache;
+    private Class<StorageInterface> storageInterfaceImplementation;
 
-    private PropertyHandler() {
+    @SuppressWarnings("unchecked")
+	private PropertyHandler() {
         File f = new File("ids.properties");
         Properties props = new Properties();
         try {
@@ -109,6 +113,20 @@ public class PropertyHandler {
                 throw new IllegalStateException(msg);
             }
         }
+        
+        String storageInterfaceImplementationName = props.getProperty("STORAGE_INTERFACE_IMPLEMENTATION");
+        if (storageInterfaceImplementationName == null) {
+        	String msg = "Property STORAGE_INTERFACE_IMPLEMENTATION must be set.";
+        	logger.severe(msg);
+        	throw new IllegalStateException(msg);
+        }
+        try {
+        	storageInterfaceImplementation = (Class<StorageInterface>) Class.forName(storageInterfaceImplementationName);
+        } catch (Exception e) {
+        	String msg = "Could not get class implementing StorageInterface from " + storageInterfaceImplementationName;
+        	logger.severe(msg);
+        	throw new IllegalStateException(msg);
+        }
     }
 
     public static PropertyHandler getInstance() {
@@ -141,4 +159,8 @@ public class PropertyHandler {
     public int getNumberOfDaysToKeepFilesInCache() {
         return numberOfDaysToKeepFilesInCache;
     }
+
+	public Class<StorageInterface> getStorageInterfaceImplementation() {
+		return storageInterfaceImplementation;
+	}
 }

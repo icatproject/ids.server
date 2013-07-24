@@ -2,11 +2,11 @@ package org.icatproject.ids;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+
 import junit.framework.Assert;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.icatproject.ids.icatclient.icat42.IcatException_Exception;
 import org.icatproject.idsclient.Status;
 import org.icatproject.idsclient.TestingClient;
@@ -87,6 +87,12 @@ public class GetStatusTest {
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getCommaSepDatafileIds(), null, null);
         Status status = null;
         do {
+        	try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				System.out.println("sleep interrupted");
+				
+			}
             status = client.getStatus(preparedId);
         } while (Status.RESTORING.equals(status));
         Assert.assertEquals(Status.ONLINE, status);

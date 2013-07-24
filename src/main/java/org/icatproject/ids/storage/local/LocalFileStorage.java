@@ -3,6 +3,8 @@ package org.icatproject.ids.storage.local;
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.icatproject.ids.entity.DatafileEntity;
 import org.icatproject.ids.storage.StorageInterface;
@@ -11,8 +13,14 @@ import org.icatproject.ids.util.StatusInfo;
 
 
 public class LocalFileStorage implements StorageInterface {
+	
+	private final static Logger logger = Logger.getLogger(LocalFileStorage.class.getName());
 
     private PropertyHandler properties = PropertyHandler.getInstance();
+    
+    public LocalFileStorage() {
+    	logger.log(Level.INFO, "LocalFileStorage constructed");
+    }
 
     @Override
     public HashSet<String> copyDatafiles(List<DatafileEntity> datafileList) {
