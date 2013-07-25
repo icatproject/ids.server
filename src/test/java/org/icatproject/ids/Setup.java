@@ -54,8 +54,6 @@ public class Setup {
         filenameMD5 = new HashMap<String, String>();
         filenameMD5.put(props.getProperty("df1_location"), props.getProperty("df1_md5"));
         filenameMD5.put(props.getProperty("df2_location"), props.getProperty("df2_md5"));
-        filenameMD5.put(props.getProperty("df3_location"), props.getProperty("df3_md5"));
-        filenameMD5.put(props.getProperty("df4_location"), props.getProperty("df4_md5"));
 
         datasetIds = new ArrayList<String>();
         datasetIds.add(props.getProperty("ds1_id"));

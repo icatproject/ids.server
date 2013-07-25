@@ -42,10 +42,10 @@ public class LocalFileStorage implements StorageInterface {
         return datafilePathSet;
     }
 
-    @Override
-    public String getStoragePath() {
-        return properties.getLocalStorageSystemPath();
-    }
+//    @Override
+//    public String getStoragePath() {
+//        return properties.getLocalStorageSystemPath();
+//    }
 
     @Override
     public void clearUnusedFiles(int numberOfDays) {

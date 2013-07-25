@@ -16,6 +16,6 @@ import org.icatproject.ids.entity.DatafileEntity;
  */
 public interface StorageInterface {
     public HashSet<String> copyDatafiles(List<DatafileEntity> datafileList);
-    public String getStoragePath();
+//    public String getStoragePath();
     public void clearUnusedFiles(int numberOfDays);
 }

@@ -149,7 +149,7 @@ public class DownloadRequestHelper
         if (!downloadRequestEntity.getStatus().equals(StatusInfo.ERROR.name())) {
             downloadRequestEntity.setStatus(StatusInfo.COMPLETED.name());
             File zipFile = new File(properties.getLocalTemporaryStoragePath() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
-            ZipHelper.compressFileList(zipFile, fileSet, storage.getStoragePath(), downloadRequestEntity.getCompress());
+            ZipHelper.compressFileList(zipFile, fileSet, properties.getLocalStorageSystemPath(), downloadRequestEntity.getCompress());
         }
     
         em.merge(downloadRequestEntity);
