@@ -5,15 +5,15 @@ import java.net.MalformedURLException;
 
 import junit.framework.Assert;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.icatproject.ids.icatclient.icat42.IcatException_Exception;
+import org.icatproject.IcatException_Exception;
 import org.icatproject.idsclient.Status;
 import org.icatproject.idsclient.TestingClient;
 import org.icatproject.idsclient.exceptions.BadRequestException;
 import org.icatproject.idsclient.exceptions.ForbiddenException;
 import org.icatproject.idsclient.exceptions.IDSException;
 import org.icatproject.idsclient.exceptions.NotFoundException;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 
 /*

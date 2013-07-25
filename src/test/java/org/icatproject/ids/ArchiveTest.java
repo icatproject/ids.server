@@ -2,15 +2,15 @@ package org.icatproject.ids;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
-import org.icatproject.ids.icatclient.icat42.IcatException_Exception;
+import org.icatproject.IcatException_Exception;
 import org.icatproject.idsclient.TestingClient;
 import org.icatproject.idsclient.exceptions.BadRequestException;
+import org.icatproject.idsclient.exceptions.ForbiddenException;
 import org.icatproject.idsclient.exceptions.IDSException;
 import org.icatproject.idsclient.exceptions.NotImplementedException;
-import org.icatproject.idsclient.exceptions.ForbiddenException;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /*
  * Test the archive method for the IDS. NOTE: these tests are specific to

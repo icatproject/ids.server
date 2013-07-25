@@ -4,10 +4,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.xml.namespace.QName;
 
+import org.icatproject.Datafile;
+import org.icatproject.ICAT;
+import org.icatproject.ICATService;
+import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.DatafileEntity;
-import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.exceptions.ICATBadParameterException;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
@@ -16,10 +20,6 @@ import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
 import org.icatproject.ids.icatclient.exceptions.ICATObjectAlreadyExistsException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
 import org.icatproject.ids.icatclient.exceptions.ICATValidationException;
-import org.icatproject.ids.icatclient.icat42.Datafile;
-import org.icatproject.ids.icatclient.icat42.ICAT;
-import org.icatproject.ids.icatclient.icat42.ICATService;
-import org.icatproject.ids.icatclient.icat42.IcatException_Exception;
 import org.icatproject.ids.util.StatusInfo;
 
 

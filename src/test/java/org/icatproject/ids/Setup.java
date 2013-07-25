@@ -1,6 +1,5 @@
 package org.icatproject.ids;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,11 +11,11 @@ import java.util.Properties;
 
 import javax.xml.namespace.QName;
 
-import org.icatproject.ids.icatclient.icat42.ICAT;
-import org.icatproject.ids.icatclient.icat42.ICATService;
-import org.icatproject.ids.icatclient.icat42.IcatException_Exception;
-import org.icatproject.ids.icatclient.icat42.Login.Credentials;
-import org.icatproject.ids.icatclient.icat42.Login.Credentials.Entry;
+import org.icatproject.ICAT;
+import org.icatproject.ICATService;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.Login.Credentials;
+import org.icatproject.Login.Credentials.Entry;
 
 
 /*
@@ -72,7 +71,7 @@ public class Setup {
      */
     public String login(String username, String password) throws IcatException_Exception,
             MalformedURLException {
-        ICAT icat = new ICATService(new URL(icatUrl), new QName("http://icatproject.org",
+    	ICAT icat = new ICATService(new URL(icatUrl), new QName("http://icatproject.org",
                 "ICATService")).getICATPort();
 
         Credentials credentials = new Credentials();
