@@ -89,21 +89,19 @@ public class PropertyHandler {
             throw new IllegalStateException(msg);
         }
 
-        storageType = props.getProperty("STORAGE_TYPE").trim().toUpperCase();
-        if (storageType == null) {
-            String msg = "Property STORAGE_TYPE must be set.";
-            logger.severe(msg);
-            throw new IllegalStateException(msg);
-        }
-
-        if (!"LOCAL".equals(storageType) && !"STORAGED".equals(storageType)) {
-            String msg = "Invalid property STORAGE_TYPE (" + storageType
-                    + "). Must be either LOCAL or STORAGED";
-            logger.severe(msg);
-            throw new IllegalStateException(msg);
-        }
-
-        if ("LOCAL".equals(storageType)) {
+//        storageType = props.getProperty("STORAGE_TYPE").trim().toUpperCase();
+//        if (storageType == null) {
+//            String msg = "Property STORAGE_TYPE must be set.";
+//            logger.severe(msg);
+//            throw new IllegalStateException(msg);
+//        }
+//        if (!"LOCAL".equals(storageType) && !"STORAGED".equals(storageType)) {
+//            String msg = "Invalid property STORAGE_TYPE (" + storageType
+//                    + "). Must be either LOCAL or STORAGED";
+//            logger.severe(msg);
+//            throw new IllegalStateException(msg);
+//        }
+//        if ("LOCAL".equals(storageType)) {
             localStorageSystemPath = props.getProperty("LOCAL_STORAGE_PATH").trim();
             File localStorageDir = new File(localStorageSystemPath);
             if (!localStorageDir.exists()) {
@@ -112,7 +110,7 @@ public class PropertyHandler {
                 logger.severe(msg);
                 throw new IllegalStateException(msg);
             }
-        }
+//        }
         
         String storageInterfaceImplementationName = props.getProperty("STORAGE_INTERFACE_IMPLEMENTATION");
         if (storageInterfaceImplementationName == null) {

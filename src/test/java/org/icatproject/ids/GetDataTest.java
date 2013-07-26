@@ -261,7 +261,7 @@ public class GetDataTest {
                 os = new ByteArrayOutputStream();
                 int len;
                 byte[] buffer = new byte[1024];
-                while ((len = zis.read(buffer)) != -1) {
+                while ((len = zis.read(buffer)) != -1) { // zis.read will read up to last byte of the entry
                     os.write(buffer, 0, len);
                 }
                 
