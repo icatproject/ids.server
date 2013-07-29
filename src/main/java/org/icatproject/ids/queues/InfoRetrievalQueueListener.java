@@ -46,6 +46,7 @@ public class InfoRetrievalQueueListener implements MessageListener {
 
                     // if all information successfully retrieved from ICAT, add request to the
                     // data retrieval queue
+                    logger.severe("InfoRetrievalQueueListener status: " + downloadRequestEntity.getStatus()); // TODO remove
                     if (downloadRequestEntity.getStatus().equals(StatusInfo.INFO_RETRIVED.name())) {
                         dataRetrievalQueueSender.addDataRetrievalRequest(downloadRequestEntity);
                     }

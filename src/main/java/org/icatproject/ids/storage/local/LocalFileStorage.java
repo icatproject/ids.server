@@ -29,8 +29,9 @@ public class LocalFileStorage implements StorageInterface {
         // and sets the status of datafile as found otherwise sets error in the status
         // of datafile
         for (DatafileEntity datafileEntity : datafileList) {
-            String filename = properties.getLocalStorageSystemPath() + File.separator
+            String filename = properties.getStorageDir() + File.separator
                     + datafileEntity.getName();
+            logger.severe("filename: " + filename);
             File df = new File(filename);
             if (df.exists()) {
                 datafileEntity.setStatus(StatusInfo.COMPLETED.name());

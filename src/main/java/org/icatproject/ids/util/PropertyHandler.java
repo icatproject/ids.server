@@ -21,9 +21,10 @@ public class PropertyHandler {
 
     private int numberOfDaysToExpire;
     private String icatURL;
-    private String localTemporaryStoragePath;
+    private String storageArchiveDir;
+    private String storageZipDir;
+    private String storageDir;
     private String storageType;
-    private String localStorageSystemPath;
     private int numberOfDaysToKeepFilesInCache;
     private Class<StorageInterface> storageInterfaceImplementation;
 
@@ -64,21 +65,6 @@ public class PropertyHandler {
             throw new IllegalStateException(msg);
         }
 
-        localTemporaryStoragePath = props.getProperty("TEMPORARY_STORAGE_PATH");
-        if (localTemporaryStoragePath == null) {
-            String msg = "Property TEMPORARY_STORAGE_PATH must be set.";
-            logger.severe(msg);
-            throw new IllegalStateException(msg);
-        }
-
-        File tmpStoragePathDir = new File(localTemporaryStoragePath);
-        if (!tmpStoragePathDir.exists()) {
-            String msg = "Invalid TEMPORARY_STORAGE_PATH. Directory " + localTemporaryStoragePath
-                    + " not found. Please create.";
-            logger.severe(msg);
-            throw new IllegalStateException(msg);
-        }
-
         numberOfDaysToKeepFilesInCache = Integer.parseInt(props
                 .getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE"));
         if (numberOfDaysToKeepFilesInCache < 1) {
@@ -88,29 +74,10 @@ public class PropertyHandler {
             logger.severe(msg);
             throw new IllegalStateException(msg);
         }
-
-//        storageType = props.getProperty("STORAGE_TYPE").trim().toUpperCase();
-//        if (storageType == null) {
-//            String msg = "Property STORAGE_TYPE must be set.";
-//            logger.severe(msg);
-//            throw new IllegalStateException(msg);
-//        }
-//        if (!"LOCAL".equals(storageType) && !"STORAGED".equals(storageType)) {
-//            String msg = "Invalid property STORAGE_TYPE (" + storageType
-//                    + "). Must be either LOCAL or STORAGED";
-//            logger.severe(msg);
-//            throw new IllegalStateException(msg);
-//        }
-//        if ("LOCAL".equals(storageType)) {
-            localStorageSystemPath = props.getProperty("LOCAL_STORAGE_PATH").trim();
-            File localStorageDir = new File(localStorageSystemPath);
-            if (!localStorageDir.exists()) {
-                String msg = "Invalid LOCAL_STORAGE_PATH. Directory " + localStorageSystemPath
-                        + " not found. Please create.";
-                logger.severe(msg);
-                throw new IllegalStateException(msg);
-            }
-//        }
+        
+        storageArchiveDir = setICATDirFromProperties(props, "STORAGE_ARCHIVE_DIR");
+        storageZipDir = setICATDirFromProperties(props, "STORAGE_ZIP_DIR");
+        storageDir = setICATDirFromProperties(props, "STORAGE_DIR");
         
         String storageInterfaceImplementationName = props.getProperty("STORAGE_INTERFACE_IMPLEMENTATION");
         if (storageInterfaceImplementationName == null) {
@@ -138,12 +105,12 @@ public class PropertyHandler {
         return icatURL;
     }
 
-    public String getLocalStorageSystemPath() {
-        return localStorageSystemPath;
+    public String getStorageDir() {
+        return storageDir;
     }
 
-    public String getLocalTemporaryStoragePath() {
-        return localTemporaryStoragePath;
+    public String getStorageZipDir() {
+        return storageZipDir;
     }
 
     public int getNumberOfDaysToExpire() {
@@ -160,5 +127,24 @@ public class PropertyHandler {
 
 	public Class<StorageInterface> getStorageInterfaceImplementation() {
 		return storageInterfaceImplementation;
+	}
+	
+	private String setICATDirFromProperties(Properties props, String property) {
+		String res = props.getProperty(property);
+		// logger.severe(property + " = " + res); // TODO remove
+        if (res == null) {
+            String msg = "Property " + property + " must be set.";
+            logger.severe(msg);
+            throw new IllegalStateException(msg);
+        }
+
+        File tmp = new File(res);
+        if (!tmp.exists()) {
+            String msg = "Invalid " + property + ". Directory " + res
+                    + " not found. Please create.";
+            logger.severe(msg);
+            throw new IllegalStateException(msg);
+        }
+        return res;
 	}
 }

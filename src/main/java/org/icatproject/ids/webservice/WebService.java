@@ -313,8 +313,11 @@ public class WebService {
         }
         
         
-        File zipFile = new File(PropertyHandler.getInstance().getLocalTemporaryStoragePath() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
+        File zipFile = new File(PropertyHandler.getInstance().getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
         
+//        if (zipFile.exists() == false) {
+//        	throw new InternalServerErrorException("The zip file doesn't exist");
+//        }
         // if zip file is 0 bytes then something has gone wrong
         if (zipFile.length() == 0) {
             throw new InternalServerErrorException("There was a problem creating the zip file.");
