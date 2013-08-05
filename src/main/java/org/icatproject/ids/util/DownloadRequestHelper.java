@@ -125,14 +125,14 @@ public class DownloadRequestHelper
         StorageInterface storage = StorageFactory.getInstance().createStorageInterface(em, downloadRequestEntity.getPreparedId());
     
         //System.out.println("Number of Datafiles:" + downloadRequestEntity.getDatafileList().size());      // TODO: remove System.out
-        em.refresh(downloadRequestEntity);
+        em.refresh(downloadRequestEntity); // gets changes to the entity from the database
         
         // loop through the DownloadRequestEntity Datafiles and Datasets to download the files
         HashSet<String> fileSet = storage.copyDatafiles(downloadRequestEntity.getDatafileList());
         
         // check if there were any problems retrieving the datafiles
         for (DatafileEntity datafileEntity : downloadRequestEntity.getDatafileList()) {
-        	logger.severe(datafileEntity.getName() + " status: " + datafileEntity.getStatus()); // TODO remove
+        	// logger.severe(datafileEntity.getName() + " status: " + datafileEntity.getStatus()); // TODO remove
             if (datafileEntity.getStatus().equals(StatusInfo.ERROR.name())) {
                 downloadRequestEntity.setStatus(StatusInfo.ERROR.name());
                 // If there was a problem retrieving a file, check that it still exists in ICAT.

@@ -24,7 +24,8 @@ public class PropertyHandler {
     private String storageArchiveDir;
     private String storageZipDir;
     private String storageDir;
-    private String storageType;
+    private long writeDelaySeconds;
+    private long processQueueIntervalSeconds;
     private int numberOfDaysToKeepFilesInCache;
     private Class<StorageInterface> storageInterfaceImplementation;
 
@@ -79,6 +80,24 @@ public class PropertyHandler {
         storageZipDir = setICATDirFromProperties(props, "STORAGE_ZIP_DIR");
         storageDir = setICATDirFromProperties(props, "STORAGE_DIR");
         
+        writeDelaySeconds = Long.parseLong(props.getProperty("WRITE_DELAY_SECONDS"));
+        if (writeDelaySeconds < 1) {
+            String msg = "Invalid property WRITE_DELAY_SECONDS ("
+                    + props.getProperty("WRITE_DELAY_SECONDS")
+                    + "). Must be an integer greater than 0.";
+            logger.severe(msg);
+            throw new IllegalStateException(msg);
+        }
+        
+        processQueueIntervalSeconds = Long.parseLong(props.getProperty("PROCESS_QUEUE_INTERVAL_SECONDS"));
+        if (processQueueIntervalSeconds < 1) {
+            String msg = "Invalid property PROCESS_QUEUE_INTERVAL_SECONDS ("
+                    + props.getProperty("PROCESS_QUEUE_INTERVAL_SECONDS")
+                    + "). Must be an integer greater than 0.";
+            logger.severe(msg);
+            throw new IllegalStateException(msg);
+        }
+        
         String storageInterfaceImplementationName = props.getProperty("STORAGE_INTERFACE_IMPLEMENTATION");
         if (storageInterfaceImplementationName == null) {
         	String msg = "Property STORAGE_INTERFACE_IMPLEMENTATION must be set.";
@@ -104,6 +123,10 @@ public class PropertyHandler {
     public String getIcatURL() {
         return icatURL;
     }
+    
+    public String getStorageArchiveDir() {
+    	return storageArchiveDir;
+    }
 
     public String getStorageDir() {
         return storageDir;
@@ -112,13 +135,17 @@ public class PropertyHandler {
     public String getStorageZipDir() {
         return storageZipDir;
     }
+    
+    public long getWriteDelaySeconds() {
+    	return writeDelaySeconds;
+    }
+    
+    public long getProcessQueueIntervalSeconds() {
+    	return processQueueIntervalSeconds;
+    }
 
     public int getNumberOfDaysToExpire() {
         return numberOfDaysToExpire;
-    }
-
-    public String getStorageType() {
-        return storageType;
     }
 
     public int getNumberOfDaysToKeepFilesInCache() {

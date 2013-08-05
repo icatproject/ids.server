@@ -46,12 +46,12 @@ public class InfoRetrievalQueueListener implements MessageListener {
 
                     // if all information successfully retrieved from ICAT, add request to the
                     // data retrieval queue
-                    logger.severe("InfoRetrievalQueueListener status: " + downloadRequestEntity.getStatus()); // TODO remove
+                    // logger.severe("InfoRetrievalQueueListener status: " + downloadRequestEntity.getStatus()); // TODO remove
                     if (downloadRequestEntity.getStatus().equals(StatusInfo.INFO_RETRIVED.name())) {
                         dataRetrievalQueueSender.addDataRetrievalRequest(downloadRequestEntity);
                     }
                 } else {
-                    logger.log(Level.SEVERE, "Couldn not find the download request Id");
+                    logger.log(Level.SEVERE, "Could not find the download request Id");
                 }
             } catch (JMSException e) {
                 logger.log(Level.SEVERE, "Unable to proccess the download request", e);
