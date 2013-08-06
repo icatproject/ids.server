@@ -9,8 +9,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,11 +17,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -63,6 +60,7 @@ import org.icatproject.ids2.ported.DeferredOp;
 import org.icatproject.ids2.ported.Ids2DatasetEntity;
 import org.icatproject.ids2.ported.RequestEntity;
 import org.icatproject.ids2.ported.RequestHelper;
+import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.thread.ProcessQueue;
 
@@ -77,11 +75,9 @@ public class WebService {
 	private final static Logger logger = Logger.getLogger(WebService.class.getName());
 	
 	private ICAT icatClient;
-	private final Map<Ids2DatasetEntity, RequestedState> deferredOpsQueue = new HashMap<Ids2DatasetEntity, RequestedState>();
-	private final Set<Ids2DatasetEntity> changing = new HashSet<Ids2DatasetEntity>();
-	private final Map<Ids2DatasetEntity, Long> writeTimes = new HashMap<Ids2DatasetEntity, Long>();
 	private long archiveWriteDelayMillis = PropertyHandler.getInstance().getWriteDelaySeconds() * 1000L;
-	private Timer timer;
+	private Timer timer = new Timer();	
+	private RequestQueues requestQueues = RequestQueues.getInstance();
 
 	@EJB
 	private InfoRetrievalQueueSender infoRetrievalQueueSender;
@@ -91,29 +87,26 @@ public class WebService {
 
 	@EJB
 	private RequestHelper requestHelper;
-	
-	@PersistenceContext(unitName = "IDS-PU")
-	private EntityManager em;
 
-	public WebService() {
-		logger.log(Level.SEVERE, "creating WebService");		
-	}
-	
 	@PostConstruct
 	public void postConstructInit() {
+		logger.info("creating WebService");
 		try {
 			final URL icatUrl = new URL(PropertyHandler.getInstance().getIcatURL());
 			final ICATService icatService = new ICATService(icatUrl, new QName(
 					"http://icatproject.org", "ICATService"));
 			this.icatClient = icatService.getICATPort();
-//			logger.info("Starting Timer from WebService");
-			this.timer = new Timer();
-//			logger.info("em factory in WebService() " + em.getEntityManagerFactory());
-			timer.schedule(new ProcessQueue(deferredOpsQueue, changing, writeTimes, timer, requestHelper), 
+//			this.timer = new Timer();
+			timer.schedule(new ProcessQueue(timer, requestHelper), 
 					PropertyHandler.getInstance().getProcessQueueIntervalSeconds() * 1000L);
 		} catch (Exception e) {
 			throw new InternalServerErrorException("Could not initialize ICAT client");
 		}
+	}
+	
+	@PreDestroy
+	public void destroy() {
+		
 	}
 
 	/**
@@ -186,9 +179,9 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(requestEntity, datasetIds);
 			}
-			logger.info("prepareData em contains " + em.contains(requestEntity.getDatasetList().get(0)));
-			for (Ids2DatasetEntity ds : requestEntity.getDatasetList()) {
-				Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getDatasetId());
+//			logger.info("prepareData em contains " + em.contains(requestEntity.getDatasetList().get(0)));
+			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
+				Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getIcatDatasetId());
 				ds.setLocation(icatDs.getLocation());
 				this.queue(ds, DeferredOp.RESTORE);
 			}
@@ -700,50 +693,55 @@ public class WebService {
 
 	private void queue(Ids2DatasetEntity ds, DeferredOp deferredOp) {
 		logger.info("Requesting " + deferredOp + " of " + ds);
-		synchronized (this.deferredOpsQueue) {
-			final RequestedState state = this.deferredOpsQueue.get(ds);
+		
+		Map<Ids2DatasetEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
+		
+		synchronized (deferredOpsQueue) {
+			final RequestedState state = deferredOpsQueue.get(ds);
 			if (state == null) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
 					this.setDelay(ds);
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					this.deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
 				} else if (deferredOp == DeferredOp.RESTORE) {
-					this.deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
 				}
 			} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
 					this.setDelay(ds);
 				} else if (deferredOp == DeferredOp.RESTORE) {
-					this.deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
 				}
 			} else if (state == RequestedState.RESTORE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
 					this.setDelay(ds);
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					this.deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
 				}
 			} else if (state == RequestedState.WRITE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					this.setDelay(ds);
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					this.deferredOpsQueue.put(ds, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
 				}
 			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					this.setDelay(ds);
 				} else if (deferredOp == DeferredOp.RESTORE) {
-					this.deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
 				}
 			}
 		}
 	}
 
 	private void setDelay(Ids2DatasetEntity ds) {
-		this.writeTimes.put(ds, System.currentTimeMillis() + this.archiveWriteDelayMillis);
-		final Date d = new Date(this.writeTimes.get(ds));
+		Map<Ids2DatasetEntity, Long> writeTimes = requestQueues.getWriteTimes();
+		
+		writeTimes.put(ds, System.currentTimeMillis() + this.archiveWriteDelayMillis);
+		final Date d = new Date(writeTimes.get(ds));
 		logger.info("Requesting delay of writing of " + ds + " till " + d);
 	}
 }
