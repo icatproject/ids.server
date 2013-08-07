@@ -5,17 +5,15 @@
 
 package org.icatproject.ids.storage;
 
-import java.util.HashSet;
-import java.util.List;
+import org.icatproject.ids.util.StatusInfo;
+import org.icatproject.ids2.ported.Ids2DatasetEntity;
 
-import org.icatproject.ids.entity.DatafileEntity;
-
-/**
- *
- * @author sn65
- */
 public interface StorageInterface {
-    public HashSet<String> copyDatafiles(List<DatafileEntity> datafileList);
+    public StatusInfo restoreFromArchive(Ids2DatasetEntity dataset);
+    // not yet implemented
+//    public StatusInfo copyToArchive(Ids2DatasetEntity dataset);
+    
+    // old methods, unused
 //    public String getStoragePath();
-    public void clearUnusedFiles(int numberOfDays);
+//    public void clearUnusedFiles(int numberOfDays);
 }

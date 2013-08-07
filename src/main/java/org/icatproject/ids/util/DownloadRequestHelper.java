@@ -121,44 +121,44 @@ public class DownloadRequestHelper
      * and extracts them from the storage source
      */
     public void processDataRetrievalRequest(DownloadRequestEntity downloadRequestEntity)
-    {           
-        StorageInterface storage = StorageFactory.getInstance().createStorageInterface(em, downloadRequestEntity.getPreparedId());
-    
-        //System.out.println("Number of Datafiles:" + downloadRequestEntity.getDatafileList().size());      // TODO: remove System.out
-        em.refresh(downloadRequestEntity); // gets changes to the entity from the database
-        
-        // loop through the DownloadRequestEntity Datafiles and Datasets to download the files
-        HashSet<String> fileSet = storage.copyDatafiles(downloadRequestEntity.getDatafileList());
-        
-        // check if there were any problems retrieving the datafiles
-        for (DatafileEntity datafileEntity : downloadRequestEntity.getDatafileList()) {
-        	// logger.severe(datafileEntity.getName() + " status: " + datafileEntity.getStatus()); // TODO remove
-            if (datafileEntity.getStatus().equals(StatusInfo.ERROR.name())) {
-                downloadRequestEntity.setStatus(StatusInfo.ERROR.name());
-                // If there was a problem retrieving a file, check that it still exists in ICAT.
-                // If it no longer exists in ICAT set status as INCOMPLETE
-                try {
-                    ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
-                    ArrayList<Long> datafileIds = new ArrayList<Long>();
-                    datafileIds.add(datafileEntity.getDatafileId());
-                    client.getDatafilePaths(downloadRequestEntity.getSessionId(), datafileIds);
-                } catch (ICATNoSuchObjectException e) {
-                    downloadRequestEntity.setStatus(StatusInfo.INCOMPLETE.name());
-                } catch (Exception e) {
-                    // do nothing as status already set as error
-                }
-                break;
-            }
-        }
-        
-        // if there were not any problems retriving the files, change the status of the request to COMPLETE
-        if (!downloadRequestEntity.getStatus().equals(StatusInfo.ERROR.name())) {
-            downloadRequestEntity.setStatus(StatusInfo.COMPLETED.name());
-            File zipFile = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
-            ZipHelper.compressFileList(zipFile, fileSet, properties.getStorageDir(), downloadRequestEntity.getCompress());
-        }
-    
-        em.merge(downloadRequestEntity);
+    {     
+//        StorageInterface storage = StorageFactory.getInstance().createStorageInterface(em, downloadRequestEntity.getPreparedId());
+//    
+//        //System.out.println("Number of Datafiles:" + downloadRequestEntity.getDatafileList().size());      // TODO: remove System.out
+//        em.refresh(downloadRequestEntity); // gets changes to the entity from the database
+//        
+//        // loop through the DownloadRequestEntity Datafiles and Datasets to download the files
+//        HashSet<String> fileSet = storage.copyDatafiles(downloadRequestEntity.getDatafileList());
+//        
+//        // check if there were any problems retrieving the datafiles
+//        for (DatafileEntity datafileEntity : downloadRequestEntity.getDatafileList()) {
+//        	// logger.severe(datafileEntity.getName() + " status: " + datafileEntity.getStatus()); // TODO remove
+//            if (datafileEntity.getStatus().equals(StatusInfo.ERROR.name())) {
+//                downloadRequestEntity.setStatus(StatusInfo.ERROR.name());
+//                // If there was a problem retrieving a file, check that it still exists in ICAT.
+//                // If it no longer exists in ICAT set status as INCOMPLETE
+//                try {
+//                    ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
+//                    ArrayList<Long> datafileIds = new ArrayList<Long>();
+//                    datafileIds.add(datafileEntity.getDatafileId());
+//                    client.getDatafilePaths(downloadRequestEntity.getSessionId(), datafileIds);
+//                } catch (ICATNoSuchObjectException e) {
+//                    downloadRequestEntity.setStatus(StatusInfo.INCOMPLETE.name());
+//                } catch (Exception e) {
+//                    // do nothing as status already set as error
+//                }
+//                break;
+//            }
+//        }
+//        
+//        // if there were not any problems retriving the files, change the status of the request to COMPLETE
+//        if (!downloadRequestEntity.getStatus().equals(StatusInfo.ERROR.name())) {
+//            downloadRequestEntity.setStatus(StatusInfo.COMPLETED.name());
+//            File zipFile = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
+//            ZipHelper.compressFileList(zipFile, fileSet, properties.getStorageDir(), downloadRequestEntity.getCompress());
+//        }
+//    
+//        em.merge(downloadRequestEntity);
     }
 
 
