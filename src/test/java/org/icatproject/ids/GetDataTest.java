@@ -47,13 +47,13 @@ public class GetDataTest {
     
     @Test(expected = BadRequestException.class)
     public void badPreparedIdFormatTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         client.getDataTest("bad preparedId format", null, null);
     }
 
     @Test(expected = BadRequestException.class)
     public void badFileNameFormatTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
                 null, null);
 
@@ -67,7 +67,7 @@ public class GetDataTest {
 
     @Test(expected = BadRequestException.class)
     public void badOffsetFormatTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
                 null, null);
 
@@ -81,13 +81,13 @@ public class GetDataTest {
 
     @Test(expected = NotFoundException.class)
     public void nonExistantPreparedIdTest() throws IOException, IDSException, NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         client.getDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null);
     }
 
     @Test(expected = ForbiddenException.class)
     public void forbiddenTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getForbiddenSessionId(), null, null,
                 setup.getDatafileIds().get(0), null, null);
 
@@ -105,7 +105,7 @@ public class GetDataTest {
     
     @Test(expected = BadRequestException.class)
     public void offsetTooBigTest() throws IOException, IDSException, NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
                 null, null);
 
@@ -119,7 +119,7 @@ public class GetDataTest {
 
     @Test
     public void correctBehaviourNoOffsetTest() throws IOException, IDSException, NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
                 null, null);
 
@@ -136,7 +136,7 @@ public class GetDataTest {
     @Test
     public void correctBehaviourNoOffsetMultipleDatafilesTest() throws IOException, IDSException,
             NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getCommaSepDatafileIds(),
                 null, null);
 
@@ -152,7 +152,7 @@ public class GetDataTest {
 
     @Test
     public void correctBehaviourNoOffsetWithDatasetTest() throws IOException, IDSException, NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0), null,
                 null, null);
 
@@ -169,7 +169,7 @@ public class GetDataTest {
     @Test
     public void correctBehaviourNoOffsetWithDatasetAndDatafileTest() throws IOException, IDSException,
             NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
 
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0),
                 setup.getCommaSepDatafileIds(), null, null);
@@ -186,7 +186,7 @@ public class GetDataTest {
 
     @Test
     public void correctBehaviourWithOffsetTest() throws IOException, IDSException, NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
                 null, null);
 
@@ -214,7 +214,7 @@ public class GetDataTest {
     @Test
     public void correctBehaviourFilenameWithExtensionTest() throws IOException, IDSException,
             NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
                 null, null);
 
@@ -231,7 +231,7 @@ public class GetDataTest {
     @Test
     public void correctBehaviourFilenameWithoutExtensionTest() throws IOException, IDSException,
             NoSuchAlgorithmException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
                 null, null);
 

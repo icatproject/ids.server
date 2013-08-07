@@ -30,19 +30,19 @@ public class GetStatusTest {
 
     @Test(expected = BadRequestException.class)
     public void badPreparedIdFormatTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         client.getStatusTest("bad preparedId format");
     }
 
     @Test(expected = NotFoundException.class)
     public void nonExistingPreparedIdTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         client.getStatus("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     }
 
     @Test(expected = NotFoundException.class)
     public void notFoundIdsTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, "1,2,3,99999", null, null);
         Status status = null;
         do {
@@ -52,7 +52,7 @@ public class GetStatusTest {
     
     @Test(expected = NotFoundException.class)
     public void notFoundSingleIdTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, "99999", null, null);
         Status status = null;
         do {
@@ -62,7 +62,7 @@ public class GetStatusTest {
     
     @Test(expected = NotFoundException.class)
     public void notFoundDatasetSingleIdTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, "99999", null, null, null);
         Status status = null;
         do {
@@ -72,7 +72,7 @@ public class GetStatusTest {
 
     @Test(expected = ForbiddenException.class)
     public void forbiddenTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getForbiddenSessionId(), null, null, setup.getCommaSepDatafileIds(),
                 null, null);
         Status status = null;
@@ -83,7 +83,7 @@ public class GetStatusTest {
 
     @Test
     public void correctBehaviourTest() throws IOException, IDSException {
-        TestingClient client = new TestingClient(setup.getidsURL());
+        TestingClient client = new TestingClient(setup.getIdsUrl());
         String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getCommaSepDatafileIds(), null, null);
         Status status = null;
         do {

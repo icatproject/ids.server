@@ -36,6 +36,10 @@ public class Setup {
     private static Map<String, String> filenameMD5 = null;
     private static ArrayList<String> datasetIds = null;
     private static ArrayList<String> datafileIds = null;
+    
+    private String storageArchiveDir;
+    private String storageZipDir;
+    private String storageDir;
 
     public Setup() throws MalformedURLException, IcatException_Exception {
         InputStream is = getClass().getResourceAsStream("/test.properties");
@@ -61,6 +65,10 @@ public class Setup {
         datafileIds = new ArrayList<String>();
         datafileIds.add(props.getProperty("df1_id"));
         datafileIds.add(props.getProperty("df2_id"));
+        
+        storageArchiveDir = props.getProperty("STORAGE_ARCHIVE_DIR");
+        storageZipDir = props.getProperty("STORAGE_ZIP_DIR");
+        storageDir = props.getProperty("STORAGE_DIR");
     }
 
     /*
@@ -101,7 +109,7 @@ public class Setup {
         return goodSessionId;
     }
     
-    public String getidsURL() throws MalformedURLException {
+    public String getIdsUrl() throws MalformedURLException {
         return idsUrl;
     }
     
@@ -116,4 +124,20 @@ public class Setup {
     public ArrayList<String> getDatafileIds() {
         return datafileIds;
     }
+
+	public String getStorageArchiveDir() {
+		return storageArchiveDir;
+	}
+
+	public String getStorageZipDir() {
+		return storageZipDir;
+	}
+
+	public String getStorageDir() {
+		return storageDir;
+	}
+
+	public String getIcatUrl() {
+		return icatUrl;
+	}
 }
