@@ -179,23 +179,14 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(requestEntity, datasetIds);
 			}
-//			logger.info("prepareData em contains " + em.contains(requestEntity.getDatasetList().get(0)));
 			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
 				Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getIcatDatasetId());
 				ds.setLocation(icatDs.getLocation());
+			}
+			// if all the information was restored successfully, we can enqueue requests
+			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
 				this.queue(ds, DeferredOp.RESTORE);
 			}
-			// create a download request with associated dataset and datafile
-			// information
-//			downloadRequestEntity = downloadRequestHelper.createDownloadRequest(sessionId, compress, zip);
-//			if (datasetIds != null) {
-//				downloadRequestHelper.addDatasets(downloadRequestEntity, datasetIds);
-//			}
-//			if (datafileIds != null) {
-//				downloadRequestHelper.addDatafiles(downloadRequestEntity, datafileIds);
-//			}
-//			// add download request to info retrieval queue
-//			infoRetrievalQueueSender.addInfoRetrievalRequest(downloadRequestEntity);
 		} catch (final IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			if (type == IcatExceptionType.SESSION || type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {

@@ -1,7 +1,6 @@
 package org.icatproject.idsclient;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -14,6 +13,12 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.icatproject.ids.webservice.Status;
+import org.icatproject.idsclient.exception.TestingClientBadRequestException;
+import org.icatproject.idsclient.exception.TestingClientForbiddenException;
+import org.icatproject.idsclient.exception.TestingClientInsufficientStorageException;
+import org.icatproject.idsclient.exception.TestingClientInternalServerErrorException;
+import org.icatproject.idsclient.exception.TestingClientNotFoundException;
+import org.icatproject.idsclient.exception.TestingClientNotImplementedException;
 
 /*
  * The test suite for the IDS makes use of the IDS client. This has some passive 
@@ -183,25 +188,25 @@ public class TestingClient {
         }
 
         // convert response code into relevant IDSException
-//        switch (connection.getResponseCode()) {
-//            case 200:
-//                break;
-//            case 400:
-//                throw new BadRequestException(os.toString());
-//            case 403:
-//                throw new ForbiddenException(os.toString());
-//            case 404:
-//                throw new NotFoundException(os.toString());
-//            case 500:
-//                throw new InternalServerErrorException(os.toString());
-//            case 501:
-//                throw new NotImplementedException(os.toString());
-//            case 507:
-//                throw new InsufficientStorageException(os.toString());
-//            default:
-//                throw new InternalServerErrorException("Unknown response "
-//                        + connection.getResponseCode() + ": " + os.toString());
-//        }
+        switch (connection.getResponseCode()) {
+            case 200:
+                break;
+            case 400:
+                throw new TestingClientBadRequestException(os.toString());
+            case 403:
+                throw new TestingClientForbiddenException(os.toString());
+            case 404:
+                throw new TestingClientNotFoundException(os.toString());
+            case 500:
+                throw new TestingClientInternalServerErrorException(os.toString());
+            case 501:
+                throw new TestingClientNotImplementedException(os.toString());
+            case 507:
+                throw new TestingClientInsufficientStorageException(os.toString());
+            default:
+                throw new TestingClientInternalServerErrorException("Unknown response "
+                        + connection.getResponseCode() + ": " + os.toString());
+        }
 
         connection.disconnect();
 

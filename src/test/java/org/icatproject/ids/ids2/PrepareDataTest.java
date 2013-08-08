@@ -1,7 +1,6 @@
 package org.icatproject.ids.ids2;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.net.URL;
@@ -15,6 +14,8 @@ import org.icatproject.ICATService;
 import org.icatproject.ids.Setup;
 import org.icatproject.ids.webservice.Status;
 import org.icatproject.idsclient.TestingClient;
+import org.icatproject.idsclient.exception.TestingClientBadRequestException;
+import org.icatproject.idsclient.exception.TestingClientForbiddenException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,63 +70,63 @@ public class PrepareDataTest {
 				zipOnFastStorage.exists());
 	}
 
-//	@Test(expected = NotFoundException)
-//	public void restoreNonExistentDataset() throws Exception {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		// dataset id -1 shouldn't exist in the DB
-//		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, "-1", null,
-//				null, null);
-//	}
-//
-//	@Test(expected = BadRequestException.class)
-//	public void badSessionIdFormatTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		client.prepareDataTest("bad sessionId format", null, null, null, null, null);
-//	}
-//
-//	@Test(expected = BadRequestException.class)
-//	public void badDatafileIdListTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		client.prepareDataTest(setup.getGoodSessionId(), null, null, "1, 2, a", null, null);
-//	}
-//
-//	@Test(expected = BadRequestException.class)
-//	public void badDatasetIdListTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		client.prepareDataTest(setup.getGoodSessionId(), null, "", null, null, null);
-//	}
-//
-//	@Test(expected = BadRequestException.class)
-//	public void tooBigIdTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		client.prepareDataTest(setup.getGoodSessionId(), null, "99999999999999999999", null, null, null);
-//	}
-//
-//	@Test(expected = BadRequestException.class)
-//	public void noIdsTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, null, null);
-//	}
-//
-//	@Test(expected = BadRequestException.class)
-//	public void badCompressTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, "flase", null);
-//	}
-//
-//	@Test(expected = ForbiddenException.class)
-//	public void nonExistingSessionIdTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		client.prepareDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null, setup.getCommaSepDatafileIds(),
-//				null, null);
-//	}
-//
-//	@Test
-//	public void correctBehaviourTest() throws IOException, IDSException {
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null,
-//				setup.getCommaSepDatafileIds(), null, null);
-//		Assert.assertNotNull(preparedId);
-//	}
+	@Test(expected = TestingClientBadRequestException.class)
+	public void restoreNonExistentDataset() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		// dataset id -1 shouldn't exist in the DB
+		client.prepareDataTest(setup.getGoodSessionId(), null, "-1", null,
+				null, null);
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badSessionIdFormatTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.prepareDataTest("bad sessionId format", null, null, null, null, null);
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badDatafileIdListTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.prepareDataTest(setup.getGoodSessionId(), null, null, "1, 2, a", null, null);
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badDatasetIdListTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.prepareDataTest(setup.getGoodSessionId(), null, "", null, null, null);
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void tooBigIdTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.prepareDataTest(setup.getGoodSessionId(), null, "99999999999999999999", null, null, null);
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void noIdsTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, null, null);
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badCompressTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, "flase", null);
+	}
+
+	@Test(expected = TestingClientForbiddenException.class)
+	public void nonExistingSessionIdTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.prepareDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null, setup.getCommaSepDatafileIds(),
+				null, null);
+	}
+
+	@Test
+	public void correctBehaviourTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null,
+				setup.getCommaSepDatafileIds(), null, null);
+		assertNotNull(preparedId);
+	}
 
 }
