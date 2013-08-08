@@ -1,10 +1,9 @@
 package org.icatproject.ids.ids2;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.xml.namespace.QName;
@@ -13,60 +12,120 @@ import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.Setup;
-import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids.webservice.exceptions.InternalServerErrorException;
-import org.icatproject.ids2.ported.thread.ProcessQueue;
-import org.icatproject.idsclient.Status;
+import org.icatproject.ids.webservice.Status;
 import org.icatproject.idsclient.TestingClient;
-import org.icatproject.idsclient.exceptions.IDSException;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class PrepareDataTest {
-	
+
 	private static Setup setup = null;
 	private static ICAT icatClient;
 
-    @BeforeClass
-    public static void setup() throws Exception {
-        setup = new Setup();
-        
-    	try {
-			final URL icatUrl = new URL(setup.getIcatUrl());
-			final ICATService icatService = new ICATService(icatUrl, new QName(
-					"http://icatproject.org", "ICATService"));
-			icatClient = icatService.getICATPort();
-		} catch (Exception e) {
-			throw new InternalServerErrorException("Could not initialize ICAT client");
-		}
-    }
-    
-    @Test
-    public void restoreArchivedDataset() throws Exception {
-        TestingClient client = new TestingClient(setup.getIdsUrl());
-        Dataset icatDs = (Dataset) icatClient.get(setup.getGoodSessionId(), "Dataset", Long.parseLong(setup.getDatasetIds().get(0)));
-        File fileOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
-        File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
-        FileUtils.deleteDirectory(fileOnFastStorage);
-        FileUtils.deleteDirectory(zipOnFastStorage);
-        
-        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0), null, null, null);
-        Status status = null;
-        do {
-        	try {
+	@BeforeClass
+	public static void setup() throws Exception {
+		setup = new Setup();
+		final URL icatUrl = new URL(setup.getIcatUrl());
+		final ICATService icatService = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"));
+		icatClient = icatService.getICATPort();
+	}
+
+	@Before
+	public void clearFastStorage() throws Exception {
+		File storageDir = new File(setup.getStorageDir());
+		File storageZipDir = new File(setup.getStorageZipDir());
+		FileUtils.deleteDirectory(storageDir);
+		FileUtils.deleteDirectory(storageZipDir);
+		storageDir.mkdir();
+		storageZipDir.mkdir();
+	}
+
+	@Test
+	public void restoreArchivedDataset() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		Dataset icatDs = (Dataset) icatClient.get(setup.getGoodSessionId(), "Dataset",
+				Long.parseLong(setup.getDatasetIds().get(0)));
+		File fileOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
+		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
+
+		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0), null,
+				null, null);
+		Status status = null;
+		do {
+			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-            status = client.getStatus(preparedId);
-        } while (Status.RESTORING.equals(status));
-        
-        assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
-        assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist", fileOnFastStorage.exists());
-        assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist", zipOnFastStorage.exists());
-    }
+			status = client.getStatusTest(preparedId);
+		} while (Status.RESTORING.equals(status));
+
+		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
+		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				fileOnFastStorage.exists());
+		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				zipOnFastStorage.exists());
+	}
+
+//	@Test(expected = NotFoundException)
+//	public void restoreNonExistentDataset() throws Exception {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		// dataset id -1 shouldn't exist in the DB
+//		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, "-1", null,
+//				null, null);
+//	}
+//
+//	@Test(expected = BadRequestException.class)
+//	public void badSessionIdFormatTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		client.prepareDataTest("bad sessionId format", null, null, null, null, null);
+//	}
+//
+//	@Test(expected = BadRequestException.class)
+//	public void badDatafileIdListTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		client.prepareDataTest(setup.getGoodSessionId(), null, null, "1, 2, a", null, null);
+//	}
+//
+//	@Test(expected = BadRequestException.class)
+//	public void badDatasetIdListTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		client.prepareDataTest(setup.getGoodSessionId(), null, "", null, null, null);
+//	}
+//
+//	@Test(expected = BadRequestException.class)
+//	public void tooBigIdTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		client.prepareDataTest(setup.getGoodSessionId(), null, "99999999999999999999", null, null, null);
+//	}
+//
+//	@Test(expected = BadRequestException.class)
+//	public void noIdsTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, null, null);
+//	}
+//
+//	@Test(expected = BadRequestException.class)
+//	public void badCompressTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, "flase", null);
+//	}
+//
+//	@Test(expected = ForbiddenException.class)
+//	public void nonExistingSessionIdTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		client.prepareDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null, setup.getCommaSepDatafileIds(),
+//				null, null);
+//	}
+//
+//	@Test
+//	public void correctBehaviourTest() throws IOException, IDSException {
+//		TestingClient client = new TestingClient(setup.getIdsUrl());
+//		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null,
+//				setup.getCommaSepDatafileIds(), null, null);
+//		Assert.assertNotNull(preparedId);
+//	}
 
 }
