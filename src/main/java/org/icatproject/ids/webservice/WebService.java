@@ -91,17 +91,17 @@ public class WebService {
 	@PostConstruct
 	public void postConstructInit() {
 		logger.info("creating WebService");
-		try {
-			final URL icatUrl = new URL(PropertyHandler.getInstance().getIcatURL());
-			final ICATService icatService = new ICATService(icatUrl, new QName(
-					"http://icatproject.org", "ICATService"));
-			this.icatClient = icatService.getICATPort();
+//		try {
+//			final URL icatUrl = new URL(PropertyHandler.getInstance().getIcatURL());
+//			final ICATService icatService = new ICATService(icatUrl, new QName(
+//					"http://icatproject.org", "ICATService"));
+//			this.icatClient = icatService.getICATPort();
 //			this.timer = new Timer();
 			timer.schedule(new ProcessQueue(timer, requestHelper), 
 					PropertyHandler.getInstance().getProcessQueueIntervalSeconds() * 1000L);
-		} catch (Exception e) {
-			throw new InternalServerErrorException("Could not initialize ICAT client");
-		}
+//		} catch (Exception e) {
+//			throw new InternalServerErrorException("Could not initialize ICAT client");
+//		}
 	}
 	
 	@PreDestroy
@@ -177,24 +177,24 @@ public class WebService {
 		try {
 			requestEntity = requestHelper.createRequest(sessionId, compress, zip, RequestedState.RESTORE_REQUESTED);
 			if (datasetIds != null) {
-				requestHelper.addDatasets(requestEntity, datasetIds);
+				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
 			// perhaps it would be better to put this in addDatasets call
-			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
-				Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getIcatDatasetId());
-				ds.setLocation(icatDs.getLocation());
-			}
+//			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
+//				Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getIcatDatasetId());
+//				ds.setLocation(icatDs.getLocation());
+//			}
 			// if all the information was restored successfully, we can enqueue requests
 			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
 				this.queue(ds, DeferredOp.RESTORE);
 			}
-		} catch (final IcatException_Exception e) {
-			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.SESSION || type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {
-				throw new ForbiddenException(e.getMessage());
-			} else {
-				throw new InternalServerErrorException(e.getMessage());
-			}
+//		} catch (final IcatException_Exception e) {
+//			IcatExceptionType type = e.getFaultInfo().getType();
+//			if (type == IcatExceptionType.SESSION || type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {
+//				throw new ForbiddenException(e.getMessage());
+//			} else {
+//				throw new InternalServerErrorException(e.getMessage());
+//			}
 		} catch (ICATSessionException e) {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
 		} catch (ICATInternalException e) {

@@ -14,6 +14,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.icatproject.Dataset;
 import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
@@ -53,13 +54,14 @@ public class RequestHelper {
 		return requestEntity;
 	}
 	
-	public void addDatasets(RequestEntity requestEntity, String datasetIds)
-    {
+	public void addDatasets(String sessionId, RequestEntity requestEntity, String datasetIds) throws Exception {
         List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
         ArrayList<Ids2DatasetEntity> newDatasetList = new ArrayList<Ids2DatasetEntity>();
 
         for (String id : datasetIdList) {
             Ids2DatasetEntity newDataset = new Ids2DatasetEntity();
+            Dataset icatDs = ICATClientFactory.getInstance().createICATInterface().getDatasetForDatasetId(sessionId, Long.parseLong(id));
+            newDataset.setLocation(icatDs.getLocation());
             newDataset.setIcatDatasetId(Long.parseLong(id));
             newDataset.setRequest(requestEntity);
             newDataset.setStatus(StatusInfo.SUBMITTED);         
