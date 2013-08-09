@@ -58,14 +58,19 @@ public class Setup {
         filenameMD5 = new HashMap<String, String>();
         filenameMD5.put(props.getProperty("df1_location"), props.getProperty("df1_md5"));
         filenameMD5.put(props.getProperty("df2_location"), props.getProperty("df2_md5"));
+        filenameMD5.put(props.getProperty("df3_location"), props.getProperty("df3_md5"));
+        filenameMD5.put(props.getProperty("df4_location"), props.getProperty("df4_md5"));
 
         datasetIds = new ArrayList<String>();
         datasetIds.add(props.getProperty("ds1_id"));
+        datasetIds.add(props.getProperty("ds2_id"));
 
         datafileIds = new ArrayList<String>();
         datafileIds.add(props.getProperty("df1_id"));
         datafileIds.add(props.getProperty("df2_id"));
-        
+        datafileIds.add(props.getProperty("df3_id"));
+        datafileIds.add(props.getProperty("df4_id"));
+
         storageArchiveDir = props.getProperty("STORAGE_ARCHIVE_DIR");
         storageZipDir = props.getProperty("STORAGE_ZIP_DIR");
         storageDir = props.getProperty("STORAGE_DIR");

@@ -77,9 +77,20 @@ public class RequestHelper {
 	public void setDatasetStatus(Ids2DatasetEntity ds, StatusInfo status) {
 		ds = em.merge(ds);
 		ds.setStatus(StatusInfo.COMPLETED);
-		RequestEntity requestEntity = ds.getRequest();
-		requestEntity.setStatus(StatusInfo.COMPLETED);
+		setRequestCompletedIfEverythingDone(ds);
+//		RequestEntity requestEntity = ds.getRequest();
+//		requestEntity.setStatus(StatusInfo.COMPLETED);
 		em.merge(ds);
+	}
+	
+	private void setRequestCompletedIfEverythingDone(Ids2DatasetEntity dataset) {
+		RequestEntity request = dataset.getRequest();
+		for (Ids2DatasetEntity ds : request.getDatasets()) {
+			if (ds.getStatus() != StatusInfo.COMPLETED) {
+				return;
+			}
+		}
+		request.setStatus(StatusInfo.COMPLETED);
 	}
 	
 	public RequestEntity getRequestByPreparedId(String preparedId) {
