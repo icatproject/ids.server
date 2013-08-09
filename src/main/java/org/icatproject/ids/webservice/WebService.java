@@ -179,6 +179,7 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(requestEntity, datasetIds);
 			}
+			// perhaps it would be better to put this in addDatasets call
 			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
 				Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getIcatDatasetId());
 				ds.setLocation(icatDs.getLocation());

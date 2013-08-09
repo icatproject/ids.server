@@ -62,20 +62,14 @@ public class RequestHelper {
             Ids2DatasetEntity newDataset = new Ids2DatasetEntity();
             newDataset.setIcatDatasetId(Long.parseLong(id));
             newDataset.setRequest(requestEntity);
-            newDataset.setStatus(StatusInfo.SUBMITTED);
-//            newDataset.setDatasetName(null); // TODO: check if this field is needed, if not remove
-//            newDataset = em.merge(newDataset); // new            
+            newDataset.setStatus(StatusInfo.SUBMITTED);         
             newDatasetList.add(newDataset);
-            em.persist(newDataset); // old
+            em.persist(newDataset);
         }
         
         requestEntity.setDatasets(newDatasetList);
         em.merge(requestEntity);
         em.flush();
-//        logger.info("refresh in addDatasets");
-//        logger.info("addDatasets em contains " + em.contains(requestEntity.getDatasetList().get(0)));
-//        em.refresh(requestEntity.getDatasetList().get(0));
-//        logger.info("after refresh in addDatasets");
     }
 	
 	public void setDatasetStatus(Ids2DatasetEntity ds, StatusInfo status) {

@@ -8,6 +8,7 @@ import java.util.List;
 import javax.xml.namespace.QName;
 
 import org.icatproject.Datafile;
+import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
@@ -42,7 +43,7 @@ public class ICATClient42 implements ICATClientBase {
         try {
             retval = service.getUserName(sessionId);
         } catch (IcatException_Exception e) {
-            convertToICATClientException(e);
+        	throw convertToICATClientException(e);
         }
         return retval;
     }
@@ -57,7 +58,7 @@ public class ICATClient42 implements ICATClientBase {
             datafileLocations = service.search(sessionId, "Datafile.location [id IN ("
                     + datafileIds.toString().replace('[', ' ').replace(']', ' ') + ")]");
         } catch (IcatException_Exception e) {
-            convertToICATClientException(e);
+        	throw convertToICATClientException(e);
         }
 
         // if the number of locations returned does not match number
@@ -85,7 +86,7 @@ public class ICATClient42 implements ICATClientBase {
         try {
             datafileList = service.search(sessionId, "Datafile [dataset.id = " + datasetId + "]");
         } catch (IcatException_Exception e) {
-            convertToICATClientException(e);
+        	throw convertToICATClientException(e);
         }
         
         // if no datafiles are returned, check to see if dataset actually exists
@@ -96,7 +97,7 @@ public class ICATClient42 implements ICATClientBase {
                     throw new ICATNoSuchObjectException();
                 }
             } catch (IcatException_Exception e) {
-                convertToICATClientException(e);
+                throw convertToICATClientException(e);
             }
         }
 
@@ -116,30 +117,40 @@ public class ICATClient42 implements ICATClientBase {
         try {
             version = service.getApiVersion();
         } catch (IcatException_Exception e) {
-            convertToICATClientException(e);
+            throw convertToICATClientException(e);
         }
         return version;
     }
 
     // TODO: add proper logging
-    private void convertToICATClientException(IcatException_Exception e) throws ICATClientException {
+    private ICATClientException convertToICATClientException(IcatException_Exception e) {
         switch (e.getFaultInfo().getType()) {
             case BAD_PARAMETER:
-                throw new ICATBadParameterException();
+                return new ICATBadParameterException();
             case INSUFFICIENT_PRIVILEGES:
-                throw new ICATInsufficientPrivilegesException();
+                return new ICATInsufficientPrivilegesException();
             case INTERNAL:
-                throw new ICATInternalException();
+                return new ICATInternalException();
             case NO_SUCH_OBJECT_FOUND:
-                throw new ICATNoSuchObjectException();
+                return new ICATNoSuchObjectException();
             case OBJECT_ALREADY_EXISTS:
-                throw new ICATObjectAlreadyExistsException();
+                return new ICATObjectAlreadyExistsException();
             case SESSION:
-                throw new ICATSessionException();
+                return new ICATSessionException();
             case VALIDATION:
-                throw new ICATValidationException();
+                return new ICATValidationException();
             default:
-                break;
+                return new ICATClientException("Unknown ICATException_Exception, is the ICAT version supported?");
+        }
+    }
+    
+    @Override
+    public Dataset getDatasetForDatasetId(String sessionId, Long datasetId) throws ICATClientException {
+    	try {
+    		Dataset icatDs = (Dataset) service.get(sessionId, "Dataset", datasetId);
+    		return icatDs;
+    	} catch (IcatException_Exception e) {
+    		throw convertToICATClientException(e);
         }
     }
 }
