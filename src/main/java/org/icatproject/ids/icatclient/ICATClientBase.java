@@ -13,5 +13,5 @@ public interface ICATClientBase {
 	public abstract ArrayList<DatafileEntity> getDatafilesInDataset(String sessionId, Long datasetId) throws ICATClientException;
 	
 	public Dataset getDatasetForDatasetId(String sessionId, Long datasetId) throws ICATClientException;
-//	public Dataset getDatasetForDatafileId(String datafileId);
+	public Dataset getDatasetForDatafileId(String sessionId, Long datafileId) throws ICATClientException;
 }

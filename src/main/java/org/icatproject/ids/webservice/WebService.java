@@ -144,28 +144,22 @@ public class WebService {
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-
 		if (zip != null) {
 			throw new NotImplementedException("the zip parameter is not supported");
 		}
-
 		// 400
 		if (ValidationHelper.isValidId(sessionId) == false) {
 			throw new BadRequestException("The sessionId parameter is invalid");
 		}
-
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
 			throw new BadRequestException("The datasetIds parameter is invalid");
 		}
-
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
-
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
 		}
-
 		if (ValidationHelper.isValidBoolean(compress) == false) {
 			throw new BadRequestException("The compress parameter is invalid");
 		}
@@ -179,22 +173,13 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
-			// perhaps it would be better to put this in addDatasets call
-//			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
-//				Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getIcatDatasetId());
-//				ds.setLocation(icatDs.getLocation());
-//			}
+			if (datafileIds != null) {
+				requestHelper.addDatasetsFromDatafiles(sessionId, requestEntity, datafileIds);
+			}
 			// if all the information was restored successfully, we can enqueue requests
 			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
 				this.queue(ds, DeferredOp.RESTORE);
 			}
-//		} catch (final IcatException_Exception e) {
-//			IcatExceptionType type = e.getFaultInfo().getType();
-//			if (type == IcatExceptionType.SESSION || type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {
-//				throw new ForbiddenException(e.getMessage());
-//			} else {
-//				throw new InternalServerErrorException(e.getMessage());
-//			}
 		} catch (ICATSessionException e) {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
 		} catch (ICATInternalException e) {

@@ -23,134 +23,141 @@ import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
 import org.icatproject.ids.icatclient.exceptions.ICATValidationException;
 import org.icatproject.ids.util.StatusInfo;
 
-
 /*
  * TODO: move out code that references DatafileEntity ie. make better
  * separation
  */
 public class ICATClient42 implements ICATClientBase {
 
-    private ICAT service;
+	private ICAT service;
 
-    public ICATClient42(String url) throws MalformedURLException {
-        service = new ICATService(new URL(url), new QName("http://icatproject.org", "ICATService"))
-                .getICATPort();
-    }
+	public ICATClient42(String url) throws MalformedURLException {
+		service = new ICATService(new URL(url), new QName("http://icatproject.org", "ICATService")).getICATPort();
+	}
 
-    @Override
-    public String getUserId(String sessionId) throws ICATClientException {
-        String retval = null;
-        try {
-            retval = service.getUserName(sessionId);
-        } catch (IcatException_Exception e) {
-        	throw convertToICATClientException(e);
-        }
-        return retval;
-    }
+	@Override
+	public String getUserId(String sessionId) throws ICATClientException {
+		String retval = null;
+		try {
+			retval = service.getUserName(sessionId);
+		} catch (IcatException_Exception e) {
+			throw convertToICATClientException(e);
+		}
+		return retval;
+	}
 
-    @Override
-    public ArrayList<String> getDatafilePaths(String sessionId, ArrayList<Long> datafileIds)
-            throws ICATClientException {
-        ArrayList<String> results = new ArrayList<String>();
-        List<Object> datafileLocations = null;
+	@Override
+	public ArrayList<String> getDatafilePaths(String sessionId, ArrayList<Long> datafileIds) throws ICATClientException {
+		ArrayList<String> results = new ArrayList<String>();
+		List<Object> datafileLocations = null;
 
-        try {
-            datafileLocations = service.search(sessionId, "Datafile.location [id IN ("
-                    + datafileIds.toString().replace('[', ' ').replace(']', ' ') + ")]");
-        } catch (IcatException_Exception e) {
-        	throw convertToICATClientException(e);
-        }
+		try {
+			datafileLocations = service.search(sessionId, "Datafile.location [id IN ("
+					+ datafileIds.toString().replace('[', ' ').replace(']', ' ') + ")]");
+		} catch (IcatException_Exception e) {
+			throw convertToICATClientException(e);
+		}
 
-        // if the number of locations returned does not match number
-        // of datafileIds then one or more of the ids were not found
-        if (datafileIds.size() != datafileLocations.size()) {
-            throw new ICATNoSuchObjectException();
-        }
+		// if the number of locations returned does not match number
+		// of datafileIds then one or more of the ids were not found
+		if (datafileIds.size() != datafileLocations.size()) {
+			throw new ICATNoSuchObjectException();
+		}
 
-        for (Object location : datafileLocations) {
-            results.add((String) location);
-        }
+		for (Object location : datafileLocations) {
+			results.add((String) location);
+		}
 
-        return results;
-    }
+		return results;
+	}
 
-    /*
-     * TODO make fast by checking for dataset location
-     */
-    @Override
-    public ArrayList<DatafileEntity> getDatafilesInDataset(String sessionId, Long datasetId)
-            throws ICATClientException {
-        ArrayList<DatafileEntity> results = new ArrayList<DatafileEntity>();
-        List<Object> datafileList = null;
+	/*
+	 * TODO make fast by checking for dataset location
+	 */
+	@Override
+	public ArrayList<DatafileEntity> getDatafilesInDataset(String sessionId, Long datasetId) throws ICATClientException {
+		ArrayList<DatafileEntity> results = new ArrayList<DatafileEntity>();
+		List<Object> datafileList = null;
 
-        try {
-            datafileList = service.search(sessionId, "Datafile [dataset.id = " + datasetId + "]");
-        } catch (IcatException_Exception e) {
-        	throw convertToICATClientException(e);
-        }
-        
-        // if no datafiles are returned, check to see if dataset actually exists
-        if (datafileList.size() == 0) {
-            try {
-                List<Object> datasets = service.search(sessionId, "Dataset [id = " + datasetId + "]");
-                if (datasets.size() == 0) {
-                    throw new ICATNoSuchObjectException();
-                }
-            } catch (IcatException_Exception e) {
-                throw convertToICATClientException(e);
-            }
-        }
+		try {
+			datafileList = service.search(sessionId, "Datafile [dataset.id = " + datasetId + "]");
+		} catch (IcatException_Exception e) {
+			throw convertToICATClientException(e);
+		}
 
-        for (Object icatDatafile : datafileList) {
-            DatafileEntity datafile = new DatafileEntity();
-            datafile.setDatafileId(((Datafile) icatDatafile).getId());
-            datafile.setName(((Datafile) icatDatafile).getLocation());
-            datafile.setStatus(StatusInfo.SUBMITTED.name());
-            results.add(datafile);
-        }
+		// if no datafiles are returned, check to see if dataset actually exists
+		if (datafileList.size() == 0) {
+			try {
+				List<Object> datasets = service.search(sessionId, "Dataset [id = " + datasetId + "]");
+				if (datasets.size() == 0) {
+					throw new ICATNoSuchObjectException();
+				}
+			} catch (IcatException_Exception e) {
+				throw convertToICATClientException(e);
+			}
+		}
 
-        return results;
-    }
-    
-    public String getICATVersion() throws ICATClientException {
-        String version = null;
-        try {
-            version = service.getApiVersion();
-        } catch (IcatException_Exception e) {
-            throw convertToICATClientException(e);
-        }
-        return version;
-    }
+		for (Object icatDatafile : datafileList) {
+			DatafileEntity datafile = new DatafileEntity();
+			datafile.setDatafileId(((Datafile) icatDatafile).getId());
+			datafile.setName(((Datafile) icatDatafile).getLocation());
+			datafile.setStatus(StatusInfo.SUBMITTED.name());
+			results.add(datafile);
+		}
 
-    // TODO: add proper logging
-    private ICATClientException convertToICATClientException(IcatException_Exception e) {
-        switch (e.getFaultInfo().getType()) {
-            case BAD_PARAMETER:
-                return new ICATBadParameterException();
-            case INSUFFICIENT_PRIVILEGES:
-                return new ICATInsufficientPrivilegesException();
-            case INTERNAL:
-                return new ICATInternalException();
-            case NO_SUCH_OBJECT_FOUND:
-                return new ICATNoSuchObjectException();
-            case OBJECT_ALREADY_EXISTS:
-                return new ICATObjectAlreadyExistsException();
-            case SESSION:
-                return new ICATSessionException();
-            case VALIDATION:
-                return new ICATValidationException();
-            default:
-                return new ICATClientException("Unknown ICATException_Exception, is the ICAT version supported?");
-        }
-    }
-    
-    @Override
-    public Dataset getDatasetForDatasetId(String sessionId, Long datasetId) throws ICATClientException {
+		return results;
+	}
+
+	public String getICATVersion() throws ICATClientException {
+		String version = null;
+		try {
+			version = service.getApiVersion();
+		} catch (IcatException_Exception e) {
+			throw convertToICATClientException(e);
+		}
+		return version;
+	}
+
+	// TODO: add proper logging
+	private ICATClientException convertToICATClientException(IcatException_Exception e) {
+		switch (e.getFaultInfo().getType()) {
+		case BAD_PARAMETER:
+			return new ICATBadParameterException();
+		case INSUFFICIENT_PRIVILEGES:
+			return new ICATInsufficientPrivilegesException();
+		case INTERNAL:
+			return new ICATInternalException();
+		case NO_SUCH_OBJECT_FOUND:
+			return new ICATNoSuchObjectException();
+		case OBJECT_ALREADY_EXISTS:
+			return new ICATObjectAlreadyExistsException();
+		case SESSION:
+			return new ICATSessionException();
+		case VALIDATION:
+			return new ICATValidationException();
+		default:
+			return new ICATClientException("Unknown ICATException_Exception, is the ICAT version supported?");
+		}
+	}
+
+	@Override
+	public Dataset getDatasetForDatasetId(String sessionId, Long datasetId) throws ICATClientException {
+		try {
+			Dataset icatDs = (Dataset) service.get(sessionId, "Dataset", datasetId);
+			return icatDs;
+		} catch (IcatException_Exception e) {
+			throw convertToICATClientException(e);
+		}
+	}
+
+	@Override
+    public Dataset getDatasetForDatafileId(String sessionId, Long datafileId) throws ICATClientException {
     	try {
-    		Dataset icatDs = (Dataset) service.get(sessionId, "Dataset", datasetId);
+    		Datafile icatDf = (Datafile) service.get(sessionId, "Datafile INCLUDE Dataset", datafileId);
+    		Dataset icatDs = icatDf.getDataset();
     		return icatDs;
     	} catch (IcatException_Exception e) {
     		throw convertToICATClientException(e);
-        }
+    	}
     }
 }

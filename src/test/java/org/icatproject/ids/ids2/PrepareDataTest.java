@@ -23,14 +23,14 @@ import org.junit.Test;
 public class PrepareDataTest {
 
 	private static Setup setup = null;
-	private static ICAT icatClient;
+	private static ICAT icat;
 
 	@BeforeClass
 	public static void setup() throws Exception {
 		setup = new Setup();
 		final URL icatUrl = new URL(setup.getIcatUrl());
 		final ICATService icatService = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"));
-		icatClient = icatService.getICATPort();
+		icat = icatService.getICATPort();
 	}
 
 	@Before
@@ -48,7 +48,7 @@ public class PrepareDataTest {
 		TestingClient client = new TestingClient(setup.getIdsUrl());
 		// choose the second dataset, as it's much smaller (tests run faster)
 		final int DS_NUM_FROM_PROPS = 1;
-		Dataset icatDs = (Dataset) icatClient.get(setup.getGoodSessionId(), "Dataset",
+		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
@@ -75,11 +75,11 @@ public class PrepareDataTest {
 	@Test
 	public void restoreTwoArchivedDatasets() throws Exception {
 		TestingClient client = new TestingClient(setup.getIdsUrl());
-		Dataset icatDs1 = (Dataset) icatClient.get(setup.getGoodSessionId(), "Dataset",
+		Dataset icatDs1 = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(0)));
 		File dirOnFastStorage1 = new File(setup.getStorageDir(), icatDs1.getLocation());
 		File zipOnFastStorage1 = new File(setup.getStorageZipDir(), icatDs1.getLocation());
-		Dataset icatDs2 = (Dataset) icatClient.get(setup.getGoodSessionId(), "Dataset",
+		Dataset icatDs2 = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(1)));
 		File dirOnFastStorage2 = new File(setup.getStorageDir(), icatDs2.getLocation());
 		File zipOnFastStorage2 = new File(setup.getStorageZipDir(), icatDs2.getLocation());
@@ -107,6 +107,9 @@ public class PrepareDataTest {
 		assertTrue("Zip in " + zipOnFastStorage2.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage2.exists());
 	}
+	
+	// TODO check if restoration of files triggers restoration of whole datasets
+	// TODO check how the app behaves when a DS and a file from this DS is requested for restoration
 
 	@Test(expected = TestingClientBadRequestException.class)
 	public void restoreNonExistentDataset() throws Exception {
