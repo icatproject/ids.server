@@ -151,11 +151,10 @@ public class ICATClient42 implements ICATClientBase {
 	}
 
 	@Override
-    public Dataset getDatasetForDatafileId(String sessionId, Long datafileId) throws ICATClientException {
+    public Datafile getDatafileWithDatasetForDatafileId(String sessionId, Long datafileId) throws ICATClientException {
     	try {
     		Datafile icatDf = (Datafile) service.get(sessionId, "Datafile INCLUDE Dataset", datafileId);
-    		Dataset icatDs = icatDf.getDataset();
-    		return icatDs;
+    		return icatDf;
     	} catch (IcatException_Exception e) {
     		throw convertToICATClientException(e);
     	}

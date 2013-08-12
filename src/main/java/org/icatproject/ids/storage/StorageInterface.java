@@ -5,11 +5,13 @@
 
 package org.icatproject.ids.storage;
 
+import java.util.List;
+
+import org.icatproject.Dataset;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids2.ported.Ids2DatasetEntity;
 
 public interface StorageInterface {
-    public StatusInfo restoreFromArchive(Ids2DatasetEntity dataset);
+    public StatusInfo restoreFromArchive(List<Dataset> datasets);
     // not yet implemented
 //    public StatusInfo copyToArchive(Ids2DatasetEntity dataset);
     

@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported;
+package org.icatproject.ids2.ported.entity;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -17,6 +17,7 @@ import javax.persistence.TemporalType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.icatproject.ids.util.StatusInfo;
+import org.icatproject.ids2.ported.RequestedState;
 
 @SuppressWarnings("serial")
 @Entity

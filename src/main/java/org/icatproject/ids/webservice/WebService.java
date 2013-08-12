@@ -4,14 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,13 +32,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import javax.xml.namespace.QName;
 
-import org.icatproject.Dataset;
 import org.icatproject.ICAT;
-import org.icatproject.ICATService;
-import org.icatproject.IcatExceptionType;
-import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.ICATClientFactory;
@@ -57,11 +50,13 @@ import org.icatproject.ids.webservice.exceptions.InternalServerErrorException;
 import org.icatproject.ids.webservice.exceptions.NotFoundException;
 import org.icatproject.ids.webservice.exceptions.NotImplementedException;
 import org.icatproject.ids2.ported.DeferredOp;
-import org.icatproject.ids2.ported.Ids2DatasetEntity;
-import org.icatproject.ids2.ported.RequestEntity;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
+import org.icatproject.ids2.ported.entity.Ids2DataEntity;
+import org.icatproject.ids2.ported.entity.Ids2DatafileEntity;
+import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
+import org.icatproject.ids2.ported.entity.RequestEntity;
 import org.icatproject.ids2.ported.thread.ProcessQueue;
 
 /**
@@ -170,13 +165,16 @@ public class WebService {
 
 		try {
 			requestEntity = requestHelper.createRequest(sessionId, compress, zip, RequestedState.RESTORE_REQUESTED);
+			if (datafileIds != null) {
+				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
+			}
 			if (datasetIds != null) {
 				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
-			if (datafileIds != null) {
-				requestHelper.addDatasetsFromDatafiles(sessionId, requestEntity, datafileIds);
-			}
 			// if all the information was restored successfully, we can enqueue requests
+			for (Ids2DatafileEntity df : requestEntity.getDatafiles()) {
+				this.queue(df, DeferredOp.RESTORE);
+			}
 			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
 				this.queue(ds, DeferredOp.RESTORE);
 			}
@@ -578,100 +576,10 @@ public class WebService {
 		throw new NotImplementedException("The method 'restore' has not been implemented");
 	}
 
-	// ################ PORTED METHODS #######################
-
-	// private FullDataset checkDatasetRequest(Parms parms, HttpServletResponse
-	// response,
-	// Permission op, CheckFile checkFile) throws IOException, ErrorException,
-	// SessionException {
-	// final String sessionid = parms.sessionid;
-	// final String datasetidString = parms.datasetidString;
-	// String location = parms.location;
-	// // either datasetId or location has to be set (location determines the
-	// dataset)
-	// if (datasetidString == null && location == null) {
-	// throw new ErrorException(HttpServletResponse.SC_BAD_REQUEST,
-	// "Neither datasetId nor location set in request");
-	// }
-	// if (datasetidString != null && location != null) {
-	// throw new ErrorException(HttpServletResponse.SC_BAD_REQUEST,
-	// "Both datasetId and location were set in request");
-	// }
-	//
-	// Dataset ds = null;
-	// try {
-	// // if datasetId was set, it's necessary to retrieve the location of this
-	// dataset
-	// if (datasetidString != null) {
-	// try {
-	// final long datasetid = Long.parseLong(datasetidString);
-	// ds = (Dataset) this.icatEP.get(sessionid, "Dataset", datasetid);
-	// location = ds.getLocation();
-	// if (location == null) {
-	// throw new ErrorException(HttpServletResponse.SC_PRECONDITION_FAILED,
-	// "Dataset with id " + datasetid + " has no location.");
-	// }
-	// } catch (final NumberFormatException e) {
-	// throw new ErrorException(HttpServletResponse.SC_BAD_REQUEST, "datasetid "
-	// + datasetidString + " not a long");
-	// }
-	// // if the location was set we have to find dataset for it, both elseif's
-	// are the same code retrieving dataset
-	// } else if (op == Permission.READ) {
-	// final List<Object> dss = this.icatEP.search(sessionid,
-	// "Dataset [location = '"
-	// + location + "']");
-	// if (dss.size() != 1) {
-	// throw new ErrorException(HttpServletResponse.SC_PRECONDITION_FAILED,
-	// "Dataset with location " + location + " not known to ICAT");
-	// }
-	// ds = (Dataset) dss.get(0);
-	// } else if (op == Permission.DELETE) {
-	// final List<Object> dss = this.icatEP.search(sessionid,
-	// "Datafile [location = '"
-	// + location + "']");
-	// if (dss.size() != 1) {
-	// throw new ErrorException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-	// "location " + location + " does not match exactly one dataset");
-	// }
-	// ds = (Dataset) dss.get(0);
-	// }
-	//
-	// if (op == Permission.DELETE) {
-	// this.icatEP.delete(sessionid, ds);
-	// }
-	//
-	// } catch (final IcatException_Exception e) {
-	// IcatExceptionType type = e.getFaultInfo().getType();
-	// if (type == IcatExceptionType.SESSION) {
-	// throw new SessionException();
-	// } else if (type == IcatExceptionType.INTERNAL) {
-	// throw new ErrorException(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-	// e.getMessage());
-	// } else if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {
-	// throw new ErrorException(HttpServletResponse.SC_FORBIDDEN,
-	// e.getMessage());
-	// } else {
-	// throw new ErrorException(HttpServletResponse.SC_PRECONDITION_FAILED,
-	// e.getMessage());
-	// }
-	// }
-	//
-	// final File file = new File(this.basedir, location);
-	// if (checkFile == CheckFile.TRUE && !file.canRead()) {
-	// this.queue(ds.getLocation(), DeferredOp.RESTORE);
-	// throw new ErrorException(HttpServletResponse.SC_MOVED_TEMPORARILY,
-	// "Server can't find requested dataset: " + location
-	// + " it is probably archived - restore requested.");
-	// }
-	// File zipfile = new File(new File(this.zipdir, location), "files.zip");
-	// return new FullDataset(file, zipfile, ds.getLocation());
-	// }
-
-	private void queue(Ids2DatasetEntity ds, DeferredOp deferredOp) {
+	private void queue(Ids2DataEntity ds, DeferredOp deferredOp) {
 		logger.info("Requesting " + deferredOp + " of " + ds);
 		
-		Map<Ids2DatasetEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
+		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		
 		synchronized (deferredOpsQueue) {
 			final RequestedState state = deferredOpsQueue.get(ds);
@@ -684,41 +592,54 @@ public class WebService {
 				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
 				}
-			} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
-					this.setDelay(ds);
-				} else if (deferredOp == DeferredOp.RESTORE) {
-					deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
-				}
-			} else if (state == RequestedState.RESTORE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
-					this.setDelay(ds);
-				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
-				}
-			} else if (state == RequestedState.WRITE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					this.setDelay(ds);
-				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					deferredOpsQueue.put(ds, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-				}
-			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					this.setDelay(ds);
-				} else if (deferredOp == DeferredOp.RESTORE) {
-					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+			}
+			else {
+				// if we are overwriting a DS from a different request, we should
+				// remove this old DS from its request, as it will never be COMPLETED
+//				for (Ids2DataEntity oldDs : deferredOpsQueue.keySet()) {
+//					if (oldDs.equals(ds)) {
+//						oldDs.getRequest().getDatasets().remove(oldDs);
+//						break;
+//					}
+//				}
+				
+				if (state == RequestedState.ARCHIVE_REQUESTED) {
+					if (deferredOp == DeferredOp.WRITE) {
+						deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+						this.setDelay(ds);
+					} else if (deferredOp == DeferredOp.RESTORE) {
+						deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
+					}
+				} else if (state == RequestedState.RESTORE_REQUESTED) {
+					if (deferredOp == DeferredOp.WRITE) {
+						deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+						this.setDelay(ds);
+					} else if (deferredOp == DeferredOp.ARCHIVE) {
+						deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
+					}
+				} else if (state == RequestedState.WRITE_REQUESTED) {
+					if (deferredOp == DeferredOp.WRITE) {
+						this.setDelay(ds);
+					} else if (deferredOp == DeferredOp.ARCHIVE) {
+						deferredOpsQueue.put(ds, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+					}
+				} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+					if (deferredOp == DeferredOp.WRITE) {
+						this.setDelay(ds);
+					} else if (deferredOp == DeferredOp.RESTORE) {
+						deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+					}
 				}
 			}
+			
 		}
 	}
 
-	private void setDelay(Ids2DatasetEntity ds) {
-		Map<Ids2DatasetEntity, Long> writeTimes = requestQueues.getWriteTimes();
+	private void setDelay(Ids2DataEntity de) {
+		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
 		
-		writeTimes.put(ds, System.currentTimeMillis() + this.archiveWriteDelayMillis);
-		final Date d = new Date(writeTimes.get(ds));
-		logger.info("Requesting delay of writing of " + ds + " till " + d);
+		writeTimes.put(de, System.currentTimeMillis() + this.archiveWriteDelayMillis);
+		final Date d = new Date(writeTimes.get(de));
+		logger.info("Requesting delay of writing of " + de + " till " + d);
 	}
 }

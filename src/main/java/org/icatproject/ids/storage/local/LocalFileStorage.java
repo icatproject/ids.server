@@ -6,15 +6,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids2.ported.Ids2DatasetEntity;
 
 
 public class LocalFileStorage implements StorageInterface {
@@ -33,42 +34,45 @@ public class LocalFileStorage implements StorageInterface {
     }
     
     @Override
-    public StatusInfo restoreFromArchive(Ids2DatasetEntity ds) {
-    	final String location = ds.getLocation();
-    	final File basedir = new File(storageDir);
-    	final File dir = new File(storageDir, location);
-    	final File zipdir = new File(storageZipDir, location);
-
+    public StatusInfo restoreFromArchive(List<Dataset> datasets) {
     	try {
-    		if (dir.exists()) {
-    			logger.info("Restorer omitted: files already present at " + location);
-    			return StatusInfo.COMPLETED;
+    		for (Dataset ds : datasets) {
+    			logger.info("In restorer, processing dataset " + ds);
+    	    	String location = ds.getLocation();
+    	    	File basedir = new File(storageDir);
+    	    	File dir = new File(storageDir, location);
+    	    	File zipdir = new File(storageZipDir, location);
+    	    	
+	    		if (dir.exists()) {
+	    			logger.info("Restorer omitted: files already present at " + location);
+	    			return StatusInfo.COMPLETED;
+	    		}
+	    		final File archdir = new File(storageArchiveDir, location);
+	    		//				logger.info("will restore from " + archdir.getAbsolutePath() + " that " + (archdir.exists() ? "exists" : "doesn't exist"));
+	    		if (!archdir.exists()) {
+	    			logger.severe("No archive data to restore at " + location);
+	    			return StatusInfo.NOT_FOUND;
+	    		}
+	    		File zipfiletmp = new File(zipdir, "files.zip.tmp");
+	    		File zipfile = new File(zipdir, "files.zip");
+	    		zipdir.mkdirs();
+	    		FileUtils.copyFile(new File(archdir, "files.zip"), zipfiletmp);
+	    		zipfiletmp.renameTo(zipfile);
+	
+	    		File tempdir = File.createTempFile("tmp", null, basedir);
+	    		tempdir.delete();
+	    		tempdir.mkdir();
+	
+	    		dir.getParentFile().mkdirs();
+	    		unzip(new File(archdir, "files.zip"), tempdir);
+	    		tempdir.renameTo(dir);
+	    		logger.info("Restore of  " + location + " succesful");
     		}
-    		final File archdir = new File(storageArchiveDir, location);
-    		//				logger.info("will restore from " + archdir.getAbsolutePath() + " that " + (archdir.exists() ? "exists" : "doesn't exist"));
-    		if (!archdir.exists()) {
-    			logger.severe("No archive data to restore at " + location);
-    			return StatusInfo.NOT_FOUND;
-    		}
-    		File zipfiletmp = new File(zipdir, "files.zip.tmp");
-    		File zipfile = new File(zipdir, "files.zip");
-    		zipdir.mkdirs();
-    		FileUtils.copyFile(new File(archdir, "files.zip"), zipfiletmp);
-    		zipfiletmp.renameTo(zipfile);
-
-    		File tempdir = File.createTempFile("tmp", null, basedir);
-    		tempdir.delete();
-    		tempdir.mkdir();
-
-    		dir.getParentFile().mkdirs();
-    		unzip(new File(archdir, "files.zip"), tempdir);
-    		tempdir.renameTo(dir);
-    		logger.info("Restore of  " + location + " succesful");
-    		return StatusInfo.COMPLETED;
     	} catch (final IOException e) {
     		logger.severe("Restorer failed " + e.getMessage());
     		return StatusInfo.ERROR;
     	}
+		return StatusInfo.COMPLETED;
     }
     
     private void unzip(File zip, File dir) throws IOException {

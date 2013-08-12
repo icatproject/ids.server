@@ -5,19 +5,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Singleton;
+import org.icatproject.ids2.ported.entity.Ids2DataEntity;
+import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
 
 public class RequestQueues {
-	private final Map<Ids2DatasetEntity, RequestedState> deferredOpsQueue;
-	private final Set<Ids2DatasetEntity> changing;
-	private final Map<Ids2DatasetEntity, Long> writeTimes;
+	private final Map<Ids2DataEntity, RequestedState> deferredOpsQueue;
+	private final Set<Ids2DataEntity> changing;
+	private final Map<Ids2DataEntity, Long> writeTimes;
 	
 	private static RequestQueues instance = null;
 	
 	private RequestQueues() {
-		deferredOpsQueue = new HashMap<Ids2DatasetEntity, RequestedState>();
-		changing = new HashSet<Ids2DatasetEntity>();
-		writeTimes = new HashMap<Ids2DatasetEntity, Long>();
+		deferredOpsQueue = new HashMap<Ids2DataEntity, RequestedState>();
+		changing = new HashSet<Ids2DataEntity>();
+		writeTimes = new HashMap<Ids2DataEntity, Long>();
 	}
 	
 	public static RequestQueues getInstance() {
@@ -26,13 +27,13 @@ public class RequestQueues {
 		return instance;
 	}
 	
-	public Map<Ids2DatasetEntity, RequestedState> getDeferredOpsQueue() {
+	public Map<Ids2DataEntity, RequestedState> getDeferredOpsQueue() {
 		return deferredOpsQueue;
 	}
-	public Set<Ids2DatasetEntity> getChanging() {
+	public Set<Ids2DataEntity> getChanging() {
 		return changing;
 	}
-	public Map<Ids2DatasetEntity, Long> getWriteTimes() {
+	public Map<Ids2DataEntity, Long> getWriteTimes() {
 		return writeTimes;
 	}
 		

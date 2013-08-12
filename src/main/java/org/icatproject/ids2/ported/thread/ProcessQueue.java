@@ -9,10 +9,11 @@ import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids2.ported.Ids2DatasetEntity;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
+import org.icatproject.ids2.ported.entity.Ids2DataEntity;
+import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
 
 public class ProcessQueue extends TimerTask {
 
@@ -30,17 +31,17 @@ public class ProcessQueue extends TimerTask {
 
 	@Override
 	public void run() {
-		Map<Ids2DatasetEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
-		Set<Ids2DatasetEntity> changing = requestQueues.getChanging();
-		Map<Ids2DatasetEntity, Long> writeTimes = requestQueues.getWriteTimes();
+		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
+		Set<Ids2DataEntity> changing = requestQueues.getChanging();
+		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
 		
 		try {
 			synchronized (deferredOpsQueue) {
 				final long now = System.currentTimeMillis();
-				final Iterator<Entry<Ids2DatasetEntity, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
+				final Iterator<Entry<Ids2DataEntity, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
 				while (it.hasNext()) {
-					final Entry<Ids2DatasetEntity, RequestedState> opEntry = it.next();
-					final Ids2DatasetEntity ds = opEntry.getKey();
+					final Entry<Ids2DataEntity, RequestedState> opEntry = it.next();
+					final Ids2DataEntity ds = opEntry.getKey();
 					logger.info("Processing " + ds);
 					if (!changing.contains(ds)) {
 //						Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getDatasetId());
