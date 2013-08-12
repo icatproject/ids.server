@@ -103,33 +103,6 @@ public class RequestHelper {
         em.flush();
 	}
 	
-//	public void addDatasetsFromDatafiles(String sessionId, RequestEntity requestEntity, String datafileIds) throws Exception {
-//		List<String> datasetIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
-//        List<Dataset> datasetList = new ArrayList<Dataset>();
-//
-//        for (String id : datasetIdList) {
-//            Dataset icatDs = ICATClientFactory.getInstance().createICATInterface().getDatasetForDatafileId(sessionId, Long.parseLong(id));
-//            datasetList.add(icatDs);
-//        }
-//        addPreprocessedDatasets(requestEntity, datasetList);
-//	}
-//	
-//	private void addPreprocessedDatasets(RequestEntity requestEntity, List<Dataset> datasets) {
-//		List<Ids2DatasetEntity> newDatasets = new ArrayList<Ids2DatasetEntity>();		
-//		for (Dataset icatDs : datasets) {
-//			Ids2DatasetEntity newDataset = new Ids2DatasetEntity();
-//			newDataset.setLocation(icatDs.getLocation());
-//            newDataset.setIcatDatasetId(icatDs.getId());
-//            newDataset.setRequest(requestEntity);
-//            newDataset.setStatus(StatusInfo.SUBMITTED);         
-//            newDatasets.add(newDataset);
-//            em.persist(newDataset);
-//		}		
-//		requestEntity.setDatasets(newDatasets);
-//        em.merge(requestEntity);
-//        em.flush();
-//	}
-//	
 	public void setDatasetStatus(Ids2DataEntity ds, StatusInfo status) {
 		ds = em.merge(ds);
 		ds.setStatus(StatusInfo.COMPLETED);

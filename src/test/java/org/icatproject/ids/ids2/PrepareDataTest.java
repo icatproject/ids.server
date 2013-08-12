@@ -140,34 +140,34 @@ public class PrepareDataTest {
 				zipOnFastStorage.exists());
 	}
 	
-//	@Test
-//	public void restoreArchivedDatafileAndItsDataset() throws Exception {
-//		final int DF_NUM_FROM_PROPS = 0;
-//		final int DS_NUM_FROM_PROPS = 0;
-//		TestingClient client = new TestingClient(setup.getIdsUrl());
-//		Datafile icatDf = (Datafile) icat.get(setup.getGoodSessionId(), "Datafile INCLUDE Dataset",
-//				Long.parseLong(setup.getDatafileIds().get(DF_NUM_FROM_PROPS)));
-//		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
-//		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
-//
-//		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), 
-//				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
-//		Status status = null;
-//		do {
-//			try {
-//				Thread.sleep(1000);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//			status = client.getStatusTest(preparedId);
-//		} while (Status.RESTORING.equals(status));
-//
-//		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
-//		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
-//				dirOnFastStorage.exists());
-//		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
-//				zipOnFastStorage.exists());
-//	}
+	@Test
+	public void restoreArchivedDatafileAndItsDataset() throws Exception {
+		final int DF_NUM_FROM_PROPS = 0;
+		final int DS_NUM_FROM_PROPS = 0;
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		Datafile icatDf = (Datafile) icat.get(setup.getGoodSessionId(), "Datafile INCLUDE Dataset",
+				Long.parseLong(setup.getDatafileIds().get(DF_NUM_FROM_PROPS)));
+		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
+		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
+
+		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), 
+				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
+		Status status = null;
+		do {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			status = client.getStatusTest(preparedId);
+		} while (Status.RESTORING.equals(status));
+
+		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
+		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				dirOnFastStorage.exists());
+		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				zipOnFastStorage.exists());
+	}
 
 	@Test(expected = TestingClientBadRequestException.class)
 	public void restoreNonExistentDataset() throws Exception {

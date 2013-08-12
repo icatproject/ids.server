@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -576,58 +577,60 @@ public class WebService {
 		throw new NotImplementedException("The method 'restore' has not been implemented");
 	}
 
-	private void queue(Ids2DataEntity ds, DeferredOp deferredOp) {
-		logger.info("Requesting " + deferredOp + " of " + ds);
+	private void queue(Ids2DataEntity de, DeferredOp deferredOp) {
+		logger.info("Requesting " + deferredOp + " of " + de);
 		
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		
 		synchronized (deferredOpsQueue) {
-			final RequestedState state = deferredOpsQueue.get(ds);
+			final RequestedState state = deferredOpsQueue.get(de);
 			if (state == null) {
 				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
-					this.setDelay(ds);
+					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+					this.setDelay(de);
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
+					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				} else if (deferredOp == DeferredOp.RESTORE) {
-					deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
+					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				}
 			}
 			else {
-				// if we are overwriting a DS from a different request, we should
-				// remove this old DS from its request, as it will never be COMPLETED
-//				for (Ids2DataEntity oldDs : deferredOpsQueue.keySet()) {
-//					if (oldDs.equals(ds)) {
-//						oldDs.getRequest().getDatasets().remove(oldDs);
-//						break;
-//					}
-//				}
+				// if we are overwriting a DE from a different request, we should
+				// set its status to COMPLETED and remove it from the deferredOpsQueue
+				Iterator<Ids2DataEntity> iter = deferredOpsQueue.keySet().iterator();
+				while(iter.hasNext()) {
+					Ids2DataEntity oldDe = iter.next();
+					if (oldDe.overlapsWith(de)) {
+						oldDe.setStatus(StatusInfo.COMPLETED);
+						iter.remove();
+					}
+				}
 				
 				if (state == RequestedState.ARCHIVE_REQUESTED) {
 					if (deferredOp == DeferredOp.WRITE) {
-						deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
-						this.setDelay(ds);
+						deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+						this.setDelay(de);
 					} else if (deferredOp == DeferredOp.RESTORE) {
-						deferredOpsQueue.put(ds, RequestedState.RESTORE_REQUESTED);
+						deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 					}
 				} else if (state == RequestedState.RESTORE_REQUESTED) {
 					if (deferredOp == DeferredOp.WRITE) {
-						deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
-						this.setDelay(ds);
+						deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+						this.setDelay(de);
 					} else if (deferredOp == DeferredOp.ARCHIVE) {
-						deferredOpsQueue.put(ds, RequestedState.ARCHIVE_REQUESTED);
+						deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 					}
 				} else if (state == RequestedState.WRITE_REQUESTED) {
 					if (deferredOp == DeferredOp.WRITE) {
-						this.setDelay(ds);
+						this.setDelay(de);
 					} else if (deferredOp == DeferredOp.ARCHIVE) {
-						deferredOpsQueue.put(ds, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+						deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
 					}
 				} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 					if (deferredOp == DeferredOp.WRITE) {
-						this.setDelay(ds);
+						this.setDelay(de);
 					} else if (deferredOp == DeferredOp.RESTORE) {
-						deferredOpsQueue.put(ds, RequestedState.WRITE_REQUESTED);
+						deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
 					}
 				}
 			}
