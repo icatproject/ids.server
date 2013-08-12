@@ -1,5 +1,6 @@
 package org.icatproject.ids.storage;
 
+import java.lang.reflect.Constructor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,14 +25,15 @@ public class StorageFactory {
 
     public StorageInterface createStorageInterface() {
     	logger.log(Level.INFO, "creatingStorageInterface");
-    	StorageInterface ret = new LocalFileStorage(properties.getStorageDir(), properties.getStorageZipDir(), properties.getStorageArchiveDir());
-//    	StorageInterface ret = null;
-//    	try {
-//	    	ret = properties.getStorageInterfaceImplementation().newInstance();
-//    	} catch (Exception e) {
-//    		logger.log(Level.SEVERE, "Could not instantiate StorageInterface implementation " + LocalFileStorage.class.getCanonicalName());
-//    		throw new RuntimeException(e);
-//    	}
+    	StorageInterface ret = null;
+    	try {
+    		Constructor<StorageInterface> constructor = 
+    				properties.getStorageInterfaceImplementation().getConstructor(String.class, String.class, String.class);
+	    	ret = constructor.newInstance(properties.getStorageDir(), properties.getStorageZipDir(), properties.getStorageArchiveDir());
+    	} catch (Exception e) {
+    		logger.log(Level.SEVERE, "Could not instantiate StorageInterface implementation " + LocalFileStorage.class.getCanonicalName());
+    		throw new RuntimeException(e);
+    	}
     	logger.log(Level.INFO, "created StorageInterface " + ret);
 		return ret;
     }
