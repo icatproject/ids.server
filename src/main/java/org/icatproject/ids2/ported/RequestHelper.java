@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -15,7 +17,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
-import org.icatproject.Dataset;
 import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
@@ -103,25 +104,43 @@ public class RequestHelper {
         em.flush();
 	}
 	
-	public void setDatasetStatus(Ids2DataEntity ds, StatusInfo status) {
-		ds = em.merge(ds);
-		ds.setStatus(StatusInfo.COMPLETED);
-		setRequestCompletedIfEverythingDone(ds);
-		em.merge(ds);
+	public void setDataEntityStatus(Ids2DataEntity de, StatusInfo status) {
+		de = em.merge(de);
+		de.setStatus(status);
+		setRequestCompletedIfEverythingDone(de);
+		em.merge(de);
 	}
-	
-	private void setRequestCompletedIfEverythingDone(Ids2DataEntity dataset) {
-		RequestEntity request = dataset.getRequest();
+	// TODO correct so that it doesn't only check DS's, but also DF's
+	// maybe change request.getDatasets and request.getDatafiles to request.getDataEntities
+	private void setRequestCompletedIfEverythingDone(Ids2DataEntity de) {
+		Set<StatusInfo> finalStatuses = new HashSet<StatusInfo>();
+		finalStatuses.add(StatusInfo.COMPLETED);
+		finalStatuses.add(StatusInfo.INCOMPLETE);
+		
+		RequestEntity request = de.getRequest();
+		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED; // assuming that everything went OK
 		logger.info("Will check status of " + request.getDatasets().size() + " datasets");
+		
+		for (Ids2DatafileEntity df : request.getDatafiles()) {
+			if (!finalStatuses.contains(df.getStatus())) {
+				return;
+			}
+			if (df.getStatus() != StatusInfo.COMPLETED) {
+				resultingRequestStatus = StatusInfo.INCOMPLETE;
+			}
+		}
 		for (Ids2DatasetEntity ds : request.getDatasets()) {
 			logger.info("Retrieval status of " + ds + " is " + ds.getStatus());
-			if (ds.getStatus() != StatusInfo.COMPLETED) {
+			if (!finalStatuses.contains(ds.getStatus())) {
 				logger.info("Retrieval of " + ds + " still not completed");
 				return;
 			}
+			if (ds.getStatus() != StatusInfo.COMPLETED) {
+				resultingRequestStatus = StatusInfo.INCOMPLETE;
+			}
 		}
-		logger.info("all tasks completed");
-		request.setStatus(StatusInfo.COMPLETED);
+		logger.info("all tasks in request " + request + " finished");
+		request.setStatus(resultingRequestStatus);
 	}
 	
 	public RequestEntity getRequestByPreparedId(String preparedId) {

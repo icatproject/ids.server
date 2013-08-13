@@ -601,7 +601,9 @@ public class WebService {
 				while(iter.hasNext()) {
 					Ids2DataEntity oldDe = iter.next();
 					if (oldDe.overlapsWith(de)) {
-						oldDe.setStatus(StatusInfo.COMPLETED);
+//						oldDe.setStatus(StatusInfo.COMPLETED);
+						requestHelper.setDataEntityStatus(oldDe, StatusInfo.COMPLETED);
+						requestQueues.getWriteTimes().remove(oldDe);
 						iter.remove();
 					}
 				}

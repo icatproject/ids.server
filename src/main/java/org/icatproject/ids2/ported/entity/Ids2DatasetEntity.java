@@ -52,14 +52,14 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 	public Ids2DatasetEntity() {
 	}
 
-	public Ids2DatasetEntity(Long id) {
-		this.id = id;
-	}
-
-	public Ids2DatasetEntity(Long id, Long datasetId) {
-		this.id = id;
-		this.icatDatasetId = datasetId;
-	}
+//	public Ids2DatasetEntity(Long id) {
+//		this.id = id;
+//	}
+//
+//	public Ids2DatasetEntity(Long id, Long datasetId) {
+//		this.id = id;
+//		this.icatDatasetId = datasetId;
+//	}
 
 	public Long getId() {
 		return id;

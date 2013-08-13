@@ -52,15 +52,15 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
     
     public Ids2DatafileEntity() {}
 
-    public Ids2DatafileEntity(Long id) {
-        this.id = id;
-    }
-
-    public Ids2DatafileEntity(Long id, Long icatDatafileId, String location) {
-        this.id = id;
-        this.icatDatafileId = icatDatafileId;
-        this.location = location;
-    }
+//    public Ids2DatafileEntity(Long id) {
+//        this.id = id;
+//    }
+//
+//    public Ids2DatafileEntity(Long id, Long icatDatafileId, String location) {
+//        this.id = id;
+//        this.icatDatafileId = icatDatafileId;
+//        this.location = location;
+//    }
 
 	public Long getId() {
 		return id;
