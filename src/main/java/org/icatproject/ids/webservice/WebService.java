@@ -165,7 +165,7 @@ public class WebService {
 				+ "' " + "zip='" + zip + "'");
 
 		try {
-			requestEntity = requestHelper.createRequest(sessionId, compress, zip, RequestedState.RESTORE_REQUESTED);
+			requestEntity = requestHelper.createRestoreRequest(sessionId, compress, zip);
 			if (datafileIds != null) {
 				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
 			}
@@ -416,25 +416,22 @@ public class WebService {
 		ArrayList<DownloadRequestEntity> matchingDownloadRequests = new ArrayList<DownloadRequestEntity>();
 		List<String> idList = null;
 		List<DownloadRequestEntity> results = null;
+		RequestEntity requestEntity = null;
 
 		// 501
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-
 		// 400
 		if (ValidationHelper.isValidId(sessionId) == false) {
 			throw new BadRequestException("The sessionId parameter is invalid");
 		}
-
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
 			throw new BadRequestException("The datasetIds parameter is invalid");
 		}
-
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
-
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
 		}
@@ -443,46 +440,19 @@ public class WebService {
 				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
 		try {
-			// find all requests relating to datasetIds
-			if (datasetIds != null) {
-				idList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
-				for (String id : idList) {
-					results = downloadRequestHelper.getDownloadRequestFromDatasetId(Long.valueOf(id)); // TODO:
-																										// allow
-																										// it
-																										// to
-																										// accept
-																										// list
-																										// of
-																										// Ids?
-					matchingDownloadRequests.addAll(results);
-				}
-			}
-
-			// find all requests relating to datafileIds
+			requestEntity = requestHelper.createArchiveRequest(sessionId);
 			if (datafileIds != null) {
-				idList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
-				for (String id : idList) {
-					results = downloadRequestHelper.getDownloadRequestFromDatafileId(Long.valueOf(id)); // TODO:
-																										// allow
-																										// it
-																										// to
-																										// accept
-																										// list
-																										// of
-																										// Ids?
-					matchingDownloadRequests.addAll(results);
-				}
+				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
 			}
-
-			// find requests specific to the user and remove
-			ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
-			String username = client.getUserId(sessionId);
-
-			for (DownloadRequestEntity dr : matchingDownloadRequests) {
-				if (username.equals(dr.getUserid()) == true) {
-					downloadRequestHelper.deleteDownloadRequest(dr);
-				}
+			if (datasetIds != null) {
+				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
+			}
+			// if all the information was restored successfully, we can enqueue requests
+			for (Ids2DatafileEntity df : requestEntity.getDatafiles()) {
+				this.queue(df, DeferredOp.ARCHIVE);
+			}
+			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
+				this.queue(ds, DeferredOp.ARCHIVE);
 			}
 		} catch (ICATSessionException e) {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");

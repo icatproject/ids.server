@@ -34,57 +34,58 @@ public class ProcessQueue extends TimerTask {
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Ids2DataEntity> changing = requestQueues.getChanging();
 		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
-		
+
 		try {
 			synchronized (deferredOpsQueue) {
 				final long now = System.currentTimeMillis();
 				final Iterator<Entry<Ids2DataEntity, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
 				while (it.hasNext()) {
 					final Entry<Ids2DataEntity, RequestedState> opEntry = it.next();
-					final Ids2DataEntity ds = opEntry.getKey();
-					logger.info("Processing " + ds);
-					if (!changing.contains(ds)) {
-//						Dataset icatDs = (Dataset) this.icatClient.get(sessionId, "Dataset", ds.getDatasetId());
-//						ds.setLocation(icatDs.getLocation());
+					final Ids2DataEntity de = opEntry.getKey();
+					logger.info("Processing " + de);
+					if (!changing.contains(de)) {
+						// Dataset icatDs = (Dataset)
+						// this.icatClient.get(sessionId, "Dataset",
+						// ds.getDatasetId());
+						// ds.setLocation(icatDs.getLocation());
 						final RequestedState state = opEntry.getValue();
-						logger.info("Will process " + ds + " with " + state);
+						logger.info("Will process " + de + " with " + state);
 						if (state == RequestedState.WRITE_REQUESTED) {
-							if (now > writeTimes.get(ds)) {
-								writeTimes.remove(ds);
-								changing.add(ds);
+							if (now > writeTimes.get(de)) {
+								writeTimes.remove(de);
+								changing.add(de);
 								it.remove();
 								// final Thread w = new Thread(new
 								// Writer(location));
 								// w.start();
 							}
 						} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-							if (now > writeTimes.get(ds)) {
-								writeTimes.remove(ds);
-								changing.add(ds);
+							if (now > writeTimes.get(de)) {
+								writeTimes.remove(de);
+								changing.add(de);
 								it.remove();
 								// final Thread w = new Thread(new
 								// WriteThenArchiver(location));
 								// w.start();
 							}
 						} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-							changing.add(ds);
+							changing.add(de);
 							it.remove();
-							// final Thread w = new Thread(new
-							// Archiver(location));
-							// w.start();
+							final Thread w = new Thread(new Archiver(de, requestHelper));
+							w.start();
 						} else if (state == RequestedState.RESTORE_REQUESTED) {
-							changing.add(ds);
+							changing.add(de);
 							it.remove();
-							final Thread w = new Thread(new Restorer(ds, requestHelper));
+							final Thread w = new Thread(new Restorer(de, requestHelper));
 							w.start();
 						}
 					}
 				}
 			}
 		} finally {
-//			logger.info("Starting new Timer from ProcessQueue");
-			timer.schedule(new ProcessQueue(timer, requestHelper), 
-					PropertyHandler.getInstance().getProcessQueueIntervalSeconds() * 1000L);
+			// logger.info("Starting new Timer from ProcessQueue");
+			timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
+					.getProcessQueueIntervalSeconds() * 1000L);
 		}
 
 	}

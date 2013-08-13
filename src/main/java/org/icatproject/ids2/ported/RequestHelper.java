@@ -29,7 +29,8 @@ import org.icatproject.ids2.ported.entity.RequestEntity;
 
 @Stateless
 public class RequestHelper {
-
+	private final static String DEFAULT_COMPRESS = "false";
+	private final static String DEFAULT_ZIP = "false";
 	private final static Logger logger = Logger.getLogger(RequestHelper.class.getName());
 	private PropertyHandler properties = PropertyHandler.getInstance();
 	private ICATClientBase icatClient;
@@ -40,6 +41,15 @@ public class RequestHelper {
 	@PostConstruct
 	public void postConstruct() throws MalformedURLException, ICATClientException {
 		icatClient = ICATClientFactory.getInstance().createICATInterface();
+	}
+	
+	public RequestEntity createRestoreRequest(String sessionId, String compress, String zip) 
+			throws ICATClientException, MalformedURLException {
+		return createRequest(sessionId, compress, zip, RequestedState.RESTORE_REQUESTED);
+	}
+	
+	public RequestEntity createArchiveRequest(String sessionId) throws MalformedURLException, ICATClientException {
+		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.ARCHIVE_REQUESTED);
 	}
 
 	public RequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
