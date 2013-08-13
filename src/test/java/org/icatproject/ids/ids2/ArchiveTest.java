@@ -15,15 +15,17 @@ import org.icatproject.ICATService;
 import org.icatproject.ids.Setup;
 import org.icatproject.ids.webservice.Status;
 import org.icatproject.idsclient.TestingClient;
+import org.icatproject.idsclient.exception.TestingClientBadRequestException;
+import org.icatproject.idsclient.exception.TestingClientForbiddenException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ArchiveTest {
-	
+
 	private static Setup setup = null;
 	private static ICAT icat;
-	
+
 	@BeforeClass
 	public static void setup() throws Exception {
 		setup = new Setup();
@@ -41,7 +43,7 @@ public class ArchiveTest {
 		storageDir.mkdir();
 		storageZipDir.mkdir();
 	}
-	
+
 	@Test
 	public void restoreThenArchiveDataset() throws Exception {
 		final int DS_NUM_FROM_PROPS = 0;
@@ -51,8 +53,8 @@ public class ArchiveTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 
-		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null,
-				null, null);
+		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null,
+				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
 		Status status = null;
 		int retryLimit = 5;
 		do {
@@ -69,7 +71,7 @@ public class ArchiveTest {
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
-		
+
 		client.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		retryLimit = 10;
 		while ((dirOnFastStorage.exists() || zipOnFastStorage.exists()) && retryLimit-- > 0) {
@@ -79,6 +81,36 @@ public class ArchiveTest {
 				!dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
 				!zipOnFastStorage.exists());
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badSessionIdFormatTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.archiveTest("bad sessionId format", null, null, "1,2");
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badDatafileIdFormatTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.archiveTest(setup.getGoodSessionId(), null, null, "1,2,a");
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badDatasetIdFormatTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.archiveTest(setup.getGoodSessionId(), null, "", null);
+	}
+
+	@Test(expected = TestingClientBadRequestException.class)
+	public void noIdsTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.archiveTest(setup.getGoodSessionId(), null, null, null);
+	}
+
+	@Test(expected = TestingClientForbiddenException.class)
+	public void nonExistingSessionIdTest() throws Exception {
+		TestingClient client = new TestingClient(setup.getIdsUrl());
+		client.archiveTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, "1,2", null);
 	}
 
 }

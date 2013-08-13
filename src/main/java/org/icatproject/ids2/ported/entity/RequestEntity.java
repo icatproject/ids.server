@@ -1,6 +1,7 @@
 package org.icatproject.ids2.ported.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -159,6 +160,13 @@ public class RequestEntity implements Serializable {
 	@Override
 	public String toString() {
 		return "RequestEntity " + id;
+	}
+	
+	public List<Ids2DataEntity> getDataEntities() {
+		List<Ids2DataEntity> res = new ArrayList<Ids2DataEntity>();
+		res.addAll(datafiles);
+		res.addAll(datasets);
+		return res;
 	}
     
 }

@@ -69,6 +69,7 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 		this.id = id;
 	}
 
+	@Override
 	public StatusInfo getStatus() {
 		return status;
 	}

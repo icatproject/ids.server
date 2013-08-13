@@ -120,32 +120,21 @@ public class RequestHelper {
 		setRequestCompletedIfEverythingDone(de);
 		em.merge(de);
 	}
-	// TODO correct so that it doesn't only check DS's, but also DF's
-	// maybe change request.getDatasets and request.getDatafiles to request.getDataEntities
-	private void setRequestCompletedIfEverythingDone(Ids2DataEntity de) {
+	
+	private void setRequestCompletedIfEverythingDone(Ids2DataEntity dataEntity) {
 		Set<StatusInfo> finalStatuses = new HashSet<StatusInfo>();
 		finalStatuses.add(StatusInfo.COMPLETED);
 		finalStatuses.add(StatusInfo.INCOMPLETE);
 		
-		RequestEntity request = de.getRequest();
+		RequestEntity request = dataEntity.getRequest();
 		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED; // assuming that everything went OK
-		logger.info("Will check status of " + request.getDatasets().size() + " datasets");
+		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
 		
-		for (Ids2DatafileEntity df : request.getDatafiles()) {
-			if (!finalStatuses.contains(df.getStatus())) {
+		for (Ids2DataEntity de : request.getDataEntities()) {
+			if (!finalStatuses.contains(de.getStatus())) {
 				return;
 			}
-			if (df.getStatus() != StatusInfo.COMPLETED) {
-				resultingRequestStatus = StatusInfo.INCOMPLETE;
-			}
-		}
-		for (Ids2DatasetEntity ds : request.getDatasets()) {
-			logger.info("Retrieval status of " + ds + " is " + ds.getStatus());
-			if (!finalStatuses.contains(ds.getStatus())) {
-				logger.info("Retrieval of " + ds + " still not completed");
-				return;
-			}
-			if (ds.getStatus() != StatusInfo.COMPLETED) {
+			if (de.getStatus() != StatusInfo.COMPLETED) {
 				resultingRequestStatus = StatusInfo.INCOMPLETE;
 			}
 		}

@@ -70,6 +70,7 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
 		this.id = id;
 	}
 
+	@Override
 	public StatusInfo getStatus() {
 		return status;
 	}
