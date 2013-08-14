@@ -27,6 +27,7 @@ public class PrepareDataTest {
 
 	private static Setup setup = null;
 	private static ICAT icat;
+	TestingClient testingClient;
 
 	@BeforeClass
 	public static void setup() throws Exception {
@@ -44,24 +45,24 @@ public class PrepareDataTest {
 		FileUtils.deleteDirectory(storageZipDir);
 		storageDir.mkdir();
 		storageZipDir.mkdir();
+		testingClient = new TestingClient(setup.getIdsUrl());
 	}
 
 	@Test
 	public void restoreArchivedDataset() throws Exception {
 		final int DS_NUM_FROM_PROPS = 0;
-		TestingClient client = new TestingClient(setup.getIdsUrl());
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 
-		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null,
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
 		Status status = null;
 		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-			status = client.getStatusTest(preparedId);
+			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
@@ -75,7 +76,6 @@ public class PrepareDataTest {
 	public void restoreTwoArchivedDatasets() throws Exception {
 		final int DS1_NUM_FROM_PROPS = 0;
 		final int DS2_NUM_FROM_PROPS = 1;
-		TestingClient client = new TestingClient(setup.getIdsUrl());
 		Dataset icatDs1 = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS1_NUM_FROM_PROPS)));
 		File dirOnFastStorage1 = new File(setup.getStorageDir(), icatDs1.getLocation());
@@ -87,12 +87,12 @@ public class PrepareDataTest {
 		String dsIds = setup.getDatasetIds().get(DS1_NUM_FROM_PROPS) + ", "
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
 
-		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, dsIds, null, null, null);
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, dsIds, null, null, null);
 		Status status = null;
 		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-			status = client.getStatusTest(preparedId);
+			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
@@ -109,19 +109,18 @@ public class PrepareDataTest {
 	@Test
 	public void restoreArchivedDatafile() throws Exception {
 		final int DF_NUM_FROM_PROPS = 0;
-		TestingClient client = new TestingClient(setup.getIdsUrl());
 		Datafile icatDf = (Datafile) icat.get(setup.getGoodSessionId(), "Datafile INCLUDE Dataset",
 				Long.parseLong(setup.getDatafileIds().get(DF_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
-		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-			status = client.getStatusTest(preparedId);
+			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
@@ -135,20 +134,19 @@ public class PrepareDataTest {
 	public void restoreArchivedDatafileAndItsDataset() throws Exception {
 		final int DF_NUM_FROM_PROPS = 0;
 		final int DS_NUM_FROM_PROPS = 0;
-		TestingClient client = new TestingClient(setup.getIdsUrl());
 		Datafile icatDf = (Datafile) icat.get(setup.getGoodSessionId(), "Datafile INCLUDE Dataset",
 				Long.parseLong(setup.getDatafileIds().get(DF_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
-		String preparedId = client
+		String preparedId = testingClient
 				.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
 						.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-			status = client.getStatusTest(preparedId);
+			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);

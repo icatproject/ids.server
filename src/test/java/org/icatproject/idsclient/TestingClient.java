@@ -20,7 +20,7 @@ import org.icatproject.idsclient.exception.TestingClientInternalServerErrorExcep
 import org.icatproject.idsclient.exception.TestingClientNotFoundException;
 import org.icatproject.idsclient.exception.TestingClientNotImplementedException;
 
-/*
+/**
  * The test suite for the IDS makes use of the IDS client. This has some passive 
  * validation built in (ie. parameters constrained to specific types). To be able to test
  * all possible combinations and values, new methods have been created that take strings for

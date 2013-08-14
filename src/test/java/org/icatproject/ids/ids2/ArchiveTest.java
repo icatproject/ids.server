@@ -25,6 +25,7 @@ public class ArchiveTest {
 
 	private static Setup setup = null;
 	private static ICAT icat;
+	TestingClient testingClient;
 
 	@BeforeClass
 	public static void setup() throws Exception {
@@ -42,18 +43,18 @@ public class ArchiveTest {
 		FileUtils.deleteDirectory(storageZipDir);
 		storageDir.mkdir();
 		storageZipDir.mkdir();
+		testingClient = new TestingClient(setup.getIdsUrl());
 	}
 
 	@Test
 	public void restoreThenArchiveDataset() throws Exception {
 		final int DS_NUM_FROM_PROPS = 0;
-		TestingClient client = new TestingClient(setup.getIdsUrl());
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 
-		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null,
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
 		Status status = null;
 		int retryLimit = 5;
@@ -63,7 +64,7 @@ public class ArchiveTest {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			status = client.getStatusTest(preparedId);
+			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
@@ -72,7 +73,7 @@ public class ArchiveTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 
-		client.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		retryLimit = 10;
 		while ((dirOnFastStorage.exists() || zipOnFastStorage.exists()) && retryLimit-- > 0) {
 			Thread.sleep(1000);
