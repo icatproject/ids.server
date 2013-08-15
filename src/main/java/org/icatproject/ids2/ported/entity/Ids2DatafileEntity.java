@@ -140,5 +140,10 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
 		datasets.add(this.icatDatafile.getDataset());
 		return datasets;
 	}
+	
+	@Override
+	public String toString() {
+		return String.format("Ids2Datafile %s (real: %s)", id, icatDatafileId);
+	}
     
 }

@@ -71,7 +71,7 @@ public class RequestHelper {
 		requestEntity.setRequestedState(requestedState);
 
 		em.persist(requestEntity);
-		em.flush();
+//		em.flush();
 
 		return requestEntity;
 	}
@@ -92,7 +92,7 @@ public class RequestHelper {
 	        
 	        requestEntity.setDatasets(newDatasetList);
 	        em.merge(requestEntity);
-	        em.flush();
+//	        em.flush();
     }
 	
 	public void addDatafiles(String sessionId, RequestEntity requestEntity, String datafileIds) throws Exception {
@@ -111,10 +111,11 @@ public class RequestHelper {
         
         requestEntity.setDatafiles(newDatafileList);
         em.merge(requestEntity);
-        em.flush();
+//        em.flush();
 	}
 	
 	public void setDataEntityStatus(Ids2DataEntity de, StatusInfo status) {
+		logger.info("Changing status of " + de + " to " + status);
 		de = em.merge(de);
 		de.setStatus(status);
 		setRequestCompletedIfEverythingDone(de);
@@ -128,9 +129,10 @@ public class RequestHelper {
 		
 		RequestEntity request = dataEntity.getRequest();
 		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED; // assuming that everything went OK
-		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
+//		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
 		
 		for (Ids2DataEntity de : request.getDataEntities()) {
+//			logger.info("Status of " + de + " is " + de.getStatus());
 			if (!finalStatuses.contains(de.getStatus())) {
 				return;
 			}
@@ -138,7 +140,7 @@ public class RequestHelper {
 				resultingRequestStatus = StatusInfo.INCOMPLETE;
 			}
 		}
-		logger.info("all tasks in request " + request + " finished");
+//		logger.info("all tasks in request " + request + " finished");
 		request.setStatus(resultingRequestStatus);
 	}
 	

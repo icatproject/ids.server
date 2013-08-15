@@ -2,7 +2,10 @@ package org.icatproject.ids.ids2;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.hamcrest.core.AnyOf.anyOf;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 import java.io.File;
 import java.net.URL;
@@ -65,7 +68,7 @@ public class PrepareDataTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
-		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
+		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -95,7 +98,7 @@ public class PrepareDataTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
-		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
+		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage1.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage1.exists());
 		assertTrue("Zip in " + zipOnFastStorage1.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -123,7 +126,7 @@ public class PrepareDataTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
-		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
+		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -149,7 +152,8 @@ public class PrepareDataTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
-		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
+		assertThat("Status info should be ONLINE or INCOMPLETE, is " + status.name(), status, anyOf(equalTo(Status.ONLINE), equalTo(Status.INCOMPLETE)));
+//		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",

@@ -67,7 +67,7 @@ public class ArchiveTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
 
-		assertEquals("Status info should be ONLINE, is " + status.name(), status, Status.ONLINE);
+		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
