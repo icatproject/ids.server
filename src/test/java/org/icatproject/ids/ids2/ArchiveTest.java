@@ -54,20 +54,12 @@ public class ArchiveTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null,
-				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
-		Status status = null;
+		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		int retryLimit = 5;
 		do {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			status = testingClient.getStatusTest(preparedId);
-		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
+			Thread.sleep(1000);
+		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
 
-		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",

@@ -68,7 +68,6 @@ public class WebService {
 
 	private final static Logger logger = Logger.getLogger(WebService.class.getName());
 
-	private ICAT icatClient;
 	private long archiveWriteDelayMillis = PropertyHandler.getInstance().getWriteDelaySeconds() * 1000L;
 	private Timer timer = new Timer();
 	private RequestQueues requestQueues = RequestQueues.getInstance();
@@ -85,24 +84,8 @@ public class WebService {
 	@PostConstruct
 	public void postConstructInit() {
 		logger.info("creating WebService");
-		// try {
-		// final URL icatUrl = new
-		// URL(PropertyHandler.getInstance().getIcatURL());
-		// final ICATService icatService = new ICATService(icatUrl, new QName(
-		// "http://icatproject.org", "ICATService"));
-		// this.icatClient = icatService.getICATPort();
-		// this.timer = new Timer();
 		timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
 				.getProcessQueueIntervalSeconds() * 1000L);
-		// } catch (Exception e) {
-		// throw new
-		// InternalServerErrorException("Could not initialize ICAT client");
-		// }
-	}
-
-	@PreDestroy
-	public void destroy() {
-
 	}
 
 	/**
@@ -133,7 +116,6 @@ public class WebService {
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds,
 			@DefaultValue("false") @FormParam("compress") String compress, @FormParam("zip") String zip) {
-		// DownloadRequestEntity downloadRequestEntity = null;
 		RequestEntity requestEntity = null;
 		logger.log(Level.INFO, "prepareData received");
 		// 501
@@ -165,20 +147,15 @@ public class WebService {
 				+ "' " + "zip='" + zip + "'");
 
 		try {
-			requestEntity = requestHelper.createRestoreRequest(sessionId, compress, zip);
+			requestEntity = requestHelper.createPrepareRequest(sessionId, compress, zip);
 			if (datafileIds != null) {
 				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
 			}
 			if (datasetIds != null) {
 				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
-			// if all the information was restored successfully, we can enqueue
-			// requests
-			for (Ids2DatafileEntity df : requestEntity.getDatafiles()) {
-				this.queue(df, DeferredOp.RESTORE);
-			}
-			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
-				this.queue(ds, DeferredOp.RESTORE);
+			for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+				this.queue(de, DeferredOp.PREPARE);
 			}
 		} catch (ICATSessionException e) {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
@@ -192,9 +169,6 @@ public class WebService {
 			throw new InternalServerErrorException(t.getMessage());
 		}
 		return Response.status(200).entity(requestEntity.getPreparedId() + "\n").build();
-		// return
-		// Response.status(200).entity(downloadRequestEntity.getPreparedId() +
-		// "\n").build(); // IDS1
 	}
 
 	/**
@@ -417,10 +391,6 @@ public class WebService {
 	public Response archive(@FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds) {
-
-		ArrayList<DownloadRequestEntity> matchingDownloadRequests = new ArrayList<DownloadRequestEntity>();
-		List<String> idList = null;
-		List<DownloadRequestEntity> results = null;
 		RequestEntity requestEntity = null;
 
 		// 501
@@ -452,13 +422,8 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
-			// if all the information was restored successfully, we can enqueue
-			// requests
-			for (Ids2DatafileEntity df : requestEntity.getDatafiles()) {
-				this.queue(df, DeferredOp.ARCHIVE);
-			}
-			for (Ids2DatasetEntity ds : requestEntity.getDatasets()) {
-				this.queue(ds, DeferredOp.ARCHIVE);
+			for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+				this.queue(de, DeferredOp.ARCHIVE);
 			}
 		} catch (ICATSessionException e) {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
@@ -550,7 +515,52 @@ public class WebService {
 	public Response restore(@FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds) {
-		throw new NotImplementedException("The method 'restore' has not been implemented");
+		RequestEntity requestEntity = null;
+		logger.log(Level.INFO, "restore received");
+		// 501
+		if (investigationIds != null) {
+			throw new NotImplementedException("investigationIds are not supported");
+		}
+		// 400
+		if (ValidationHelper.isValidId(sessionId) == false) {
+			throw new BadRequestException("The sessionId parameter is invalid");
+		}
+		if (ValidationHelper.isValidIdList(datasetIds) == false) {
+			throw new BadRequestException("The datasetIds parameter is invalid");
+		}
+		if (ValidationHelper.isValidIdList(datafileIds) == false) {
+			throw new BadRequestException("The datafileIds parameter is invalid");
+		}
+		if (datasetIds == null && datafileIds == null) {
+			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+		}
+		// at this point we're sure, that all arguments are valid
+		logger.log(Level.INFO, "New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
+				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+
+		try {
+			requestEntity = requestHelper.createRestoreRequest(sessionId);
+			if (datafileIds != null) {
+				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
+			}
+			if (datasetIds != null) {
+				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
+			}
+			for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+				this.queue(de, DeferredOp.RESTORE);
+			}
+		} catch (ICATSessionException e) {
+			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+		} catch (ICATInternalException e) {
+			throw new InternalServerErrorException("Unable to connect to ICAT server");
+		} catch (PersistenceException e) {
+			throw new InternalServerErrorException("Unable to connect to the database");
+		} catch (Exception e) {
+			throw new InternalServerErrorException(e.getMessage());
+		} catch (Throwable t) {
+			throw new InternalServerErrorException(t.getMessage());
+		}
+		return Response.status(200).entity(requestEntity.getPreparedId() + "\n").build();
 	}
 
 	private void queue(Ids2DataEntity de, DeferredOp deferredOp) {
@@ -559,6 +569,12 @@ public class WebService {
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 
 		synchronized (deferredOpsQueue) {
+			// PREPARE is a special case, as it's independent of the FSM state
+			if (deferredOp == DeferredOp.PREPARE) {
+				deferredOpsQueue.put(de, RequestedState.PREPARE_REQUESTED);
+				return;
+			}
+
 			RequestedState state = null;
 			long oldDelay = archiveWriteDelayMillis;
 			// If we are overwriting a DE from a different request, we should
@@ -580,7 +596,10 @@ public class WebService {
 					iter.remove();
 				}
 			}
-			if (state == null) {
+			// if there's no overlapping DE, or the one overlapping is to be
+			// prepared we can safely create a new request (DEs scheduled for
+			// preparation are processed independently)
+			if (state == null || state == RequestedState.PREPARE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
 					this.setNewDelay(de);
@@ -630,63 +649,6 @@ public class WebService {
 				}
 			}
 		}
-		
-//		synchronized (deferredOpsQueue) {
-//            final RequestedState state = deferredOpsQueue.get(de);
-//            if (state == null) {
-//                    if (deferredOp == DeferredOp.WRITE) {
-//                            deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-//                            this.setNewDelay(de);
-//                    } else if (deferredOp == DeferredOp.ARCHIVE) {
-//                            deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
-//                    } else if (deferredOp == DeferredOp.RESTORE) {
-//                            deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
-//                    }
-//            }
-//            else {
-//                    // if we are overwriting a DE from a different request, we should
-//                    // set its status to COMPLETED and remove it from the deferredOpsQueue
-//                    Iterator<Ids2DataEntity> iter = deferredOpsQueue.keySet().iterator();
-//                    while(iter.hasNext()) {
-//                            Ids2DataEntity oldDe = iter.next();
-//                            if (oldDe.overlapsWith(de)) {
-////                                  oldDe.setStatus(StatusInfo.COMPLETED);
-//                                    requestHelper.setDataEntityStatus(oldDe, StatusInfo.COMPLETED);
-//                                    requestQueues.getWriteTimes().remove(oldDe);
-//                                    iter.remove();
-//                            }
-//                    }
-//                    
-//                    if (state == RequestedState.ARCHIVE_REQUESTED) {
-//                            if (deferredOp == DeferredOp.WRITE) {
-//                                    deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-//                                    this.setNewDelay(de);
-//                            } else if (deferredOp == DeferredOp.RESTORE) {
-//                                    deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
-//                            }
-//                    } else if (state == RequestedState.RESTORE_REQUESTED) {
-//                            if (deferredOp == DeferredOp.WRITE) {
-//                                    deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-//                                    this.setNewDelay(de);
-//                            } else if (deferredOp == DeferredOp.ARCHIVE) {
-//                                    deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
-//                            }
-//                    } else if (state == RequestedState.WRITE_REQUESTED) {
-//                            if (deferredOp == DeferredOp.WRITE) {
-//                                    this.setNewDelay(de);
-//                            } else if (deferredOp == DeferredOp.ARCHIVE) {
-//                                    deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-//                            }
-//                    } else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-//                            if (deferredOp == DeferredOp.WRITE) {
-//                                    this.setNewDelay(de);
-//                            } else if (deferredOp == DeferredOp.RESTORE) {
-//                                    deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-//                            }
-//                    }
-//            }
-//            
-//    }
 	}
 
 	private void setNewDelay(Ids2DataEntity de) {
@@ -696,7 +658,7 @@ public class WebService {
 		final Date d = new Date(writeTimes.get(de));
 		logger.info("Requesting delay of writing of " + de + " till " + d + " (new value)");
 	}
-	
+
 	private void setExactDelay(Ids2DataEntity de, long oldDelay) {
 		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
 

@@ -43,13 +43,17 @@ public class RequestHelper {
 		icatClient = ICATClientFactory.getInstance().createICATInterface();
 	}
 	
-	public RequestEntity createRestoreRequest(String sessionId, String compress, String zip) 
+	public RequestEntity createPrepareRequest(String sessionId, String compress, String zip) 
 			throws ICATClientException, MalformedURLException {
-		return createRequest(sessionId, compress, zip, RequestedState.RESTORE_REQUESTED);
+		return createRequest(sessionId, compress, zip, RequestedState.PREPARE_REQUESTED);
 	}
 	
 	public RequestEntity createArchiveRequest(String sessionId) throws MalformedURLException, ICATClientException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.ARCHIVE_REQUESTED);
+	}
+	
+	public RequestEntity createRestoreRequest(String sessionId) throws ICATClientException, MalformedURLException {
+		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
 	}
 
 	public RequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)

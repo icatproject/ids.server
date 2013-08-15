@@ -68,6 +68,27 @@ public class TestingClient {
         Response response = HTTPConnect("POST", "prepareData", parameters);
         return response.getResponse().toString().trim();
     }
+    
+    /**
+     * Based on the restore method but takes all parameters as strings. This is used for testing
+     * and should not be used otherwise.
+     */
+    public void restoreTest(String sessionId, String investigationIds, String datasetIds,
+            String datafileIds) throws Exception {
+        Map<String, String> parameters = new HashMap<String, String>();
+
+        // create parameter list
+        parameters.put("sessionId", sessionId);
+        if (investigationIds != null)
+            parameters.put("investigationIds", investigationIds);
+        if (datasetIds != null)
+            parameters.put("datasetIds", datasetIds);
+        if (datafileIds != null)
+            parameters.put("datafileIds", datafileIds);
+
+        Response response = HTTPConnect("POST", "restore", parameters);
+        response.getResponse().toString().trim();
+    }
 
     /**
      * Based on the archive method but takes all parameters as strings. This is used for testing and
