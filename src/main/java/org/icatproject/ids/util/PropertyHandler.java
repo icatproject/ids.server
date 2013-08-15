@@ -24,6 +24,8 @@ public class PropertyHandler {
     private String storageArchiveDir;
     private String storageZipDir;
     private String storageDir;
+    private String storagePreparedDir;
+    private String userLocalDir;
     private long writeDelaySeconds;
     private long processQueueIntervalSeconds;
     private int numberOfDaysToKeepFilesInCache;
@@ -79,6 +81,8 @@ public class PropertyHandler {
         storageArchiveDir = setICATDirFromProperties(props, "STORAGE_ARCHIVE_DIR");
         storageZipDir = setICATDirFromProperties(props, "STORAGE_ZIP_DIR");
         storageDir = setICATDirFromProperties(props, "STORAGE_DIR");
+        storagePreparedDir = setICATDirFromProperties(props, "STORAGE_PREPARED_DIR");
+        userLocalDir = setICATDirFromProperties(props, "USER_LOCAL_DIR");
         
         writeDelaySeconds = Long.parseLong(props.getProperty("WRITE_DELAY_SECONDS"));
         if (writeDelaySeconds < 1) {

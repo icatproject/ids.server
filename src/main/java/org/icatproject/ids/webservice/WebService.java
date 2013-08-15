@@ -5,17 +5,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
@@ -33,8 +30,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.icatproject.ICAT;
 import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
@@ -53,8 +48,6 @@ import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
-import org.icatproject.ids2.ported.entity.Ids2DatafileEntity;
-import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
 import org.icatproject.ids2.ported.entity.RequestEntity;
 import org.icatproject.ids2.ported.thread.ProcessQueue;
 
@@ -560,7 +553,7 @@ public class WebService {
 		} catch (Throwable t) {
 			throw new InternalServerErrorException(t.getMessage());
 		}
-		return Response.status(200).entity(requestEntity.getPreparedId() + "\n").build();
+		return Response.status(200).build();
 	}
 
 	private void queue(Ids2DataEntity de, DeferredOp deferredOp) {

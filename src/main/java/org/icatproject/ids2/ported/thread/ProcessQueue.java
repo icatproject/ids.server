@@ -78,6 +78,11 @@ public class ProcessQueue extends TimerTask {
 							it.remove();
 							final Thread w = new Thread(new Restorer(de, requestHelper));
 							w.start();
+						} else if (state == RequestedState.RESTORE_REQUESTED) {
+							changing.add(de);
+							it.remove();
+							final Thread w = new Thread(new Preparer(de, requestHelper));
+							w.start();
 						}
 					}
 				}

@@ -11,7 +11,6 @@ import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
-import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
 
 //copies files from the archive to the local storage (in zip), also creates an unzipped copy
 public class Restorer implements Runnable {

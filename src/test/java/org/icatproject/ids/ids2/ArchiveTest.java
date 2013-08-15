@@ -1,6 +1,5 @@
 package org.icatproject.ids.ids2;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -13,7 +12,6 @@ import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.ids.Setup;
-import org.icatproject.ids.webservice.Status;
 import org.icatproject.idsclient.TestingClient;
 import org.icatproject.idsclient.exception.TestingClientBadRequestException;
 import org.icatproject.idsclient.exception.TestingClientForbiddenException;
