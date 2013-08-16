@@ -142,10 +142,18 @@ public class RequestHelper {
 			}
 			if (de.getStatus() != StatusInfo.COMPLETED) {
 				resultingRequestStatus = StatusInfo.INCOMPLETE;
+				break;
 			}
 		}
 //		logger.info("all tasks in request " + request + " finished");
 		request.setStatus(resultingRequestStatus);
+	}
+	
+	public void setRequestStatus(RequestEntity request, StatusInfo status) {
+		logger.info("Changing status of " + request + " to " + status);
+		request = em.merge(request);
+		request.setStatus(status);
+		em.merge(request);
 	}
 	
 	public RequestEntity getRequestByPreparedId(String preparedId) {

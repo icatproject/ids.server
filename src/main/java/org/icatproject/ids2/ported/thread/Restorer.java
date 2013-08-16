@@ -31,7 +31,7 @@ public class Restorer implements Runnable {
 	public void run() {
 		logger.info("starting restorer");
 		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
-		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getDatasets());
+		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getIcatDatasets());
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Ids2DataEntity> changing = requestQueues.getChanging();
 		synchronized (deferredOpsQueue) {

@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -12,10 +11,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.util.StatusInfo;
 
@@ -154,10 +153,15 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 	}
 	
 	@Override
-	public List<Dataset> getDatasets() {
+	public List<Dataset> getIcatDatasets() {
 		List<Dataset> datasets = new ArrayList<Dataset>();
 		datasets.add(icatDataset);
 		return datasets;
+	}
+	
+	@Override
+	public List<Datafile> getIcatDatafiles() {
+		return this.icatDataset.getDatafiles();
 	}
 	
 	@Override

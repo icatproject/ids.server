@@ -38,7 +38,7 @@ public class Archiver implements Runnable {
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
 		
 		try {
-			for (Dataset ds : de.getDatasets()) {
+			for (Dataset ds : de.getIcatDatasets()) {
 				try {
 					File dir = new File(storageDir, ds.getLocation());
 					File zipdir = new File(storageZipDir, ds.getLocation());

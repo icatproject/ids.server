@@ -1,23 +1,17 @@
 package org.icatproject.ids2.ported.thread;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.Datafile;
+import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
-import org.icatproject.ids2.ported.entity.RequestEntity;
 
 //copies files from the archive to the local storage (in zip), also creates an unzipped copy
 public class Preparer implements Runnable {
@@ -37,14 +31,37 @@ public class Preparer implements Runnable {
 	@Override
 	public void run() {
 		logger.info("starting preparer");
-		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
-		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getDatasets());
+		// assuming restoration of the files is not needed, all files should be available on fast storage
+//		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
+//		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getDatasets());
+		
+		// if one of the previous DataEntities of the Request failed, there's no point continuing with this one
+		if (de.getRequest().getStatus() == StatusInfo.INCOMPLETE) {
+			requestHelper.setDataEntityStatus(de, StatusInfo.INCOMPLETE);
+		}		
+		// if this is the first DE of the Request being processed, set the Request status to RETRIVING
+		if (de.getRequest().getStatus() == StatusInfo.SUBMITTED) {
+			requestHelper.setRequestStatus(de.getRequest(), StatusInfo.RETRIVING);
+		}
+		StatusInfo resultingStatus = StatusInfo.COMPLETED; // let's assume everything will go OK
+		for (Datafile df : de.getIcatDatafiles()) {
+			File file = new File(PropertyHandler.getInstance().getStorageDir(), df.getLocation());
+			if (!file.exists()) {
+				resultingStatus = StatusInfo.INCOMPLETE;
+				break;
+			}
+		}
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Ids2DataEntity> changing = requestQueues.getChanging();
 		synchronized (deferredOpsQueue) {
 			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
 			requestHelper.setDataEntityStatus(de, resultingStatus);
 			changing.remove(de);
+		}
+		
+		// if it's the last DataEntity of the Request and all of them were successful
+		if (de.getRequest().getStatus() == StatusInfo.COMPLETED) {
+			// prepare zip
 		}
 	}
 	

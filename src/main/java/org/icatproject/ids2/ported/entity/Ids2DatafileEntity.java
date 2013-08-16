@@ -135,10 +135,17 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
 	}
 	
 	@Override
-	public List<Dataset> getDatasets() {
+	public List<Dataset> getIcatDatasets() {
 		List<Dataset> datasets = new ArrayList<Dataset>();
 		datasets.add(this.icatDatafile.getDataset());
 		return datasets;
+	}
+	
+	@Override
+	public List<Datafile> getIcatDatafiles() {
+		List<Datafile> datafiles = new ArrayList<Datafile>();
+		datafiles.add(this.icatDatafile);
+		return datafiles;
 	}
 	
 	@Override

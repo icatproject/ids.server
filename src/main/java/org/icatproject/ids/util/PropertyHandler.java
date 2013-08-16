@@ -160,6 +160,14 @@ public class PropertyHandler {
 		return storageInterfaceImplementation;
 	}
 	
+	public String getStoragePreparedDir() {
+		return storagePreparedDir;
+	}
+
+	public String getUserLocalDir() {
+		return userLocalDir;
+	}
+
 	private String setICATDirFromProperties(Properties props, String property) {
 		String res = props.getProperty(property);
 		// logger.severe(property + " = " + res); // TODO remove
