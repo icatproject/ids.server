@@ -3,6 +3,7 @@ package org.icatproject.ids2.ported.thread;
 import java.util.Map;
 import java.util.Set;
 
+import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.util.StatusInfo;
@@ -32,13 +33,13 @@ public class Restorer implements Runnable {
 	public void run() {
 		logger.info("starting restorer");
 		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
-		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getIcatDatasets());
+		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getIcatDataset());
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
-		Set<Ids2DataEntity> changing = requestQueues.getChanging();
+		Set<Dataset> changing = requestQueues.getChanging();
 		synchronized (deferredOpsQueue) {
 			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
 			requestHelper.setDataEntityStatus(de, resultingStatus);
-			changing.remove(de);
+			changing.remove(de.getIcatDataset());
 		}
 	}
 

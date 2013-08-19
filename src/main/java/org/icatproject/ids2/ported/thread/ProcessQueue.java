@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.icatproject.Dataset;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
@@ -32,7 +33,7 @@ public class ProcessQueue extends TimerTask {
 	@Override
 	public void run() {
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
-		Set<Ids2DataEntity> changing = requestQueues.getChanging();
+		Set<Dataset> changing = requestQueues.getChanging();
 		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
 
 		try {
@@ -53,7 +54,7 @@ public class ProcessQueue extends TimerTask {
 						if (state == RequestedState.WRITE_REQUESTED) {
 							if (now > writeTimes.get(de)) {
 								writeTimes.remove(de);
-								changing.add(de);
+								changing.add(de.getIcatDataset());
 								it.remove();
 								// final Thread w = new Thread(new
 								// Writer(location));
@@ -62,24 +63,24 @@ public class ProcessQueue extends TimerTask {
 						} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 							if (now > writeTimes.get(de)) {
 								writeTimes.remove(de);
-								changing.add(de);
+								changing.add(de.getIcatDataset());
 								it.remove();
 								// final Thread w = new Thread(new
 								// WriteThenArchiver(location));
 								// w.start();
 							}
 						} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-							changing.add(de);
+							changing.add(de.getIcatDataset());
 							it.remove();
 							final Thread w = new Thread(new Archiver(de, requestHelper));
 							w.start();
 						} else if (state == RequestedState.RESTORE_REQUESTED) {
-							changing.add(de);
+							changing.add(de.getIcatDataset());
 							it.remove();
 							final Thread w = new Thread(new Restorer(de, requestHelper));
 							w.start();
 						} else if (state == RequestedState.PREPARE_REQUESTED) {
-							changing.add(de);
+							changing.add(de.getIcatDataset());
 							it.remove();
 							final Thread w = new Thread(new Preparer(de, requestHelper));
 							w.start();

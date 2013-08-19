@@ -10,10 +10,9 @@ public interface Ids2DataEntity {
 	public boolean overlapsWith(Ids2DataEntity e);
 
 	/**
-	 * Returns the ICAT Dataset this DataEntity is contained in OR the ICAT
-	 * Datasets this DataEntity contains (e.g. for Investigations)
+	 * Returns the ICAT Dataset this DataEntity is contained in
 	 */
-	public List<Dataset> getIcatDatasets();
+	public Dataset getIcatDataset();
 
 	/**
 	 * Returns all the ICAT Datafiles this DataEntity contains.

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.icatproject.Datafile;
+import org.icatproject.Dataset;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids.util.ZipHelper;
@@ -34,7 +35,7 @@ public class Preparer implements Runnable {
 	public void run() {
 		logger.info("starting preparer");
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
-		Set<Ids2DataEntity> changing = requestQueues.getChanging();
+		Set<Dataset> changing = requestQueues.getChanging();
 		// assuming restoration of the files is not needed, all files should be available on fast storage
 //		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
 //		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getDatasets());
@@ -59,7 +60,7 @@ public class Preparer implements Runnable {
 		synchronized (deferredOpsQueue) {
 			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
 			requestHelper.setDataEntityStatus(de, resultingStatus);
-			changing.remove(de);
+			changing.remove(de.getIcatDataset());
 		}
 		logger.info("dupa2 " + de.getRequest().getStatus());
 		// if it's the last DataEntity of the Request and all of them were successful

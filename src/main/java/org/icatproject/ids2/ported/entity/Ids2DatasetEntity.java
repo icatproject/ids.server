@@ -111,6 +111,7 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 		this.icatDatasetId = icatDatasetId;
 	}
 	
+	@Override
 	public Dataset getIcatDataset() {
 		return icatDataset;
 	}
@@ -150,13 +151,6 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 			return this.icatDataset.getId().equals(ds.getIcatDataset().getId());
 		}
 		return false;
-	}
-	
-	@Override
-	public List<Dataset> getIcatDatasets() {
-		List<Dataset> datasets = new ArrayList<Dataset>();
-		datasets.add(icatDataset);
-		return datasets;
 	}
 	
 	@Override
