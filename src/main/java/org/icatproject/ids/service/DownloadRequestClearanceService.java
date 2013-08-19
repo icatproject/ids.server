@@ -5,9 +5,6 @@ import javax.ejb.Schedule;
 import javax.ejb.Schedules;
 import javax.ejb.Singleton;
 
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
-import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.DownloadRequestHelper;
 
 

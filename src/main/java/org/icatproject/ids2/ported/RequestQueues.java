@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
-import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
 
 public class RequestQueues {
 	private final Map<Ids2DataEntity, RequestedState> deferredOpsQueue;

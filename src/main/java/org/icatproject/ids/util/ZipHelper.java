@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,38 +12,45 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+import org.icatproject.Datafile;
+import org.icatproject.ids2.ported.entity.RequestEntity;
+
 public class ZipHelper {
 
     private final static Logger logger = Logger.getLogger(ZipHelper.class.getName());
 
-    public static void compressFileList(File zipFile, Set<String> fileSet, String relativePath,
-            boolean compress) {
+    public static void compressFileList(File zipFile, RequestEntity request
+    		/*, Set<String> fileSet, String relativePath, boolean compress*/) {
+    	logger.info(String.format("zipping %s datasets and %s datafiles, total %s icatDatafiles\n",
+    			request.getDatasets().size(), request.getDatafiles().size(),
+    			request.getIcatDatafiles().size()));
         long startTime = System.currentTimeMillis();
-        writeZipFileFromStringFileList(zipFile, fileSet, relativePath, compress);
+        writeZipFileFromStringFileList(zipFile, request.getIcatDatafiles(), 
+        		PropertyHandler.getInstance().getStorageDir(), request.isCompress());
         long endTime = System.currentTimeMillis();
         logger.log(Level.INFO, "Time took to zip the files: " + (endTime - startTime));
     }
 
-    public static void getAllFiles(File dir, List<File> fileList) {
-        try {
-            File[] files = dir.listFiles();
-            for (File file : files) {
-                fileList.add(file);
-                if (file.isDirectory()) {
-                    logger.log(Level.INFO, "directory:" + file.getCanonicalPath());
-                    getAllFiles(file, fileList);
-                } else {
-                    logger.log(Level.INFO, "     file:" + file.getCanonicalPath());
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    public static void getAllFiles(File dir, List<File> fileList) {
+//        try {
+//            File[] files = dir.listFiles();
+//            for (File file : files) {
+//                fileList.add(file);
+//                if (file.isDirectory()) {
+//                    logger.log(Level.INFO, "directory:" + file.getCanonicalPath());
+//                    getAllFiles(file, fileList);
+//                } else {
+//                    logger.log(Level.INFO, "     file:" + file.getCanonicalPath());
+//                }
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
-    public static void writeZipFileFromStringFileList(File zipFile, Set<String> fileSet,
+    public static void writeZipFileFromStringFileList(File zipFile, Set<Datafile> fileSet,
             String relativePath, boolean compress) {
-
+        logger.info("Will add " + fileSet.size() + " files to zip");
         if (fileSet.isEmpty()) {
             // Create empty file
             try {
@@ -70,9 +76,9 @@ public class ZipHelper {
                 zos.setLevel(0);
                 //zos.setMethod(ZipOutputStream.STORED);
             }
-
-            for (String file : fileSet) {
-                addToZip(zipFile, file, zos, relativePath);
+            for (Datafile file : fileSet) {
+            	logger.info("Adding file " + file.getLocation() + " to zip");
+                addToZip(zipFile, file.getLocation(), zos, relativePath);
             }
 
             zos.close();
@@ -87,7 +93,7 @@ public class ZipHelper {
     public static void addToZip(File directoryToZip, String fileStr, ZipOutputStream zos,
             String relativePath) {
         try {
-            File file = new File(fileStr);
+            File file = new File(relativePath, fileStr);
             FileInputStream fis = new FileInputStream(file);
             // to the directory being zipped, so chop off the rest of the path
             String zipFilePath = file.getCanonicalPath().substring(relativePath.length(),

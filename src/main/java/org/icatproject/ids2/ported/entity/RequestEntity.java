@@ -3,7 +3,9 @@ package org.icatproject.ids2.ported.entity;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -17,6 +19,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.icatproject.Datafile;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids2.ported.RequestedState;
 
@@ -167,6 +170,14 @@ public class RequestEntity implements Serializable {
 		res.addAll(datafiles);
 		res.addAll(datasets);
 		return res;
+	}
+	
+	public Set<Datafile> getIcatDatafiles() {
+		Set<Datafile> datafiles = new HashSet<Datafile>();
+		for (Ids2DataEntity de : this.getDataEntities()) {
+			datafiles.addAll(de.getIcatDatafiles());
+		}
+		return datafiles;
 	}
     
 }

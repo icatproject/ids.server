@@ -120,23 +120,21 @@ public class RequestHelper {
 	
 	public void setDataEntityStatus(Ids2DataEntity de, StatusInfo status) {
 		logger.info("Changing status of " + de + " to " + status);
-		de = em.merge(de);
+//		de = em.merge(de);
 		de.setStatus(status);
-		setRequestCompletedIfEverythingDone(de);
+		setRequestCompletedIfEverythingDone(de.getRequest());
 		em.merge(de);
 	}
 	
-	private void setRequestCompletedIfEverythingDone(Ids2DataEntity dataEntity) {
+	private void setRequestCompletedIfEverythingDone(RequestEntity request) {
 		Set<StatusInfo> finalStatuses = new HashSet<StatusInfo>();
 		finalStatuses.add(StatusInfo.COMPLETED);
 		finalStatuses.add(StatusInfo.INCOMPLETE);
 		
-		RequestEntity request = dataEntity.getRequest();
 		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED; // assuming that everything went OK
-//		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
-		
+		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");		
 		for (Ids2DataEntity de : request.getDataEntities()) {
-//			logger.info("Status of " + de + " is " + de.getStatus());
+			logger.info("Status of " + de + " is " + de.getStatus());
 			if (!finalStatuses.contains(de.getStatus())) {
 				return;
 			}
@@ -145,13 +143,14 @@ public class RequestHelper {
 				break;
 			}
 		}
-//		logger.info("all tasks in request " + request + " finished");
+		logger.info("all tasks in request " + request + " finished");
 		request.setStatus(resultingRequestStatus);
+		em.merge(request);
 	}
 	
 	public void setRequestStatus(RequestEntity request, StatusInfo status) {
 		logger.info("Changing status of " + request + " to " + status);
-		request = em.merge(request);
+//		request = em.merge(request);
 		request.setStatus(status);
 		em.merge(request);
 	}

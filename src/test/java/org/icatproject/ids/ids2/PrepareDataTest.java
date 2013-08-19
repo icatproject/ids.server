@@ -2,18 +2,13 @@ package org.icatproject.ids.ids2;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.hamcrest.core.AnyOf.anyOf;
-import static org.hamcrest.core.IsEqual.equalTo;
-
 import java.io.File;
 import java.net.URL;
 
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.FileUtils;
-import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
@@ -244,7 +239,7 @@ public class PrepareDataTest {
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
+		} while (!Status.ONLINE.equals(status) && retryLimit-- > 0);
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 //		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",

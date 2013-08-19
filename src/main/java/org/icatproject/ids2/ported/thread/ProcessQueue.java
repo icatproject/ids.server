@@ -13,7 +13,6 @@ import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
-import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
 
 public class ProcessQueue extends TimerTask {
 

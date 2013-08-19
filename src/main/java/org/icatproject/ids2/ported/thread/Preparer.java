@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import org.icatproject.Datafile;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
+import org.icatproject.ids.util.ZipHelper;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
@@ -31,6 +32,8 @@ public class Preparer implements Runnable {
 	@Override
 	public void run() {
 		logger.info("starting preparer");
+		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
+		Set<Ids2DataEntity> changing = requestQueues.getChanging();
 		// assuming restoration of the files is not needed, all files should be available on fast storage
 //		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
 //		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getDatasets());
@@ -51,17 +54,18 @@ public class Preparer implements Runnable {
 				break;
 			}
 		}
-		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
-		Set<Ids2DataEntity> changing = requestQueues.getChanging();
+		logger.info("dupa1");
 		synchronized (deferredOpsQueue) {
 			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
 			requestHelper.setDataEntityStatus(de, resultingStatus);
 			changing.remove(de);
 		}
-		
+		logger.info("dupa2 " + de.getRequest().getStatus());
 		// if it's the last DataEntity of the Request and all of them were successful
 		if (de.getRequest().getStatus() == StatusInfo.COMPLETED) {
-			// prepare zip
+			File zipFile = new File(PropertyHandler.getInstance().getStoragePreparedDir(),
+					de.getRequest().getPreparedId() + ".zip");
+			ZipHelper.compressFileList(zipFile, de.getRequest());
 		}
 	}
 	
