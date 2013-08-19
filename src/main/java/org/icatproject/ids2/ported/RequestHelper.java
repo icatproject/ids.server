@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Stateless;
@@ -26,12 +25,14 @@ import org.icatproject.ids2.ported.entity.Ids2DataEntity;
 import org.icatproject.ids2.ported.entity.Ids2DatafileEntity;
 import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
 import org.icatproject.ids2.ported.entity.RequestEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Stateless
 public class RequestHelper {
 	private final static String DEFAULT_COMPRESS = "false";
 	private final static String DEFAULT_ZIP = "false";
-	private final static Logger logger = Logger.getLogger(RequestHelper.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(RequestHelper.class);
 	private PropertyHandler properties = PropertyHandler.getInstance();
 	private ICATClientBase icatClient;
 
