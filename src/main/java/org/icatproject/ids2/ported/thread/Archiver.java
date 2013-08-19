@@ -3,7 +3,6 @@ package org.icatproject.ids2.ported.thread;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
@@ -13,10 +12,12 @@ import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 //deletes files in the local storage (they'll stay in the archive)
 public class Archiver implements Runnable {
-	private final static Logger logger = Logger.getLogger(ProcessQueue.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(ProcessQueue.class);
 
 	private Ids2DataEntity de;
 	private RequestQueues requestQueues;
@@ -46,7 +47,7 @@ public class Archiver implements Runnable {
 					FileUtils.deleteDirectory(zipdir);
 					logger.info("Archive of  " + ds.getLocation() + " succesful");
 				} catch (Exception e) {
-					logger.severe("Archive of " + ds.getLocation() + " failed");
+					logger.error("Archive of " + ds.getLocation() + " failed");
 					resultingStatus = StatusInfo.INCOMPLETE;
 				}
 			}
@@ -55,7 +56,7 @@ public class Archiver implements Runnable {
 				logger.info("Archive of " + de + " completed successfully");
 			}
 			else {
-				logger.warning("Archive of " + de + " completed with errors");
+				logger.warn("Archive of " + de + " completed with errors");
 			}
 			synchronized (deferredOpsQueue) {
 				logger.info(String.format("Changing status of %s to %s", de, resultingStatus));

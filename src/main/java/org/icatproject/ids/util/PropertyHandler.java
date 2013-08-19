@@ -7,16 +7,17 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 import org.icatproject.ids.storage.StorageInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * Load the properties specified in the properties file ids.properties.
  */
 public class PropertyHandler {
 
-    private static final Logger logger = Logger.getLogger(PropertyHandler.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
     private static PropertyHandler instance = null;
 
     private int numberOfDaysToExpire;
@@ -40,7 +41,7 @@ public class PropertyHandler {
             logger.info("Property file " + f + " loaded");
         } catch (Exception e) {
             String msg = "Problem with " + f.getAbsolutePath() + ": " + e.getMessage();
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
 
@@ -51,11 +52,11 @@ public class PropertyHandler {
             connection.connect();
         } catch (MalformedURLException e) {
             String msg = "Invalid property ICAT_URL (" + icatURL + "). Check URL format";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         } catch (IOException e) {
             String msg = "Unable to contact URL supplied for ICAT_URL (" + icatURL + ")";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
 
@@ -64,7 +65,7 @@ public class PropertyHandler {
             String msg = "Invalid property NUMBER_OF_DAYS_TO_EXPIRE ("
                     + props.getProperty("NUMBER_OF_DAYS_TO_EXPIRE")
                     + "). Must be an integer greater than 0.";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
 
@@ -74,7 +75,7 @@ public class PropertyHandler {
             String msg = "Invalid property NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE ("
                     + props.getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE")
                     + ") Must be an integer greater than 0.";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
         
@@ -89,7 +90,7 @@ public class PropertyHandler {
             String msg = "Invalid property WRITE_DELAY_SECONDS ("
                     + props.getProperty("WRITE_DELAY_SECONDS")
                     + "). Must be an integer greater than 0.";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
         
@@ -98,21 +99,21 @@ public class PropertyHandler {
             String msg = "Invalid property PROCESS_QUEUE_INTERVAL_SECONDS ("
                     + props.getProperty("PROCESS_QUEUE_INTERVAL_SECONDS")
                     + "). Must be an integer greater than 0.";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
         
         String storageInterfaceImplementationName = props.getProperty("STORAGE_INTERFACE_IMPLEMENTATION");
         if (storageInterfaceImplementationName == null) {
         	String msg = "Property STORAGE_INTERFACE_IMPLEMENTATION must be set.";
-        	logger.severe(msg);
+        	logger.error(msg);
         	throw new IllegalStateException(msg);
         }
         try {
         	storageInterfaceImplementation = (Class<StorageInterface>) Class.forName(storageInterfaceImplementationName);
         } catch (Exception e) {
         	String msg = "Could not get class implementing StorageInterface from " + storageInterfaceImplementationName;
-        	logger.severe(msg);
+        	logger.error(msg);
         	throw new IllegalStateException(msg);
         }
     }
@@ -173,7 +174,7 @@ public class PropertyHandler {
 		// logger.severe(property + " = " + res); // TODO remove
         if (res == null) {
             String msg = "Property " + property + " must be set.";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
 
@@ -181,7 +182,7 @@ public class PropertyHandler {
         if (!tmp.exists()) {
             String msg = "Invalid " + property + ". Directory " + res
                     + " not found. Please create.";
-            logger.severe(msg);
+            logger.error(msg);
             throw new IllegalStateException(msg);
         }
         return res;

@@ -7,8 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -16,11 +14,13 @@ import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.util.StatusInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class LocalFileStorage implements StorageInterface {
 	
-	private final static Logger logger = Logger.getLogger(LocalFileStorage.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(LocalFileStorage.class);
 	
 	private String storageDir;
 	private String storageZipDir;
@@ -30,7 +30,7 @@ public class LocalFileStorage implements StorageInterface {
     	this.storageDir = storageDir;
     	this.storageZipDir = storageZipDir;
     	this.storageArchiveDir = storageArchiveDir;
-    	logger.log(Level.INFO, "LocalFileStorage constructed");
+    	logger.info("LocalFileStorage constructed");
     }
     
     @Override
@@ -50,7 +50,7 @@ public class LocalFileStorage implements StorageInterface {
 	    		final File archdir = new File(storageArchiveDir, location);
 	    		//				logger.info("will restore from " + archdir.getAbsolutePath() + " that " + (archdir.exists() ? "exists" : "doesn't exist"));
 	    		if (!archdir.exists()) {
-	    			logger.severe("No archive data to restore at " + location);
+	    			logger.error("No archive data to restore at " + location);
 	    			return StatusInfo.NOT_FOUND;
 	    		}
 	    		File zipfiletmp = new File(zipdir, "files.zip.tmp");
@@ -69,7 +69,7 @@ public class LocalFileStorage implements StorageInterface {
 	    		logger.info("Restore of  " + location + " succesful");
     		}
     	} catch (final IOException e) {
-    		logger.severe("Restorer failed " + e.getMessage());
+    		logger.error("Restorer failed " + e.getMessage());
     		return StatusInfo.ERROR;
     	}
 		return StatusInfo.COMPLETED;

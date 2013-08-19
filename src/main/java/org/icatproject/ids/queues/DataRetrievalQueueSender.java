@@ -1,8 +1,5 @@
 package org.icatproject.ids.queues;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.jms.Connection;
@@ -14,6 +11,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.icatproject.ids.entity.DownloadRequestEntity;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -40,7 +38,7 @@ public class DataRetrievalQueueSender
             messageProducer.close();
             connection.close();
         } catch (JMSException ex) {
-            Logger.getLogger(DataRetrievalQueueSender.class.getName()).log(Level.SEVERE, "Couldn't send message to DataRetrievalQueue", ex);
+        	LoggerFactory.getLogger(DataRetrievalQueueSender.class).error("Couldn't send message to DataRetrievalQueue", ex);
         }
     }
 }

@@ -14,6 +14,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.icatproject.ids.entity.DownloadRequestEntity;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -41,7 +42,7 @@ public class InfoRetrievalQueueSender
             messageProducer.close();
             connection.close();
         } catch (JMSException ex) {
-            Logger.getLogger(InfoRetrievalQueueSender.class.getName()).log(Level.SEVERE, "Couldn't send message to InfoRetrievalQueue", ex);
+        	LoggerFactory.getLogger(InfoRetrievalQueueSender.class).error("Couldn't send message to InfoRetrievalQueue", ex);
         }        
     }
 }

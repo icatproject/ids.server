@@ -13,7 +13,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Logger;
 
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
@@ -28,6 +27,8 @@ import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
 import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -37,7 +38,7 @@ import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
 @Stateless
 public class DownloadRequestHelper
 {
-	private final static Logger logger = Logger.getLogger(DownloadRequestHelper.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(DownloadRequestHelper.class);
 	
     @PersistenceContext(unitName = "IDS-PU")
     private EntityManager em;

@@ -3,7 +3,6 @@ package org.icatproject.ids2.ported.thread;
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.icatproject.Datafile;
 import org.icatproject.ids.util.PropertyHandler;
@@ -13,11 +12,13 @@ import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 //copies files from the archive to the local storage (in zip), also creates an unzipped copy
 public class Preparer implements Runnable {
 
-	private final static Logger logger = Logger.getLogger(ProcessQueue.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(ProcessQueue.class);
 
 	private Ids2DataEntity de;
 	private RequestQueues requestQueues;

@@ -6,18 +6,18 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import org.icatproject.Datafile;
 import org.icatproject.ids2.ported.entity.RequestEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ZipHelper {
 
-    private final static Logger logger = Logger.getLogger(ZipHelper.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(ZipHelper.class);
 
     public static void compressFileList(File zipFile, RequestEntity request
     		/*, Set<String> fileSet, String relativePath, boolean compress*/) {
@@ -28,7 +28,7 @@ public class ZipHelper {
         writeZipFileFromStringFileList(zipFile, request.getIcatDatafiles(), 
         		PropertyHandler.getInstance().getStorageDir(), request.isCompress());
         long endTime = System.currentTimeMillis();
-        logger.log(Level.INFO, "Time took to zip the files: " + (endTime - startTime));
+        logger.info("Time took to zip the files: " + (endTime - startTime));
     }
 
 //    public static void getAllFiles(File dir, List<File> fileList) {
@@ -56,7 +56,7 @@ public class ZipHelper {
             try {
                 zipFile.createNewFile();
             } catch (IOException ex) {
-                logger.log(Level.SEVERE, null, ex);
+                logger.error(null, ex);
             }
             return;
         }
@@ -102,7 +102,7 @@ public class ZipHelper {
                 zipFilePath = zipFilePath.substring(1);
             }
             
-            logger.log(Level.INFO, "Writing '" + zipFilePath + "' to zip file");
+            logger.info("Writing '" + zipFilePath + "' to zip file");
             ZipEntry zipEntry = new ZipEntry(zipFilePath);
             try {
                 zos.putNextEntry(zipEntry);
@@ -114,11 +114,11 @@ public class ZipHelper {
                 zos.closeEntry();
                 fis.close();
             } catch (ZipException ex) {
-                logger.log(Level.INFO, "Skipping the file" + ex);
+                logger.info("Skipping the file" + ex);
                 fis.close();
             }
         } catch (IOException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            logger.error(null, ex);
         }
     }
 }

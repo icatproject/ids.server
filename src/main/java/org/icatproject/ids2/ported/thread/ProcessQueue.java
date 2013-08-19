@@ -6,17 +6,18 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Logger;
 
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProcessQueue extends TimerTask {
 
-	private final static Logger logger = Logger.getLogger(ProcessQueue.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(ProcessQueue.class);
 
 	private RequestQueues requestQueues;
 	private Timer timer;

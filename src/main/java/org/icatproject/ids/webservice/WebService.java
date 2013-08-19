@@ -9,8 +9,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -50,6 +48,8 @@ import org.icatproject.ids2.ported.RequestedState;
 import org.icatproject.ids2.ported.entity.Ids2DataEntity;
 import org.icatproject.ids2.ported.entity.RequestEntity;
 import org.icatproject.ids2.ported.thread.ProcessQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of the IDS specification for the IDS Reference Implementation.
@@ -59,7 +59,7 @@ import org.icatproject.ids2.ported.thread.ProcessQueue;
 @Stateless
 public class WebService {
 
-	private final static Logger logger = Logger.getLogger(WebService.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(WebService.class);
 
 	private long archiveWriteDelayMillis = PropertyHandler.getInstance().getWriteDelaySeconds() * 1000L;
 	private Timer timer = new Timer();
@@ -110,7 +110,7 @@ public class WebService {
 			@FormParam("datafileIds") String datafileIds,
 			@DefaultValue("false") @FormParam("compress") String compress, @FormParam("zip") String zip) {
 		RequestEntity requestEntity = null;
-		logger.log(Level.INFO, "prepareData received");
+		logger.info("prepareData received");
 		// 501
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
@@ -135,7 +135,7 @@ public class WebService {
 			throw new BadRequestException("The compress parameter is invalid");
 		}
 		// at this point we're sure, that all arguments are valid
-		logger.log(Level.INFO, "New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
+		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
 				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "' " + "compress='" + compress
 				+ "' " + "zip='" + zip + "'");
 
@@ -198,7 +198,7 @@ public class WebService {
 			throw new InternalServerErrorException(t.getMessage());
 		}
 
-		logger.log(Level.INFO, "New webservice request: getStatus " + "preparedId='" + preparedId + "'");
+		logger.info("New webservice request: getStatus " + "preparedId='" + preparedId + "'");
 
 		// convert internal status to appropriate external status
 		switch (StatusInfo.valueOf(status)) {
@@ -262,7 +262,7 @@ public class WebService {
 			throw new BadRequestException("The offset parameter is invalid");
 		}
 
-		logger.log(Level.INFO, "New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='"
+		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='"
 				+ outname + "' " + "offset='" + offset + "'");
 
 		try {
@@ -404,7 +404,7 @@ public class WebService {
 			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
 		}
 
-		logger.log(Level.INFO, "New webservice request: archive " + "investigationIds='" + investigationIds + "' "
+		logger.info("New webservice request: archive " + "investigationIds='" + investigationIds + "' "
 				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
 		try {
@@ -442,7 +442,7 @@ public class WebService {
 			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafilesIds) {
 		Response status = null;
-		logger.log(Level.INFO, "received getStatus with preparedId = " + preparedId);
+		logger.info("received getStatus with preparedId = " + preparedId);
 		if (preparedId != null) {
 			status = getStatus(preparedId);
 		} else {
@@ -509,7 +509,7 @@ public class WebService {
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds) {
 		RequestEntity requestEntity = null;
-		logger.log(Level.INFO, "restore received");
+		logger.info("restore received");
 		// 501
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
@@ -528,7 +528,7 @@ public class WebService {
 			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
 		}
 		// at this point we're sure, that all arguments are valid
-		logger.log(Level.INFO, "New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
+		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
 				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
 		try {
