@@ -145,8 +145,7 @@ public class RequestHelper {
 			}
 		}
 		logger.info("all tasks in request " + request + " finished");
-		request.setStatus(resultingRequestStatus);
-		em.merge(request);
+		setRequestStatus(request, resultingRequestStatus);
 	}
 	
 	public void setRequestStatus(RequestEntity request, StatusInfo status) {
