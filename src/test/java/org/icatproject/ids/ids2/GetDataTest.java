@@ -22,6 +22,7 @@ import org.icatproject.ICATService;
 import org.icatproject.ids.Setup;
 import org.icatproject.ids.webservice.Status;
 import org.icatproject.ids.webservice.exceptions.ForbiddenException;
+import org.icatproject.idsclient.Response;
 import org.icatproject.idsclient.TestingClient;
 import org.icatproject.idsclient.exception.TestingClientBadRequestException;
 import org.icatproject.idsclient.exception.TestingClientForbiddenException;
@@ -137,133 +138,129 @@ public class GetDataTest {
         testingClient.getDataTest(preparedId, null, badOffset.longValue());
     }
 
-//    @Test
-//    public void correctBehaviourNoOffsetTest() throws IOException, IDSException, NoSuchAlgorithmException {
-//        TestingClient client = new TestingClient(setup.getIdsUrl());
-//        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
-//                null, null);
-//
-//        Status status = null;
-//        do {
-//            status = client.getStatus(preparedId);
-//        } while (Status.RESTORING.equals(status));
-//
-//        Response response = client.getDataTest(preparedId, null, null);
-//        Map<String, String> map = filenameMD5Map(response.getResponse());
-//        checkMD5Values(map);
-//    }
-//
-//    @Test
-//    public void correctBehaviourNoOffsetMultipleDatafilesTest() throws IOException, IDSException,
-//            NoSuchAlgorithmException {
-//        TestingClient client = new TestingClient(setup.getIdsUrl());
-//        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getCommaSepDatafileIds(),
-//                null, null);
-//
-//        Status status = null;
-//        do {
-//            status = client.getStatus(preparedId);
-//        } while (Status.RESTORING.equals(status));
-//
-//        Response response = client.getDataTest(preparedId, null, null);
-//        Map<String, String> map = filenameMD5Map(response.getResponse());
-//        checkMD5Values(map);
-//    }
-//
-//    @Test
-//    public void correctBehaviourNoOffsetWithDatasetTest() throws IOException, IDSException, NoSuchAlgorithmException {
-//        TestingClient client = new TestingClient(setup.getIdsUrl());
-//        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0), null,
-//                null, null);
-//
-//        Status status = null;
-//        do {
-//            status = client.getStatus(preparedId);
-//        } while (Status.RESTORING.equals(status));
-//
-//        Response response = client.getDataTest(preparedId, null, null);
-//        Map<String, String> map = filenameMD5Map(response.getResponse());
-//        checkMD5Values(map);
-//    }
-//
-//    @Test
-//    public void correctBehaviourNoOffsetWithDatasetAndDatafileTest() throws IOException, IDSException,
-//            NoSuchAlgorithmException {
-//        TestingClient client = new TestingClient(setup.getIdsUrl());
-//
-//        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0),
-//                setup.getCommaSepDatafileIds(), null, null);
-//
-//        Status status = null;
-//        do {
-//            status = client.getStatus(preparedId);
-//        } while (Status.RESTORING.equals(status));
-//
-//        Response response = client.getDataTest(preparedId, null, null);
-//        Map<String, String> map = filenameMD5Map(response.getResponse());
-//        checkMD5Values(map);
-//    }
-//
-//    @Test
-//    public void correctBehaviourWithOffsetTest() throws IOException, IDSException, NoSuchAlgorithmException {
-//        TestingClient client = new TestingClient(setup.getIdsUrl());
-//        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
-//                null, null);
-//
-//        Status status = null;
-//        do {
-//            status = client.getStatus(preparedId);
-//        } while (Status.RESTORING.equals(status));
-//
-//        // request the zip file twice, with and without an offset
-//        Response zip = client.getDataTest(preparedId, null, null);
-//        Response zipoffset = client.getDataTest(preparedId, null, goodOffset.longValue());
-//
-//        // check that the full zip file is valid
-//        Map<String, String> map = filenameMD5Map(zip.getResponse());
-//        checkMD5Values(map);
-//
-//        // compare the two zip files byte by byte taking into account the offset
-//        byte[] a = zip.getResponse().toByteArray();
-//        byte[] b = zipoffset.getResponse().toByteArray();
-//        for (int i = 0; i < b.length; i++) {
-//            Assert.assertEquals("Byte offset: " + i, (byte) b[i], (byte) a[i + goodOffset]);
-//        }
-//    }
-//    
-//    @Test
-//    public void correctBehaviourFilenameWithExtensionTest() throws IOException, IDSException,
-//            NoSuchAlgorithmException {
-//        TestingClient client = new TestingClient(setup.getIdsUrl());
-//        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
-//                null, null);
-//
-//        Status status = null;
-//        do {
-//            status = client.getStatus(preparedId);
-//        } while (Status.RESTORING.equals(status));
-//
-//        Response response = client.getDataTest(preparedId, "testfilenamewithextension.zip", null);
-//        Assert.assertEquals("Downloaded filename does not match requested filename",
-//                response.getFilename(), "testfilenamewithextension.zip");
-//    }
-//
-//    @Test
-//    public void correctBehaviourFilenameWithoutExtensionTest() throws IOException, IDSException,
-//            NoSuchAlgorithmException {
-//        TestingClient client = new TestingClient(setup.getIdsUrl());
-//        String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
-//                null, null);
-//
-//        Status status = null;
-//        do {
-//            status = client.getStatus(preparedId);
-//        } while (Status.RESTORING.equals(status));
-//
-//        Response response = client.getDataTest(preparedId, "testfilenamewithoutextension", null);
-//        Assert.assertEquals("Downloaded filename does not match requested filename",
-//                response.getFilename(), "testfilenamewithoutextension.zip");
-//    }
+    @Test
+    public void correctBehaviourNoOffsetTest() throws Exception {
+        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
+                null, null);
+
+        Status status = null;
+        do {
+        	Thread.sleep(1000);
+            status = testingClient.getStatusTest(preparedId);
+        } while (Status.RESTORING.equals(status));
+
+        Response response = testingClient.getDataTest(preparedId, null, null);
+        Map<String, String> map = filenameMD5Map(response.getResponse());
+        checkMD5Values(map);
+    }
+
+    @Test
+    public void correctBehaviourNoOffsetMultipleDatafilesTest() throws Exception {
+        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getCommaSepDatafileIds(),
+                null, null);
+
+        Status status = null;
+        do {
+        	Thread.sleep(1000);
+            status = testingClient.getStatusTest(preparedId);
+        } while (Status.RESTORING.equals(status));
+
+        Response response = testingClient.getDataTest(preparedId, null, null);
+        Map<String, String> map = filenameMD5Map(response.getResponse());
+        checkMD5Values(map);
+    }
+
+    @Test
+    public void correctBehaviourNoOffsetWithDatasetTest() throws Exception {
+        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0), null,
+                null, null);
+
+        Status status = null;
+        do {
+        	Thread.sleep(1000);
+            status = testingClient.getStatusTest(preparedId);
+        } while (Status.RESTORING.equals(status));
+
+        Response response = testingClient.getDataTest(preparedId, null, null);
+        Map<String, String> map = filenameMD5Map(response.getResponse());
+        checkMD5Values(map);
+    }
+
+    @Test
+    public void correctBehaviourNoOffsetWithDatasetAndDatafileTest() throws Exception {
+
+        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0),
+                setup.getCommaSepDatafileIds(), null, null);
+
+        Status status = null;
+        do {
+        	Thread.sleep(1000);
+            status = testingClient.getStatusTest(preparedId);
+        } while (Status.RESTORING.equals(status));
+
+        Response response = testingClient.getDataTest(preparedId, null, null);
+        Map<String, String> map = filenameMD5Map(response.getResponse());
+        checkMD5Values(map);
+    }
+
+    @Test
+    public void correctBehaviourWithOffsetTest() throws Exception {
+        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
+                null, null);
+
+        Status status = null;
+        do {
+        	Thread.sleep(1000);
+            status = testingClient.getStatusTest(preparedId);
+        } while (Status.RESTORING.equals(status));
+
+        // request the zip file twice, with and without an offset
+        Response zip = testingClient.getDataTest(preparedId, null, null);
+        Response zipoffset = testingClient.getDataTest(preparedId, null, goodOffset.longValue());
+
+        // check that the full zip file is valid
+        Map<String, String> map = filenameMD5Map(zip.getResponse());
+        checkMD5Values(map);
+
+        // compare the two zip files byte by byte taking into account the offset
+        byte[] a = zip.getResponse().toByteArray();
+        byte[] b = zipoffset.getResponse().toByteArray();
+        for (int i = 0; i < b.length; i++) {
+            Assert.assertEquals("Byte offset: " + i, (byte) b[i], (byte) a[i + goodOffset]);
+        }
+    }
+    
+    @Test
+    public void correctBehaviourFilenameWithExtensionTest() throws Exception {
+        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
+                null, null);
+
+        Status status = null;
+        do {
+        	Thread.sleep(1000);
+            status = testingClient.getStatusTest(preparedId);
+        } while (Status.RESTORING.equals(status));
+
+        Response response = testingClient.getDataTest(preparedId, "testfilenamewithextension.zip", null);
+        Assert.assertEquals("Downloaded filename does not match requested filename",
+                response.getFilename(), "testfilenamewithextension.zip");
+    }
+
+    @Test
+    public void correctBehaviourFilenameWithoutExtensionTest() throws Exception {
+        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
+                null, null);
+
+        Status status = null;
+        do {
+        	Thread.sleep(1000);
+            status = testingClient.getStatusTest(preparedId);
+        } while (Status.RESTORING.equals(status));
+
+        Response response = testingClient.getDataTest(preparedId, "testfilenamewithoutextension", null);
+        Assert.assertEquals("Downloaded filename does not match requested filename",
+                response.getFilename(), "testfilenamewithoutextension.zip");
+    }
 
     /*
      * Takes in a outputstream of a zip file. Creates a mapping between the filenames and their MD5
