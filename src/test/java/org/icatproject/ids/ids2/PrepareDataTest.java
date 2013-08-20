@@ -1,11 +1,8 @@
 package org.icatproject.ids.ids2;
 
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.net.URL;

@@ -1,6 +1,7 @@
 package org.icatproject.ids.ids2;
 
 import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.net.URL;
 

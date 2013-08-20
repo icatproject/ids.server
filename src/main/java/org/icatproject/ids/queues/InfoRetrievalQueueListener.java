@@ -5,7 +5,10 @@ import java.net.MalformedURLException;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 
 import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.util.DownloadRequestHelper;

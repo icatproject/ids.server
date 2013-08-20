@@ -245,7 +245,8 @@ public class WebService {
 	 * @return HTTP response containing the ZIP file
 	 */
 	public Response getData(String preparedId, String outname, String offset) {
-		final DownloadRequestEntity downloadRequestEntity;
+//		final DownloadRequestEntity downloadRequestEntity;
+		final RequestEntity requestEntity;
 		final Long offsetLong;
 		StreamingOutput strOut = null;
 		String name = null;
@@ -267,7 +268,7 @@ public class WebService {
 				+ outname + "' " + "offset='" + offset + "'");
 
 		try {
-			downloadRequestEntity = downloadRequestHelper.getDownloadRequestByPreparedId(preparedId);
+			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
 		} catch (PersistenceException e) {
 			throw new InternalServerErrorException("Unable to connect to the database");
 		} catch (EJBException e) {
@@ -280,7 +281,7 @@ public class WebService {
 
 		// the internal download request status must be COMPLETE in order to
 		// download the zip
-		switch (StatusInfo.valueOf(downloadRequestEntity.getStatus())) {
+		switch (requestEntity.getStatus()) {
 		case SUBMITTED:
 		case INFO_RETRIVING:
 		case INFO_RETRIVED:
@@ -305,7 +306,7 @@ public class WebService {
 		// if no outname supplied give default name also suffix with .zip if
 		// absent
 		if (outname == null) {
-			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(downloadRequestEntity.getSubmittedTime());
+			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity.getSubmittedTime());
 			name = name + ".zip";
 		} else {
 			name = outname;
@@ -323,7 +324,7 @@ public class WebService {
 		}
 
 		File zipFile = new File(PropertyHandler.getInstance().getStorageZipDir() + File.separator
-				+ downloadRequestEntity.getPreparedId() + ".zip");
+				+ requestEntity.getPreparedId() + ".zip");
 
 		// if (zipFile.exists() == false) {
 		// throw new InternalServerErrorException("The zip file doesn't exist");
@@ -335,7 +336,7 @@ public class WebService {
 
 		// check if offset is larger than the file size
 		if (offsetLong >= zipFile.length()) {
-			System.out.println("\n\n\n\n\n\n" + downloadRequestEntity.getPreparedId() + "\n\n\n\n\n\n\n");
+			System.out.println("\n\n\n\n\n\n" + requestEntity.getPreparedId() + "\n\n\n\n\n\n\n");
 			throw new BadRequestException("Offset (" + offsetLong + " bytes) is larger than file size ("
 					+ zipFile.length() + " bytes)");
 		}
@@ -344,7 +345,7 @@ public class WebService {
 		strOut = new StreamingOutput() {
 			@Override
 			public void write(OutputStream output) throws IOException {
-				downloadRequestHelper.writeFileToOutputStream(downloadRequestEntity, output, offsetLong);
+				requestHelper.writeFileToOutputStream(requestEntity, output, offsetLong);
 			}
 		};
 

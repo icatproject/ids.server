@@ -23,7 +23,7 @@ public class ArchiveTest {
 
 	private static Setup setup = null;
 	private static ICAT icat;
-	TestingClient testingClient;
+	private TestingClient testingClient;
 
 	@BeforeClass
 	public static void setup() throws Exception {
