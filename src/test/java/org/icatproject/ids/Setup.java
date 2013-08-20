@@ -40,6 +40,8 @@ public class Setup {
     private String storageArchiveDir;
     private String storageZipDir;
     private String storageDir;
+    private String storagePreparedDir;
+    private String userLocalDir;
 
     public Setup() throws MalformedURLException, IcatException_Exception {
         InputStream is = getClass().getResourceAsStream("/test.properties");
@@ -74,6 +76,8 @@ public class Setup {
         storageArchiveDir = props.getProperty("STORAGE_ARCHIVE_DIR");
         storageZipDir = props.getProperty("STORAGE_ZIP_DIR");
         storageDir = props.getProperty("STORAGE_DIR");
+        storagePreparedDir = props.getProperty("STORAGE_PREPARED_DIR");
+        userLocalDir = props.getProperty("USER_LOCAL_DIR");
     }
 
     /*
@@ -140,6 +144,14 @@ public class Setup {
 
 	public String getStorageDir() {
 		return storageDir;
+	}
+
+	public String getStoragePreparedDir() {
+		return storagePreparedDir;
+	}
+
+	public String getUserLocalDir() {
+		return userLocalDir;
 	}
 
 	public String getIcatUrl() {

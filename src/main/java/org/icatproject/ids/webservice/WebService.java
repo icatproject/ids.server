@@ -28,6 +28,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.icatproject.Dataset;
 import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
@@ -569,7 +570,7 @@ public class WebService {
 			}
 
 			RequestedState state = null;
-			long oldDelay = archiveWriteDelayMillis;
+//			long oldDelay = archiveWriteDelayMillis;
 			// If we are overwriting a DE from a different request, we should
 			// set its status to COMPLETED and remove it from the
 			// deferredOpsQueue.
@@ -580,13 +581,14 @@ public class WebService {
 				Ids2DataEntity oldDe = iter.next();
 				if (oldDe.overlapsWith(de)) {
 					requestHelper.setDataEntityStatus(oldDe, StatusInfo.INCOMPLETE);
-					requestQueues.getWriteTimes().remove(oldDe);
+//					requestQueues.getWriteTimes().remove(oldDe);
 					state = deferredOpsQueue.get(oldDe);
-					Long probablyOldDelay = requestQueues.getWriteTimes().get(oldDe);
-					if (probablyOldDelay != null) {
-						oldDelay = probablyOldDelay;
-					}
+//					Long probablyOldDelay = requestQueues.getWriteTimes().get(oldDe);
+//					if (probablyOldDelay != null) {
+//						oldDelay = probablyOldDelay;
+//					}
 					iter.remove();
+					break;
 				}
 			}
 			// if there's no overlapping DE, or the one overlapping is to be
@@ -595,7 +597,7 @@ public class WebService {
 			if (state == null || state == RequestedState.PREPARE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setNewDelay(de);
+					this.setDelay(de.getIcatDataset());
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				} else if (deferredOp == DeferredOp.RESTORE) {
@@ -604,7 +606,7 @@ public class WebService {
 			} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setNewDelay(de);
+					this.setDelay(de.getIcatDataset());
 				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				} else {
@@ -613,7 +615,7 @@ public class WebService {
 			} else if (state == RequestedState.RESTORE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setNewDelay(de);
+					this.setDelay(de.getIcatDataset());
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				} else {
@@ -622,41 +624,33 @@ public class WebService {
 			} else if (state == RequestedState.WRITE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setNewDelay(de);
+					this.setDelay(de.getIcatDataset());
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setExactDelay(de, oldDelay);
+//					this.setExactDelay(de, oldDelay);
 				}
 			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-					this.setNewDelay(de);
+					this.setDelay(de.getIcatDataset());
 				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setExactDelay(de, oldDelay);
+//					this.setExactDelay(de, oldDelay);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-					this.setExactDelay(de, oldDelay);
+//					this.setExactDelay(de, oldDelay);
 				}
 			}
 		}
 	}
 
-	private void setNewDelay(Ids2DataEntity de) {
-		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
+	private void setDelay(Dataset ds) {
+		Map<Dataset, Long> writeTimes = requestQueues.getWriteTimes();
 
-		writeTimes.put(de, System.currentTimeMillis() + archiveWriteDelayMillis);
-		final Date d = new Date(writeTimes.get(de));
-		logger.info("Requesting delay of writing of " + de + " till " + d + " (new value)");
-	}
-
-	private void setExactDelay(Ids2DataEntity de, long oldDelay) {
-		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
-
-		writeTimes.put(de, oldDelay);
-		final Date d = new Date(writeTimes.get(de));
-		logger.info("Requesting delay of writing of " + de + " till " + d + " (old value)");
+		writeTimes.put(ds, System.currentTimeMillis() + archiveWriteDelayMillis);
+		final Date d = new Date(writeTimes.get(ds));
+		logger.info("Requesting delay of writing of " + ds + " till " + d);
 	}
 }

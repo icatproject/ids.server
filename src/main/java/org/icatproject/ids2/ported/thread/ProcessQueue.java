@@ -34,7 +34,7 @@ public class ProcessQueue extends TimerTask {
 	public void run() {
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		Map<Ids2DataEntity, Long> writeTimes = requestQueues.getWriteTimes();
+		Map<Dataset, Long> writeTimes = requestQueues.getWriteTimes();
 
 		try {
 			synchronized (deferredOpsQueue) {
@@ -52,8 +52,8 @@ public class ProcessQueue extends TimerTask {
 						final RequestedState state = opEntry.getValue();
 						logger.info("Will process " + de + " with " + state);
 						if (state == RequestedState.WRITE_REQUESTED) {
-							if (now > writeTimes.get(de)) {
-								writeTimes.remove(de);
+							if (now > writeTimes.get(de.getIcatDataset())) {
+								writeTimes.remove(de.getIcatDataset());
 								changing.add(de.getIcatDataset());
 								it.remove();
 								// final Thread w = new Thread(new
@@ -61,8 +61,8 @@ public class ProcessQueue extends TimerTask {
 								// w.start();
 							}
 						} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-							if (now > writeTimes.get(de)) {
-								writeTimes.remove(de);
+							if (now > writeTimes.get(de.getIcatDataset())) {
+								writeTimes.remove(de.getIcatDataset());
 								changing.add(de.getIcatDataset());
 								it.remove();
 								// final Thread w = new Thread(new

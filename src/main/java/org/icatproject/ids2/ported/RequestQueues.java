@@ -11,14 +11,14 @@ import org.icatproject.ids2.ported.entity.Ids2DataEntity;
 public class RequestQueues {
 	private final Map<Ids2DataEntity, RequestedState> deferredOpsQueue;
 	private final Set<Dataset> changing;
-	private final Map<Ids2DataEntity, Long> writeTimes;
+	private final Map<Dataset, Long> writeTimes;
 	
 	private static RequestQueues instance = null;
 	
 	private RequestQueues() {
 		deferredOpsQueue = new HashMap<Ids2DataEntity, RequestedState>();
 		changing = new HashSet<Dataset>();
-		writeTimes = new HashMap<Ids2DataEntity, Long>();
+		writeTimes = new HashMap<Dataset, Long>();
 	}
 	
 	public static RequestQueues getInstance() {
@@ -33,7 +33,7 @@ public class RequestQueues {
 	public Set<Dataset> getChanging() {
 		return changing;
 	}
-	public Map<Ids2DataEntity, Long> getWriteTimes() {
+	public Map<Dataset, Long> getWriteTimes() {
 		return writeTimes;
 	}
 		
