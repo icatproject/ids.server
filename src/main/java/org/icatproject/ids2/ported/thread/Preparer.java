@@ -6,6 +6,8 @@ import java.util.Set;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
+import org.icatproject.ids.storage.StorageFactory;
+import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids.util.ZipHelper;
@@ -36,9 +38,6 @@ public class Preparer implements Runnable {
 		logger.info("starting preparer");
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		// assuming restoration of the files is not needed, all files should be available on fast storage
-//		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
-//		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getDatasets());
 		
 		// if one of the previous DataEntities of the Request failed, there's no point continuing with this one
 		if (de.getRequest().getStatus() == StatusInfo.INCOMPLETE) {
@@ -48,7 +47,7 @@ public class Preparer implements Runnable {
 		if (de.getRequest().getStatus() == StatusInfo.SUBMITTED) {
 			requestHelper.setRequestStatus(de.getRequest(), StatusInfo.RETRIVING);
 		}
-		StatusInfo resultingStatus = StatusInfo.COMPLETED; // let's assume everything will go OK
+		StatusInfo resultingStatus = StatusInfo.COMPLETED; // let's assume all files are available on fast storage
 		for (Datafile df : de.getIcatDatafiles()) {
 			File file = new File(PropertyHandler.getInstance().getStorageDir(), df.getLocation());
 			if (!file.exists()) {
@@ -56,6 +55,12 @@ public class Preparer implements Runnable {
 				break;
 			}
 		}
+
+		if (resultingStatus.equals(StatusInfo.INCOMPLETE)) {
+			StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
+			resultingStatus = storageInterface.restoreFromArchive(de.getIcatDataset());
+		}
+		
 		logger.info("dupa1");
 		synchronized (deferredOpsQueue) {
 			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));

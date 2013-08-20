@@ -30,6 +30,7 @@ import javax.ws.rs.core.StreamingOutput;
 
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.DownloadRequestEntity;
+import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
 import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
 import org.icatproject.ids.queues.InfoRetrievalQueueSender;
@@ -153,6 +154,8 @@ public class WebService {
 			}
 		} catch (ICATSessionException e) {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+		} catch (ICATInsufficientPrivilegesException e) {
+			throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
 		} catch (ICATInternalException e) {
 			throw new InternalServerErrorException("Unable to connect to ICAT server");
 		} catch (PersistenceException e) {
@@ -323,7 +326,7 @@ public class WebService {
 			offsetLong = 0L;
 		}
 
-		File zipFile = new File(PropertyHandler.getInstance().getStorageZipDir() + File.separator
+		File zipFile = new File(PropertyHandler.getInstance().getStoragePreparedDir() + File.separator
 				+ requestEntity.getPreparedId() + ".zip");
 
 		// if (zipFile.exists() == false) {
