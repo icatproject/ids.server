@@ -32,6 +32,7 @@ import org.icatproject.Dataset;
 import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
 import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
+import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
 import org.icatproject.ids.queues.InfoRetrievalQueueSender;
 import org.icatproject.ids.util.DownloadRequestHelper;
@@ -156,6 +157,8 @@ public class WebService {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
 		} catch (ICATInsufficientPrivilegesException e) {
 			throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+		} catch (ICATNoSuchObjectException e) {
+			throw new NotFoundException("Could not find requested objects");
 		} catch (ICATInternalException e) {
 			throw new InternalServerErrorException("Unable to connect to ICAT server");
 		} catch (PersistenceException e) {
