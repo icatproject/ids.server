@@ -1,6 +1,9 @@
 package org.icatproject.ids.webservice;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,8 +31,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
-import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
 import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
 import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
@@ -492,12 +495,39 @@ public class WebService {
 	public Response put(
 			InputStream body, // TODO: Check that this the correct way of
 								// handling the data input
-			@QueryParam("sessionId") String sessionId, @QueryParam("name") String name,
+			@QueryParam("sessionId") String sessionId, @QueryParam("name") String name/*,
 			@QueryParam("dataFileFormatId") String dataFileFormatId, @QueryParam("datasetId") String datasetId,
 			@QueryParam("description") String description, @QueryParam("doi") String doi,
 			@QueryParam("datafileCreateTime") String datafileCreateTime,
-			@QueryParam("datafileModTime") String datafileModTime) {
-		throw new NotImplementedException("The method 'put' has not been implemented");
+			@QueryParam("datafileModTime") String datafileModTime*/) throws Exception {
+		logger.info(String.format("sessionId=%s, name=%s", sessionId, name));
+		try {
+			File file = new File(PropertyHandler.getInstance().getStorageDir(), name);
+
+			final File tfile = File.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
+			final long tbytes = storeFile(body, tfile);
+			try {
+//				final long datasetId = Long.parseLong(datasetidString);
+//				final String dsLocation = this.registerDatafile(sessionid, filename, location,
+//						fileformatName, fileformatVersion, datasetId, tbytes);
+				FileUtils.forceMkdir(file.getParentFile());
+				tfile.renameTo(file);
+//				File zipfile = new File(new File(this.zipdir, dsLocation), "files.zip");
+//				if (zipfile.exists()) {
+//					zipfile.delete();
+//				}
+				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
+//				this.queue(dsLocation, DeferredOp.WRITE);
+			} catch (IOException e) {
+				FileUtils.forceDelete(tfile);
+				throw e;
+			}
+
+		} catch (final IOException e) {
+			logger.error(e.getMessage());
+			throw e;
+		}
+		return Response.status(200).entity(name).build();
 	}
 
 	@DELETE
@@ -659,5 +689,31 @@ public class WebService {
 		writeTimes.put(ds, System.currentTimeMillis() + archiveWriteDelayMillis);
 		final Date d = new Date(writeTimes.get(ds));
 		logger.info("Requesting delay of writing of " + ds + " till " + d);
+	}
+	
+	private long storeFile(InputStream requestBody, File file) throws IOException {
+		BufferedInputStream is = null;
+		BufferedOutputStream os = null;
+		int BUFSIZ = 1024; // extract it to properties or sth
+		long tbytes;
+		try {
+			is = new BufferedInputStream(requestBody, BUFSIZ);
+			os = new BufferedOutputStream(new FileOutputStream(file), BUFSIZ);
+			final byte[] bytes = new byte[BUFSIZ];
+			int n = 0;
+			tbytes = 0;
+			while ((n = is.read(bytes, 0, BUFSIZ)) != -1) {
+				os.write(bytes, 0, n);
+				tbytes += n;
+			}
+		} finally {
+			if (is != null) {
+				is.close();
+			}
+			if (os != null) {
+				os.close();
+			}
+		}
+		return tbytes;
 	}
 }

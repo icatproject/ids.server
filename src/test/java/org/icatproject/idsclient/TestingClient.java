@@ -1,6 +1,9 @@
 package org.icatproject.idsclient;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -65,7 +68,7 @@ public class TestingClient {
         if (zip != null)
             parameters.put("zip", zip);
 
-        Response response = HTTPConnect("POST", "prepareData", parameters);
+        Response response = HTTPConnect("POST", "prepareData", parameters, null);
         return response.getResponse().toString().trim();
     }
     
@@ -86,7 +89,7 @@ public class TestingClient {
         if (datafileIds != null)
             parameters.put("datafileIds", datafileIds);
 
-        Response response = HTTPConnect("POST", "restore", parameters);
+        Response response = HTTPConnect("POST", "restore", parameters, null);
         response.getResponse().toString().trim();
     }
 
@@ -107,7 +110,7 @@ public class TestingClient {
         if (datafileIds != null)
             parameters.put("datafileIds", datafileIds);
 
-        Response response = HTTPConnect("POST", "archive", parameters);
+        Response response = HTTPConnect("POST", "archive", parameters, null);
         response.getResponse().toString().trim();
     }
 
@@ -117,7 +120,7 @@ public class TestingClient {
     public Status getStatusTest(String preparedId) throws Exception {
         Map<String, String> parameters = new HashMap<String, String>();
         parameters.put("preparedId", preparedId);
-        Response response = HTTPConnect("GET", "getStatus", parameters);
+        Response response = HTTPConnect("GET", "getStatus", parameters, null);
         return Status.valueOf(response.getResponse().toString().trim());
     }
 
@@ -134,14 +137,21 @@ public class TestingClient {
         if (offset != null)
             parameters.put("offset", offset.toString());
 
-        return HTTPConnect("GET", "getData", parameters);
+        return HTTPConnect("GET", "getData", parameters, null);
+    }
+    
+    public Response putTest(String sessionId, String name, File file) throws Exception {
+    	Map<String, String> parameters = new HashMap<String, String>();
+    	parameters.put("sessionId", sessionId);
+    	parameters.put("name", name);
+    	return HTTPConnect("PUT", "put", parameters, file);
     }
     
     /*
      * Create HTTP request of type defined by method to 'page' defined by relativeURL. Converts
-     * parameter list into format suitable for either URL (GET,DELETE) or message body (POST).
+     * parameter list into format suitable for either URL (GET, DELETE, PUT) or message body (POST).
      */
-    protected Response HTTPConnect(String method, String relativeUrl, Map<String, String> parameters)
+    protected Response HTTPConnect(String method, String relativeUrl, Map<String, String> parameters, File file)
             throws Exception {
         StringBuilder url = new StringBuilder();
         HttpURLConnection connection;
@@ -156,7 +166,7 @@ public class TestingClient {
         url.append(relativeUrl);
 
         // add parameters to url for GET and DELETE requests
-        if ("GET".equals(method) || "DELETE".equals(method)) {
+        if ("GET".equals(method) || "DELETE".equals(method) || "PUT".equals(method)) {
             url.append("?");
             url.append(parametersToString(parameters));
         }
@@ -181,6 +191,10 @@ public class TestingClient {
                     os.close();
                 }
             }
+        }
+        
+        if ("PUT".equals(method)) {
+        	writeFileToBody(file, connection);
         }
 
         // read in response
@@ -252,4 +266,20 @@ public class TestingClient {
         }
         return sb.toString();
     }
+    
+    private void writeFileToBody(File file, HttpURLConnection urlc) throws IOException {
+		OutputStream out = null;
+		InputStream in = null;
+		int n = 0;
+		final byte[] bytes = new byte[1024];
+		out = urlc.getOutputStream();
+		in = new FileInputStream(file);
+		while ((n = in.read(bytes)) != -1) {
+			out.write(bytes, 0, n);
+		}
+		in.close();
+		out.close();
+//		this.processResponseCode(urlc);
+//		urlc.disconnect();
+	}
 }
