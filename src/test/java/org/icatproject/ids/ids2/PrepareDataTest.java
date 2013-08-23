@@ -353,7 +353,7 @@ public class PrepareDataTest {
 				null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), 
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
-		retryLimit = 5;
+		retryLimit = 10;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);

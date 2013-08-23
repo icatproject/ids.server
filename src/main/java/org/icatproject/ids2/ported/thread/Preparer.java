@@ -41,11 +41,15 @@ public class Preparer implements Runnable {
 		
 		// if one of the previous DataEntities of the Request failed, there's no point continuing with this one
 		if (de.getRequest().getStatus() == StatusInfo.INCOMPLETE) {
-			requestHelper.setDataEntityStatus(de, StatusInfo.INCOMPLETE);
+			synchronized (deferredOpsQueue) {
+				requestHelper.setDataEntityStatus(de, StatusInfo.INCOMPLETE);
+			}
 		}		
 		// if this is the first DE of the Request being processed, set the Request status to RETRIVING
 		if (de.getRequest().getStatus() == StatusInfo.SUBMITTED) {
-			requestHelper.setRequestStatus(de.getRequest(), StatusInfo.RETRIVING);
+			synchronized (deferredOpsQueue) {
+				requestHelper.setRequestStatus(de.getRequest(), StatusInfo.RETRIVING);
+			}
 		}
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // let's assume all files are available on fast storage
 		for (Datafile df : de.getIcatDatafiles()) {
