@@ -521,8 +521,9 @@ public class WebService {
 		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
 		String location = probableLocation;
 		if (location == null) {
-			location = new File(ds.getLocation(), name).getAbsolutePath();
+			location = new File(ds.getLocation(), name).getPath();
 		}
+		String locationDir = new File(location).getParent();
 
 		try {
 			File file = new File(PropertyHandler.getInstance().getStorageDir(), name);
@@ -535,11 +536,11 @@ public class WebService {
 						datafileFormatId, tbytes, ds));
 				FileUtils.forceMkdir(file.getParentFile());
 				tfile.renameTo(file);
-				// File zipfile = new File(new File(this.zipdir, dsLocation),
-				// "files.zip");
-				// if (zipfile.exists()) {
-				// zipfile.delete();
-				// }
+				File zipfile = new File(new File(PropertyHandler.getInstance().getStorageZipDir(), locationDir),
+						"files.zip");
+				if (zipfile.exists()) {
+					zipfile.delete();
+				}
 				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
 				// queue(dsLocation, DeferredOp.WRITE);
 			} catch (IOException e) {
