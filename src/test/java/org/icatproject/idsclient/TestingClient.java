@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.ws.rs.QueryParam;
+
 import org.icatproject.ids.webservice.Status;
 import org.icatproject.idsclient.exception.TestingClientBadRequestException;
 import org.icatproject.idsclient.exception.TestingClientForbiddenException;
@@ -140,10 +142,26 @@ public class TestingClient {
         return HTTPConnect("GET", "getData", parameters, null);
     }
     
-    public Response putTest(String sessionId, String name, File file) throws Exception {
+    public Response putTest(String sessionId, String name, String datafileFormatId, String datasetId,
+			String location, String description,  String doi, String datafileCreateTime,
+			String datafileModTime, File file) throws Exception {
     	Map<String, String> parameters = new HashMap<String, String>();
+    	
     	parameters.put("sessionId", sessionId);
     	parameters.put("name", name);
+    	parameters.put("datafileFormatId", datafileFormatId);
+    	parameters.put("datasetId", datasetId);
+    	if (location !=null)
+    		parameters.put("location", location);
+    	if (description != null)
+    		parameters.put("description", description);
+    	if (doi != null)
+    		parameters.put("doi", doi);
+    	if (datafileCreateTime != null)
+    		parameters.put("datafileCreateTime", datafileCreateTime);
+    	if (datafileModTime != null)
+    		parameters.put("datafileModTime", datafileModTime);
+    	
     	return HTTPConnect("PUT", "put", parameters, file);
     }
     

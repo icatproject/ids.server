@@ -32,7 +32,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.io.FileUtils;
+import org.icatproject.Datafile;
+import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
+import org.icatproject.ids.icatclient.ICATClientBase;
+import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
 import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
 import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
@@ -70,6 +74,7 @@ public class WebService {
 	private long archiveWriteDelayMillis = PropertyHandler.getInstance().getWriteDelaySeconds() * 1000L;
 	private Timer timer = new Timer();
 	private RequestQueues requestQueues = RequestQueues.getInstance();
+	private ICATClientBase icatClient;
 
 	@EJB
 	private InfoRetrievalQueueSender infoRetrievalQueueSender;
@@ -81,10 +86,11 @@ public class WebService {
 	private RequestHelper requestHelper;
 
 	@PostConstruct
-	public void postConstructInit() {
+	public void postConstructInit() throws Exception {
 		logger.info("creating WebService");
 		timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
 				.getProcessQueueIntervalSeconds() * 1000L);
+		icatClient = ICATClientFactory.getInstance().createICATInterface();
 	}
 
 	/**
@@ -254,7 +260,7 @@ public class WebService {
 	 * @return HTTP response containing the ZIP file
 	 */
 	public Response getData(String preparedId, String outname, String offset) {
-//		final DownloadRequestEntity downloadRequestEntity;
+		// final DownloadRequestEntity downloadRequestEntity;
 		final RequestEntity requestEntity;
 		final Long offsetLong;
 		StreamingOutput strOut = null;
@@ -273,8 +279,8 @@ public class WebService {
 			throw new BadRequestException("The offset parameter is invalid");
 		}
 
-		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='"
-				+ outname + "' " + "offset='" + offset + "'");
+		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='" + outname
+				+ "' " + "offset='" + offset + "'");
 
 		try {
 			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
@@ -492,32 +498,50 @@ public class WebService {
 	@PUT
 	@Path("put")
 	@Consumes("application/octet-stream")
-	public Response put(
-			InputStream body, // TODO: Check that this the correct way of
-								// handling the data input
-			@QueryParam("sessionId") String sessionId, @QueryParam("name") String name/*,
-			@QueryParam("dataFileFormatId") String dataFileFormatId, @QueryParam("datasetId") String datasetId,
-			@QueryParam("description") String description, @QueryParam("doi") String doi,
-			@QueryParam("datafileCreateTime") String datafileCreateTime,
-			@QueryParam("datafileModTime") String datafileModTime*/) throws Exception {
-		logger.info(String.format("sessionId=%s, name=%s", sessionId, name));
+	public Response put(InputStream body, @QueryParam("sessionId") String sessionId, @QueryParam("name") String name,
+			@QueryParam("datafileFormatId") String datafileFormatId, @QueryParam("datasetId") String datasetId,
+			@QueryParam("location") String probableLocation, @QueryParam("description") String description,
+			@QueryParam("doi") String doi, @QueryParam("datafileCreateTime") String datafileCreateTime,
+			@QueryParam("datafileModTime") String datafileModTime) throws Exception {
+		logger.info(String.format("put received, file=%s, location=%s", name, probableLocation));
+
+		if (ValidationHelper.isValidId(sessionId) == false) {
+			throw new BadRequestException("The sessionId parameter is invalid");
+		}
+		if (name == null) {
+			throw new BadRequestException("The name parameter must be set");
+		}
+		if (datafileFormatId == null) {
+			throw new BadRequestException("The datafileFormatId parameter must be set");
+		}
+		if (datasetId == null) {
+			throw new BadRequestException("The datasetId parameter must be set");
+		}
+
+		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
+		String location = probableLocation;
+		if (location == null) {
+			location = new File(ds.getLocation(), name).getAbsolutePath();
+		}
+
 		try {
 			File file = new File(PropertyHandler.getInstance().getStorageDir(), name);
 
-			final File tfile = File.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
+			final File tfile = File
+					.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
 			final long tbytes = storeFile(body, tfile);
 			try {
-//				final long datasetId = Long.parseLong(datasetidString);
-//				final String dsLocation = this.registerDatafile(sessionid, filename, location,
-//						fileformatName, fileformatVersion, datasetId, tbytes);
+				String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, location,
+						datafileFormatId, tbytes, ds));
 				FileUtils.forceMkdir(file.getParentFile());
 				tfile.renameTo(file);
-//				File zipfile = new File(new File(this.zipdir, dsLocation), "files.zip");
-//				if (zipfile.exists()) {
-//					zipfile.delete();
-//				}
+				// File zipfile = new File(new File(this.zipdir, dsLocation),
+				// "files.zip");
+				// if (zipfile.exists()) {
+				// zipfile.delete();
+				// }
 				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
-//				this.queue(dsLocation, DeferredOp.WRITE);
+				// queue(dsLocation, DeferredOp.WRITE);
 			} catch (IOException e) {
 				FileUtils.forceDelete(tfile);
 				throw e;
@@ -607,7 +631,7 @@ public class WebService {
 			}
 
 			RequestedState state = null;
-//			long oldDelay = archiveWriteDelayMillis;
+			// long oldDelay = archiveWriteDelayMillis;
 			// If we are overwriting a DE from a different request, we should
 			// set its status to COMPLETED and remove it from the
 			// deferredOpsQueue.
@@ -618,12 +642,13 @@ public class WebService {
 				Ids2DataEntity oldDe = iter.next();
 				if (oldDe.overlapsWith(de)) {
 					requestHelper.setDataEntityStatus(oldDe, StatusInfo.INCOMPLETE);
-//					requestQueues.getWriteTimes().remove(oldDe);
+					// requestQueues.getWriteTimes().remove(oldDe);
 					state = deferredOpsQueue.get(oldDe);
-//					Long probablyOldDelay = requestQueues.getWriteTimes().get(oldDe);
-//					if (probablyOldDelay != null) {
-//						oldDelay = probablyOldDelay;
-//					}
+					// Long probablyOldDelay =
+					// requestQueues.getWriteTimes().get(oldDe);
+					// if (probablyOldDelay != null) {
+					// oldDelay = probablyOldDelay;
+					// }
 					iter.remove();
 					break;
 				}
@@ -666,7 +691,7 @@ public class WebService {
 					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-//					this.setExactDelay(de, oldDelay);
+					// this.setExactDelay(de, oldDelay);
 				}
 			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
@@ -674,10 +699,10 @@ public class WebService {
 					this.setDelay(de.getIcatDataset());
 				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-//					this.setExactDelay(de, oldDelay);
+					// this.setExactDelay(de, oldDelay);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-//					this.setExactDelay(de, oldDelay);
+					// this.setExactDelay(de, oldDelay);
 				}
 			}
 		}
@@ -690,7 +715,7 @@ public class WebService {
 		final Date d = new Date(writeTimes.get(ds));
 		logger.info("Requesting delay of writing of " + ds + " till " + d);
 	}
-	
+
 	private long storeFile(InputStream requestBody, File file) throws IOException {
 		BufferedInputStream is = null;
 		BufferedOutputStream os = null;
@@ -715,5 +740,22 @@ public class WebService {
 			}
 		}
 		return tbytes;
+	}
+
+	private Long registerDatafile(String sessionid, String filename, String location, String datafileFormatId,
+			long tbytes, Dataset dataset) throws Exception {
+		final Datafile df = new Datafile();
+		DatafileFormat format = icatClient.findDatafileFormatById(sessionid, datafileFormatId);
+		if (format == null) {
+			throw new NotFoundException("DatafileFormatId " + datafileFormatId + " does not exist.");
+		}
+		df.setDatafileFormat(format);
+		df.setLocation(location);
+		df.setFileSize(tbytes);
+		df.setName(filename);
+		df.setDataset(dataset);
+		df.setId((Long) icatClient.registerDatafile(sessionid, df));
+		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), filename + " at " + location);
+		return df.getId();
 	}
 }

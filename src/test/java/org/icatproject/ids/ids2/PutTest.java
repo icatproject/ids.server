@@ -42,8 +42,10 @@ public class PutTest {
 	
 	@Test
 	public void putOneFileTest() throws Exception {
+		long timestamp = System.currentTimeMillis();
 		File fileOnSlowStorage = new File(setup.getUserLocalDir(), "test_file.txt");
-		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt", fileOnSlowStorage);
+		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_"+timestamp, "xml",
+				setup.getDatasetIds().get(0), "./my_file_name.txt", null, null, null, null, fileOnSlowStorage);
 		
 	}
 

@@ -8,6 +8,7 @@ import java.util.List;
 import javax.xml.namespace.QName;
 
 import org.icatproject.Datafile;
+import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
@@ -159,4 +160,28 @@ public class ICATClient42 implements ICATClientBase {
     		throw convertToICATClientException(e);
     	}
     }
+	
+	@Override
+	public DatafileFormat findDatafileFormatById(String sessionId, String datafileFormatId) throws ICATClientException {
+		try {
+			List<Object> formats = service.search(sessionId, "DatafileFormat [name = '"
+					+ datafileFormatId + "']");
+			if (formats.size() == 0) {
+				return null;
+			} else {
+				return (DatafileFormat) formats.get(0);
+			}
+		} catch (IcatException_Exception e) {
+			throw convertToICATClientException(e);
+		}
+	}
+	
+	@Override
+	public Long registerDatafile(String sessionId, Datafile datafile) throws ICATClientException {
+		try {
+			return (Long) service.create(sessionId, datafile);
+		} catch (IcatException_Exception e) {
+			throw convertToICATClientException(e);
+		}
+	}
 }
