@@ -57,24 +57,24 @@
 			<artifactId>protobuf-java</artifactId>
 			<version>2.4.1</version>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>javax</groupId>
 			<artifactId>javaee-api</artifactId>
 			<version>6.0</version>
 			<scope>provided</scope>
-		</dependency>
+		</dependency> -->
 		
 		<!-- Contains concrete JEE6 classes instead of just interfaces (in javax/javaee-api).
 			This is only used for testing. When deploying to the container, the interfaces
 			will be used and all the concrete classes will be provided by the container -->
-		<!-- <dependency>
+		<dependency>
         	<groupId>org.jboss.spec</groupId>
         	<artifactId>jboss-javaee-6.0</artifactId>
         	<version>1.0.0.Final</version>
         	<type>pom</type>
         	<scope>provided</scope>
      	</dependency>
-     	<dependency>
+     	<!-- <dependency>
 			<groupId>asm</groupId>
 			<artifactId>asm</artifactId>
 			<version>3.3.1</version>
@@ -116,6 +116,19 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.6.4</version>
 		</dependency>
+		<!-- <dependency>
+   			<groupId>org.glassfish.jersey.core</groupId>
+    		<artifactId>jersey-client</artifactId>
+    		<version>2.2</version>
+    		<scope>test</scope>
+		</dependency> -->
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-client</artifactId>
+			<version>1.8</version>
+		</dependency>
+            
+		
 	</dependencies>
 	<build>
 		<plugins>

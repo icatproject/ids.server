@@ -10,6 +10,7 @@ import org.icatproject.ids.util.StatusInfo;
 
 public interface StorageInterface {
     public StatusInfo restoreFromArchive(Dataset dataset);
+    public StatusInfo writeToArchive(Dataset dataset);
     // not yet implemented
 //    public StatusInfo copyToArchive(Ids2DatasetEntity dataset);
     

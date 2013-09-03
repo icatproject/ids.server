@@ -48,9 +48,23 @@ public class PutTest {
 	public void putOneFileTest() throws Exception {
 		final int DS_NUM_FROM_PROPS = 0;
 		long timestamp = System.currentTimeMillis();
-		File fileOnSlowStorage = new File(setup.getUserLocalDir(), "test_file.txt");
+//		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
+//				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
+		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
+		String uploadedLocation = "./my_file_name.txt";
+		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
+//		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
+		
 		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
-				.get(DS_NUM_FROM_PROPS), "./my_file_name.txt", null, null, null, null, fileOnSlowStorage);
+				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
+		int retryLimit = 10;
+		do {
+			Thread.sleep(1000);
+		} while ((!fileOnFastStorage.exists() /*|| !zipOnFastStorage.exists()*/) && retryLimit-- > 0);
+		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
+				fileOnFastStorage.exists());
+//		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
+//				zipOnFastStorage.exists());
 	}
 
 	@Test

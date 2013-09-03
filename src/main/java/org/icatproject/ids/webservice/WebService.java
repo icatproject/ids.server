@@ -91,6 +91,7 @@ public class WebService {
 		timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
 				.getProcessQueueIntervalSeconds() * 1000L);
 		icatClient = ICATClientFactory.getInstance().createICATInterface();
+//		restartUnfinishedWork();
 	}
 
 	/**
@@ -526,7 +527,7 @@ public class WebService {
 		String locationDir = new File(location).getParent();
 
 		try {
-			File file = new File(PropertyHandler.getInstance().getStorageDir(), name);
+			File file = new File(PropertyHandler.getInstance().getStorageDir(), location);
 
 			final File tfile = File
 					.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
@@ -542,12 +543,16 @@ public class WebService {
 					zipfile.delete();
 				}
 				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
-				// queue(dsLocation, DeferredOp.WRITE);
+				
+				RequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
+				requestHelper.addDatafiles(sessionId, requestEntity, assignedDatafileId);
+				for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+					this.queue(de, DeferredOp.WRITE);
+				}
 			} catch (IOException e) {
 				FileUtils.forceDelete(tfile);
 				throw e;
 			}
-
 		} catch (final IOException e) {
 			logger.error(e.getMessage());
 			throw e;

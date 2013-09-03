@@ -6,13 +6,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.util.StatusInfo;
+import org.icatproject.ids2.ported.SimpleDirectoryWalker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +27,7 @@ public class LocalFileStorage implements StorageInterface {
 	private String storageDir;
 	private String storageZipDir;
 	private String storageArchiveDir;
+	final int BUFSIZ = 2048;
 
 	public LocalFileStorage(String storageDir, String storageZipDir, String storageArchiveDir) {
 		this.storageDir = storageDir;
@@ -73,7 +78,6 @@ public class LocalFileStorage implements StorageInterface {
 	}
 
 	private void unzip(File zip, File dir) throws IOException {
-		final int BUFSIZ = 2048;
 		final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)));
 		ZipEntry entry;
 		while ((entry = zis.getNextEntry()) != null) {
@@ -95,37 +99,82 @@ public class LocalFileStorage implements StorageInterface {
 		zis.close();
 	}
 
-	// @Override
-	// public HashSet<String> copyDatafiles(List<DatafileEntity> datafileList) {
-	// HashSet<String> datafilePathSet = new HashSet<String>();
-	// // Check if the file exists. if it does then it adds to the return array
-	// list
-	// // and sets the status of datafile as found otherwise sets error in the
-	// status
-	// // of datafile
-	// for (DatafileEntity datafileEntity : datafileList) {
-	// String filename = properties.getStorageDir() + File.separator
-	// + datafileEntity.getName();
-	// logger.severe("filename: " + filename);
-	// File df = new File(filename);
-	// if (df.exists()) {
-	// datafileEntity.setStatus(StatusInfo.COMPLETED.name());
-	// datafilePathSet.add(filename);
-	// } else {
-	// datafileEntity.setStatus(StatusInfo.ERROR.name());
-	// }
-	// }
-	// return datafilePathSet;
-	// }
+	@Override
+	public StatusInfo writeToArchive(Dataset ds) {
+		try {
+			String location = ds.getLocation();
+			final File dir = new File(storageDir, location);
+			final File archdir = new File(storageArchiveDir, location);
+			final File zipdir = new File(storageZipDir, location);
 
-	// @Override
-	// public String getStoragePath() {
-	// return properties.getLocalStorageSystemPath();
-	// }
+			// if the file doesn't exist locally, we also delete it from the
+			// archive
+			if (!dir.exists() || dir.list().length == 0) {
+				logger.info("No files present at " + location + " - archive deleted");
+				FileUtils.deleteDirectory(archdir);
+				FileUtils.deleteDirectory(zipdir);
+			} else {
+				archdir.mkdirs();
+				File zipfiletmp = new File(zipdir, "files.zip.tmp");
+				File zipfile = new File(zipdir, "files.zip");
+				if (!zipfile.exists()) {
+					zipdir.mkdirs();
+					zip(new FileOutputStream(zipfiletmp), dir);
+					zipfiletmp.renameTo(zipfile);
+				}
+				FileUtils.copyFileToDirectory(zipfile, archdir);
+				logger.info("Write to archive of  " + location + " succesful");
+			}
+		} catch (final IOException e) {
+			logger.error("Writer failed " + e.getMessage());
+			return StatusInfo.ERROR;
+		}
+		return StatusInfo.COMPLETED;
+	}
+	
+	// zips files from "dir" to the output "stream"
+		private void zip(OutputStream stream, File dir) throws IOException {
+			ZipOutputStream os = null;
+			BufferedInputStream is = null;
+			logger.info("Stream files from " + dir);
+			try {
+				os = new ZipOutputStream(new BufferedOutputStream(stream, BUFSIZ));
+				final byte data[] = new byte[BUFSIZ];
 
-	// @Override
-	// public void clearUnusedFiles(int numberOfDays) {
-	// // Doesn't delete the local cache files
-	// }
+				final SimpleDirectoryWalker sdw = new SimpleDirectoryWalker();
+				final List<File> files = sdw.walk(dir);
+
+				int startPos = 0;
+				for (final File file : files) {
+					final String name = file.getPath();
+					if (startPos == 0) {
+						startPos = name.length() + 1;
+					} else {
+						ZipEntry entry;
+						if (file.isFile()) {
+							entry = new ZipEntry(name.substring(startPos));
+						} else {
+							entry = new ZipEntry(name.substring(startPos) + "/");
+						}
+						os.putNextEntry(entry);
+						if (file.isFile()) {
+							int count;
+							is = new BufferedInputStream(new FileInputStream(file), BUFSIZ);
+							while ((count = is.read(data, 0, BUFSIZ)) != -1) {
+								os.write(data, 0, count);
+							}
+							is.close();
+						}
+					}
+				}
+			} finally {
+				if (os != null) {
+					os.close();
+				}
+				if (is != null) {
+					is.close();
+				}
+			}
+		}
 
 }

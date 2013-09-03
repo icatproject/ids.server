@@ -56,9 +56,8 @@ public class ProcessQueue extends TimerTask {
 								writeTimes.remove(de.getIcatDataset());
 								changing.add(de.getIcatDataset());
 								it.remove();
-								// final Thread w = new Thread(new
-								// Writer(location));
-								// w.start();
+								final Thread w = new Thread(new Writer(de, requestHelper));
+								w.start();
 							}
 						} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 							if (now > writeTimes.get(de.getIcatDataset())) {

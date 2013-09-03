@@ -28,17 +28,17 @@ public class DataRetrievalQueueSender
     
     public void addDataRetrievalRequest(DownloadRequestEntity downloadRequestEntity)
     {
-        try {
-            Connection connection = connectionFactory.createConnection();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageProducer messageProducer = session.createProducer(queue);
-            ObjectMessage message = session.createObjectMessage();
-            message.setObject(downloadRequestEntity.getId());
-            messageProducer.send(message);
-            messageProducer.close();
-            connection.close();
-        } catch (JMSException ex) {
-        	LoggerFactory.getLogger(DataRetrievalQueueSender.class).error("Couldn't send message to DataRetrievalQueue", ex);
-        }
+//        try {
+//            Connection connection = connectionFactory.createConnection();
+//            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+//            MessageProducer messageProducer = session.createProducer(queue);
+//            ObjectMessage message = session.createObjectMessage();
+//            message.setObject(downloadRequestEntity.getId());
+//            messageProducer.send(message);
+//            messageProducer.close();
+//            connection.close();
+//        } catch (JMSException ex) {
+//        	LoggerFactory.getLogger(DataRetrievalQueueSender.class).error("Couldn't send message to DataRetrievalQueue", ex);
+//        }
     }
 }
