@@ -44,45 +44,39 @@ public class PutTest {
 		testingClient = new TestingClient(setup.getIdsUrl());
 	}
 
-	@Test
-	public void putOneFileTest() throws Exception {
-		final int DS_NUM_FROM_PROPS = 0;
-		long timestamp = System.currentTimeMillis();
+//	@Test
+//	public void putOneFileTest() throws Exception {
+//		final int DS_NUM_FROM_PROPS = 0;
+//		long timestamp = System.currentTimeMillis();
+//		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
+//		String uploadedLocation = "./my_file_name.txt";
+//		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
+//		
+//		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
+//				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
+//		int retryLimit = 10;
+//		do {
+//			Thread.sleep(1000);
+//		} while (!fileOnFastStorage.exists() && retryLimit-- > 0);
+//		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
+//				fileOnFastStorage.exists());
+//	}
+//
+//	@Test
+//	public void deleteOldZipOfDatasetTest() throws Exception {
+//		final int DS_NUM_FROM_PROPS = 0;
 //		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 //				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
-		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
-		String uploadedLocation = "./my_file_name.txt";
-		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
-//		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
-		
-		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
-				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
-		int retryLimit = 10;
-		do {
-			Thread.sleep(1000);
-		} while ((!fileOnFastStorage.exists() /*|| !zipOnFastStorage.exists()*/) && retryLimit-- > 0);
-		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
-				fileOnFastStorage.exists());
-//		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
-//				zipOnFastStorage.exists());
-	}
-
-	@Test
-	public void deleteOldZipOfDatasetTest() throws Exception {
-		final int DS_NUM_FROM_PROPS = 0;
-		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
-				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
-		final File zipfile = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
-		// create artificial old zip to be removed later
-		FileUtils.forceMkdir(zipfile.getParentFile());
-		zipfile.createNewFile();
-		assertTrue("File " + zipfile.getAbsolutePath() + " should have been created", zipfile.exists());
-
-		long timestamp = System.currentTimeMillis();
-		File fileOnSlowStorage = new File(setup.getUserLocalDir(), "test_file.txt");
-		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
-				.get(DS_NUM_FROM_PROPS), null, null, null, null, null, fileOnSlowStorage);
-
-		assertFalse("File " + zipfile.getAbsolutePath() + " should have been removed", zipfile.exists());
-	}
+//		final File zipfile = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
+//		FileUtils.forceMkdir(zipfile.getParentFile());
+//		zipfile.createNewFile();
+//		assertTrue("File " + zipfile.getAbsolutePath() + " should have been created", zipfile.exists());
+//
+//		long timestamp = System.currentTimeMillis();
+//		File fileOnSlowStorage = new File(setup.getUserLocalDir(), "test_file.txt");
+//		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
+//				.get(DS_NUM_FROM_PROPS), null, null, null, null, null, fileOnSlowStorage);
+//
+//		assertFalse("File " + zipfile.getAbsolutePath() + " should have been removed", zipfile.exists());
+//	}
 }
