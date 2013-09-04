@@ -95,5 +95,10 @@ public class LocalFileStorageCommons {
 			}
 		}
 	}
+	
+	public void deleteDataset(Dataset dataset, String storageDir) throws Exception {
+		File zippedDs = new File(new File(storageDir, dataset.getLocation()), "files.zip");
+		zippedDs.delete();
+	}
 
 }

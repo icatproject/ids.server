@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
 
@@ -49,8 +50,16 @@ public class FastLocalFileStorage implements StorageInterface {
 		tempdir.mkdir();
 		dir.getParentFile().mkdirs();
 		unzip(new File(archdir, "files.zip"), tempdir);
-		tempdir.renameTo(dir);
-		
+		tempdir.renameTo(dir);		
+	}
+	
+	@Override
+	public void deleteDataset(Dataset dataset) throws Exception {
+		fsCommons.deleteDataset(dataset, STORAGE_ZIP_DIR);
+		for (Datafile df : dataset.getDatafiles()) {
+			File explodedFile = new File(STORAGE_DIR, df.getLocation());
+			explodedFile.delete();
+		}
 	}
 	
 	private void unzip(File zip, File dir) throws IOException {

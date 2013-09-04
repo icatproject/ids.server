@@ -50,7 +50,7 @@ public class ArchiveTest {
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
-		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
+		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		int retryLimit = 5;
@@ -65,11 +65,11 @@ public class ArchiveTest {
 
 		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		retryLimit = 10;
-		while ((dirOnFastStorage.exists() || zipOnFastStorage.exists()) && retryLimit-- > 0) {
+		while ((dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) && retryLimit-- > 0) {
 			Thread.sleep(1000);
 		}
-		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
-				!dirOnFastStorage.exists());
+		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath() + " should have been cleaned, but still contains files",
+				dirOnFastStorage.listFiles().length == 0);
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
 				!zipOnFastStorage.exists());
 	}

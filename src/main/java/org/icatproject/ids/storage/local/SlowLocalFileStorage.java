@@ -30,5 +30,10 @@ public class SlowLocalFileStorage implements StorageInterface {
 	public void putDataset(Dataset dataset, InputStream is) throws Exception {
 		fsCommons.putDataset(dataset, is, STORAGE_ARCHIVE_DIR);
 	}
+	
+	@Override
+	public void deleteDataset(Dataset dataset) throws Exception {
+		fsCommons.deleteDataset(dataset, STORAGE_ARCHIVE_DIR);
+	}
 
 }
