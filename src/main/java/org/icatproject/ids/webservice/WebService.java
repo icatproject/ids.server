@@ -261,112 +261,112 @@ public class WebService {
 	 * @return HTTP response containing the ZIP file
 	 */
 	public Response getData(String preparedId, String outname, String offset) {
-		// final DownloadRequestEntity downloadRequestEntity;
-		final RequestEntity requestEntity;
-		final Long offsetLong;
-		StreamingOutput strOut = null;
-		String name = null;
-
-		// 400
-		if (ValidationHelper.isValidId(preparedId) == false) {
-			throw new BadRequestException("The preparedId parameter is invalid");
-		}
-
-		if (ValidationHelper.isValidName(outname) == false) {
-			throw new BadRequestException("The outname parameter is invalid");
-		}
-
-		if (ValidationHelper.isValidOffset(offset) == false) {
-			throw new BadRequestException("The offset parameter is invalid");
-		}
-
-		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='" + outname
-				+ "' " + "offset='" + offset + "'");
-
-		try {
-			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
-		} catch (PersistenceException e) {
-			throw new InternalServerErrorException("Unable to connect to the database");
-		} catch (EJBException e) {
-			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
-		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
-		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
-		}
-
-		// the internal download request status must be COMPLETE in order to
-		// download the zip
-		switch (requestEntity.getStatus()) {
-		case SUBMITTED:
-		case INFO_RETRIVING:
-		case INFO_RETRIVED:
-		case RETRIVING:
-			throw new NotFoundException("Requested files are not ready for download");
-		case DENIED:
-			// TODO: return a list of the 'bad' files?
-			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
-		case NOT_FOUND:
-			// TODO: return list of the 'bad' ids?
-			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
-		case INCOMPLETE:
-			throw new NotFoundException("Some of the requested files are no longer avaliable in ICAT.");
-		case ERROR:
-			// TODO: return list of the missing files?
-			throw new InternalServerErrorException("Unable to find files in storage");
-		case COMPLETED:
-		default:
-			break;
-		}
-
-		// if no outname supplied give default name also suffix with .zip if
-		// absent
-		if (outname == null) {
-			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity.getSubmittedTime());
-			name = name + ".zip";
-		} else {
-			name = outname;
-			String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
-			if ("zip".equals(ext) == false) {
-				name = name + ".zip";
-			}
-		}
-
-		// calculate offset
-		if (offset != null) {
-			offsetLong = Long.parseLong(offset);
-		} else {
-			offsetLong = 0L;
-		}
-
-		File zipFile = new File(PropertyHandler.getInstance().getStoragePreparedDir() + File.separator
-				+ requestEntity.getPreparedId() + ".zip");
-
-		// if (zipFile.exists() == false) {
-		// throw new InternalServerErrorException("The zip file doesn't exist");
-		// }
-		// if zip file is 0 bytes then something has gone wrong
-		if (zipFile.length() == 0) {
-			throw new InternalServerErrorException("There was a problem creating the zip file.");
-		}
-
-		// check if offset is larger than the file size
-		if (offsetLong >= zipFile.length()) {
-			System.out.println("\n\n\n\n\n\n" + requestEntity.getPreparedId() + "\n\n\n\n\n\n\n");
-			throw new BadRequestException("Offset (" + offsetLong + " bytes) is larger than file size ("
-					+ zipFile.length() + " bytes)");
-		}
-
-		// create output stream of the zip file
-		strOut = new StreamingOutput() {
-			@Override
-			public void write(OutputStream output) throws IOException {
-				requestHelper.writeFileToOutputStream(requestEntity, output, offsetLong);
-			}
-		};
-
-		return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
-				.header("Accept-Ranges", "bytes").build();
+//		final RequestEntity requestEntity;
+//		final Long offsetLong;
+//		StreamingOutput strOut = null;
+//		String name = null;
+//
+//		// 400
+//		if (ValidationHelper.isValidId(preparedId) == false) {
+//			throw new BadRequestException("The preparedId parameter is invalid");
+//		}
+//
+//		if (ValidationHelper.isValidName(outname) == false) {
+//			throw new BadRequestException("The outname parameter is invalid");
+//		}
+//
+//		if (ValidationHelper.isValidOffset(offset) == false) {
+//			throw new BadRequestException("The offset parameter is invalid");
+//		}
+//
+//		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='" + outname
+//				+ "' " + "offset='" + offset + "'");
+//
+//		try {
+//			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
+//		} catch (PersistenceException e) {
+//			throw new InternalServerErrorException("Unable to connect to the database");
+//		} catch (EJBException e) {
+//			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
+//		} catch (Exception e) {
+//			throw new InternalServerErrorException(e.getMessage());
+//		} catch (Throwable t) {
+//			throw new InternalServerErrorException(t.getMessage());
+//		}
+//
+//		// the internal download request status must be COMPLETE in order to
+//		// download the zip
+//		switch (requestEntity.getStatus()) {
+//		case SUBMITTED:
+//		case INFO_RETRIVING:
+//		case INFO_RETRIVED:
+//		case RETRIVING:
+//			throw new NotFoundException("Requested files are not ready for download");
+//		case DENIED:
+//			// TODO: return a list of the 'bad' files?
+//			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
+//		case NOT_FOUND:
+//			// TODO: return list of the 'bad' ids?
+//			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
+//		case INCOMPLETE:
+//			throw new NotFoundException("Some of the requested files are no longer avaliable in ICAT.");
+//		case ERROR:
+//			// TODO: return list of the missing files?
+//			throw new InternalServerErrorException("Unable to find files in storage");
+//		case COMPLETED:
+//		default:
+//			break;
+//		}
+//
+//		// if no outname supplied give default name also suffix with .zip if
+//		// absent
+//		if (outname == null) {
+//			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity.getSubmittedTime());
+//			name = name + ".zip";
+//		} else {
+//			name = outname;
+//			String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
+//			if ("zip".equals(ext) == false) {
+//				name = name + ".zip";
+//			}
+//		}
+//
+//		// calculate offset
+//		if (offset != null) {
+//			offsetLong = Long.parseLong(offset);
+//		} else {
+//			offsetLong = 0L;
+//		}
+//
+////		File zipFile = new File(PropertyHandler.getInstance().getStoragePreparedDir() + File.separator
+////				+ requestEntity.getPreparedId() + ".zip");
+//
+//		// if (zipFile.exists() == false) {
+//		// throw new InternalServerErrorException("The zip file doesn't exist");
+//		// }
+//		// if zip file is 0 bytes then something has gone wrong
+//		if (zipFile.length() == 0) {
+//			throw new InternalServerErrorException("There was a problem creating the zip file.");
+//		}
+//
+//		// check if offset is larger than the file size
+//		if (offsetLong >= zipFile.length()) {
+//			System.out.println("\n\n\n\n\n\n" + requestEntity.getPreparedId() + "\n\n\n\n\n\n\n");
+//			throw new BadRequestException("Offset (" + offsetLong + " bytes) is larger than file size ("
+//					+ zipFile.length() + " bytes)");
+//		}
+//
+//		// create output stream of the zip file
+//		strOut = new StreamingOutput() {
+//			@Override
+//			public void write(OutputStream output) throws IOException {
+//				requestHelper.writeFileToOutputStream(requestEntity, output, offsetLong);
+//			}
+//		};
+//
+//		return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
+//				.header("Accept-Ranges", "bytes").build();
+		return null;
 	}
 
 	/**
@@ -506,58 +506,59 @@ public class WebService {
 			@QueryParam("datafileModTime") String datafileModTime) throws Exception {
 		logger.info(String.format("put received, file=%s, location=%s", name, probableLocation));
 
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
-		if (name == null) {
-			throw new BadRequestException("The name parameter must be set");
-		}
-		if (datafileFormatId == null) {
-			throw new BadRequestException("The datafileFormatId parameter must be set");
-		}
-		if (datasetId == null) {
-			throw new BadRequestException("The datasetId parameter must be set");
-		}
-
-		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
-		String location = probableLocation;
-		if (location == null) {
-			location = new File(ds.getLocation(), name).getPath();
-		}
-		String locationDir = new File(location).getParent();
-
-		try {
-			File file = new File(PropertyHandler.getInstance().getStorageDir(), location);
-
-			final File tfile = File
-					.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
-			final long tbytes = storeFile(body, tfile);
-			try {
-				String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, location,
-						datafileFormatId, tbytes, ds));
-				FileUtils.forceMkdir(file.getParentFile());
-				tfile.renameTo(file);
-				File zipfile = new File(new File(PropertyHandler.getInstance().getStorageZipDir(), locationDir),
-						"files.zip");
-				if (zipfile.exists()) {
-					zipfile.delete();
-				}
-				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
-				
-				RequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
-				requestHelper.addDatafiles(sessionId, requestEntity, assignedDatafileId);
-				for (Ids2DataEntity de : requestEntity.getDataEntities()) {
-					this.queue(de, DeferredOp.WRITE);
-				}
-			} catch (IOException e) {
-				FileUtils.forceDelete(tfile);
-				throw e;
-			}
-		} catch (final IOException e) {
-			logger.error(e.getMessage());
-			throw e;
-		}
-		return Response.status(200).entity(name).build();
+//		if (ValidationHelper.isValidId(sessionId) == false) {
+//			throw new BadRequestException("The sessionId parameter is invalid");
+//		}
+//		if (name == null) {
+//			throw new BadRequestException("The name parameter must be set");
+//		}
+//		if (datafileFormatId == null) {
+//			throw new BadRequestException("The datafileFormatId parameter must be set");
+//		}
+//		if (datasetId == null) {
+//			throw new BadRequestException("The datasetId parameter must be set");
+//		}
+//
+//		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
+//		String location = probableLocation;
+//		if (location == null) {
+//			location = new File(ds.getLocation(), name).getPath();
+//		}
+//		String locationDir = new File(location).getParent();
+//
+//		try {
+//			File file = new File(PropertyHandler.getInstance().getStorageDir(), location);
+//
+//			final File tfile = File
+//					.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
+//			final long tbytes = storeFile(body, tfile);
+//			try {
+//				String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, location,
+//						datafileFormatId, tbytes, ds));
+//				FileUtils.forceMkdir(file.getParentFile());
+//				tfile.renameTo(file);
+//				File zipfile = new File(new File(PropertyHandler.getInstance().getStorageZipDir(), locationDir),
+//						"files.zip");
+//				if (zipfile.exists()) {
+//					zipfile.delete();
+//				}
+//				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
+//				
+//				RequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
+//				requestHelper.addDatafiles(sessionId, requestEntity, assignedDatafileId);
+//				for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+//					this.queue(de, DeferredOp.WRITE);
+//				}
+//			} catch (IOException e) {
+//				FileUtils.forceDelete(tfile);
+//				throw e;
+//			}
+//		} catch (final IOException e) {
+//			logger.error(e.getMessage());
+//			throw e;
+//		}
+//		return Response.status(200).entity(name).build();
+		return null;
 	}
 
 	@DELETE

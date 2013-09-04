@@ -239,33 +239,33 @@ public class DownloadRequestHelper
 
     public void writeFileToOutputStream(DownloadRequestEntity downloadRequestEntity, OutputStream output, Long offset) throws IOException
     {
-        File zipFile = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
-
-        BufferedInputStream bis = null;
-        BufferedOutputStream bos = null;
-        try {
-            int bytesRead = 0;
-            byte[] buffer = new byte[32 * 1024];
-            bis = new BufferedInputStream(new FileInputStream(zipFile));
-            bos = new BufferedOutputStream(output);
-            
-            // apply offset to stream
-            if (offset > 0) {
-                bis.skip(offset);
-            }
-            
-            // write bytes to output stream
-            while ((bytesRead = bis.read(buffer)) > 0) {
-                bos.write(buffer, 0, bytesRead);
-            }
-        } finally {
-            if (bis != null) {
-                bis.close();
-            }
-            if (bos != null) {
-                bos.close();
-            }
-        }
+//        File zipFile = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
+//
+//        BufferedInputStream bis = null;
+//        BufferedOutputStream bos = null;
+//        try {
+//            int bytesRead = 0;
+//            byte[] buffer = new byte[32 * 1024];
+//            bis = new BufferedInputStream(new FileInputStream(zipFile));
+//            bos = new BufferedOutputStream(output);
+//            
+//            // apply offset to stream
+//            if (offset > 0) {
+//                bis.skip(offset);
+//            }
+//            
+//            // write bytes to output stream
+//            while ((bytesRead = bis.read(buffer)) > 0) {
+//                bos.write(buffer, 0, bytesRead);
+//            }
+//        } finally {
+//            if (bis != null) {
+//                bis.close();
+//            }
+//            if (bos != null) {
+//                bos.close();
+//            }
+//        }
     }
 
 
@@ -301,11 +301,11 @@ public class DownloadRequestHelper
    
     public void deleteDownloadRequest(DownloadRequestEntity downloadRequestEntity)
     {
-        File file = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
-        file.delete();
-        
-        em.remove(downloadRequestEntity);
-        em.flush();
+//        File file = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
+//        file.delete();
+//        
+//        em.remove(downloadRequestEntity);
+//        em.flush();
     }
     
     

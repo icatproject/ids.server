@@ -30,15 +30,15 @@ public class Writer implements Runnable {
 	
 	@Override
 	public void run() {
-		logger.info("starting writer");
-		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
-		StatusInfo resultingStatus = storageInterface.writeToArchive(de.getIcatDataset());
-		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
-		Set<Dataset> changing = requestQueues.getChanging();
-		synchronized (deferredOpsQueue) {
-			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
-			requestHelper.setDataEntityStatus(de, resultingStatus);
-			changing.remove(de.getIcatDataset());
-		}
+//		logger.info("starting writer");
+//		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
+//		StatusInfo resultingStatus = storageInterface.writeToArchive(de.getIcatDataset());
+//		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
+//		Set<Dataset> changing = requestQueues.getChanging();
+//		synchronized (deferredOpsQueue) {
+//			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
+//			requestHelper.setDataEntityStatus(de, resultingStatus);
+//			changing.remove(de.getIcatDataset());
+//		}
 	}
 }

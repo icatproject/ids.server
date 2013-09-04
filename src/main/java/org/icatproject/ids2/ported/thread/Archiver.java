@@ -31,35 +31,35 @@ public class Archiver implements Runnable {
 	
 	@Override
 	public void run() {
-		logger.info("starting archiver");
-		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
-		Set<Dataset> changing = requestQueues.getChanging();
-		String storageDir = PropertyHandler.getInstance().getStorageDir();
-		String storageZipDir = PropertyHandler.getInstance().getStorageZipDir();
-		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
-		Dataset ds = de.getIcatDataset();
-		
-		try {
-			File dir = new File(storageDir, ds.getLocation());
-			File zipdir = new File(storageZipDir, ds.getLocation());
-			FileUtils.deleteDirectory(dir);
-			FileUtils.deleteDirectory(zipdir);
-			logger.info("Archive of  " + ds.getLocation() + " succesful");
-		} catch (Exception e) {
-			logger.error("Archive of " + ds.getLocation() + " failed");
-			resultingStatus = StatusInfo.INCOMPLETE;
-		} finally {
-			if (resultingStatus == StatusInfo.COMPLETED) {
-				logger.info("Archive of " + de + " completed successfully");
-			}
-			else {
-				logger.warn("Archive of " + de + " completed with errors");
-			}
-			synchronized (deferredOpsQueue) {
-				logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
-				requestHelper.setDataEntityStatus(de, resultingStatus);
-				changing.remove(de.getIcatDataset());
-			}
-		}
+//		logger.info("starting archiver");
+//		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
+//		Set<Dataset> changing = requestQueues.getChanging();
+//		String storageDir = PropertyHandler.getInstance().getStorageDir();
+//		String storageZipDir = PropertyHandler.getInstance().getStorageZipDir();
+//		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
+//		Dataset ds = de.getIcatDataset();
+//		
+//		try {
+//			File dir = new File(storageDir, ds.getLocation());
+//			File zipdir = new File(storageZipDir, ds.getLocation());
+//			FileUtils.deleteDirectory(dir);
+//			FileUtils.deleteDirectory(zipdir);
+//			logger.info("Archive of  " + ds.getLocation() + " succesful");
+//		} catch (Exception e) {
+//			logger.error("Archive of " + ds.getLocation() + " failed");
+//			resultingStatus = StatusInfo.INCOMPLETE;
+//		} finally {
+//			if (resultingStatus == StatusInfo.COMPLETED) {
+//				logger.info("Archive of " + de + " completed successfully");
+//			}
+//			else {
+//				logger.warn("Archive of " + de + " completed with errors");
+//			}
+//			synchronized (deferredOpsQueue) {
+//				logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
+//				requestHelper.setDataEntityStatus(de, resultingStatus);
+//				changing.remove(de.getIcatDataset());
+//			}
+//		}
 	}
 }

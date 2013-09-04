@@ -21,14 +21,15 @@ public class ZipHelper {
 
     public static void compressFileList(File zipFile, RequestEntity request
     		/*, Set<String> fileSet, String relativePath, boolean compress*/) {
-    	logger.info(String.format("zipping %s datasets and %s datafiles, total %s icatDatafiles",
-    			request.getDatasets().size(), request.getDatafiles().size(),
-    			request.getIcatDatafiles().size()));
-        long startTime = System.currentTimeMillis();
-        writeZipFileFromStringFileList(zipFile, request.getIcatDatafiles(), 
-        		PropertyHandler.getInstance().getStorageDir(), request.isCompress());
-        long endTime = System.currentTimeMillis();
-        logger.info("Time took to zip the files: " + (endTime - startTime));
+//    	logger.info(String.format("zipping %s datasets and %s datafiles, total %s icatDatafiles",
+//    			request.getDatasets().size(), request.getDatafiles().size(),
+//    			request.getIcatDatafiles().size()));
+//        long startTime = System.currentTimeMillis();
+//
+//        writeZipFileFromStringFileList(zipFile, request.getIcatDatafiles(), 
+//        		PropertyHandler.getInstance().getStorageDir(), request.isCompress());
+//        long endTime = System.currentTimeMillis();
+//        logger.info("Time took to zip the files: " + (endTime - startTime));
     }
 
 //    public static void getAllFiles(File dir, List<File> fileList) {

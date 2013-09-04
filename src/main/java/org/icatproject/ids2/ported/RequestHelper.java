@@ -175,35 +175,35 @@ public class RequestHelper {
 		return (RequestEntity) q.getSingleResult();
 	}
 
-	public void writeFileToOutputStream(RequestEntity requestEntity, OutputStream output, Long offset)
-			throws IOException {
-		File zipFile = new File(properties.getStoragePreparedDir(), requestEntity.getPreparedId()+".zip");
-
-		BufferedInputStream bis = null;
-		BufferedOutputStream bos = null;
-		try {
-			int bytesRead = 0;
-			byte[] buffer = new byte[32 * 1024];
-			bis = new BufferedInputStream(new FileInputStream(zipFile));
-			bos = new BufferedOutputStream(output);
-
-			// apply offset to stream
-			if (offset > 0) {
-				bis.skip(offset);
-			}
-
-			// write bytes to output stream
-			while ((bytesRead = bis.read(buffer)) > 0) {
-				bos.write(buffer, 0, bytesRead);
-			}
-		} finally {
-			if (bis != null) {
-				bis.close();
-			}
-			if (bos != null) {
-				bos.close();
-			}
-		}
-	}
+//	public void writeFileToOutputStream(RequestEntity requestEntity, OutputStream output, Long offset)
+//			throws IOException {
+//		File zipFile = new File(properties.getStoragePreparedDir(), requestEntity.getPreparedId()+".zip");
+//
+//		BufferedInputStream bis = null;
+//		BufferedOutputStream bos = null;
+//		try {
+//			int bytesRead = 0;
+//			byte[] buffer = new byte[32 * 1024];
+//			bis = new BufferedInputStream(new FileInputStream(zipFile));
+//			bos = new BufferedOutputStream(output);
+//
+//			// apply offset to stream
+//			if (offset > 0) {
+//				bis.skip(offset);
+//			}
+//
+//			// write bytes to output stream
+//			while ((bytesRead = bis.read(buffer)) > 0) {
+//				bos.write(buffer, 0, bytesRead);
+//			}
+//		} finally {
+//			if (bis != null) {
+//				bis.close();
+//			}
+//			if (bos != null) {
+//				bos.close();
+//			}
+//		}
+//	}
 
 }

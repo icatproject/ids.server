@@ -22,15 +22,16 @@ public class PropertyHandler {
 
     private int numberOfDaysToExpire;
     private String icatURL;
-    private String storageArchiveDir;
-    private String storageZipDir;
-    private String storageDir;
-    private String storagePreparedDir;
+//    private String storageArchiveDir;
+//    private String storageZipDir;
+//    private String storageDir;
+//    private String storagePreparedDir;
     private String userLocalDir;
     private long writeDelaySeconds;
     private long processQueueIntervalSeconds;
     private int numberOfDaysToKeepFilesInCache;
-    private Class<StorageInterface> storageInterfaceImplementation;
+    private Class<StorageInterface> fastStorageInterfaceImplementation;
+    private Class<StorageInterface> slowStorageInterfaceImplementation;
 
     @SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -79,10 +80,10 @@ public class PropertyHandler {
             throw new IllegalStateException(msg);
         }
         
-        storageArchiveDir = setICATDirFromProperties(props, "STORAGE_ARCHIVE_DIR");
-        storageZipDir = setICATDirFromProperties(props, "STORAGE_ZIP_DIR");
-        storageDir = setICATDirFromProperties(props, "STORAGE_DIR");
-        storagePreparedDir = setICATDirFromProperties(props, "STORAGE_PREPARED_DIR");
+//        storageArchiveDir = setICATDirFromProperties(props, "STORAGE_ARCHIVE_DIR");
+//        storageZipDir = setICATDirFromProperties(props, "STORAGE_ZIP_DIR");
+//        storageDir = setICATDirFromProperties(props, "STORAGE_DIR");
+//        storagePreparedDir = setICATDirFromProperties(props, "STORAGE_PREPARED_DIR");
         userLocalDir = setICATDirFromProperties(props, "USER_LOCAL_DIR");
         
         writeDelaySeconds = Long.parseLong(props.getProperty("WRITE_DELAY_SECONDS"));
@@ -103,16 +104,30 @@ public class PropertyHandler {
             throw new IllegalStateException(msg);
         }
         
-        String storageInterfaceImplementationName = props.getProperty("STORAGE_INTERFACE_IMPLEMENTATION");
-        if (storageInterfaceImplementationName == null) {
-        	String msg = "Property STORAGE_INTERFACE_IMPLEMENTATION must be set.";
+        String fastStorageInterfaceImplementationName = props.getProperty("FAST_STORAGE_INTERFACE_IMPLEMENTATION");
+        if (fastStorageInterfaceImplementationName == null) {
+        	String msg = "Property FAST_STORAGE_INTERFACE_IMPLEMENTATION must be set.";
         	logger.error(msg);
         	throw new IllegalStateException(msg);
         }
         try {
-        	storageInterfaceImplementation = (Class<StorageInterface>) Class.forName(storageInterfaceImplementationName);
+        	fastStorageInterfaceImplementation = (Class<StorageInterface>) Class.forName(fastStorageInterfaceImplementationName);
         } catch (Exception e) {
-        	String msg = "Could not get class implementing StorageInterface from " + storageInterfaceImplementationName;
+        	String msg = "Could not get class implementing StorageInterface from " + fastStorageInterfaceImplementationName;
+        	logger.error(msg);
+        	throw new IllegalStateException(msg);
+        }
+        
+        String slowStorageInterfaceImplementationName = props.getProperty("SLOW_STORAGE_INTERFACE_IMPLEMENTATION");
+        if (slowStorageInterfaceImplementationName == null) {
+        	String msg = "Property SLOW_STORAGE_INTERFACE_IMPLEMENTATION must be set.";
+        	logger.error(msg);
+        	throw new IllegalStateException(msg);
+        }
+        try {
+        	slowStorageInterfaceImplementation = (Class<StorageInterface>) Class.forName(slowStorageInterfaceImplementationName);
+        } catch (Exception e) {
+        	String msg = "Could not get class implementing StorageInterface from " + slowStorageInterfaceImplementationName;
         	logger.error(msg);
         	throw new IllegalStateException(msg);
         }
@@ -129,17 +144,21 @@ public class PropertyHandler {
         return icatURL;
     }
     
-    public String getStorageArchiveDir() {
-    	return storageArchiveDir;
-    }
-
-    public String getStorageDir() {
-        return storageDir;
-    }
-
-    public String getStorageZipDir() {
-        return storageZipDir;
-    }
+//    public String getStorageArchiveDir() {
+//    	return storageArchiveDir;
+//    }
+//
+//    public String getStorageDir() {
+//        return storageDir;
+//    }
+//
+//    public String getStorageZipDir() {
+//        return storageZipDir;
+//    }
+//	
+//	public String getStoragePreparedDir() {
+//		return storagePreparedDir;
+//	}
     
     public long getWriteDelaySeconds() {
     	return writeDelaySeconds;
@@ -157,12 +176,12 @@ public class PropertyHandler {
         return numberOfDaysToKeepFilesInCache;
     }
 
-	public Class<StorageInterface> getStorageInterfaceImplementation() {
-		return storageInterfaceImplementation;
+	public Class<StorageInterface> getFastStorageInterfaceImplementation() {
+		return fastStorageInterfaceImplementation;
 	}
 	
-	public String getStoragePreparedDir() {
-		return storagePreparedDir;
+	public Class<StorageInterface> getSlowStorageInterfaceImplementation() {
+		return slowStorageInterfaceImplementation;
 	}
 
 	public String getUserLocalDir() {
@@ -171,7 +190,6 @@ public class PropertyHandler {
 
 	private String setICATDirFromProperties(Properties props, String property) {
 		String res = props.getProperty(property);
-		// logger.severe(property + " = " + res); // TODO remove
         if (res == null) {
             String msg = "Property " + property + " must be set.";
             logger.error(msg);

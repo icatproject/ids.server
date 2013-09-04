@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -54,6 +55,8 @@ public class RequestEntity implements Serializable {
     private String preparedId;
     private String sessionId;
     private String userId;
+    
+    @Column(name = "IDS_COMPRESS")
     private boolean compress;
     
     public RequestEntity() {}

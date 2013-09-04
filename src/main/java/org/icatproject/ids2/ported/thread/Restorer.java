@@ -1,5 +1,7 @@
 package org.icatproject.ids2.ported.thread;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,8 +34,22 @@ public class Restorer implements Runnable {
 	@Override
 	public void run() {
 		logger.info("starting restorer");
-		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
-		StatusInfo resultingStatus = storageInterface.restoreFromArchive(de.getIcatDataset());
+		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
+		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
+		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming, that everything will go OK
+		try {
+			if (!fastStorageInterface.datasetExists(de.getIcatDataset())) {
+				InputStream is = slowStorageInterface.getDatasetInputStream(de.getIcatDataset());
+				fastStorageInterface.putDataset(de.getIcatDataset(), is);
+			}
+		} catch (FileNotFoundException e) {
+			logger.warn("Could not restore " + de.getIcatDataset() + " (file doesn't exist): " + e.getMessage());
+			resultingStatus = StatusInfo.NOT_FOUND;
+		} catch (Exception e) {
+			logger.warn("Could not restore " + de.getIcatDataset() + " (reason uknonwn): " + e.getMessage());
+			resultingStatus = StatusInfo.ERROR;
+		}
+		
 		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
 		synchronized (deferredOpsQueue) {

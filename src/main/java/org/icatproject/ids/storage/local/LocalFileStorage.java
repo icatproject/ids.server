@@ -20,7 +20,7 @@ import org.icatproject.ids2.ported.SimpleDirectoryWalker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LocalFileStorage implements StorageInterface {
+public class LocalFileStorage /*implements StorageInterface*/ {
 
 	private final static Logger logger = LoggerFactory.getLogger(LocalFileStorage.class);
 
@@ -36,7 +36,7 @@ public class LocalFileStorage implements StorageInterface {
 		logger.info("LocalFileStorage constructed");
 	}
 
-	@Override
+	/*@Override*/
 	public StatusInfo restoreFromArchive(Dataset ds) {
 		try {
 			logger.info("In restorer, processing dataset " + ds);
@@ -99,7 +99,7 @@ public class LocalFileStorage implements StorageInterface {
 		zis.close();
 	}
 
-	@Override
+	/*@Override*/
 	public StatusInfo writeToArchive(Dataset ds) {
 		try {
 			String location = ds.getLocation();

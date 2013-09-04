@@ -1,6 +1,7 @@
 package org.icatproject.ids.storage;
 
 import java.lang.reflect.Constructor;
+import java.util.Map;
 
 import org.icatproject.ids.storage.local.LocalFileStorage;
 import org.icatproject.ids.util.PropertyHandler;
@@ -23,18 +24,28 @@ public class StorageFactory {
         return instance;
     }
 
-    public StorageInterface createStorageInterface() {
+    private StorageInterface createStorageInterface(Class<StorageInterface> storageInterfaceImplementation) {
     	logger.info("creatingStorageInterface");
     	StorageInterface ret = null;
     	try {
-    		Constructor<StorageInterface> constructor = 
-    				properties.getStorageInterfaceImplementation().getConstructor(String.class, String.class, String.class);
-	    	ret = constructor.newInstance(properties.getStorageDir(), properties.getStorageZipDir(), properties.getStorageArchiveDir());
+//    		Constructor<StorageInterface> constructor = 
+//    				storageInterfaceImplementation.getConstructor(Map.class);
+//	    	ret = constructor.newInstance(props);
+    		Constructor<StorageInterface> constructor = storageInterfaceImplementation.getConstructor();
+    		ret = constructor.newInstance();
     	} catch (Exception e) {
     		logger.error("Could not instantiate StorageInterface implementation " + LocalFileStorage.class.getCanonicalName());
     		throw new RuntimeException(e);
     	}
     	logger.info("created StorageInterface " + ret);
 		return ret;
+    }
+    
+    public StorageInterface createFastStorageInterface() {
+    	return createStorageInterface(properties.getFastStorageInterfaceImplementation());
+    }
+    
+    public StorageInterface createSlowStorageInterface() {
+    	return createStorageInterface(properties.getSlowStorageInterfaceImplementation());
     }
 }
