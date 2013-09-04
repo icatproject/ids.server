@@ -7,7 +7,9 @@ package org.icatproject.ids.storage;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Set;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 
 public interface StorageInterface {
@@ -16,6 +18,10 @@ public interface StorageInterface {
 	public void putDataset(Dataset dataset, InputStream is) throws Exception;
 	public boolean datasetExists(Dataset dataset) throws Exception;
 	public void deleteDataset(Dataset dataset) throws Exception;
+	
+//	public boolean datafileExists(Datafile datafile) throws Exception;
+	
+	public void prepareZipForRequest(Set<Datafile> datafiles, String zipName, boolean compress) throws Exception;
 	
 //    public StatusInfo restoreFromArchive(Dataset dataset);
 //    public StatusInfo writeToArchive(Dataset dataset);

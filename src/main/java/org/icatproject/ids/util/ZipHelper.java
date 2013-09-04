@@ -19,7 +19,7 @@ public class ZipHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(ZipHelper.class);
 
-    public static void compressFileList(File zipFile, RequestEntity request
+    public static void compressFileList(RequestEntity request
     		/*, Set<String> fileSet, String relativePath, boolean compress*/) {
 //    	logger.info(String.format("zipping %s datasets and %s datafiles, total %s icatDatafiles",
 //    			request.getDatasets().size(), request.getDatafiles().size(),

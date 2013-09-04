@@ -2,7 +2,9 @@ package org.icatproject.ids.storage.local;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Set;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
 
@@ -34,6 +36,11 @@ public class SlowLocalFileStorage implements StorageInterface {
 	@Override
 	public void deleteDataset(Dataset dataset) throws Exception {
 		fsCommons.deleteDataset(dataset, STORAGE_ARCHIVE_DIR);
+	}
+	
+	@Override
+	public void prepareZipForRequest(Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
+		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
 	}
 
 }

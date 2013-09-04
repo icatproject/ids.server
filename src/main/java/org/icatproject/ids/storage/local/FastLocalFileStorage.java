@@ -4,18 +4,28 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Set;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.util.PropertyHandler;
+import org.icatproject.ids.util.ZipHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FastLocalFileStorage implements StorageInterface {
+	
+	private final static Logger logger = LoggerFactory.getLogger(FastLocalFileStorage.class);
 	
 	final int BUFSIZ = 2048;
 	final String STORAGE_ZIP_DIR = "/home/wojtek/icat/icatzipdata/";
@@ -62,6 +72,22 @@ public class FastLocalFileStorage implements StorageInterface {
 		}
 	}
 	
+//	@Override
+//	public boolean datafileExists(Datafile datafile) throws Exception {
+//		return 
+//	}
+	
+	@Override
+	public void prepareZipForRequest(java.util.Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
+		logger.info(String.format("zipping %s datafiles", datafiles.size()));
+        long startTime = System.currentTimeMillis();
+        File zipFile = new File(STORAGE_PREPARED_DIR, zipName);
+        writeZipFileFromDatafiles(zipFile, datafiles, 
+        		STORAGE_DIR, compress);
+        long endTime = System.currentTimeMillis();
+        logger.info("Time took to zip the files: " + (endTime - startTime));
+	}
+	
 	private void unzip(File zip, File dir) throws IOException {
 		final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)));
 		ZipEntry entry;
@@ -83,5 +109,78 @@ public class FastLocalFileStorage implements StorageInterface {
 		}
 		zis.close();
 	}
+	
+	public static void writeZipFileFromDatafiles(File zipFile, Set<Datafile> fileSet,
+            String relativePath, boolean compress) {
+        if (fileSet.isEmpty()) {
+            // Create empty file
+            try {
+                zipFile.createNewFile();
+            } catch (IOException ex) {
+                logger.error(null, ex);
+            }
+            return;
+        }
+
+        try {
+            FileOutputStream fos = new FileOutputStream(zipFile);
+            ZipOutputStream zos = new ZipOutputStream(fos);
+
+            // set whether to compress the zip file or not
+            if (compress == true) {
+                zos.setMethod(ZipOutputStream.DEFLATED);
+            } else {
+                // using compress with level 0 instead of archive (STORED) because
+                // STORED requires you to set CRC, size and compressed size
+                // TODO: find efficient way of calculating CRC
+                zos.setMethod(ZipOutputStream.DEFLATED);
+                zos.setLevel(0);
+                //zos.setMethod(ZipOutputStream.STORED);
+            }
+            for (Datafile file : fileSet) {
+            	logger.info("Adding file " + file.getLocation() + " to zip");
+                addToZip(zipFile, file.getLocation(), zos, relativePath);
+            }
+
+            zos.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void addToZip(File directoryToZip, String fileStr, ZipOutputStream zos,
+            String relativePath) {
+        try {
+            File file = new File(relativePath, fileStr);
+            FileInputStream fis = new FileInputStream(file);
+            // to the directory being zipped, so chop off the rest of the path
+            String zipFilePath = file.getCanonicalPath().substring(relativePath.length(),
+                    file.getCanonicalPath().length());
+            if (zipFilePath.startsWith(File.separator)) {
+                zipFilePath = zipFilePath.substring(1);
+            }
+            
+            logger.info("Writing '" + zipFilePath + "' to zip file");
+            ZipEntry zipEntry = new ZipEntry(zipFilePath);
+            try {
+                zos.putNextEntry(zipEntry);
+                byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fis.read(bytes)) >= 0) {
+                    zos.write(bytes, 0, length);
+                }
+                zos.closeEntry();
+                fis.close();
+            } catch (ZipException ex) {
+                logger.info("Skipping the file" + ex);
+                fis.close();
+            }
+        } catch (IOException ex) {
+            logger.error(null, ex);
+        }
+    }
 
 }
