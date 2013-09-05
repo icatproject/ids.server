@@ -3,6 +3,7 @@ package org.icatproject.ids.webservice;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +29,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
@@ -42,6 +44,8 @@ import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
 import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
 import org.icatproject.ids.queues.InfoRetrievalQueueSender;
+import org.icatproject.ids.storage.StorageFactory;
+import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.util.DownloadRequestHelper;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
@@ -261,112 +265,96 @@ public class WebService {
 	 * @return HTTP response containing the ZIP file
 	 */
 	public Response getData(String preparedId, String outname, String offset) {
-//		final RequestEntity requestEntity;
-//		final Long offsetLong;
-//		StreamingOutput strOut = null;
-//		String name = null;
-//
-//		// 400
-//		if (ValidationHelper.isValidId(preparedId) == false) {
-//			throw new BadRequestException("The preparedId parameter is invalid");
-//		}
-//
-//		if (ValidationHelper.isValidName(outname) == false) {
-//			throw new BadRequestException("The outname parameter is invalid");
-//		}
-//
-//		if (ValidationHelper.isValidOffset(offset) == false) {
-//			throw new BadRequestException("The offset parameter is invalid");
-//		}
-//
-//		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='" + outname
-//				+ "' " + "offset='" + offset + "'");
-//
-//		try {
-//			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
-//		} catch (PersistenceException e) {
-//			throw new InternalServerErrorException("Unable to connect to the database");
-//		} catch (EJBException e) {
-//			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
-//		} catch (Exception e) {
-//			throw new InternalServerErrorException(e.getMessage());
-//		} catch (Throwable t) {
-//			throw new InternalServerErrorException(t.getMessage());
-//		}
-//
-//		// the internal download request status must be COMPLETE in order to
-//		// download the zip
-//		switch (requestEntity.getStatus()) {
-//		case SUBMITTED:
-//		case INFO_RETRIVING:
-//		case INFO_RETRIVED:
-//		case RETRIVING:
-//			throw new NotFoundException("Requested files are not ready for download");
-//		case DENIED:
-//			// TODO: return a list of the 'bad' files?
-//			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
-//		case NOT_FOUND:
-//			// TODO: return list of the 'bad' ids?
-//			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
-//		case INCOMPLETE:
-//			throw new NotFoundException("Some of the requested files are no longer avaliable in ICAT.");
-//		case ERROR:
-//			// TODO: return list of the missing files?
-//			throw new InternalServerErrorException("Unable to find files in storage");
-//		case COMPLETED:
-//		default:
-//			break;
-//		}
-//
-//		// if no outname supplied give default name also suffix with .zip if
-//		// absent
-//		if (outname == null) {
-//			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity.getSubmittedTime());
-//			name = name + ".zip";
-//		} else {
-//			name = outname;
-//			String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
-//			if ("zip".equals(ext) == false) {
-//				name = name + ".zip";
-//			}
-//		}
-//
-//		// calculate offset
-//		if (offset != null) {
-//			offsetLong = Long.parseLong(offset);
-//		} else {
-//			offsetLong = 0L;
-//		}
-//
-////		File zipFile = new File(PropertyHandler.getInstance().getStoragePreparedDir() + File.separator
-////				+ requestEntity.getPreparedId() + ".zip");
-//
-//		// if (zipFile.exists() == false) {
-//		// throw new InternalServerErrorException("The zip file doesn't exist");
-//		// }
-//		// if zip file is 0 bytes then something has gone wrong
-//		if (zipFile.length() == 0) {
-//			throw new InternalServerErrorException("There was a problem creating the zip file.");
-//		}
-//
-//		// check if offset is larger than the file size
-//		if (offsetLong >= zipFile.length()) {
-//			System.out.println("\n\n\n\n\n\n" + requestEntity.getPreparedId() + "\n\n\n\n\n\n\n");
-//			throw new BadRequestException("Offset (" + offsetLong + " bytes) is larger than file size ("
-//					+ zipFile.length() + " bytes)");
-//		}
-//
-//		// create output stream of the zip file
-//		strOut = new StreamingOutput() {
-//			@Override
-//			public void write(OutputStream output) throws IOException {
-//				requestHelper.writeFileToOutputStream(requestEntity, output, offsetLong);
-//			}
-//		};
-//
-//		return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
-//				.header("Accept-Ranges", "bytes").build();
-		return null;
+		final RequestEntity requestEntity;
+		final Long offsetLong;
+		String name = null;
+
+		// 400
+		if (ValidationHelper.isValidId(preparedId) == false) {
+			throw new BadRequestException("The preparedId parameter is invalid");
+		}
+
+		if (ValidationHelper.isValidName(outname) == false) {
+			throw new BadRequestException("The outname parameter is invalid");
+		}
+
+		if (ValidationHelper.isValidOffset(offset) == false) {
+			throw new BadRequestException("The offset parameter is invalid");
+		}
+
+		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='" + outname
+				+ "' " + "offset='" + offset + "'");
+
+		try {
+			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
+		} catch (PersistenceException e) {
+			throw new InternalServerErrorException("Unable to connect to the database");
+		} catch (EJBException e) {
+			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
+		} catch (Exception e) {
+			throw new InternalServerErrorException(e.getMessage());
+		} catch (Throwable t) {
+			throw new InternalServerErrorException(t.getMessage());
+		}
+
+		// the internal download request status must be COMPLETE in order to
+		// download the zip
+		switch (requestEntity.getStatus()) {
+		case SUBMITTED:
+		case INFO_RETRIVING:
+		case INFO_RETRIVED:
+		case RETRIVING:
+			throw new NotFoundException("Requested files are not ready for download");
+		case DENIED:
+			// TODO: return a list of the 'bad' files?
+			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
+		case NOT_FOUND:
+			// TODO: return list of the 'bad' ids?
+			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
+		case INCOMPLETE:
+			throw new NotFoundException("Some of the requested files are no longer avaliable in ICAT.");
+		case ERROR:
+			// TODO: return list of the missing files?
+			throw new InternalServerErrorException("Unable to find files in storage");
+		case COMPLETED:
+		default:
+			break;
+		}
+
+		// if no outname supplied give default name also suffix with .zip if
+		// absent
+		if (outname == null) {
+			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity.getSubmittedTime());
+			name = name + ".zip";
+		} else {
+			name = outname;
+			String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
+			if ("zip".equals(ext) == false) {
+				name = name + ".zip";
+			}
+		}
+
+		// calculate offset
+		if (offset != null) {
+			offsetLong = Long.parseLong(offset);
+		} else {
+			offsetLong = 0L;
+		}
+
+		final StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+		// create output stream of the zip file
+		StreamingOutput strOut = new StreamingOutput() {
+			@Override
+			public void write(OutputStream output) throws IOException, WebApplicationException {
+				try {
+					fastStorage.getPreparedZip(requestEntity.getPreparedId()+".zip", output, offsetLong);
+				} catch (Exception e) {
+					throw new WebApplicationException(e);
+				}
+			}
+		};
+			return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
+					.header("Accept-Ranges", "bytes").build();
 	}
 
 	/**

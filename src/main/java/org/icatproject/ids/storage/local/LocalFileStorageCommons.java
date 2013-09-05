@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.icatproject.Dataset;
+import org.icatproject.ids.webservice.exceptions.BadRequestException;
 
 public class LocalFileStorageCommons {
 	
@@ -23,13 +24,22 @@ public class LocalFileStorageCommons {
 	
 	public void getDataset(Dataset dataset, OutputStream os, String storageDir) throws Exception {
 		File zippedDs = new File(new File(storageDir, dataset.getLocation()), "files.zip");
-		if (!zippedDs.exists()) {
-			throw new FileNotFoundException(zippedDs.getAbsolutePath());
-		}
 		writeFileToOutputStream(zippedDs, os, 0L);
 	}
 	
-	private void writeFileToOutputStream(File file, OutputStream os, Long offset) throws IOException {
+	public void getPreparedZip(String zipName, OutputStream os, long offset, String preparedDir) throws Exception {
+		File preparedZip = new File(preparedDir, zipName);
+		writeFileToOutputStream(preparedZip, os, offset);
+	}
+	
+	private void writeFileToOutputStream(File file, OutputStream os, Long offset) throws Exception {
+		if (!file.exists()) {
+			throw new FileNotFoundException(file.getAbsolutePath());
+		}
+		if (offset >= file.length()) {
+			throw new IllegalArgumentException("Offset (" + offset + " bytes) is larger than file size ("
+					+ file.length() + " bytes)");
+		}
 		BufferedInputStream bis = null;
 		BufferedOutputStream bos = null;
 		try {

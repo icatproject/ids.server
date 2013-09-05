@@ -88,6 +88,11 @@ public class FastLocalFileStorage implements StorageInterface {
         logger.info("Time took to zip the files: " + (endTime - startTime));
 	}
 	
+	@Override
+	public void getPreparedZip(String zipName, OutputStream os, long offset) throws Exception {
+		fsCommons.getPreparedZip(zipName, os, offset, STORAGE_PREPARED_DIR);
+	}
+	
 	private void unzip(File zip, File dir) throws IOException {
 		final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)));
 		ZipEntry entry;

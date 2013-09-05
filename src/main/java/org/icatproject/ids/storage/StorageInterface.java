@@ -22,6 +22,7 @@ public interface StorageInterface {
 //	public boolean datafileExists(Datafile datafile) throws Exception;
 	
 	public void prepareZipForRequest(Set<Datafile> datafiles, String zipName, boolean compress) throws Exception;
+	public void getPreparedZip(String zipName, OutputStream os, long offset) throws Exception;
 	
 //    public StatusInfo restoreFromArchive(Dataset dataset);
 //    public StatusInfo writeToArchive(Dataset dataset);
