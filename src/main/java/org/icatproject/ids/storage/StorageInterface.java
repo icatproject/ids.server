@@ -19,6 +19,10 @@ public interface StorageInterface {
 	public boolean datasetExists(Dataset dataset) throws Exception;
 	public void deleteDataset(Dataset dataset) throws Exception;
 	
+	/*
+	 * Returns the length of the created file
+	 */
+	public long putDatafile(String location, InputStream is) throws Exception;
 //	public boolean datafileExists(Datafile datafile) throws Exception;
 	
 	public void prepareZipForRequest(Set<Datafile> datafiles, String zipName, boolean compress) throws Exception;

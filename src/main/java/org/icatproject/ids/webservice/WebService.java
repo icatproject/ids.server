@@ -494,35 +494,42 @@ public class WebService {
 			@QueryParam("datafileModTime") String datafileModTime) throws Exception {
 		logger.info(String.format("put received, file=%s, location=%s", name, probableLocation));
 
-//		if (ValidationHelper.isValidId(sessionId) == false) {
-//			throw new BadRequestException("The sessionId parameter is invalid");
-//		}
-//		if (name == null) {
-//			throw new BadRequestException("The name parameter must be set");
-//		}
-//		if (datafileFormatId == null) {
-//			throw new BadRequestException("The datafileFormatId parameter must be set");
-//		}
-//		if (datasetId == null) {
-//			throw new BadRequestException("The datasetId parameter must be set");
-//		}
-//
-//		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
-//		String location = probableLocation;
-//		if (location == null) {
-//			location = new File(ds.getLocation(), name).getPath();
-//		}
-//		String locationDir = new File(location).getParent();
-//
-//		try {
+		if (ValidationHelper.isValidId(sessionId) == false) {
+			throw new BadRequestException("The sessionId parameter is invalid");
+		}
+		if (name == null) {
+			throw new BadRequestException("The name parameter must be set");
+		}
+		if (datafileFormatId == null) {
+			throw new BadRequestException("The datafileFormatId parameter must be set");
+		}
+		if (datasetId == null) {
+			throw new BadRequestException("The datasetId parameter must be set");
+		}
+
+		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
+		String location = probableLocation;
+		if (location == null) {
+			location = new File(ds.getLocation(), name).getPath();
+		}
+		String locationDir = new File(location).getParent();
+
 //			File file = new File(PropertyHandler.getInstance().getStorageDir(), location);
 //
 //			final File tfile = File
 //					.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
 //			final long tbytes = storeFile(body, tfile);
-//			try {
-//				String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, location,
-//						datafileFormatId, tbytes, ds));
+			try {
+				StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+				if (!fastStorage.datasetExists(ds)) {
+					RequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
+					requestHelper.addDatasets(sessionId, requestEntity, datasetId);
+					this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
+					throw new NotFoundException("Before putting a datafile, its dataset has to be restored, restoration requested automatically");
+				}
+				long tbytes = fastStorage.putDatafile(location, body);
+				String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, location,
+						datafileFormatId, tbytes, ds));
 //				FileUtils.forceMkdir(file.getParentFile());
 //				tfile.renameTo(file);
 //				File zipfile = new File(new File(PropertyHandler.getInstance().getStorageZipDir(), locationDir),
@@ -531,22 +538,17 @@ public class WebService {
 //					zipfile.delete();
 //				}
 //				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
-//				
+				
 //				RequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
 //				requestHelper.addDatafiles(sessionId, requestEntity, assignedDatafileId);
 //				for (Ids2DataEntity de : requestEntity.getDataEntities()) {
 //					this.queue(de, DeferredOp.WRITE);
 //				}
-//			} catch (IOException e) {
+			} catch (IOException e) {
 //				FileUtils.forceDelete(tfile);
-//				throw e;
-//			}
-//		} catch (final IOException e) {
-//			logger.error(e.getMessage());
-//			throw e;
-//		}
-//		return Response.status(200).entity(name).build();
-		return null;
+				throw e;
+			}
+		return Response.status(200).entity(name).build();
 	}
 
 	@DELETE

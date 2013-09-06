@@ -77,6 +77,12 @@ public class FastLocalFileStorage implements StorageInterface {
 //		return 
 //	}
 	
+	public long putDatafile(String location, InputStream is) throws Exception {
+		File file = new File(STORAGE_DIR, location);
+		fsCommons.writeInputStreamToFile(file, is);
+		return 0;
+	};
+	
 	@Override
 	public void prepareZipForRequest(java.util.Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
 		logger.info(String.format("zipping %s datafiles", datafiles.size()));

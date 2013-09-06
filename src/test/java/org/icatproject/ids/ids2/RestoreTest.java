@@ -53,7 +53,7 @@ public class RestoreTest {
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		int retryLimit = 10;
+		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
@@ -80,7 +80,7 @@ public class RestoreTest {
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null, dsIds, null);
-		int retryLimit = 10;
+		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 		} while ((!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists() || 

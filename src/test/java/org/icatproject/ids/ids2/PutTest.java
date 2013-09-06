@@ -13,6 +13,7 @@ import org.icatproject.ICATService;
 import org.icatproject.ids.Setup;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.idsclient.TestingClient;
+import org.icatproject.idsclient.exception.TestingClientNotFoundException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,6 +25,8 @@ public class PutTest {
 	private static Setup setup = null;
 	private static ICAT icat;
 	TestingClient testingClient;
+
+	private static long timestamp;
 
 	@BeforeClass
 	public static void setup() throws Exception {
@@ -42,26 +45,49 @@ public class PutTest {
 		storageDir.mkdir();
 		storageZipDir.mkdir();
 		testingClient = new TestingClient(setup.getIdsUrl());
+		timestamp = System.currentTimeMillis();
+	}
+	
+	@Test(expected = TestingClientNotFoundException.class)
+	public void putToUnrestoredDataset() throws Exception {
+		final int DS_NUM_FROM_PROPS = 0;
+		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
+		String uploadedLocation = "./my_file_name.txt";
+		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
+				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
 	}
 
-//	@Test
-//	public void putOneFileTest() throws Exception {
-//		final int DS_NUM_FROM_PROPS = 0;
-//		long timestamp = System.currentTimeMillis();
-//		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
-//		String uploadedLocation = "./my_file_name.txt";
-//		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
-//		
-//		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
-//				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
-//		int retryLimit = 10;
-//		do {
-//			Thread.sleep(1000);
-//		} while (!fileOnFastStorage.exists() && retryLimit-- > 0);
-//		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
-//				fileOnFastStorage.exists());
-//	}
-//
+	@Test
+	public void putOneFileTest() throws Exception {
+		final int DS_NUM_FROM_PROPS = 0;		
+		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
+				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
+		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
+		String uploadedLocation = new File(icatDs.getLocation(), "my_file_name.txt").getPath();
+		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
+		
+		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
+		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
+		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		int retryLimit = 5;
+		do {
+			Thread.sleep(1000);
+		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				dirOnFastStorage.exists());
+		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				zipOnFastStorage.exists());
+		
+		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
+				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
+		retryLimit = 5;
+		do {
+			Thread.sleep(1000);
+		} while (!fileOnFastStorage.exists() && retryLimit-- > 0);
+		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
+				fileOnFastStorage.exists());
+	}
+
 //	@Test
 //	public void deleteOldZipOfDatasetTest() throws Exception {
 //		final int DS_NUM_FROM_PROPS = 0;

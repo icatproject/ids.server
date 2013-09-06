@@ -17,7 +17,7 @@ public class WebApplicationExceptionMapper implements ExceptionMapper<WebApplica
 
     @Override
     public Response toResponse(WebApplicationException e) {
-//    	logger.info("mapping exception " + e + " " + e.getMessage());
+    	logger.info("mapping exception " + e + " " + e.getMessage());
     	int responseStatus = 500;
     	if (e.getCause() instanceof FileNotFoundException) {
     		responseStatus = WebServiceException.Response.NOT_FOUND.getResponseCode();

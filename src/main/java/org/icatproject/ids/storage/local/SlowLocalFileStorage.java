@@ -39,6 +39,11 @@ public class SlowLocalFileStorage implements StorageInterface {
 	}
 	
 	@Override
+	public long putDatafile(String location, InputStream is) throws Exception {
+		throw new UnsupportedOperationException("Single files cannot be added directly to the slow storage");
+	}
+	
+	@Override
 	public void prepareZipForRequest(Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
 		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
 	}

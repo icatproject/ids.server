@@ -30,7 +30,7 @@ public class Writer implements Runnable {
 	
 	@Override
 	public void run() {
-//		logger.info("starting writer");
+		logger.info("starting writer");
 //		StorageInterface storageInterface = StorageFactory.getInstance().createStorageInterface();
 //		StatusInfo resultingStatus = storageInterface.writeToArchive(de.getIcatDataset());
 //		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();

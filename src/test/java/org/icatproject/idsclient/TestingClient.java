@@ -84,19 +84,19 @@ public class TestingClient {
 	 */
 	public void restoreTest(String sessionId, String investigationIds, String datasetIds, String datafileIds)
 			throws Exception {
-		// Map<String, String> parameters = new HashMap<String, String>();
-		//
-		// // create parameter list
-		// parameters.put("sessionId", sessionId);
-		// if (investigationIds != null)
-		// parameters.put("investigationIds", investigationIds);
-		// if (datasetIds != null)
-		// parameters.put("datasetIds", datasetIds);
-		// if (datafileIds != null)
-		// parameters.put("datafileIds", datafileIds);
-		//
-		// Response response = HTTPConnect("POST", "restore", parameters, null);
-		// response.getResponse().toString().trim();
+//		 Map<String, String> parameters = new HashMap<String, String>();
+//		
+//		 // create parameter list
+//		 parameters.put("sessionId", sessionId);
+//		 if (investigationIds != null)
+//		 parameters.put("investigationIds", investigationIds);
+//		 if (datasetIds != null)
+//		 parameters.put("datasetIds", datasetIds);
+//		 if (datafileIds != null)
+//		 parameters.put("datafileIds", datafileIds);
+//		
+//		 Response response = HTTPConnect("POST", "restore", parameters, null);
+//		 response.getResponse().toString().trim();
 
 		Client client = Client.create();
 
@@ -260,6 +260,7 @@ public class TestingClient {
 		}
 
 		// convert response code into relevant IDSException
+//		System.err.println("SC = " + connection.getResponseCode());
 		switch (connection.getResponseCode()) {
 		case 200:
 			break;

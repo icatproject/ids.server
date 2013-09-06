@@ -84,6 +84,9 @@ public class LocalFileStorageCommons {
 	}
 	
 	public void writeInputStreamToFile(File file, InputStream is) throws Exception {
+		File fileDir = file.getParentFile();
+		fileDir.mkdirs();
+		
 		BufferedInputStream bis = null;
 		BufferedOutputStream bos = null;
 		try {
