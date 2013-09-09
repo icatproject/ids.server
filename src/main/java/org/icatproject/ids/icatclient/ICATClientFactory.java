@@ -1,18 +1,16 @@
 package org.icatproject.ids.icatclient;
 
 import java.net.MalformedURLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import org.icatproject.ids.icatclient.ICATClient42;
-import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
 import org.icatproject.ids.util.PropertyHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class ICATClientFactory {
 
-    private final static Logger logger = Logger.getLogger(ICATClientFactory.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(ICATClientFactory.class);
 
     private static ICATClientFactory instance = new ICATClientFactory();
     private static String url;
@@ -35,8 +33,7 @@ public class ICATClientFactory {
         if (version.equals("4.2")) {
             icat = new ICATClient42(url);
         } else {
-            logger.log(Level.SEVERE,
-                    "Unsupported ICAT version : '" + tempICATClient.getICATVersion() + "'");
+            logger.error("Unsupported ICAT version : '" + tempICATClient.getICATVersion() + "'");
         }
         
         return icat;

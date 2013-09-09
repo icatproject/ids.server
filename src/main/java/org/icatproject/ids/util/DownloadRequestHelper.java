@@ -11,9 +11,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -27,8 +27,8 @@ import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
 import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -38,6 +38,8 @@ import org.icatproject.ids.storage.StorageInterface;
 @Stateless
 public class DownloadRequestHelper
 {
+	private final static Logger logger = LoggerFactory.getLogger(DownloadRequestHelper.class);
+	
     @PersistenceContext(unitName = "IDS-PU")
     private EntityManager em;
 
@@ -116,43 +118,44 @@ public class DownloadRequestHelper
      * and extracts them from the storage source
      */
     public void processDataRetrievalRequest(DownloadRequestEntity downloadRequestEntity)
-    {           
-        StorageInterface storage = StorageFactory.getInstance().createStorageInterface(em, downloadRequestEntity.getPreparedId());
-    
-        //System.out.println("Number of Datafiles:" + downloadRequestEntity.getDatafileList().size());      // TODO: remove System.out
-        em.refresh(downloadRequestEntity);
-        
-        // loop through the DownloadRequestEntity Datafiles and Datasets to download the files
-        HashSet<String> fileSet = storage.copyDatafiles(downloadRequestEntity.getDatafileList());
-        
-        // check if there were any problems retrieving the datafiles
-        for (DatafileEntity datafileEntity : downloadRequestEntity.getDatafileList()) {
-            if (datafileEntity.getStatus().equals(StatusInfo.ERROR.name())) {
-                downloadRequestEntity.setStatus(StatusInfo.ERROR.name());
-                // If there was a problem retrieving a file, check that it still exists in ICAT.
-                // If it no longer exists in ICAT set status as INCOMPLETE
-                try {
-                    ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
-                    ArrayList<Long> datafileIds = new ArrayList<Long>();
-                    datafileIds.add(datafileEntity.getDatafileId());
-                    client.getDatafilePaths(downloadRequestEntity.getSessionId(), datafileIds);
-                } catch (ICATNoSuchObjectException e) {
-                    downloadRequestEntity.setStatus(StatusInfo.INCOMPLETE.name());
-                } catch (Exception e) {
-                    // do nothing as status already set as error
-                }
-                break;
-            }
-        }
-        
-        // if there were not any problems retriving the files, change the status of the request to COMPLETE
-        if (!downloadRequestEntity.getStatus().equals(StatusInfo.ERROR.name())) {
-            downloadRequestEntity.setStatus(StatusInfo.COMPLETED.name());
-            File zipFile = new File(properties.getLocalTemporaryStoragePath() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
-            ZipHelper.compressFileList(zipFile, fileSet, storage.getStoragePath(), downloadRequestEntity.getCompress());
-        }
-    
-        em.merge(downloadRequestEntity);
+    {     
+//        StorageInterface storage = StorageFactory.getInstance().createStorageInterface(em, downloadRequestEntity.getPreparedId());
+//    
+//        //System.out.println("Number of Datafiles:" + downloadRequestEntity.getDatafileList().size());      // TODO: remove System.out
+//        em.refresh(downloadRequestEntity); // gets changes to the entity from the database
+//        
+//        // loop through the DownloadRequestEntity Datafiles and Datasets to download the files
+//        HashSet<String> fileSet = storage.copyDatafiles(downloadRequestEntity.getDatafileList());
+//        
+//        // check if there were any problems retrieving the datafiles
+//        for (DatafileEntity datafileEntity : downloadRequestEntity.getDatafileList()) {
+//        	// logger.severe(datafileEntity.getName() + " status: " + datafileEntity.getStatus()); // TODO remove
+//            if (datafileEntity.getStatus().equals(StatusInfo.ERROR.name())) {
+//                downloadRequestEntity.setStatus(StatusInfo.ERROR.name());
+//                // If there was a problem retrieving a file, check that it still exists in ICAT.
+//                // If it no longer exists in ICAT set status as INCOMPLETE
+//                try {
+//                    ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
+//                    ArrayList<Long> datafileIds = new ArrayList<Long>();
+//                    datafileIds.add(datafileEntity.getDatafileId());
+//                    client.getDatafilePaths(downloadRequestEntity.getSessionId(), datafileIds);
+//                } catch (ICATNoSuchObjectException e) {
+//                    downloadRequestEntity.setStatus(StatusInfo.INCOMPLETE.name());
+//                } catch (Exception e) {
+//                    // do nothing as status already set as error
+//                }
+//                break;
+//            }
+//        }
+//        
+//        // if there were not any problems retriving the files, change the status of the request to COMPLETE
+//        if (!downloadRequestEntity.getStatus().equals(StatusInfo.ERROR.name())) {
+//            downloadRequestEntity.setStatus(StatusInfo.COMPLETED.name());
+//            File zipFile = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
+//            ZipHelper.compressFileList(zipFile, fileSet, properties.getStorageDir(), downloadRequestEntity.getCompress());
+//        }
+//    
+//        em.merge(downloadRequestEntity);
     }
 
 
@@ -236,33 +239,33 @@ public class DownloadRequestHelper
 
     public void writeFileToOutputStream(DownloadRequestEntity downloadRequestEntity, OutputStream output, Long offset) throws IOException
     {
-        File zipFile = new File(properties.getLocalTemporaryStoragePath() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
-
-        BufferedInputStream bis = null;
-        BufferedOutputStream bos = null;
-        try {
-            int bytesRead = 0;
-            byte[] buffer = new byte[32 * 1024];
-            bis = new BufferedInputStream(new FileInputStream(zipFile));
-            bos = new BufferedOutputStream(output);
-            
-            // apply offset to stream
-            if (offset > 0) {
-                bis.skip(offset);
-            }
-            
-            // write bytes to output stream
-            while ((bytesRead = bis.read(buffer)) > 0) {
-                bos.write(buffer, 0, bytesRead);
-            }
-        } finally {
-            if (bis != null) {
-                bis.close();
-            }
-            if (bos != null) {
-                bos.close();
-            }
-        }
+//        File zipFile = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
+//
+//        BufferedInputStream bis = null;
+//        BufferedOutputStream bos = null;
+//        try {
+//            int bytesRead = 0;
+//            byte[] buffer = new byte[32 * 1024];
+//            bis = new BufferedInputStream(new FileInputStream(zipFile));
+//            bos = new BufferedOutputStream(output);
+//            
+//            // apply offset to stream
+//            if (offset > 0) {
+//                bis.skip(offset);
+//            }
+//            
+//            // write bytes to output stream
+//            while ((bytesRead = bis.read(buffer)) > 0) {
+//                bos.write(buffer, 0, bytesRead);
+//            }
+//        } finally {
+//            if (bis != null) {
+//                bis.close();
+//            }
+//            if (bos != null) {
+//                bos.close();
+//            }
+//        }
     }
 
 
@@ -298,11 +301,11 @@ public class DownloadRequestHelper
    
     public void deleteDownloadRequest(DownloadRequestEntity downloadRequestEntity)
     {
-        File file = new File(properties.getLocalTemporaryStoragePath() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
-        file.delete();
-        
-        em.remove(downloadRequestEntity);
-        em.flush();
+//        File file = new File(properties.getStorageZipDir() + File.separator + downloadRequestEntity.getPreparedId() + ".zip");
+//        file.delete();
+//        
+//        em.remove(downloadRequestEntity);
+//        em.flush();
     }
     
     

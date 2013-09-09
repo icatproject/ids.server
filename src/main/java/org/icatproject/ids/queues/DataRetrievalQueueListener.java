@@ -1,7 +1,5 @@
 package org.icatproject.ids.queues;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
@@ -12,6 +10,8 @@ import javax.jms.ObjectMessage;
 
 import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.util.DownloadRequestHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -27,7 +27,7 @@ public class DataRetrievalQueueListener implements MessageListener {
     @EJB
     private DownloadRequestHelper downloadRequestHelper;
 
-    private final static Logger logger = Logger.getLogger(DataRetrievalQueueListener.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(DataRetrievalQueueListener.class);
     
     @Override
     public void onMessage(Message message) {
@@ -40,10 +40,10 @@ public class DataRetrievalQueueListener implements MessageListener {
                 if (downloadRequestEntity != null) {
                     downloadRequestHelper.processDataRetrievalRequest(downloadRequestEntity);
                 } else {         
-                    logger.log(Level.SEVERE, "Could not find the download request Id");
+                    logger.error("Could not find the download request Id");
                 }
             } catch (JMSException e) {
-                logger.log(Level.SEVERE, "Unable to proccess the download request", e);
+                logger.error("Unable to proccess the download request", e);
             }
         }
     }

@@ -5,9 +5,6 @@ import javax.ejb.Schedule;
 import javax.ejb.Schedules;
 import javax.ejb.Singleton;
 
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
-import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.DownloadRequestHelper;
 
 
@@ -28,8 +25,8 @@ public class DownloadRequestClearanceService {
         @Schedule(dayOfWeek = "Sun")
     })
     public void removeOldLocalCacheFiles() {
-        StorageFactory sf = StorageFactory.getInstance();
-        StorageInterface si = sf.createStorageInterface(null, null);
-        si.clearUnusedFiles(PropertyHandler.getInstance().getNumberOfDaysToKeepFilesInCache());
+//        StorageFactory sf = StorageFactory.getInstance();
+//        StorageInterface si = sf.createStorageInterface(null, null);
+//        si.clearUnusedFiles(PropertyHandler.getInstance().getNumberOfDaysToKeepFilesInCache()); // TODO implement clearing unused files (here or in some other class)
     }
 }

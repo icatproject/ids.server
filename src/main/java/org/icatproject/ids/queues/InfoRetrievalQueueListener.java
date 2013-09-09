@@ -1,16 +1,20 @@
 package org.icatproject.ids.queues;
 
 import java.net.MalformedURLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import javax.ejb.ActivationConfigProperty;
 import javax.ejb.EJB;
 import javax.ejb.MessageDriven;
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.ObjectMessage;
 
 import org.icatproject.ids.entity.DownloadRequestEntity;
 import org.icatproject.ids.util.DownloadRequestHelper;
 import org.icatproject.ids.util.StatusInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -29,7 +33,7 @@ public class InfoRetrievalQueueListener implements MessageListener {
     @EJB
     private DownloadRequestHelper downloadRequestHelper;
     
-    private final static Logger logger = Logger.getLogger(InfoRetrievalQueueListener.class.getName());
+    private final static Logger logger = LoggerFactory.getLogger(InfoRetrievalQueueListener.class);
     
     public InfoRetrievalQueueListener() {}
 
@@ -46,16 +50,17 @@ public class InfoRetrievalQueueListener implements MessageListener {
 
                     // if all information successfully retrieved from ICAT, add request to the
                     // data retrieval queue
+                    // logger.severe("InfoRetrievalQueueListener status: " + downloadRequestEntity.getStatus()); // TODO remove
                     if (downloadRequestEntity.getStatus().equals(StatusInfo.INFO_RETRIVED.name())) {
                         dataRetrievalQueueSender.addDataRetrievalRequest(downloadRequestEntity);
                     }
                 } else {
-                    logger.log(Level.SEVERE, "Couldn not find the download request Id");
+                    logger.error("Could not find the download request Id");
                 }
             } catch (JMSException e) {
-                logger.log(Level.SEVERE, "Unable to proccess the download request", e);
+                logger.error("Unable to proccess the download request", e);
             } catch (MalformedURLException e) {
-                logger.log(Level.SEVERE, "Unable to connect to ICAT - Bad URL", e);
+                logger.error("Unable to connect to ICAT - Bad URL", e);
             }
         }
     }

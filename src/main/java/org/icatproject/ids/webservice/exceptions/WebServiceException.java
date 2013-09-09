@@ -1,7 +1,6 @@
 package org.icatproject.ids.webservice.exceptions;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the parent class for all the response code exceptions the web service can throw. Each
@@ -46,9 +45,9 @@ public class WebServiceException extends RuntimeException
         this.message = message;
         
         if (response.getResponseCode() == 500 || response.getResponseCode() == 507) {
-            Logger.getLogger(WebServiceExceptionMapper.class.getName()).log(Level.SEVERE, getMessage());
+        	LoggerFactory.getLogger(WebServiceExceptionMapper.class).error(getMessage());
         } else {
-            Logger.getLogger(WebServiceExceptionMapper.class.getName()).log(Level.INFO, getMessage());
+        	LoggerFactory.getLogger(WebServiceExceptionMapper.class).info(getMessage());
         }
     }
     

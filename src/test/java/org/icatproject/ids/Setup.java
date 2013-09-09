@@ -11,11 +11,11 @@ import java.util.Properties;
 
 import javax.xml.namespace.QName;
 
-import org.icatproject.ids.icatclient.icat42.ICAT;
-import org.icatproject.ids.icatclient.icat42.ICATService;
-import org.icatproject.ids.icatclient.icat42.IcatException_Exception;
-import org.icatproject.ids.icatclient.icat42.Login.Credentials;
-import org.icatproject.ids.icatclient.icat42.Login.Credentials.Entry;
+import org.icatproject.ICAT;
+import org.icatproject.ICATService;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.Login.Credentials;
+import org.icatproject.Login.Credentials.Entry;
 
 
 /*
@@ -36,11 +36,17 @@ public class Setup {
     private static Map<String, String> filenameMD5 = null;
     private static ArrayList<String> datasetIds = null;
     private static ArrayList<String> datafileIds = null;
+    
+    private String storageArchiveDir;
+    private String storageZipDir;
+    private String storageDir;
+    private String storagePreparedDir;
+    private String userLocalDir;
 
     public Setup() throws MalformedURLException, IcatException_Exception {
         InputStream is = getClass().getResourceAsStream("/test.properties");
         try {
-          props.load(is);
+        	props.load(is);
         } catch (Exception e) {
             System.out.println("Problem loading test.properties\n" + e.getMessage());
         }
@@ -54,13 +60,24 @@ public class Setup {
         filenameMD5 = new HashMap<String, String>();
         filenameMD5.put(props.getProperty("df1_location"), props.getProperty("df1_md5"));
         filenameMD5.put(props.getProperty("df2_location"), props.getProperty("df2_md5"));
+        filenameMD5.put(props.getProperty("df3_location"), props.getProperty("df3_md5"));
+        filenameMD5.put(props.getProperty("df4_location"), props.getProperty("df4_md5"));
 
         datasetIds = new ArrayList<String>();
         datasetIds.add(props.getProperty("ds1_id"));
+        datasetIds.add(props.getProperty("ds2_id"));
 
         datafileIds = new ArrayList<String>();
         datafileIds.add(props.getProperty("df1_id"));
         datafileIds.add(props.getProperty("df2_id"));
+        datafileIds.add(props.getProperty("df3_id"));
+        datafileIds.add(props.getProperty("df4_id"));
+
+        storageArchiveDir = props.getProperty("STORAGE_ARCHIVE_DIR");
+        storageZipDir = props.getProperty("STORAGE_ZIP_DIR");
+        storageDir = props.getProperty("STORAGE_DIR");
+        storagePreparedDir = props.getProperty("STORAGE_PREPARED_DIR");
+        userLocalDir = props.getProperty("USER_LOCAL_DIR");
     }
 
     /*
@@ -69,7 +86,7 @@ public class Setup {
      */
     public String login(String username, String password) throws IcatException_Exception,
             MalformedURLException {
-        ICAT icat = new ICATService(new URL(icatUrl), new QName("http://icatproject.org",
+    	ICAT icat = new ICATService(new URL(icatUrl), new QName("http://icatproject.org",
                 "ICATService")).getICATPort();
 
         Credentials credentials = new Credentials();
@@ -84,8 +101,9 @@ public class Setup {
         p.setKey("password");
         p.setValue(password);
         entries.add(p);
-
-        return icat.login("db", credentials);
+        System.out.println("user: " + username + " password: " + password);
+        String sessionId = icat.login("db", credentials);
+        return sessionId;
     }
     
     public String getCommaSepDatafileIds() {
@@ -100,7 +118,7 @@ public class Setup {
         return goodSessionId;
     }
     
-    public String getidsURL() throws MalformedURLException {
+    public String getIdsUrl() throws MalformedURLException {
         return idsUrl;
     }
     
@@ -115,4 +133,28 @@ public class Setup {
     public ArrayList<String> getDatafileIds() {
         return datafileIds;
     }
+
+	public String getStorageArchiveDir() {
+		return storageArchiveDir;
+	}
+
+	public String getStorageZipDir() {
+		return storageZipDir;
+	}
+
+	public String getStorageDir() {
+		return storageDir;
+	}
+
+	public String getStoragePreparedDir() {
+		return storagePreparedDir;
+	}
+
+	public String getUserLocalDir() {
+		return userLocalDir;
+	}
+
+	public String getIcatUrl() {
+		return icatUrl;
+	}
 }
