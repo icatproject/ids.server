@@ -39,7 +39,7 @@ public class SlowLocalFileStorage implements StorageInterface {
 	}
 	
 	@Override
-	public long putDatafile(String location, InputStream is) throws Exception {
+	public long putDatafile(String location, InputStream is, Dataset dataset) throws Exception {
 		throw new UnsupportedOperationException("Single files cannot be added directly to the slow storage");
 	}
 	

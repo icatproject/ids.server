@@ -18,10 +18,14 @@ import java.util.zip.ZipOutputStream;
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
-import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids.util.ZipHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import de.schlichtherle.truezip.file.TArchiveDetector;
+import de.schlichtherle.truezip.file.TConfig;
+import de.schlichtherle.truezip.file.TFile;
+import de.schlichtherle.truezip.fs.archive.zip.ZipDriver;
+import de.schlichtherle.truezip.socket.sl.IOPoolLocator;
 
 public class FastLocalFileStorage implements StorageInterface {
 	
@@ -32,6 +36,16 @@ public class FastLocalFileStorage implements StorageInterface {
 	final String STORAGE_DIR = "/home/wojtek/icat/icatdata/";
 	final String STORAGE_PREPARED_DIR = "/home/wojtek/icat/icatprepareddata/";
 	final LocalFileStorageCommons fsCommons = new LocalFileStorageCommons();
+	
+	public FastLocalFileStorage() {
+		// enable detection of ZIP files as archives
+		TConfig.get().setArchiveDetector(
+		        new TArchiveDetector(
+		            TArchiveDetector.NULL,
+		            new Object[][] {
+		                { "zip", new ZipDriver(IOPoolLocator.SINGLETON)},
+		            }));
+	}
 	
 	@Override
 	public boolean datasetExists(Dataset dataset) throws Exception {
@@ -77,10 +91,19 @@ public class FastLocalFileStorage implements StorageInterface {
 //		return 
 //	}
 	
-	public long putDatafile(String location, InputStream is) throws Exception {
+	public long putDatafile(String location, InputStream is, Dataset dataset) throws Exception {
 		File file = new File(STORAGE_DIR, location);
+		File filesZip = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
+		if (!filesZip.exists()) {
+			logger.warn("Couldn't find zipped DS: " + filesZip.getAbsolutePath() + " in Fast.putDatafile");
+			throw new FileNotFoundException(filesZip.getAbsolutePath());
+		}
 		fsCommons.writeInputStreamToFile(file, is);
-		return 0;
+		// TODO write new file to zip; what should be new file's location in zip?
+//		String locationInZip = "new-file";
+//		TFile fileInZip = new TFile(filesZip, locationInZip);
+//		new TFile(file).cp_r(fileInZip);
+		return file.length();
 	};
 	
 	@Override
@@ -128,7 +151,7 @@ public class FastLocalFileStorage implements StorageInterface {
             try {
                 zipFile.createNewFile();
             } catch (IOException ex) {
-                logger.error(null, ex);
+                logger.error("writeZipFileFromDatafiles", ex);
             }
             return;
         }
@@ -190,7 +213,7 @@ public class FastLocalFileStorage implements StorageInterface {
                 fis.close();
             }
         } catch (IOException ex) {
-            logger.error(null, ex);
+            logger.error("addToZip", ex);
         }
     }
 

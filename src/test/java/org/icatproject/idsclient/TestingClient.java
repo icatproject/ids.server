@@ -84,33 +84,33 @@ public class TestingClient {
 	 */
 	public void restoreTest(String sessionId, String investigationIds, String datasetIds, String datafileIds)
 			throws Exception {
-//		 Map<String, String> parameters = new HashMap<String, String>();
-//		
-//		 // create parameter list
-//		 parameters.put("sessionId", sessionId);
-//		 if (investigationIds != null)
-//		 parameters.put("investigationIds", investigationIds);
-//		 if (datasetIds != null)
-//		 parameters.put("datasetIds", datasetIds);
-//		 if (datafileIds != null)
-//		 parameters.put("datafileIds", datafileIds);
-//		
-//		 Response response = HTTPConnect("POST", "restore", parameters, null);
-//		 response.getResponse().toString().trim();
+		 Map<String, String> parameters = new HashMap<String, String>();
+		
+		 // create parameter list
+		 parameters.put("sessionId", sessionId);
+		 if (investigationIds != null)
+		 parameters.put("investigationIds", investigationIds);
+		 if (datasetIds != null)
+		 parameters.put("datasetIds", datasetIds);
+		 if (datafileIds != null)
+		 parameters.put("datafileIds", datafileIds);
+		
+		 Response response = HTTPConnect("POST", "restore", parameters, null);
+		 response.getResponse().toString().trim();
 
-		Client client = Client.create();
-
-		Form form = new Form();
-		form.add("sessionId", sessionId);
-		if (investigationIds != null)
-			form.add("investigationIds", investigationIds);
-		if (datasetIds != null)
-			form.add("datasetIds", datasetIds);
-		if (datafileIds != null)
-			form.add("datafileIds", datafileIds);
-		WebResource resource = client.resource(idsUrl).path("restore");
-
-		resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
+//		Client client = Client.create();
+//
+//		Form form = new Form();
+//		form.add("sessionId", sessionId);
+//		if (investigationIds != null)
+//			form.add("investigationIds", investigationIds);
+//		if (datasetIds != null)
+//			form.add("datasetIds", datasetIds);
+//		if (datafileIds != null)
+//			form.add("datafileIds", datafileIds);
+//		WebResource resource = client.resource(idsUrl).path("restore");
+//
+//		resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
 	}
 
 	/**

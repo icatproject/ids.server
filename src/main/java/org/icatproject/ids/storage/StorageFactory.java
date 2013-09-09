@@ -25,7 +25,7 @@ public class StorageFactory {
     }
 
     private StorageInterface createStorageInterface(Class<StorageInterface> storageInterfaceImplementation) {
-    	logger.info("creatingStorageInterface");
+    	logger.info("creatingStorageInterface " + storageInterfaceImplementation.getCanonicalName());
     	StorageInterface ret = null;
     	try {
 //    		Constructor<StorageInterface> constructor = 
@@ -34,7 +34,7 @@ public class StorageFactory {
     		Constructor<StorageInterface> constructor = storageInterfaceImplementation.getConstructor();
     		ret = constructor.newInstance();
     	} catch (Exception e) {
-    		logger.error("Could not instantiate StorageInterface implementation " + LocalFileStorage.class.getCanonicalName());
+    		logger.error("Could not instantiate StorageInterface implementation " + storageInterfaceImplementation.getCanonicalName());
     		throw new RuntimeException(e);
     	}
     	logger.info("created StorageInterface " + ret);

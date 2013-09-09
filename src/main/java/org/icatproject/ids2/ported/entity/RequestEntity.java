@@ -165,7 +165,7 @@ public class RequestEntity implements Serializable {
 
 	@Override
 	public String toString() {
-		return "RequestEntity " + id;
+		return String.format("RequestEntity id=%s, requestedState=%s", id, requestedState);
 	}
 	
 	public List<Ids2DataEntity> getDataEntities() {

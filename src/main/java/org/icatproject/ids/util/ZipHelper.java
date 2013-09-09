@@ -57,7 +57,7 @@ public class ZipHelper {
             try {
                 zipFile.createNewFile();
             } catch (IOException ex) {
-                logger.error(null, ex);
+                logger.error("writeZipFileFromStringFileList", ex);
             }
             return;
         }
@@ -119,7 +119,7 @@ public class ZipHelper {
                 fis.close();
             }
         } catch (IOException ex) {
-            logger.error(null, ex);
+            logger.error("addToZip", ex);
         }
     }
 }

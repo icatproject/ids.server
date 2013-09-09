@@ -22,7 +22,7 @@ public interface StorageInterface {
 	/*
 	 * Returns the length of the created file
 	 */
-	public long putDatafile(String location, InputStream is) throws Exception;
+	public long putDatafile(String location, InputStream is, Dataset dataset) throws Exception;
 //	public boolean datafileExists(Datafile datafile) throws Exception;
 	
 	public void prepareZipForRequest(Set<Datafile> datafiles, String zipName, boolean compress) throws Exception;

@@ -18,6 +18,8 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -71,6 +73,7 @@ import org.slf4j.LoggerFactory;
  */
 @Path("/")
 @Stateless
+@TransactionAttribute(TransactionAttributeType.NEVER)
 public class WebService {
 
 	private final static Logger logger = LoggerFactory.getLogger(WebService.class);
@@ -525,9 +528,10 @@ public class WebService {
 					RequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
 					requestHelper.addDatasets(sessionId, requestEntity, datasetId);
 					this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
+					
 					throw new NotFoundException("Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 				}
-				long tbytes = fastStorage.putDatafile(location, body);
+				long tbytes = fastStorage.putDatafile(location, body, ds);
 				String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, location,
 						datafileFormatId, tbytes, ds));
 //				FileUtils.forceMkdir(file.getParentFile());
