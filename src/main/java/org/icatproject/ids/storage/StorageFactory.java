@@ -1,9 +1,7 @@
 package org.icatproject.ids.storage;
 
 import java.lang.reflect.Constructor;
-import java.util.Map;
 
-import org.icatproject.ids.storage.local.LocalFileStorage;
 import org.icatproject.ids.util.PropertyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

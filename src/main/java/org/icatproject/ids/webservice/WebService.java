@@ -3,7 +3,6 @@ package org.icatproject.ids.webservice;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +34,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.apache.commons.io.FileUtils;
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
@@ -45,10 +43,8 @@ import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesExcep
 import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
 import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
-import org.icatproject.ids.queues.InfoRetrievalQueueSender;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
-import org.icatproject.ids.util.DownloadRequestHelper;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids.util.ValidationHelper;
@@ -82,12 +78,6 @@ public class WebService {
 	private Timer timer = new Timer();
 	private RequestQueues requestQueues = RequestQueues.getInstance();
 	private ICATClientBase icatClient;
-
-	@EJB
-	private InfoRetrievalQueueSender infoRetrievalQueueSender;
-
-	@EJB
-	private DownloadRequestHelper downloadRequestHelper;
 
 	@EJB
 	private RequestHelper requestHelper;

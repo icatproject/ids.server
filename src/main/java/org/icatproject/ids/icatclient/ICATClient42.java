@@ -13,7 +13,6 @@ import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.entity.DatafileEntity;
 import org.icatproject.ids.icatclient.exceptions.ICATBadParameterException;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
@@ -45,68 +44,6 @@ public class ICATClient42 implements ICATClientBase {
 			throw convertToICATClientException(e);
 		}
 		return retval;
-	}
-
-	@Override
-	public ArrayList<String> getDatafilePaths(String sessionId, ArrayList<Long> datafileIds) throws ICATClientException {
-		ArrayList<String> results = new ArrayList<String>();
-		List<Object> datafileLocations = null;
-
-		try {
-			datafileLocations = service.search(sessionId, "Datafile.location [id IN ("
-					+ datafileIds.toString().replace('[', ' ').replace(']', ' ') + ")]");
-		} catch (IcatException_Exception e) {
-			throw convertToICATClientException(e);
-		}
-
-		// if the number of locations returned does not match number
-		// of datafileIds then one or more of the ids were not found
-		if (datafileIds.size() != datafileLocations.size()) {
-			throw new ICATNoSuchObjectException();
-		}
-
-		for (Object location : datafileLocations) {
-			results.add((String) location);
-		}
-
-		return results;
-	}
-
-	/*
-	 * TODO make fast by checking for dataset location
-	 */
-	@Override
-	public ArrayList<DatafileEntity> getDatafilesInDataset(String sessionId, Long datasetId) throws ICATClientException {
-		ArrayList<DatafileEntity> results = new ArrayList<DatafileEntity>();
-		List<Object> datafileList = null;
-
-		try {
-			datafileList = service.search(sessionId, "Datafile [dataset.id = " + datasetId + "]");
-		} catch (IcatException_Exception e) {
-			throw convertToICATClientException(e);
-		}
-
-		// if no datafiles are returned, check to see if dataset actually exists
-		if (datafileList.size() == 0) {
-			try {
-				List<Object> datasets = service.search(sessionId, "Dataset [id = " + datasetId + "]");
-				if (datasets.size() == 0) {
-					throw new ICATNoSuchObjectException();
-				}
-			} catch (IcatException_Exception e) {
-				throw convertToICATClientException(e);
-			}
-		}
-
-		for (Object icatDatafile : datafileList) {
-			DatafileEntity datafile = new DatafileEntity();
-			datafile.setDatafileId(((Datafile) icatDatafile).getId());
-			datafile.setName(((Datafile) icatDatafile).getLocation());
-			datafile.setStatus(StatusInfo.SUBMITTED.name());
-			results.add(datafile);
-		}
-
-		return results;
 	}
 
 	public String getICATVersion() throws ICATClientException {

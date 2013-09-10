@@ -5,20 +5,21 @@ import javax.ejb.Schedule;
 import javax.ejb.Schedules;
 import javax.ejb.Singleton;
 
-import org.icatproject.ids.util.DownloadRequestHelper;
+import org.icatproject.ids2.ported.RequestHelper;
 
 
 @Singleton
-public class DownloadRequestClearanceService {
+public class RequestClearanceService {
 
     @EJB
-    DownloadRequestHelper downloadRequestHelper;
+    RequestHelper requestHelper;
 
+    // TODO adapt to the new RequestHelper
     @Schedules({
         @Schedule(hour = "*/1")
     })
     public void removeExpiredDownloadRequests() {
-        downloadRequestHelper.removeExpiredDownloadRequests();
+//        downloadRequestHelper.removeExpiredDownloadRequests();
     }
 
     @Schedules({
