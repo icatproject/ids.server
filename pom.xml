@@ -23,7 +23,7 @@
             <id>ICAT Repo</id>
             <url>http://www.icatproject.org/mvn/repo</url>
             <snapshots>
-                <enabled>false</enabled>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>
