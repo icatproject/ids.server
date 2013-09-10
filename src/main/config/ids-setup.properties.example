@@ -1,0 +1,25 @@
+Database Properties
+#driver=org.apache.derby.jdbc.ClientDataSource
+#connectionProperties=Password=APP:User=APP:serverName=localhost:DatabaseName=ids:connectionAttributes=";"create"'"="'"true
+
+driver=com.mysql.jdbc.jdbc2.optional.MysqlDataSource
+connectionProperties=user=ids:password=secret:databaseName=ids
+
+#driver=oracle.jdbc.pool.OracleDataSource
+#connectionProperties=url="'"jdbc:oracle:thin:@//localhost:1521/XE"'":ImplicitCachingEnabled=true:MaxStatements=200:user=ids:password=password 
+
+# Glasfish home, must contain "glassfish/domains"
+#
+glassfish=/home/fisher/pf/glassfish3
+
+
+# Glassfish admin port (normally 4848)
+#
+port=4848
+
+# The request timeout specifies in seconds the maximum time glassfish will
+# keep a connection open. Warning: setting this value too low can result in
+# downloads being cut off before they have finished. Set to -1 to disable 
+# timeout.
+#
+requestTimeout=-1

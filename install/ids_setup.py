@@ -16,7 +16,7 @@ import re
 from os import getcwd
 
 # Variables 
-APPLICATION_NAME = "IDS-0.0"
+APPLICATION_NAME = "ids-1.0.0"
 
 GF_PROPS_FILE = "ids_glassfish.props"
 GF_REQ_VALUES = ["connectionProperties", "driver", "glassfish", "requestTimeout"]
@@ -205,7 +205,7 @@ def deploy():
     """
     if VERBOSE > 0:
         print "Deploying the IDS application"
-    asadmin_cmd("deploy " + APPLICATION_NAME + ".war", "ERROR deploying " + APPLICATION_NAME + ".war", VERBOSE)
+    asadmin_cmd("deploy --force " + APPLICATION_NAME + ".war", "ERROR deploying " + APPLICATION_NAME + ".war", VERBOSE)
    
 #    if VERBOSE > 0:
 #        print "Disable the HTTP request timeout"

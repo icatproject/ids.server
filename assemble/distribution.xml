@@ -1,30 +1,56 @@
-<assembly
-    xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
-    <id>distribution</id>
+    <id>distro</id>
     <formats>
         <format>zip</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
+
     <fileSets>
         <fileSet>
-            <outputDirectory>ids.${project.version}</outputDirectory>
-            <directory>${project.basedir}/target</directory>
-            <includes>
-                <include>*.war</include>
-            </includes>
+            <outputDirectory>ids</outputDirectory>
+            <directory>${basedir}/src/main/scripts</directory>
+            <excludes>
+                <exclude>*.dump</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
-            <outputDirectory>ids.${project.version}</outputDirectory>
-            <directory>${project.basedir}/install</directory>
+            <outputDirectory>ids</outputDirectory>
+            <directory>${basedir}/src/main/config</directory>
+        </fileSet>
+        <fileSet>
+            <outputDirectory>ids</outputDirectory>
+            <directory>${basedir}</directory>
+            <filtered>true</filtered>
             <includes>
-                <include>ids_setup.py</include>
-                <include>README.txt</include>
-                <include>RELEASE_NOTES</include>
-                <include>ids_glassfish.props</include>
-                <include>ids.properties</include>
+                <include>*.txt</include>
             </includes>
         </fileSet>
+
     </fileSets>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>ids</outputDirectory>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
+            <includes>
+                <include>org.icatproject:icat.ear</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <outputDirectory>ids</outputDirectory>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
+            <unpack>true</unpack>
+            <unpackOptions>
+                <includes>
+                    <include>*.py</include>
+                </includes>
+            </unpackOptions>
+            <includes>
+                <include>org.icatproject:icat.utils</include>
+            </includes>
+        </dependencySet>
+
+    </dependencySets>
 </assembly>
