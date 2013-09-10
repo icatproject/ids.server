@@ -34,7 +34,7 @@
             <outputDirectory>ids</outputDirectory>
             <useTransitiveDependencies>false</useTransitiveDependencies>
             <includes>
-                <include>org.icatproject:icat.ear</include>
+                <include>org.icatproject:ids</include>
             </includes>
         </dependencySet>
 

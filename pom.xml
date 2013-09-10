@@ -3,9 +3,44 @@
     <groupId>org.icatproject</groupId>
     <artifactId>ids</artifactId>
     <packaging>war</packaging>
-    <version>1.0.0</version>
-    <name>IDS Java EE 6 Webapp</name>
-    <url>http://maven.apache.org</url>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>IDS</name>
+    
+     <distributionManagement>
+        <downloadUrl>http://www.icatproject.org/mvn/repo</downloadUrl>
+        <site>
+            <id>website</id>
+            <url>scp://www.icatproject.org/var/www/html/mvn/site/ids/${project.version}</url>
+        </site>
+        <repository>
+            <id>repo</id>
+            <url>scp://www.icatproject.org/var/www/html/mvn/repo</url>
+        </repository>
+    </distributionManagement>  
+    
+    <description>ICAT Data Service to provide a uniform interface to data.</description>
+    <issueManagement>
+        <url>http://code.google.com/p/icat-data-service/issues/list</url>
+        <system>Google Code</system>
+    </issueManagement>
+
+    <scm>
+        <connection>scm:svn:http://icat-data-service.googlecode.com/svn/ids/trunk</connection>
+        <developerConnection>scm:svn:https://icat-data-service.googlecode.com/svn/ids/trunk</developerConnection>
+        <url>http://code.google.com/p/icat-data-service/source/browse/#svn%2Fids%2Ftrunk</url>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>The ICAT Collaboration</name>
+        <url>http://www.icatproject.org</url>
+    </organization>
 
     <repositories>
         <repository>
@@ -107,6 +142,7 @@
             <version>4.3.0-SNAPSHOT</version>
         </dependency>
 
+
     </dependencies>
     <build>
         <plugins>
@@ -162,6 +198,19 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.1</version>
+                <dependencies>
+                    <dependency><!-- add support for ssh/scp -->
+                        <groupId>org.apache.maven.wagon</groupId>
+                        <artifactId>wagon-ssh</artifactId>
+                        <version>1.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
@@ -194,6 +243,33 @@
             </plugins>
         </pluginManagement>
     </build>
+
+
+    <reporting>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.7</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>index</report>
+                            <report>summary</report>
+                            <report>dependencies</report>
+                            <report>issue-tracking</report>
+                            <report>license</report>
+                            <report>plugins</report>
+                            <report>scm</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+        </plugins>
+    </reporting>
+
     <profiles>
         <profile>
             <id>endorsed</id>

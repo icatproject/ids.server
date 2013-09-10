@@ -4,124 +4,55 @@ import os
 
 # ids
 
-actions, options, arg = getActions(binDir=True)
-props = actions.getGlassfish("icat-setup.properties", ["icatProperties", "glassfish", "driver", "port", "admin.user", "admin.password"])
+actions, options, arg = getActions()
+props = actions.getGlassfish("ids-setup.properties", ["connectionProperties", "glassfish", "driver", "port"])
 
-binDir = os.path.expanduser(options.binDir)
-files = ["testicat", "icatadmin"]
-prop_name = "icat.properties"
-prop_list = ["lifetimeMinutes", "rootUserNames", "authn.list", "notification.list", "log.list"]
+prop_name = "ids.properties"
+prop_list = []
 
 if arg == "CONFIGURE":
     actions.configure(prop_name, prop_list) 
-    icatProperties = actions.getProperties(prop_name, prop_list)
-    log4jProperties = icatProperties.get("log4j.properties")
-    if log4jProperties:actions.configure("log4j.properties", [], log4jProperties)
     actions.setConfigured()
 
 elif arg == "INSTALL":
     
     actions.checkConfigured()
     
-    icatProperties = actions.getProperties(prop_name, prop_list)
-    log4jProperties = icatProperties.get("log4j.properties")
-       
-    for v in icatProperties["authn.list"].split():
-        if "authn." + v + ".jndi" not in icatProperties:
-            abort ("authn.list included " + v + " but authn." + v + ".jndi is not defined") 
+    idsProperties = actions.getProperties(prop_name, prop_list)
+
+    actions.installFile("ids.properties")
     
-    for v in icatProperties["notification.list"].split():
-        if "notification." + v not in icatProperties:
-            abort ("notification.list included " + v + " but notification." + v + " is not defined") 
-   
-    for v in icatProperties["log.list"].split():
-        if "log." + v not in icatProperties:
-            abort ("log.list included " + v + " but log." + v + " is not defined")
-     
-    if  log4jProperties:
-        dir, file = os.path.split(log4jProperties)
-        if not os.path.exists(file): abort("log4j.properties file " + file + " not found")
-        
-    ld = icatProperties.get("lucene.Directory")
-    if ld:
-        parent = os.path.basename(os.path.normpath(ld))
-        if not os.path.exists(parent):
-            about("Parent deirectory " + parent + " of lucene directory specified in icat.properties does not exist")
-            
-        if not icatProperties.get("lucene.commitSeconds"):
-            abort("'lucene.commitSeconds' not specified in icat.properties")
-        
-    actions.installFile("icat.properties")
-    if log4jProperties:
-        dir, file = os.path.split(log4jProperties)
-        if dir:
-            actions.installFile(file, dir)
-        else:
-            actions.installFile(file)
-    
-    try:
-        
-        actions.addFileRealmUser(props["admin.user"], props["admin.password"])
-            
-        app = actions.getAppName("icat.ear")
+    try:          
+        app = actions.getAppName("ids")
         if app: actions.asadmin("undeploy " + app)
         
-        actions.asadmin("delete-jdbc-resource jdbc/icat", tolerant=True)
-        actions.asadmin("delete-jdbc-connection-pool icat", tolerant=True)
-        actions.asadmin("delete-jms-resource jms/ICATTopicConnectionFactory", tolerant=True)
-        actions.asadmin("delete-jms-resource jms/ICATTopic", tolerant=True)
+        actions.asadmin("delete-jdbc-resource jdbc/ids", tolerant=True)
+        actions.asadmin("delete-jdbc-connection-pool ids", tolerant=True)
         
         actions.asadmin('create-jdbc-connection-pool --datasourceclassname ' + props["driver"] + 
                 ' --restype javax.sql.DataSource --failconnection=true --steadypoolsize 2' + 
-                ' --maxpoolsize 8 --ping --property ' + props["icatProperties"] + ' icat', printOutput=True)
+                ' --maxpoolsize 8 --ping --property ' + props["connectionProperties"] + ' ids', printOutput=True)
         
-        actions.asadmin("create-jdbc-resource --connectionpoolid icat jdbc/icat")
-    
-        actions.asadmin("create-jms-resource --restype javax.jms.TopicConnectionFactory jms/ICATTopicConnectionFactory")
-    
-        actions.asadmin("create-jms-resource --restype javax.jms.Topic jms/ICATTopic")
-        
-        actions.deploy("icat.ear-*.ear")
-        
-        for file in files:   
-            os.chmod(file, 0755)    
-            shutil.copy(file , binDir)
-            if options.verbose:
-                print "\n", file, "copied to", binDir
-                
+        actions.asadmin("create-jdbc-resource --connectionpoolid ids jdbc/ids")
+         
+        actions.deploy("ids-*.war")
+                      
     except Exception, e:
         raise
         abort(str(e))
                 
 else:  # UNINSTALL
     
-    icatProperties = actions.getProperties(prop_name, prop_list)
-    log4jProperties = icatProperties.get("log4j.properties")
+    idsProperties = actions.getProperties(prop_name, prop_list)
     
-    actions.removeFile("icat.properties")
-    if log4jProperties:
-        dir, file = os.path.split(log4jProperties)
-        if dir:
-            actions.removeFile(file, dir)
-        else:
-            actions.removeFile(file)
-    
+    actions.removeFile("ids.properties")
+ 
     try:
-        actions.deleteFileRealmUser(props["admin.user"])
-        app = actions.getAppName("icat.ear")
+        app = actions.getAppName("ids.war")
         if app: actions.asadmin("undeploy " + app)
-        actions.asadmin("delete-jdbc-resource jdbc/icat", tolerant=True)
-        actions.asadmin("delete-jdbc-connection-pool icat", tolerant=True)
-        actions.asadmin("delete-jms-resource jms/ICATTopicConnectionFactory", tolerant=True)
-        actions.asadmin("delete-jms-resource jms/ICATTopic", tolerant=True)
-        
-        for file in files:
-            path = os.path.join(binDir, file)    
-            if os.path.exists(path): 
-                os.remove(path)
-                if options.verbose:
-                    print file, "removed from", binDir
-     
+        actions.asadmin("delete-jdbc-resource jdbc/ids", tolerant=True)
+        actions.asadmin("delete-jdbc-connection-pool ids", tolerant=True)
+          
     except Exception, e:
         abort(str(e))       
     

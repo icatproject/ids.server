@@ -1,8 +1,0 @@
-RELEASE NOTES
-=============
-
-
-[01/04/2013] First release of the ICAT Data Service.
-
-Only supports the download part of the IDS specification and includes a
-plugin for local disk storage.
