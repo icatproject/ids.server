@@ -1,6 +1,7 @@
 package org.icatproject.ids2.ported.thread;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,11 +41,16 @@ public class Archiver implements Runnable {
 		Dataset ds = de.getIcatDataset();
 		
 		try {
+			StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
 			StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
-			fastStorageInterface.deleteDataset(ds);
+			if (fastStorageInterface.datasetExists(ds)) {
+				InputStream is = fastStorageInterface.getDatasetInputStream(ds);
+				slowStorageInterface.putDataset(ds, is);
+				fastStorageInterface.deleteDataset(ds);
+			}
 			logger.info("Archive of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {
-			logger.error("Archive of " + ds.getLocation() + " failed");
+			logger.error("Archive of " + ds.getLocation() + " failed due to " + e.getMessage());
 			resultingStatus = StatusInfo.INCOMPLETE;
 		} finally {
 			synchronized (deferredOpsQueue) {

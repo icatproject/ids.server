@@ -88,7 +88,7 @@ public class WebService {
 		timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
 				.getProcessQueueIntervalSeconds() * 1000L);
 		icatClient = ICATClientFactory.getInstance().createICATInterface();
-//		restartUnfinishedWork();
+		// restartUnfinishedWork();
 	}
 
 	/**
@@ -340,14 +340,14 @@ public class WebService {
 			@Override
 			public void write(OutputStream output) throws IOException, WebApplicationException {
 				try {
-					fastStorage.getPreparedZip(requestEntity.getPreparedId()+".zip", output, offsetLong);
+					fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip", output, offsetLong);
 				} catch (Exception e) {
 					throw new WebApplicationException(e);
 				}
 			}
 		};
-			return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
-					.header("Accept-Ranges", "bytes").build();
+		return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
+				.header("Accept-Ranges", "bytes").build();
 	}
 
 	/**
@@ -482,10 +482,10 @@ public class WebService {
 	@Consumes("application/octet-stream")
 	public Response put(InputStream body, @QueryParam("sessionId") String sessionId, @QueryParam("name") String name,
 			@QueryParam("datafileFormatId") String datafileFormatId, @QueryParam("datasetId") String datasetId,
-			@QueryParam("location") String probableLocation, @QueryParam("description") String description,
-			@QueryParam("doi") String doi, @QueryParam("datafileCreateTime") String datafileCreateTime,
+			@QueryParam("description") String description, @QueryParam("doi") String doi,
+			@QueryParam("datafileCreateTime") String datafileCreateTime,
 			@QueryParam("datafileModTime") String datafileModTime) throws Exception {
-		logger.info(String.format("put received, file=%s, location=%s", name, probableLocation));
+		logger.info(String.format("put received, name=%s", name));
 
 		if (ValidationHelper.isValidId(sessionId) == false) {
 			throw new BadRequestException("The sessionId parameter is invalid");
@@ -501,47 +501,19 @@ public class WebService {
 		}
 
 		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
-		String location = probableLocation;
-		if (location == null) {
-			location = new File(ds.getLocation(), name).getPath();
-		}
-		String locationDir = new File(location).getParent();
 
-//			File file = new File(PropertyHandler.getInstance().getStorageDir(), location);
-//
-//			final File tfile = File
-//					.createTempFile("IDS", null, new File(PropertyHandler.getInstance().getStorageDir()));
-//			final long tbytes = storeFile(body, tfile);
-			try {
-				StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
-				if (!fastStorage.datasetExists(ds)) {
-					RequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
-					requestHelper.addDatasets(sessionId, requestEntity, datasetId);
-					this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
-					
-					throw new NotFoundException("Before putting a datafile, its dataset has to be restored, restoration requested automatically");
-				}
-				long tbytes = fastStorage.putDatafile(location, body, ds);
-				String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, location,
-						datafileFormatId, tbytes, ds));
-//				FileUtils.forceMkdir(file.getParentFile());
-//				tfile.renameTo(file);
-//				File zipfile = new File(new File(PropertyHandler.getInstance().getStorageZipDir(), locationDir),
-//						"files.zip");
-//				if (zipfile.exists()) {
-//					zipfile.delete();
-//				}
-//				logger.info("Written " + tbytes + " bytes to " + file.getAbsolutePath());
-				
-//				RequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
-//				requestHelper.addDatafiles(sessionId, requestEntity, assignedDatafileId);
-//				for (Ids2DataEntity de : requestEntity.getDataEntities()) {
-//					this.queue(de, DeferredOp.WRITE);
-//				}
-			} catch (IOException e) {
-//				FileUtils.forceDelete(tfile);
-				throw e;
-			}
+		StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+		if (!fastStorage.datasetExists(ds)) {
+			RequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
+			requestHelper.addDatasets(sessionId, requestEntity, datasetId);
+			this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
+
+			throw new NotFoundException(
+					"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
+		}
+		long tbytes = fastStorage.putDatafile(name, body, ds);
+		String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, datafileFormatId, tbytes, ds));
+
 		return Response.status(200).entity(name).build();
 	}
 
@@ -733,9 +705,10 @@ public class WebService {
 		return tbytes;
 	}
 
-	private Long registerDatafile(String sessionid, String filename, String location, String datafileFormatId,
-			long tbytes, Dataset dataset) throws Exception {
+	private Long registerDatafile(String sessionid, String name, String datafileFormatId, long tbytes, Dataset dataset)
+			throws Exception {
 		final Datafile df = new Datafile();
+		String location = new File(dataset.getLocation(), name).getPath();
 		DatafileFormat format = icatClient.findDatafileFormatById(sessionid, datafileFormatId);
 		if (format == null) {
 			throw new NotFoundException("DatafileFormatId " + datafileFormatId + " does not exist.");
@@ -743,10 +716,10 @@ public class WebService {
 		df.setDatafileFormat(format);
 		df.setLocation(location);
 		df.setFileSize(tbytes);
-		df.setName(filename);
+		df.setName(name);
 		df.setDataset(dataset);
 		df.setId((Long) icatClient.registerDatafile(sessionid, df));
-		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), filename + " at " + location);
+		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at " + location);
 		return df.getId();
 	}
 }

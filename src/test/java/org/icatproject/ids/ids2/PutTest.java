@@ -52,9 +52,8 @@ public class PutTest {
 	public void putToUnrestoredDataset() throws Exception {
 		final int DS_NUM_FROM_PROPS = 0;
 		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
-		String uploadedLocation = "./my_file_name.txt";
 		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
-				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
+				.get(DS_NUM_FROM_PROPS), null, null, null, null, fileOnUsersDisk);
 	}
 
 	@Test
@@ -63,7 +62,7 @@ public class PutTest {
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
 		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
-		String uploadedLocation = new File(icatDs.getLocation(), "my_file_name.txt").getPath();
+		String uploadedLocation = new File(icatDs.getLocation(), "my_file_name.txt"+timestamp).getPath();
 		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
 		
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
@@ -78,14 +77,24 @@ public class PutTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 		
-		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
-				.get(DS_NUM_FROM_PROPS), uploadedLocation, null, null, null, null, fileOnUsersDisk);
+		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt"+timestamp, "xml", setup.getDatasetIds()
+				.get(DS_NUM_FROM_PROPS), null, null, null, null, fileOnUsersDisk);
 		retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 		} while (!fileOnFastStorage.exists() && retryLimit-- > 0);
 		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
 				fileOnFastStorage.exists());
+		
+		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		retryLimit = 10;
+		while ((dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) && retryLimit-- > 0) {
+			Thread.sleep(1000);
+		}
+		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath() + " should have been cleaned, but still contains files",
+				dirOnFastStorage.listFiles().length == 0);
+		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
+				!zipOnFastStorage.exists());
 	}
 
 //	@Test

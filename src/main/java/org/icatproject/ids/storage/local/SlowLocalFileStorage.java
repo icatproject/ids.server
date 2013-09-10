@@ -44,7 +44,7 @@ public class SlowLocalFileStorage implements StorageInterface {
 	}
 	
 	@Override
-	public void prepareZipForRequest(Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
+	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
 		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
 	}
 	

@@ -160,7 +160,7 @@ public class TestingClient {
 		return HTTPConnect("GET", "getData", parameters, null);
 	}
 
-	public Response putTest(String sessionId, String name, String datafileFormatId, String datasetId, String location,
+	public Response putTest(String sessionId, String name, String datafileFormatId, String datasetId,
 			String description, String doi, String datafileCreateTime, String datafileModTime, File file)
 			throws Exception {
 		Map<String, String> parameters = new HashMap<String, String>();
@@ -169,8 +169,6 @@ public class TestingClient {
 		parameters.put("name", name);
 		parameters.put("datafileFormatId", datafileFormatId);
 		parameters.put("datasetId", datasetId);
-		if (location != null)
-			parameters.put("location", location);
 		if (description != null)
 			parameters.put("description", description);
 		if (doi != null)

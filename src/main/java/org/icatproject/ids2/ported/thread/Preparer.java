@@ -82,7 +82,8 @@ public class Preparer implements Runnable {
 //					de.getRequest().getPreparedId() + ".zip");
 			String preparedZipPath = de.getRequest().getPreparedId() + ".zip";
 			try {
-				fastStorageInterface.prepareZipForRequest(de.getRequest().getIcatDatafiles(), preparedZipPath, de.getRequest().isCompress());
+				fastStorageInterface.prepareZipForRequest(de.getRequest().getIcatDatasets(), 
+						de.getRequest().getIcatDatafiles(), preparedZipPath, de.getRequest().isCompress());
 			} catch (Exception e) {
 				logger.warn(String.format("Could not prepare the zip. Reason: " + e.getMessage()));
 				synchronized (deferredOpsQueue) {

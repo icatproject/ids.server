@@ -21,6 +21,7 @@ import javax.persistence.TemporalType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.icatproject.Datafile;
+import org.icatproject.Dataset;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids2.ported.RequestedState;
 
@@ -30,51 +31,52 @@ import org.icatproject.ids2.ported.RequestedState;
 @XmlRootElement
 public class RequestEntity implements Serializable {
 
-    @Id
-    @GeneratedValue
-    private Long id;
-    
-    @Enumerated(EnumType.STRING)
-    private StatusInfo status;
-    
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date submittedTime;
-    
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date expireTime;
-    
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
-    private List<Ids2DatafileEntity> datafiles;
-    
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
-    private List<Ids2DatasetEntity> datasets;
-    
-    @Enumerated(EnumType.STRING)
-    private RequestedState requestedState;
-    
-    private String preparedId;
-    private String sessionId;
-    private String userId;
-    
-    @Column(name = "IDS_COMPRESS")
-    private boolean compress;
-    
-    public RequestEntity() {}
+	@Id
+	@GeneratedValue
+	private Long id;
 
-    public RequestEntity(Long id) {
-        this.id = id;
-    }
+	@Enumerated(EnumType.STRING)
+	private StatusInfo status;
 
-    public RequestEntity(Long id, String preparedId, String userId, Date submittedTime,
-            Date expireTime, RequestedState type) {
-        this.id = id;
-        this.preparedId = preparedId;
-        this.userId = userId;
-        this.submittedTime = submittedTime;
-        this.expireTime = expireTime;
-        this.requestedState = type;
-    }
-    
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date submittedTime;
+
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date expireTime;
+
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
+	private List<Ids2DatafileEntity> datafiles;
+
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
+	private List<Ids2DatasetEntity> datasets;
+
+	@Enumerated(EnumType.STRING)
+	private RequestedState requestedState;
+
+	private String preparedId;
+	private String sessionId;
+	private String userId;
+
+	@Column(name = "IDS_COMPRESS")
+	private boolean compress;
+
+	public RequestEntity() {
+	}
+
+	public RequestEntity(Long id) {
+		this.id = id;
+	}
+
+	public RequestEntity(Long id, String preparedId, String userId, Date submittedTime, Date expireTime,
+			RequestedState type) {
+		this.id = id;
+		this.preparedId = preparedId;
+		this.userId = userId;
+		this.submittedTime = submittedTime;
+		this.expireTime = expireTime;
+		this.requestedState = type;
+	}
+
 	public Long getId() {
 		return id;
 	}
@@ -167,20 +169,36 @@ public class RequestEntity implements Serializable {
 	public String toString() {
 		return String.format("RequestEntity id=%s, requestedState=%s", id, requestedState);
 	}
-	
+
 	public List<Ids2DataEntity> getDataEntities() {
 		List<Ids2DataEntity> res = new ArrayList<Ids2DataEntity>();
 		res.addAll(datafiles);
 		res.addAll(datasets);
 		return res;
 	}
-	
+
+	/**
+	 * Returns all ICAT Datafiles that were requested directly (Datafiles from
+	 * requested Datasets don't count)
+	 */
 	public Set<Datafile> getIcatDatafiles() {
 		Set<Datafile> datafiles = new HashSet<Datafile>();
-		for (Ids2DataEntity de : this.getDataEntities()) {
-			datafiles.addAll(de.getIcatDatafiles());
+		for (Ids2DatafileEntity df : this.getDatafiles()) {
+			datafiles.addAll(df.getIcatDatafiles()); // will only add one DF
 		}
 		return datafiles;
 	}
-    
+
+	/**
+	 * Returns all ICAT Datasets that were requested directly (Datasets
+	 * operation on which has been caused by a requested Datafile don't count)
+	 */
+	public Set<Dataset> getIcatDatasets() {
+		Set<Dataset> datasets = new HashSet<Dataset>();
+		for (Ids2DatasetEntity ds : this.getDatasets()) {
+			datasets.add(ds.getIcatDataset());
+		}
+		return datasets;
+	}
+
 }
