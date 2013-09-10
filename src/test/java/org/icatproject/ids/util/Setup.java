@@ -1,4 +1,4 @@
-package org.icatproject.ids;
+package org.icatproject.ids.util;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;

@@ -8,15 +8,16 @@ import javax.xml.namespace.QName;
 import org.apache.commons.io.FileUtils;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.Setup;
+import org.icatproject.ids.util.Setup;
+import org.icatproject.ids.util.TestingClient;
 import org.icatproject.ids.webservice.Status;
-import org.icatproject.idsclient.TestingClient;
 import org.icatproject.idsclient.exception.TestingClientBadRequestException;
 import org.icatproject.idsclient.exception.TestingClientForbiddenException;
 import org.icatproject.idsclient.exception.TestingClientNotFoundException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class GetStatusTest {
