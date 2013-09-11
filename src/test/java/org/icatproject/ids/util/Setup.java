@@ -332,7 +332,7 @@ public class Setup {
                 //zos.setMethod(ZipOutputStream.STORED);
             }
             for (Datafile file : dataset.getDatafiles()) {
-                addToZip(zipFile, file.getName(), zos, new File(relativePath, 
+                addToZip(file.getName(), zos, new File(relativePath, 
                 		dataset.getLocation()).getAbsolutePath());
             }
 
@@ -345,7 +345,7 @@ public class Setup {
         }
     }
 
-    public static void addToZip(File directoryToZip, String fileName, ZipOutputStream zos,
+    public static void addToZip(String fileName, ZipOutputStream zos,
             String relativePath) {
         try {
             File file = new File(relativePath, fileName);

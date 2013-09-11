@@ -85,6 +85,7 @@ public class FastLocalFileStorage implements StorageInterface {
 		Datafile tmpDatafile = new Datafile();
 		tmpDatafile.setName(name);
 		tmpDatafile.setDataset(dataset);
+		tmpDatafile.setLocation(new File(dataset.getLocation(), name).getPath());
 		
 		zipDataset(zipFile, dataset, STORAGE_DIR, false, tmpDatafile);
 		return file.length();
@@ -95,9 +96,7 @@ public class FastLocalFileStorage implements StorageInterface {
 		logger.info(String.format("zipping %s datafiles", datafiles.size()));
         long startTime = System.currentTimeMillis();
         File zipFile = new File(STORAGE_PREPARED_DIR, zipName);
-        // TODO make it conform to rules specified in interface specification
-        prepareZipFileForUser(zipFile, datasets, datafiles, 
-        		STORAGE_DIR, compress, null);
+        prepareZipFileForUser(zipFile, datasets, datafiles, STORAGE_DIR, compress, null);
         long endTime = System.currentTimeMillis();
         logger.info("Time took to zip the files: " + (endTime - startTime));
 	}
@@ -131,7 +130,32 @@ public class FastLocalFileStorage implements StorageInterface {
 	
 	private void prepareZipFileForUser(File zipFile, Set<Dataset> datasets, Set<Datafile> datafiles,
             String relativePath, boolean compress, Datafile newDatafile) {
-		throw new UnsupportedOperationException("not yet implemented");
+        try {
+            FileOutputStream fos = new FileOutputStream(zipFile);
+            ZipOutputStream zos = new ZipOutputStream(fos);
+
+            // set whether to compress the zip file or not
+            if (compress == true) {
+                zos.setMethod(ZipOutputStream.DEFLATED);
+            } else {
+                // using compress with level 0 instead of archive (STORED) because
+                // STORED requires you to set CRC, size and compressed size
+                // TODO: find efficient way of calculating CRC
+                zos.setMethod(ZipOutputStream.DEFLATED);
+                zos.setLevel(0);
+                //zos.setMethod(ZipOutputStream.STORED);
+            }
+            for (Datafile df : datafiles) {
+                addToZip("Datafile-" + df.getId(), zos, "tmp"); // TODO
+            }
+
+            zos.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 	
 	/**
@@ -139,8 +163,8 @@ public class FastLocalFileStorage implements StorageInterface {
 	 * has not yet been added to it (because it hasn't been persisted to ICAT yet)
 	 * Should be null if no such file is necessary.
 	 */
-	public static void zipDataset(File zipFile, Dataset dataset,
-            String relativePath, boolean compress, Datafile newDatafile) {
+	private void zipDataset(File zipFile, Dataset dataset,
+            String storageRootPath, boolean compress, Datafile newDatafile) {
         if (dataset.getDatafiles().isEmpty() && newDatafile == null) {
             // Create empty file
             try {
@@ -168,13 +192,13 @@ public class FastLocalFileStorage implements StorageInterface {
             }
             for (Datafile file : dataset.getDatafiles()) {
             	logger.info("Adding file " + file.getName() + " to zip");
-                addToZip(zipFile, file.getName(), zos, new File(relativePath, 
-                		dataset.getLocation()).getAbsolutePath());
+                addToZip(file.getName(), zos, new File(storageRootPath, 
+                		file.getLocation()).getAbsolutePath());
             }
             if (newDatafile != null) {
             	logger.info("Adding file " + newDatafile.getName() + " to zip");
-            	addToZip(zipFile, newDatafile.getName(), zos, new File(relativePath, 
-            			dataset.getLocation()).getAbsolutePath());
+            	addToZip(newDatafile.getName(), zos, new File(storageRootPath, 
+            			newDatafile.getLocation()).getAbsolutePath());
             }
 
             zos.close();
@@ -186,20 +210,13 @@ public class FastLocalFileStorage implements StorageInterface {
         }
     }
 
-    public static void addToZip(File directoryToZip, String fileName, ZipOutputStream zos,
-            String relativePath) {
+    private void addToZip(String pathInsideOfZip, ZipOutputStream zos,
+            String filePathOnDisk) {
         try {
-            File file = new File(relativePath, fileName);
-            FileInputStream fis = new FileInputStream(file);
-            // to the directory being zipped, so chop off the rest of the path
-            String zipFilePath = file.getCanonicalPath().substring(relativePath.length(),
-                    file.getCanonicalPath().length());
-            if (zipFilePath.startsWith(File.separator)) {
-                zipFilePath = zipFilePath.substring(1);
-            }
-            
-            logger.info("Writing '" + zipFilePath + "' to zip file");
-            ZipEntry zipEntry = new ZipEntry(zipFilePath);
+            File fileOnDisk = new File(filePathOnDisk);
+            FileInputStream fis = new FileInputStream(fileOnDisk);
+            logger.info("Writing '" + pathInsideOfZip + "' to zip file");
+            ZipEntry zipEntry = new ZipEntry(pathInsideOfZip);
             try {
                 zos.putNextEntry(zipEntry);
                 byte[] bytes = new byte[1024];
