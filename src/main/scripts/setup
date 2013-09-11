@@ -34,8 +34,8 @@ elif arg == "INSTALL":
                 ' --maxpoolsize 8 --ping --property ' + props["connectionProperties"] + ' ids', printOutput=True)
         
         actions.asadmin("create-jdbc-resource --connectionpoolid ids jdbc/ids")
-         
-        actions.deploy("ids-*.war")
+                 
+        actions.deploy("ids-*.war", contextroot = "ids")
                       
     except Exception, e:
         raise
@@ -52,7 +52,7 @@ else:  # UNINSTALL
         if app: actions.asadmin("undeploy " + app)
         actions.asadmin("delete-jdbc-resource jdbc/ids", tolerant=True)
         actions.asadmin("delete-jdbc-connection-pool ids", tolerant=True)
-          
+                  
     except Exception, e:
         abort(str(e))       
     
