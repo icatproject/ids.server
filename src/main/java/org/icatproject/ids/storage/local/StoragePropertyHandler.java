@@ -19,7 +19,7 @@ public class StoragePropertyHandler {
 	private String storagePreparedDir;
 
 	private StoragePropertyHandler() {
-		File f = new File("ids_storage.properties");
+		File f = new File("ids-storage.properties");
 		Properties props = new Properties();
 		try {
 			props.load(new FileInputStream(f));
@@ -30,10 +30,10 @@ public class StoragePropertyHandler {
 			throw new IllegalStateException(msg);
 		}
 
-		storageArchiveDir = setICATDirFromProperties(props, "STORAGE_ARCHIVE_DIR");
-		storageZipDir = setICATDirFromProperties(props, "STORAGE_ZIP_DIR");
-		storageDir = setICATDirFromProperties(props, "STORAGE_DIR");
-		storagePreparedDir = setICATDirFromProperties(props, "STORAGE_PREPARED_DIR");
+		storageArchiveDir = setICATDirFromProperties(props, "storageArchiveDir");
+		storageZipDir = setICATDirFromProperties(props, "storageZipDir");
+		storageDir = setICATDirFromProperties(props, "storageDir");
+		storagePreparedDir = setICATDirFromProperties(props, "storagePreparedDir");
 	}
 	
 	public static StoragePropertyHandler getInstance() {
