@@ -1,0 +1,13 @@
+# slow storage
+STORAGE_ARCHIVE_DIR = /home/fisher/icat/icatarchive/
+
+# fast storage
+
+# contains zipped datasets restored from the slow storage
+STORAGE_ZIP_DIR = /home/fisher/icat/icatzipdata/
+
+# contains unpacked datafiles from restored datasets
+STORAGE_DIR = /home/wojtek/fisher/icatdata/
+
+# contains zips prepared for users to download (results of /prepareData)
+STORAGE_PREPARED_DIR = /home/fisher/icat/icatprepareddata/

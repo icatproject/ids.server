@@ -27,9 +27,10 @@ public class FastLocalFileStorage implements StorageInterface {
 	private final static Logger logger = LoggerFactory.getLogger(FastLocalFileStorage.class);
 	
 	final int BUFSIZ = 2048;
-	final String STORAGE_ZIP_DIR = "/home/wojtek/icat/icatzipdata/";
-	final String STORAGE_DIR = "/home/wojtek/icat/icatdata/";
-	final String STORAGE_PREPARED_DIR = "/home/wojtek/icat/icatprepareddata/";
+	final StoragePropertyHandler storagePropertyHandler = StoragePropertyHandler.getInstance();
+	final String STORAGE_ZIP_DIR = storagePropertyHandler.getStorageZipDir();
+	final String STORAGE_DIR = storagePropertyHandler.getStorageDir();
+	final String STORAGE_PREPARED_DIR = storagePropertyHandler.getStoragePreparedDir();
 	final LocalFileStorageCommons fsCommons = new LocalFileStorageCommons();
 	
 	@Override

@@ -22,11 +22,6 @@ public class PropertyHandler {
 
     private int numberOfDaysToExpire;
     private String icatURL;
-//    private String storageArchiveDir;
-//    private String storageZipDir;
-//    private String storageDir;
-//    private String storagePreparedDir;
-    private String userLocalDir;
     private long writeDelaySeconds;
     private long processQueueIntervalSeconds;
     private int numberOfDaysToKeepFilesInCache;
@@ -79,12 +74,6 @@ public class PropertyHandler {
             logger.error(msg);
             throw new IllegalStateException(msg);
         }
-        
-//        storageArchiveDir = setICATDirFromProperties(props, "STORAGE_ARCHIVE_DIR");
-//        storageZipDir = setICATDirFromProperties(props, "STORAGE_ZIP_DIR");
-//        storageDir = setICATDirFromProperties(props, "STORAGE_DIR");
-//        storagePreparedDir = setICATDirFromProperties(props, "STORAGE_PREPARED_DIR");
-        userLocalDir = setICATDirFromProperties(props, "USER_LOCAL_DIR");
         
         writeDelaySeconds = Long.parseLong(props.getProperty("WRITE_DELAY_SECONDS"));
         if (writeDelaySeconds < 1) {
@@ -144,22 +133,6 @@ public class PropertyHandler {
         return icatURL;
     }
     
-//    public String getStorageArchiveDir() {
-//    	return storageArchiveDir;
-//    }
-//
-//    public String getStorageDir() {
-//        return storageDir;
-//    }
-//
-//    public String getStorageZipDir() {
-//        return storageZipDir;
-//    }
-//	
-//	public String getStoragePreparedDir() {
-//		return storagePreparedDir;
-//	}
-    
     public long getWriteDelaySeconds() {
     	return writeDelaySeconds;
     }
@@ -182,27 +155,5 @@ public class PropertyHandler {
 	
 	public Class<StorageInterface> getSlowStorageInterfaceImplementation() {
 		return slowStorageInterfaceImplementation;
-	}
-
-	public String getUserLocalDir() {
-		return userLocalDir;
-	}
-
-	private String setICATDirFromProperties(Properties props, String property) {
-		String res = props.getProperty(property);
-        if (res == null) {
-            String msg = "Property " + property + " must be set.";
-            logger.error(msg);
-            throw new IllegalStateException(msg);
-        }
-
-        File tmp = new File(res);
-        if (!tmp.exists()) {
-            String msg = "Invalid " + property + ". Directory " + res
-                    + " not found. Please create.";
-            logger.error(msg);
-            throw new IllegalStateException(msg);
-        }
-        return res;
 	}
 }

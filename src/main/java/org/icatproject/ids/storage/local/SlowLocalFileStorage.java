@@ -10,7 +10,7 @@ import org.icatproject.ids.storage.StorageInterface;
 
 public class SlowLocalFileStorage implements StorageInterface {
 	
-	final String STORAGE_ARCHIVE_DIR = "/home/wojtek/icat/icatarchive/";
+	final String STORAGE_ARCHIVE_DIR = StoragePropertyHandler.getInstance().getStorageArchiveDir();
 	final LocalFileStorageCommons fsCommons = new LocalFileStorageCommons();
 	
 	@Override
