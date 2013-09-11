@@ -11,7 +11,8 @@ prop_name = "ids.properties"
 prop_list = []
 
 if arg == "CONFIGURE":
-    actions.configure(prop_name, prop_list) 
+    actions.configure(prop_name, prop_list)
+    actions.configure("ids-storage.properties", [])
     actions.setConfigured()
 
 elif arg == "INSTALL":
@@ -19,8 +20,10 @@ elif arg == "INSTALL":
     actions.checkConfigured()
     
     idsProperties = actions.getProperties(prop_name, prop_list)
-
+    storageProps = actions.getProperties("ids-storage.properties", [])
+    
     actions.installFile("ids.properties")
+    actions.installFile("ids-storage.properties")
     
     try:          
         app = actions.getAppName("ids")
@@ -35,7 +38,7 @@ elif arg == "INSTALL":
         
         actions.asadmin("create-jdbc-resource --connectionpoolid ids jdbc/ids")
                  
-        actions.deploy("ids-*.war", contextroot = "ids")
+        actions.deploy("ids-*.war", contextroot="ids")
                       
     except Exception, e:
         raise
@@ -43,10 +46,9 @@ elif arg == "INSTALL":
                 
 else:  # UNINSTALL
     
-    idsProperties = actions.getProperties(prop_name, prop_list)
+    actions.removeFile("ids.properties") 
+    actions.removeFile("ids-storage.properties")
     
-    actions.removeFile("ids.properties")
- 
     try:
         app = actions.getAppName("ids.war")
         if app: actions.asadmin("undeploy " + app)

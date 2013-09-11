@@ -1,4 +1,4 @@
-# The URL pointing to a running ICAT eg. http://example.com:8080/ICATService/ICAT?wsdl
+removeFile# The URL pointing to a running ICAT eg. http://example.com:8080/ICATService/ICAT?wsdl
 # The /ICATService/ICAT?wsdl suffix is optional
 icat.url=https://smfisher.esc.rl.ac.uk:8181/ICATService/ICAT?wsdl
 
