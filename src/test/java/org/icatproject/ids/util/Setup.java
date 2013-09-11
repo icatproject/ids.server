@@ -53,7 +53,7 @@ public class Setup {
 
         icatUrl = props.getProperty("icat_url");
         idsUrl = props.getProperty("ids_url");
-                
+        
         goodSessionId = login(props.getProperty("valid_icat_username"), props.getProperty("valid_icat_password"));
         forbiddenSessionId = login(props.getProperty("invalid_icat_username"), props.getProperty("invalid_icat_password"));
         
