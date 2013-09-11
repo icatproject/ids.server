@@ -14,6 +14,7 @@ import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.ids.util.Setup;
 import org.icatproject.ids.util.TestingClient;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,6 +31,11 @@ public class RestoreTest {
 		final URL icatUrl = new URL(setup.getIcatUrl());
 		final ICATService icatService = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
+	}
+	
+	@AfterClass
+	public static void cleanup() throws Exception {
+//		setup.cleanArchiveAndDb();
 	}
 
 	@Before

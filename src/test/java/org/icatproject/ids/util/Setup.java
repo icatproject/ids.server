@@ -1,16 +1,32 @@
 package org.icatproject.ids.util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipOutputStream;
 
 import javax.xml.namespace.QName;
 
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.icatproject.Datafile;
+import org.icatproject.Dataset;
+import org.icatproject.DatasetType;
+import org.icatproject.Facility;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
@@ -33,17 +49,21 @@ public class Setup {
     private String goodSessionId = null;
     private String forbiddenSessionId = null;
     
-    private static Map<String, String> filenameMD5 = null;
-    private static ArrayList<String> datasetIds = null;
-    private static ArrayList<String> datafileIds = null;
+    private static Map<String, String> filenameMD5 = new HashMap<String, String>();
+    private static ArrayList<String> datasetIds = new ArrayList<String>();
+    private static ArrayList<String> datafileIds = new ArrayList<String>();
     
     private String storageArchiveDir;
     private String storageZipDir;
     private String storageDir;
     private String storagePreparedDir;
     private String userLocalDir;
+    
+    private ICAT icat;
+    Facility fac;
+    DatasetType dsType;
 
-    public Setup() throws MalformedURLException, IcatException_Exception {
+    public Setup() throws Exception {
         InputStream is = getClass().getResourceAsStream("/test.properties");
         try {
         	props.load(is);
@@ -51,33 +71,109 @@ public class Setup {
             System.out.println("Problem loading test.properties\n" + e.getMessage());
         }
 
-        icatUrl = props.getProperty("icat_url");
-        idsUrl = props.getProperty("ids_url");
+        icatUrl = props.getProperty("icat.url");
+        if (!icatUrl.endsWith("ICATService/ICAT?wsdl")) {
+        	if (icatUrl.charAt(icatUrl.length()-1) == '/') {
+        		icatUrl = icatUrl + "ICATService/ICAT?wsdl";
+        	} else {
+        		icatUrl = icatUrl + "/ICATService/ICAT?wsdl";
+        	}
+        }
         
-        goodSessionId = login(props.getProperty("valid_icat_username"), props.getProperty("valid_icat_password"));
-        forbiddenSessionId = login(props.getProperty("invalid_icat_username"), props.getProperty("invalid_icat_password"));
+        idsUrl = props.getProperty("ids.url");
         
-        filenameMD5 = new HashMap<String, String>();
-        filenameMD5.put(props.getProperty("df1_location"), props.getProperty("df1_md5"));
-        filenameMD5.put(props.getProperty("df2_location"), props.getProperty("df2_md5"));
-        filenameMD5.put(props.getProperty("df3_location"), props.getProperty("df3_md5"));
-        filenameMD5.put(props.getProperty("df4_location"), props.getProperty("df4_md5"));
+        goodSessionId = login(props.getProperty("authorizedIcatUsername"), props.getProperty("authorizedIcatPassword"));
+        forbiddenSessionId = login(props.getProperty("unauthorizedIcatUsername"), props.getProperty("unauthorizedIcatPassword"));
 
-        datasetIds = new ArrayList<String>();
-        datasetIds.add(props.getProperty("ds1_id"));
-        datasetIds.add(props.getProperty("ds2_id"));
+        storageArchiveDir = props.getProperty("storageArchiveDir");
+        storageZipDir = props.getProperty("storageZipDir");
+        storageDir = props.getProperty("storageDir");
+        storagePreparedDir = props.getProperty("storagePreparedDir");
+        userLocalDir = props.getProperty("userLocalDir");
+        
+//        ICATClientBase icatClient = ICATClientFactory.getInstance().createICATInterface();
+        long timestamp = System.currentTimeMillis();
+        
+        try {
+	        final URL icatProperUrl = new URL(icatUrl);
+			final ICATService icatService = new ICATService(icatProperUrl, new QName("http://icatproject.org", "ICATService"));
+			icat = icatService.getICATPort();
+			
+			fac = new Facility();
+			fac.setName("Facility_" + timestamp);
+			fac.setId(icat.create(goodSessionId, fac));
+			
+			dsType = new DatasetType();
+			dsType.setFacility(fac);
+			dsType.setName("DatasetType_" + timestamp);
+			dsType.setId(icat.create(goodSessionId, dsType));
+	        
+	        Dataset ds1 = new Dataset();
+	        ds1.setName("ds1_" + timestamp);
+	        ds1.setLocation("test_dss/ds1_" + timestamp);
+	        ds1.setType(dsType);
+	        ds1.setId(icat.create(goodSessionId, ds1));
+	        
+	        Dataset ds2 = new Dataset();
+	        ds2.setName("ds2_" + timestamp);
+	        ds2.setLocation("test_dss/ds2_" + timestamp);
+	        ds2.setType(dsType);
+	        ds2.setId(icat.create(goodSessionId, ds2));
+	        
+	        Datafile df1 = new Datafile();
+	        df1.setName("df1_" + timestamp);
+	        df1.setLocation(ds1.getLocation() +"/df1_" + timestamp);
+	        df1.setDataset(ds1);
+	        df1.setId(icat.create(goodSessionId, df1));
+	        
+	        Datafile df2 = new Datafile();
+	        df2.setName("df2_" + timestamp);
+	        df2.setLocation(ds1.getLocation() +"/df2_" + timestamp);
+	        df2.setDataset(ds1);
+	        df2.setId(icat.create(goodSessionId, df2));
+	        
+	        Datafile df3 = new Datafile();
+	        df3.setName("df3_" + timestamp);
+	        df3.setLocation(ds2.getLocation() +"/df3_" + timestamp);
+	        df3.setDataset(ds2);
+	        df3.setId(icat.create(goodSessionId, df3));
+	        
+	        Datafile df4 = new Datafile();
+	        df4.setName("df4_" + timestamp);
+	        df4.setLocation(ds2.getLocation() +"/df4_" + timestamp);
+	        df4.setDataset(ds2);
+	        df4.setId(icat.create(goodSessionId, df4));
+	        
+	        // update the datasets, so they contains references to their datafiles
+	        ds1 = (Dataset) icat.get(goodSessionId, "Dataset INCLUDE Datafile", ds1.getId());
+	        ds2 = (Dataset) icat.get(goodSessionId, "Dataset INCLUDE Datafile", ds2.getId());
 
-        datafileIds = new ArrayList<String>();
-        datafileIds.add(props.getProperty("df1_id"));
-        datafileIds.add(props.getProperty("df2_id"));
-        datafileIds.add(props.getProperty("df3_id"));
-        datafileIds.add(props.getProperty("df4_id"));
+	        datasetIds.add(ds1.getId().toString());
+	        datasetIds.add(ds2.getId().toString());
 
-        storageArchiveDir = props.getProperty("STORAGE_ARCHIVE_DIR");
-        storageZipDir = props.getProperty("STORAGE_ZIP_DIR");
-        storageDir = props.getProperty("STORAGE_DIR");
-        storagePreparedDir = props.getProperty("STORAGE_PREPARED_DIR");
-        userLocalDir = props.getProperty("USER_LOCAL_DIR");
+	        datafileIds.add(df1.getId().toString());
+	        datafileIds.add(df2.getId().toString());
+	        datafileIds.add(df3.getId().toString());
+	        datafileIds.add(df4.getId().toString());
+	        
+	        writeToFile(df1, "df1 test content");
+	        writeToFile(df2, "df2 test content");
+	        writeToFile(df3, "df3 test content");
+	        writeToFile(df4, "df4 test content");
+	        
+	        filenameMD5.put(df1.getLocation(), computeMd5(df1));
+	        filenameMD5.put(df2.getLocation(), computeMd5(df2));
+	        filenameMD5.put(df3.getLocation(), computeMd5(df3));
+	        filenameMD5.put(df4.getLocation(), computeMd5(df4));
+	        
+	        zipDatasetToArchive(ds1);
+	        zipDatasetToArchive(ds2);
+        } catch (Exception e) {
+        	System.err.println("Could not prepare ICAT db for testing: " + e.getMessage());
+        	e.printStackTrace();
+        	throw e;
+        }
+        
     }
 
     /*
@@ -101,9 +197,22 @@ public class Setup {
         p.setKey("password");
         p.setValue(password);
         entries.add(p);
-        System.out.println("user: " + username + " password: " + password);
         String sessionId = icat.login("db", credentials);
         return sessionId;
+    }
+    
+    public void cleanArchiveAndDb() throws NumberFormatException, IcatException_Exception, IOException {
+    	for (String id : datafileIds) {
+    		Datafile df = (Datafile) icat.get(goodSessionId, "Datafile", Long.parseLong(id));
+    		icat.delete(goodSessionId, df);
+    	}
+    	for (String id :datasetIds) {
+    		Dataset ds = (Dataset) icat.get(goodSessionId, "Dataset", Long.parseLong(id));
+    		icat.delete(goodSessionId, ds);
+    	}
+    	icat.delete(goodSessionId, dsType);
+    	icat.delete(goodSessionId, fac);
+    	FileUtils.deleteDirectory(new File(storageArchiveDir, "test_dss"));
     }
     
     public String getCommaSepDatafileIds() {
@@ -157,4 +266,113 @@ public class Setup {
 	public String getIcatUrl() {
 		return icatUrl;
 	}
+	
+	private void writeToFile(Datafile df, String content) throws IOException { 
+		PrintWriter out = null;
+		try {
+			File file = new File(storageDir, df.getLocation());
+			file.getParentFile().mkdirs();
+			file.createNewFile();
+			out = new PrintWriter(file);
+			out.println(content);
+		} finally {
+			if (out != null) {
+				out.close();
+			}
+		}
+	}
+	
+	private String computeMd5(Datafile df) throws IOException {
+		FileInputStream in = null;
+		String res;
+		try {
+			File file = new File(storageDir, df.getLocation());
+			in = new FileInputStream(file);
+			res = DigestUtils.md5Hex(in);
+		} finally {
+			if (in != null) {
+				in.close();
+			}
+		}
+		return res;
+	}
+	
+	private void zipDatasetToArchive(Dataset ds) throws IOException {
+		File zipFile = new File(new File(storageArchiveDir, ds.getLocation()), "files.zip");
+		zipFile.getParentFile().mkdirs();
+		zipFile.createNewFile();
+		zipDataset(zipFile, ds, storageDir, false);
+	}
+	
+	public static void zipDataset(File zipFile, Dataset dataset,
+            String relativePath, boolean compress) {
+        if (dataset.getDatafiles().isEmpty()) {
+            // Create empty file
+            try {
+                zipFile.createNewFile();
+            } catch (IOException ex) {
+                System.err.println("writeZipFileFromDatafiles" + ex);
+            }
+            return;
+        }
+
+        try {
+            FileOutputStream fos = new FileOutputStream(zipFile);
+            ZipOutputStream zos = new ZipOutputStream(fos);
+
+            // set whether to compress the zip file or not
+            if (compress == true) {
+                zos.setMethod(ZipOutputStream.DEFLATED);
+            } else {
+                // using compress with level 0 instead of archive (STORED) because
+                // STORED requires you to set CRC, size and compressed size
+                // TODO: find efficient way of calculating CRC
+                zos.setMethod(ZipOutputStream.DEFLATED);
+                zos.setLevel(0);
+                //zos.setMethod(ZipOutputStream.STORED);
+            }
+            for (Datafile file : dataset.getDatafiles()) {
+                addToZip(zipFile, file.getName(), zos, new File(relativePath, 
+                		dataset.getLocation()).getAbsolutePath());
+            }
+
+            zos.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void addToZip(File directoryToZip, String fileName, ZipOutputStream zos,
+            String relativePath) {
+        try {
+            File file = new File(relativePath, fileName);
+            FileInputStream fis = new FileInputStream(file);
+            // to the directory being zipped, so chop off the rest of the path
+            String zipFilePath = file.getCanonicalPath().substring(relativePath.length(),
+                    file.getCanonicalPath().length());
+            if (zipFilePath.startsWith(File.separator)) {
+                zipFilePath = zipFilePath.substring(1);
+            }            
+            System.out.println("Writing '" + zipFilePath + "' to zip file");
+            ZipEntry zipEntry = new ZipEntry(zipFilePath);
+            try {
+                zos.putNextEntry(zipEntry);
+                byte[] bytes = new byte[1024];
+                int length;
+                while ((length = fis.read(bytes)) >= 0) {
+                    zos.write(bytes, 0, length);
+                }
+                zos.closeEntry();
+                fis.close();
+            } catch (ZipException ex) {
+            	System.out.println("Skipping the file" + ex);
+                fis.close();
+            }
+        } catch (IOException ex) {
+            System.err.println("addToZip" + ex);
+        }
+    }
 }

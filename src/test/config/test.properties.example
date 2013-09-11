@@ -1,63 +1,37 @@
-icat_url=https://smfisher.esc.rl.ac.uk:8181/ICATService/ICAT?wsdl
-ids_url=https://smfisher.esc.rl.ac.uk:8181/IDS/
+# The URL pointing to a running ICAT eg. http://example.com:8080/ICATService/ICAT?wsdl
+# The /ICATService/ICAT?wsdl suffix is optional
+icat.url=https://smfisher.esc.rl.ac.uk:8181/ICATService/ICAT?wsdl
+
+ids.url=https://smfisher.esc.rl.ac.uk:8181/IDS/
 
 #
 # These credentials must have permission to read and download
 # the dataset and datafiles specificed below.
 #
-valid_icat_username=root
-valid_icat_password=password
+authorizedIcatUsername=root
+authorizedIcatPassword=password
 
 #
 # These credentials must NOT have permission to read and download
-# the dataset and datafiles below.
+# the dataset and datafiles below (but they have to be a valid username/password pair)
 #
-invalid_icat_username=guest
-invalid_icat_password=guess
+unauthorizedIcatUsername=guest
+unauthorizedIcatPassword=guess
 
-#
-# The IDs of two valid datasets
-#
-ds1_id=4071
-ds2_id=4072
-
-#
-# Information about 4 datafiles. The first two should be contained in 
-# the first the dataset, the next two in the second dataset
-#
-# The location must match the LOCATION filed in the ICAT database.
-# The md5 is just the MD5 sum of the datafile in _lowercase_ 
-#
-
-df1_id=4132
-df1_location=None/ds1/f0-0
-df1_md5=93b885adfe0da089cdf634904fd59f71
-
-df2_id=4133
-df2_location=None/ds1/f0-1
-df2_md5=93b885adfe0da089cdf634904fd59f71
-
-df3_id=4073
-df3_location=None/ds2/t1.dat
-df3_md5=fbcf37468ef809cc4d23be97169c32cf
-
-df4_id=4074
-df4_location=None/ds2/t2.dat
-df4_md5=428f7b490c5d9be707aab2c146757da3
 
 # Folders which simulate different storages
-# Make sure, that you use the same folders in StorageInterface implementations
+# Make sure, that you use the same folders in ids-storage.properties
 
 # simulates slow storage, contains zipped datasets
-STORAGE_ARCHIVE_DIR = /home/wojtek/icat/icatarchive/
+storageArchiveDir = /home/fisher/icat/icatarchive/
 
 # simulates fast storage
-# STORAGE_ZIP_DIR - contains zipped datasets
-# STORAGE_DIR - contains exploaded datafiles from datasets
-# STORAGE_PREPARED_DIR - contains zips prepared for a particular user to download
-STORAGE_ZIP_DIR = /home/wojtek/icat/icatzipdata/
-STORAGE_DIR = /home/wojtek/icat/icatdata/
-STORAGE_PREPARED_DIR = /home/wojtek/icat/icatprepareddata
+# storageZipDir - contains zipped datasets
+# storageDir - contains exploaded datafiles from datasets
+# storagePreparedDir - contains zips prepared for a particular user to download
+storageZipDir = /home/fisher/icat/icatzipdata/
+storageDir = /home/fisher/icat/icatdata/
+storagePreparedDir = /home/fisher/icat/icatprepareddata
 
 # folder, where files should be downloaded to and uploaded from
-USER_LOCAL_DIR = /home/wojtek/icat/icatuserlocal
+userLocalDir = /home/fisher/icat/icatuserlocal

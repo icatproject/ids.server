@@ -5,7 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Set;
+import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
@@ -49,7 +49,7 @@ public class ZipHelper {
 //        }
 //    }
 
-    public static void writeZipFileFromStringFileList(File zipFile, Set<Datafile> fileSet,
+    public static void writeZipFileFromStringFileList(File zipFile, Collection<Datafile> fileSet,
             String relativePath, boolean compress) {
         logger.info("Will add " + fileSet.size() + " files to zip");
         if (fileSet.isEmpty()) {

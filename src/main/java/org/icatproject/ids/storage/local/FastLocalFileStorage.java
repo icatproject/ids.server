@@ -186,10 +186,10 @@ public class FastLocalFileStorage implements StorageInterface {
         }
     }
 
-    public static void addToZip(File directoryToZip, String fileStr, ZipOutputStream zos,
+    public static void addToZip(File directoryToZip, String fileName, ZipOutputStream zos,
             String relativePath) {
         try {
-            File file = new File(relativePath, fileStr);
+            File file = new File(relativePath, fileName);
             FileInputStream fis = new FileInputStream(file);
             // to the directory being zipped, so chop off the rest of the path
             String zipFilePath = file.getCanonicalPath().substring(relativePath.length(),
