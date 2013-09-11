@@ -512,7 +512,7 @@ public class WebService {
 					"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 		}
 		long tbytes = fastStorage.putDatafile(name, body, ds);
-		String assignedDatafileId = String.valueOf(registerDatafile(sessionId, name, datafileFormatId, tbytes, ds));
+		registerDatafile(sessionId, name, datafileFormatId, tbytes, ds);
 
 		return Response.status(200).entity(name).build();
 	}
@@ -594,24 +594,17 @@ public class WebService {
 			}
 
 			RequestedState state = null;
-			// long oldDelay = archiveWriteDelayMillis;
 			// If we are overwriting a DE from a different request, we should
-			// set its status to COMPLETED and remove it from the
+			// set its status to INCOMPLETE and remove it from the
 			// deferredOpsQueue.
-			// So far the previous status will be set at most once, so there's
+			// So far the previous RequestedState will be set at most once, so there's
 			// no ambiguity. Be careful though when implementing Investigations!
 			Iterator<Ids2DataEntity> iter = deferredOpsQueue.keySet().iterator();
 			while (iter.hasNext()) {
 				Ids2DataEntity oldDe = iter.next();
 				if (oldDe.overlapsWith(de)) {
 					requestHelper.setDataEntityStatus(oldDe, StatusInfo.INCOMPLETE);
-					// requestQueues.getWriteTimes().remove(oldDe);
 					state = deferredOpsQueue.get(oldDe);
-					// Long probablyOldDelay =
-					// requestQueues.getWriteTimes().get(oldDe);
-					// if (probablyOldDelay != null) {
-					// oldDelay = probablyOldDelay;
-					// }
 					iter.remove();
 					break;
 				}
@@ -654,7 +647,6 @@ public class WebService {
 					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					// this.setExactDelay(de, oldDelay);
 				}
 			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
@@ -662,10 +654,8 @@ public class WebService {
 					this.setDelay(de.getIcatDataset());
 				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					// this.setExactDelay(de, oldDelay);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-					// this.setExactDelay(de, oldDelay);
 				}
 			}
 		}
@@ -677,32 +667,6 @@ public class WebService {
 		writeTimes.put(ds, System.currentTimeMillis() + archiveWriteDelayMillis);
 		final Date d = new Date(writeTimes.get(ds));
 		logger.info("Requesting delay of writing of " + ds + " till " + d);
-	}
-
-	private long storeFile(InputStream requestBody, File file) throws IOException {
-		BufferedInputStream is = null;
-		BufferedOutputStream os = null;
-		int BUFSIZ = 1024; // extract it to properties or sth
-		long tbytes;
-		try {
-			is = new BufferedInputStream(requestBody, BUFSIZ);
-			os = new BufferedOutputStream(new FileOutputStream(file), BUFSIZ);
-			final byte[] bytes = new byte[BUFSIZ];
-			int n = 0;
-			tbytes = 0;
-			while ((n = is.read(bytes, 0, BUFSIZ)) != -1) {
-				os.write(bytes, 0, n);
-				tbytes += n;
-			}
-		} finally {
-			if (is != null) {
-				is.close();
-			}
-			if (os != null) {
-				os.close();
-			}
-		}
-		return tbytes;
 	}
 
 	private Long registerDatafile(String sessionid, String name, String datafileFormatId, long tbytes, Dataset dataset)
