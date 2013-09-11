@@ -20,11 +20,11 @@ public class PropertyHandler {
     private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
     private static PropertyHandler instance = null;
 
-    private int numberOfDaysToExpire;
-    private String icatURL;
+    private int requestExpireTimeDays;
+    private String icatUrl;
     private long writeDelaySeconds;
     private long processQueueIntervalSeconds;
-    private int numberOfDaysToKeepFilesInCache;
+//    private int numberOfDaysToKeepFilesInCache;
     private Class<StorageInterface> fastStorageInterfaceImplementation;
     private Class<StorageInterface> slowStorageInterfaceImplementation;
 
@@ -42,60 +42,67 @@ public class PropertyHandler {
         }
 
         // do some very basic error checking on the config options
-        icatURL = props.getProperty("ICAT_URL");
+        icatUrl = props.getProperty("icat.url");
+        if (!icatUrl.endsWith("ICATService/ICAT?wsdl")) {
+        	if (icatUrl.charAt(icatUrl.length()-1) == '/') {
+        		icatUrl = icatUrl + "ICATService/ICAT?wsdl";
+        	} else {
+        		icatUrl = icatUrl + "/ICATService/ICAT?wsdl";
+        	}
+        }
         try {
-            final URLConnection connection = new URL(icatURL).openConnection();
+            final URLConnection connection = new URL(icatUrl).openConnection();
             connection.connect();
         } catch (MalformedURLException e) {
-            String msg = "Invalid property ICAT_URL (" + icatURL + "). Check URL format";
+            String msg = "Invalid property icat.url (" + icatUrl + "). Check URL format";
             logger.error(msg);
             throw new IllegalStateException(msg);
         } catch (IOException e) {
-            String msg = "Unable to contact URL supplied for ICAT_URL (" + icatURL + ")";
+            String msg = "Unable to contact URL supplied for icat.url (" + icatUrl + ")";
             logger.error(msg);
             throw new IllegalStateException(msg);
         }
 
-        numberOfDaysToExpire = Integer.parseInt(props.getProperty("NUMBER_OF_DAYS_TO_EXPIRE"));
-        if (numberOfDaysToExpire < 1) {
-            String msg = "Invalid property NUMBER_OF_DAYS_TO_EXPIRE ("
-                    + props.getProperty("NUMBER_OF_DAYS_TO_EXPIRE")
+        requestExpireTimeDays = Integer.parseInt(props.getProperty("requestExpireTimeDays"));
+        if (requestExpireTimeDays < 1) {
+            String msg = "Invalid property requestExpireTimeDays ("
+                    + props.getProperty("requestExpireTimeDays")
                     + "). Must be an integer greater than 0.";
             logger.error(msg);
             throw new IllegalStateException(msg);
         }
 
-        numberOfDaysToKeepFilesInCache = Integer.parseInt(props
-                .getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE"));
-        if (numberOfDaysToKeepFilesInCache < 1) {
-            String msg = "Invalid property NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE ("
-                    + props.getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE")
-                    + ") Must be an integer greater than 0.";
-            logger.error(msg);
-            throw new IllegalStateException(msg);
-        }
+//        numberOfDaysToKeepFilesInCache = Integer.parseInt(props
+//                .getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE"));
+//        if (numberOfDaysToKeepFilesInCache < 1) {
+//            String msg = "Invalid property NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE ("
+//                    + props.getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE")
+//                    + ") Must be an integer greater than 0.";
+//            logger.error(msg);
+//            throw new IllegalStateException(msg);
+//        }
         
-        writeDelaySeconds = Long.parseLong(props.getProperty("WRITE_DELAY_SECONDS"));
+        writeDelaySeconds = Long.parseLong(props.getProperty("writeDelaySeconds"));
         if (writeDelaySeconds < 1) {
-            String msg = "Invalid property WRITE_DELAY_SECONDS ("
-                    + props.getProperty("WRITE_DELAY_SECONDS")
+            String msg = "Invalid property writeDelaySeconds ("
+                    + props.getProperty("writeDelaySeconds")
                     + "). Must be an integer greater than 0.";
             logger.error(msg);
             throw new IllegalStateException(msg);
         }
         
-        processQueueIntervalSeconds = Long.parseLong(props.getProperty("PROCESS_QUEUE_INTERVAL_SECONDS"));
+        processQueueIntervalSeconds = Long.parseLong(props.getProperty("processQueueIntervalSeconds"));
         if (processQueueIntervalSeconds < 1) {
-            String msg = "Invalid property PROCESS_QUEUE_INTERVAL_SECONDS ("
-                    + props.getProperty("PROCESS_QUEUE_INTERVAL_SECONDS")
+            String msg = "Invalid property processQueueIntervalSeconds ("
+                    + props.getProperty("processQueueIntervalSeconds")
                     + "). Must be an integer greater than 0.";
             logger.error(msg);
             throw new IllegalStateException(msg);
         }
         
-        String fastStorageInterfaceImplementationName = props.getProperty("FAST_STORAGE_INTERFACE_IMPLEMENTATION");
+        String fastStorageInterfaceImplementationName = props.getProperty("plugin.main");
         if (fastStorageInterfaceImplementationName == null) {
-        	String msg = "Property FAST_STORAGE_INTERFACE_IMPLEMENTATION must be set.";
+        	String msg = "Property plugin.main must be set.";
         	logger.error(msg);
         	throw new IllegalStateException(msg);
         }
@@ -107,9 +114,9 @@ public class PropertyHandler {
         	throw new IllegalStateException(msg);
         }
         
-        String slowStorageInterfaceImplementationName = props.getProperty("SLOW_STORAGE_INTERFACE_IMPLEMENTATION");
+        String slowStorageInterfaceImplementationName = props.getProperty("plugin.archive");
         if (slowStorageInterfaceImplementationName == null) {
-        	String msg = "Property SLOW_STORAGE_INTERFACE_IMPLEMENTATION must be set.";
+        	String msg = "Property plugin.archive must be set.";
         	logger.error(msg);
         	throw new IllegalStateException(msg);
         }
@@ -129,8 +136,8 @@ public class PropertyHandler {
         return instance;
     }
 
-    public String getIcatURL() {
-        return icatURL;
+    public String getIcatUrl() {
+        return icatUrl;
     }
     
     public long getWriteDelaySeconds() {
@@ -141,13 +148,13 @@ public class PropertyHandler {
     	return processQueueIntervalSeconds;
     }
 
-    public int getNumberOfDaysToExpire() {
-        return numberOfDaysToExpire;
+    public int getRequestExpireTimeDays() {
+        return requestExpireTimeDays;
     }
 
-    public int getNumberOfDaysToKeepFilesInCache() {
-        return numberOfDaysToKeepFilesInCache;
-    }
+//    public int getNumberOfDaysToKeepFilesInCache() {
+//        return numberOfDaysToKeepFilesInCache;
+//    }
 
 	public Class<StorageInterface> getFastStorageInterfaceImplementation() {
 		return fastStorageInterfaceImplementation;

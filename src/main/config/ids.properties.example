@@ -1,15 +1,13 @@
 # The URL pointing to a running ICAT eg. http://example.com:8080/ICATService/ICAT?wsdl
-ICAT_URL = https://smfisher.esc.rl.ac.uk:8181/ICATService/ICAT?wsdl
+# The /ICATService/ICAT?wsdl suffix is optional
+icat.url = https://smfisher.esc.rl.ac.uk:8181/ICATService/ICAT?wsdl
 
-# user's local folder for downloading files
-USER_LOCAL_DIR = /home/fisher/icat/icatuserlocal
-
-WRITE_DELAY_SECONDS = 60
-PROCESS_QUEUE_INTERVAL_SECONDS = 2
+writeDelaySeconds = 60
+processQueueIntervalSeconds = 2
 
 # How long a download request will remaining in the database. After this time the entry 
 # will automatically be removed from the database as well as associated ZIP files.
-REQUEST_EXPIRE_TIME_DAYS = 7
+requestExpireTimeDays = 7
 
 # How long files will stay in LOCAL_STORAGE_PATH. This has no effect using using storage
 # type LOCAL.
@@ -17,5 +15,5 @@ REQUEST_EXPIRE_TIME_DAYS = 7
 # NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE = 30
 
 # Canonical name of the class implementing StorageInterface, must be on classpath
-FAST_STORAGE_INTERFACE_IMPLEMENTATION = org.icatproject.ids.storage.local.FastLocalFileStorage
-SLOW_STORAGE_INTERFACE_IMPLEMENTATION = org.icatproject.ids.storage.local.SlowLocalFileStorage
+plugin.main = org.icatproject.ids.storage.local.FastLocalFileStorage
+plugin.archive = org.icatproject.ids.storage.local.SlowLocalFileStorage

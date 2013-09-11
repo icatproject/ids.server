@@ -16,7 +16,7 @@ public class ICATClientFactory {
     private static String url;
 
     private ICATClientFactory() {
-        url = PropertyHandler.getInstance().getIcatURL();
+        url = PropertyHandler.getInstance().getIcatUrl();
     }
 
     public static ICATClientFactory getInstance() {

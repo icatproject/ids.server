@@ -68,7 +68,7 @@ public class RequestHelper {
 			throws ICATClientException, MalformedURLException {
 		ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
 		Calendar expireDate = Calendar.getInstance();
-		expireDate.add(Calendar.DATE, properties.getNumberOfDaysToExpire());
+		expireDate.add(Calendar.DATE, properties.getRequestExpireTimeDays());
 
 		String username = client.getUserId(sessionId);
 
