@@ -129,7 +129,7 @@ public class FastLocalFileStorage implements StorageInterface {
 	}
 	
 	private void prepareZipFileForUser(File zipFile, Set<Dataset> datasets, Set<Datafile> datafiles,
-            String relativePath, boolean compress, Datafile newDatafile) {
+            String storageRootPath, boolean compress, Datafile newDatafile) {
         try {
             FileOutputStream fos = new FileOutputStream(zipFile);
             ZipOutputStream zos = new ZipOutputStream(fos);
@@ -146,9 +146,14 @@ public class FastLocalFileStorage implements StorageInterface {
                 //zos.setMethod(ZipOutputStream.STORED);
             }
             for (Datafile df : datafiles) {
-                addToZip("Datafile-" + df.getId(), zos, "tmp"); // TODO
+                addToZip("Datafile-" + df.getId(), zos, new File(storageRootPath, df.getLocation()).getAbsolutePath());
             }
-
+            for (Dataset ds : datasets) {
+            	for (Datafile df : ds.getDatafiles()) {
+            		addToZip(String.format("Dataset-%s/Datafile-%s", ds.getId(), df.getId()), zos,
+            				new File(storageRootPath, df.getLocation()).getAbsolutePath());
+            	}
+            }
             zos.close();
             fos.close();
         } catch (FileNotFoundException e) {
