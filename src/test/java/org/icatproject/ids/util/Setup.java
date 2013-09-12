@@ -50,9 +50,10 @@ public class Setup {
 	private String goodSessionId = null;
 	private String forbiddenSessionId = null;
 
-	private static Map<String, String> filenameMD5 = new HashMap<String, String>();
-	private static ArrayList<String> datasetIds = new ArrayList<String>();
-	private static ArrayList<String> datafileIds = new ArrayList<String>();
+	private Map<String, String> filenameMD5 = new HashMap<String, String>();
+	private ArrayList<String> datasetIds = new ArrayList<String>();
+	private ArrayList<String> datafileIds = new ArrayList<String>();
+	private String newFileLocation;
 
 	private String storageArchiveDir;
 	private String storageZipDir;
@@ -175,10 +176,10 @@ public class Setup {
 			datafileIds.add(df3.getId().toString());
 			datafileIds.add(df4.getId().toString());
 
-			writeToFile(df1, "df1 test content");
-			writeToFile(df2, "df2 test content");
-			writeToFile(df3, "df3 test content");
-			writeToFile(df4, "df4 test content");
+			writeToFile(new File(storageDir, df1.getLocation()), "df1 test content");
+			writeToFile(new File(storageDir, df2.getLocation()), "df2 test content");
+			writeToFile(new File(storageDir, df3.getLocation()), "df3 test content");
+			writeToFile(new File(storageDir, df4.getLocation()), "df4 test content");
 
 			filenameMD5.put(df1.getLocation(), computeMd5(df1));
 			filenameMD5.put(df2.getLocation(), computeMd5(df2));
@@ -187,6 +188,9 @@ public class Setup {
 
 			zipDatasetToArchive(ds1);
 			zipDatasetToArchive(ds2);
+			
+			newFileLocation = new File(userLocalDir, "new_file_" + timestamp).getAbsolutePath();
+			writeToFile(new File(newFileLocation), "new_file test content");
 		} catch (Exception e) {
 			System.err.println("Could not prepare ICAT db for testing: " + e.getMessage());
 			e.printStackTrace();
@@ -282,18 +286,21 @@ public class Setup {
 	public String getUserLocalDir() {
 		return userLocalDir;
 	}
+	
+	public String getNewFileLocation() {
+		return newFileLocation;
+	}
 
 	public String getIcatUrl() {
 		return icatUrl;
 	}
 
-	private void writeToFile(Datafile df, String content) throws IOException {
+	private void writeToFile(File dst, String content) throws IOException {
 		PrintWriter out = null;
 		try {
-			File file = new File(storageDir, df.getLocation());
-			file.getParentFile().mkdirs();
-			file.createNewFile();
-			out = new PrintWriter(file);
+			dst.getParentFile().mkdirs();
+			dst.createNewFile();
+			out = new PrintWriter(dst);
 			out.println(content);
 		} finally {
 			if (out != null) {

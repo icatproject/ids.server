@@ -51,8 +51,8 @@ public class PutTest {
 	@Test(expected = TestingClientNotFoundException.class)
 	public void putToUnrestoredDataset() throws Exception {
 		final int DS_NUM_FROM_PROPS = 0;
-		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
-		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
+		File fileOnUsersDisk = new File(setup.getNewFileLocation()); // this file will be uploaded
+		testingClient.putTest(setup.getGoodSessionId(), "uploaded_file1_" + timestamp, "xml", setup.getDatasetIds()
 				.get(DS_NUM_FROM_PROPS), null, null, null, null, fileOnUsersDisk);
 	}
 
@@ -61,8 +61,8 @@ public class PutTest {
 		final int DS_NUM_FROM_PROPS = 0;		
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
-		File fileOnUsersDisk = new File(setup.getUserLocalDir(), "test_file.txt"); // this file will be uploaded
-		String uploadedLocation = new File(icatDs.getLocation(), "my_file_name.txt"+timestamp).getPath();
+		File fileOnUsersDisk = new File(setup.getNewFileLocation()); // this file will be uploaded
+		String uploadedLocation = new File(icatDs.getLocation(), "uploaded_file2_"+timestamp).getPath();
 		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
 		
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
@@ -77,7 +77,7 @@ public class PutTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 		
-		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt"+timestamp, "xml", setup.getDatasetIds()
+		testingClient.putTest(setup.getGoodSessionId(), "uploaded_file2_"+timestamp, "xml", setup.getDatasetIds()
 				.get(DS_NUM_FROM_PROPS), null, null, null, null, fileOnUsersDisk);
 		retryLimit = 5;
 		do {
@@ -96,22 +96,4 @@ public class PutTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
 				!zipOnFastStorage.exists());
 	}
-
-//	@Test
-//	public void deleteOldZipOfDatasetTest() throws Exception {
-//		final int DS_NUM_FROM_PROPS = 0;
-//		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
-//				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
-//		final File zipfile = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
-//		FileUtils.forceMkdir(zipfile.getParentFile());
-//		zipfile.createNewFile();
-//		assertTrue("File " + zipfile.getAbsolutePath() + " should have been created", zipfile.exists());
-//
-//		long timestamp = System.currentTimeMillis();
-//		File fileOnSlowStorage = new File(setup.getUserLocalDir(), "test_file.txt");
-//		testingClient.putTest(setup.getGoodSessionId(), "my_file_name.txt_" + timestamp, "xml", setup.getDatasetIds()
-//				.get(DS_NUM_FROM_PROPS), null, null, null, null, null, fileOnSlowStorage);
-//
-//		assertFalse("File " + zipfile.getAbsolutePath() + " should have been removed", zipfile.exists());
-//	}
 }
