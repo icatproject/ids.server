@@ -16,15 +16,15 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.icatproject.ids.entity.IdsDataEntity;
+import org.icatproject.ids.entity.IdsDatafileEntity;
+import org.icatproject.ids.entity.IdsDatasetEntity;
+import org.icatproject.ids.entity.IdsRequestEntity;
 import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids2.ported.entity.Ids2DataEntity;
-import org.icatproject.ids2.ported.entity.Ids2DatafileEntity;
-import org.icatproject.ids2.ported.entity.Ids2DatasetEntity;
-import org.icatproject.ids2.ported.entity.RequestEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,27 +44,27 @@ public class RequestHelper {
 		icatClient = ICATClientFactory.getInstance().createICATInterface();
 	}
 
-	public RequestEntity createPrepareRequest(String sessionId, String compress, String zip)
+	public IdsRequestEntity createPrepareRequest(String sessionId, String compress, String zip)
 			throws ICATClientException, MalformedURLException {
 		return createRequest(sessionId, compress, zip, RequestedState.PREPARE_REQUESTED);
 	}
 
 //	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-	public RequestEntity createArchiveRequest(String sessionId) throws MalformedURLException, ICATClientException {
+	public IdsRequestEntity createArchiveRequest(String sessionId) throws MalformedURLException, ICATClientException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.ARCHIVE_REQUESTED);
 	}
 
 //	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-	public RequestEntity createRestoreRequest(String sessionId) throws ICATClientException, MalformedURLException {
+	public IdsRequestEntity createRestoreRequest(String sessionId) throws ICATClientException, MalformedURLException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
 	}
 	
 //	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-	public RequestEntity createWriteRequest(String sessionId) throws ICATClientException, MalformedURLException {
+	public IdsRequestEntity createWriteRequest(String sessionId) throws ICATClientException, MalformedURLException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.WRITE_REQUESTED);
 	}
 
-	public RequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
+	public IdsRequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
 			throws ICATClientException, MalformedURLException {
 		ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
 		Calendar expireDate = Calendar.getInstance();
@@ -72,7 +72,7 @@ public class RequestHelper {
 
 		String username = client.getUserId(sessionId);
 
-		RequestEntity requestEntity = new RequestEntity();
+		IdsRequestEntity requestEntity = new IdsRequestEntity();
 		requestEntity.setSessionId(sessionId);
 		requestEntity.setUserId(username);
 		requestEntity.setPreparedId(UUID.randomUUID().toString());
@@ -93,12 +93,12 @@ public class RequestHelper {
 		return requestEntity;
 	}
 
-	public void addDatasets(String sessionId, RequestEntity requestEntity, String datasetIds) throws Exception {
+	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds) throws Exception {
 		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
-		List<Ids2DatasetEntity> newDatasetList = new ArrayList<Ids2DatasetEntity>();
+		List<IdsDatasetEntity> newDatasetList = new ArrayList<IdsDatasetEntity>();
 
 		for (String id : datasetIdList) {
-			Ids2DatasetEntity newDataset = new Ids2DatasetEntity();
+			IdsDatasetEntity newDataset = new IdsDatasetEntity();
 			newDataset.setIcatDatasetId(Long.parseLong(id));
 			newDataset.setIcatDataset(icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(id)));
 			newDataset.setRequest(requestEntity);
@@ -112,12 +112,12 @@ public class RequestHelper {
 		// em.flush();
 	}
 
-	public void addDatafiles(String sessionId, RequestEntity requestEntity, String datafileIds) throws Exception {
+	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds) throws Exception {
 		List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
-		List<Ids2DatafileEntity> newDatafileList = new ArrayList<Ids2DatafileEntity>();
+		List<IdsDatafileEntity> newDatafileList = new ArrayList<IdsDatafileEntity>();
 
 		for (String id : datafileIdList) {
-			Ids2DatafileEntity newDatafile = new Ids2DatafileEntity();
+			IdsDatafileEntity newDatafile = new IdsDatafileEntity();
 			newDatafile.setIcatDatafileId(Long.parseLong(id));
 			newDatafile.setIcatDatafile(icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id)));
 			newDatafile.setRequest(requestEntity);
@@ -131,7 +131,7 @@ public class RequestHelper {
 		// em.flush();
 	}
 
-	public void setDataEntityStatus(Ids2DataEntity de, StatusInfo status) {
+	public void setDataEntityStatus(IdsDataEntity de, StatusInfo status) {
 		logger.info("Changing status of " + de + " to " + status);
 		// de = em.merge(de);
 		de.setStatus(status);
@@ -139,7 +139,7 @@ public class RequestHelper {
 		em.merge(de);
 	}
 
-	private void setRequestCompletedIfEverythingDone(RequestEntity request) {
+	private void setRequestCompletedIfEverythingDone(IdsRequestEntity request) {
 		Set<StatusInfo> finalStatuses = new HashSet<StatusInfo>();
 		finalStatuses.add(StatusInfo.COMPLETED);
 		finalStatuses.add(StatusInfo.INCOMPLETE);
@@ -149,7 +149,7 @@ public class RequestHelper {
 																	// everything
 																	// went OK
 		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
-		for (Ids2DataEntity de : request.getDataEntities()) {
+		for (IdsDataEntity de : request.getDataEntities()) {
 			logger.info("Status of " + de + " is " + de.getStatus());
 			if (!finalStatuses.contains(de.getStatus())) {
 				return;
@@ -163,48 +163,17 @@ public class RequestHelper {
 		setRequestStatus(request, resultingRequestStatus);
 	}
 
-	public void setRequestStatus(RequestEntity request, StatusInfo status) {
+	public void setRequestStatus(IdsRequestEntity request, StatusInfo status) {
 		logger.info("Changing status of " + request + " to " + status);
 		// request = em.merge(request);
 		request.setStatus(status);
 		em.merge(request);
 	}
 
-	public RequestEntity getRequestByPreparedId(String preparedId) {
-		Query q = em.createQuery("SELECT d FROM RequestEntity d WHERE d.preparedId = :preparedId").setParameter(
+	public IdsRequestEntity getRequestByPreparedId(String preparedId) {
+		Query q = em.createQuery("SELECT d FROM IdsRequestEntity d WHERE d.preparedId = :preparedId").setParameter(
 				"preparedId", preparedId);
-		return (RequestEntity) q.getSingleResult();
+		return (IdsRequestEntity) q.getSingleResult();
 	}
-
-//	public void writeFileToOutputStream(RequestEntity requestEntity, OutputStream output, Long offset)
-//			throws IOException {
-//		File zipFile = new File(properties.getStoragePreparedDir(), requestEntity.getPreparedId()+".zip");
-//
-//		BufferedInputStream bis = null;
-//		BufferedOutputStream bos = null;
-//		try {
-//			int bytesRead = 0;
-//			byte[] buffer = new byte[32 * 1024];
-//			bis = new BufferedInputStream(new FileInputStream(zipFile));
-//			bos = new BufferedOutputStream(output);
-//
-//			// apply offset to stream
-//			if (offset > 0) {
-//				bis.skip(offset);
-//			}
-//
-//			// write bytes to output stream
-//			while ((bytesRead = bis.read(buffer)) > 0) {
-//				bos.write(buffer, 0, bytesRead);
-//			}
-//		} finally {
-//			if (bis != null) {
-//				bis.close();
-//			}
-//			if (bos != null) {
-//				bos.close();
-//			}
-//		}
-//	}
 
 }

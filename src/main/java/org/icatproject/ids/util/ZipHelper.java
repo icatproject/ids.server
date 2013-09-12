@@ -11,7 +11,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import org.icatproject.Datafile;
-import org.icatproject.ids2.ported.entity.RequestEntity;
+import org.icatproject.ids.entity.IdsRequestEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ public class ZipHelper {
 
     private final static Logger logger = LoggerFactory.getLogger(ZipHelper.class);
 
-    public static void compressFileList(RequestEntity request
+    public static void compressFileList(IdsRequestEntity request
     		/*, Set<String> fileSet, String relativePath, boolean compress*/) {
 //    	logger.info(String.format("zipping %s datasets and %s datafiles, total %s icatDatafiles",
 //    			request.getDatasets().size(), request.getDatafiles().size(),

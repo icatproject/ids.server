@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported.entity;
+package org.icatproject.ids.entity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,9 +27,9 @@ import org.icatproject.ids2.ported.RequestedState;
 
 @SuppressWarnings("serial")
 @Entity
-@Table(name = "IDS2_REQUEST")
+@Table(name = "IDS_REQUEST")
 @XmlRootElement
-public class RequestEntity implements Serializable {
+public class IdsRequestEntity implements Serializable {
 
 	@Id
 	@GeneratedValue
@@ -45,10 +45,10 @@ public class RequestEntity implements Serializable {
 	private Date expireTime;
 
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
-	private List<Ids2DatafileEntity> datafiles;
+	private List<IdsDatafileEntity> datafiles;
 
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "request")
-	private List<Ids2DatasetEntity> datasets;
+	private List<IdsDatasetEntity> datasets;
 
 	@Enumerated(EnumType.STRING)
 	private RequestedState requestedState;
@@ -60,14 +60,14 @@ public class RequestEntity implements Serializable {
 	@Column(name = "IDS_COMPRESS")
 	private boolean compress;
 
-	public RequestEntity() {
+	public IdsRequestEntity() {
 	}
 
-	public RequestEntity(Long id) {
+	public IdsRequestEntity(Long id) {
 		this.id = id;
 	}
 
-	public RequestEntity(Long id, String preparedId, String userId, Date submittedTime, Date expireTime,
+	public IdsRequestEntity(Long id, String preparedId, String userId, Date submittedTime, Date expireTime,
 			RequestedState type) {
 		this.id = id;
 		this.preparedId = preparedId;
@@ -109,19 +109,19 @@ public class RequestEntity implements Serializable {
 		this.expireTime = expireTime;
 	}
 
-	public List<Ids2DatafileEntity> getDatafiles() {
+	public List<IdsDatafileEntity> getDatafiles() {
 		return datafiles;
 	}
 
-	public void setDatafiles(List<Ids2DatafileEntity> datafiles) {
+	public void setDatafiles(List<IdsDatafileEntity> datafiles) {
 		this.datafiles = datafiles;
 	}
 
-	public List<Ids2DatasetEntity> getDatasets() {
+	public List<IdsDatasetEntity> getDatasets() {
 		return datasets;
 	}
 
-	public void setDatasets(List<Ids2DatasetEntity> datasets) {
+	public void setDatasets(List<IdsDatasetEntity> datasets) {
 		this.datasets = datasets;
 	}
 
@@ -170,8 +170,8 @@ public class RequestEntity implements Serializable {
 		return String.format("RequestEntity id=%s, requestedState=%s", id, requestedState);
 	}
 
-	public List<Ids2DataEntity> getDataEntities() {
-		List<Ids2DataEntity> res = new ArrayList<Ids2DataEntity>();
+	public List<IdsDataEntity> getDataEntities() {
+		List<IdsDataEntity> res = new ArrayList<IdsDataEntity>();
 		res.addAll(datafiles);
 		res.addAll(datasets);
 		return res;
@@ -183,7 +183,7 @@ public class RequestEntity implements Serializable {
 	 */
 	public Set<Datafile> getIcatDatafiles() {
 		Set<Datafile> datafiles = new HashSet<Datafile>();
-		for (Ids2DatafileEntity df : this.getDatafiles()) {
+		for (IdsDatafileEntity df : this.getDatafiles()) {
 			datafiles.addAll(df.getIcatDatafiles()); // will only add one DF
 		}
 		return datafiles;
@@ -195,7 +195,7 @@ public class RequestEntity implements Serializable {
 	 */
 	public Set<Dataset> getIcatDatasets() {
 		Set<Dataset> datasets = new HashSet<Dataset>();
-		for (Ids2DatasetEntity ds : this.getDatasets()) {
+		for (IdsDatasetEntity ds : this.getDatasets()) {
 			datasets.add(ds.getIcatDataset());
 		}
 		return datasets;

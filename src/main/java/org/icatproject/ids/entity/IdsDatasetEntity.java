@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported.entity;
+package org.icatproject.ids.entity;
 
 import java.io.Serializable;
 import java.util.List;
@@ -19,8 +19,8 @@ import org.icatproject.ids.util.StatusInfo;
 
 @SuppressWarnings("serial")
 @Entity
-@Table(name = "IDS2_DATASET")
-public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
+@Table(name = "IDS_DATASET")
+public class IdsDatasetEntity implements IdsDataEntity, Serializable {
 
 	@Id
 	@GeneratedValue
@@ -31,7 +31,7 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 	
 	@JoinColumn(name = "REQUESTID", referencedColumnName = "ID")
 	@ManyToOne(optional = false)
-	private RequestEntity request;
+	private IdsRequestEntity request;
 	
 //	@OneToMany(cascade = CascadeType.ALL, mappedBy = "dataset")
 //    private List<Ids2DatafileEntity> datafiles;
@@ -47,7 +47,7 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 	@Transient
 	private Dataset icatDataset;
 
-	public Ids2DatasetEntity() {
+	public IdsDatasetEntity() {
 	}
 
 //	public Ids2DatasetEntity(Long id) {
@@ -78,11 +78,11 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 	}
 
 	@Override
-	public RequestEntity getRequest() {
+	public IdsRequestEntity getRequest() {
 		return request;
 	}
 
-	public void setRequest(RequestEntity request) {
+	public void setRequest(IdsRequestEntity request) {
 		this.request = request;
 	}
 
@@ -140,13 +140,13 @@ public class Ids2DatasetEntity implements Ids2DataEntity, Serializable {
 //	}
 
 	@Override
-	public boolean overlapsWith(Ids2DataEntity de) {
-		if (de instanceof Ids2DatafileEntity) {
-			Ids2DatafileEntity df = (Ids2DatafileEntity) de;
+	public boolean overlapsWith(IdsDataEntity de) {
+		if (de instanceof IdsDatafileEntity) {
+			IdsDatafileEntity df = (IdsDatafileEntity) de;
 			return this.icatDataset.getId().equals(df.getIcatDatafile().getDataset().getId());
 		}
-		if (de instanceof Ids2DatasetEntity) {
-			Ids2DatasetEntity ds = (Ids2DatasetEntity) de;
+		if (de instanceof IdsDatasetEntity) {
+			IdsDatasetEntity ds = (IdsDatasetEntity) de;
 			return this.icatDataset.getId().equals(ds.getIcatDataset().getId());
 		}
 		return false;

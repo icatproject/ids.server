@@ -37,6 +37,8 @@ import javax.ws.rs.core.StreamingOutput;
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
+import org.icatproject.ids.entity.IdsDataEntity;
+import org.icatproject.ids.entity.IdsRequestEntity;
 import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
@@ -57,8 +59,6 @@ import org.icatproject.ids2.ported.DeferredOp;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;
-import org.icatproject.ids2.ported.entity.Ids2DataEntity;
-import org.icatproject.ids2.ported.entity.RequestEntity;
 import org.icatproject.ids2.ported.thread.ProcessQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +119,7 @@ public class WebService {
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds,
 			@DefaultValue("false") @FormParam("compress") String compress, @FormParam("zip") String zip) {
-		RequestEntity requestEntity = null;
+		IdsRequestEntity requestEntity = null;
 		logger.info("prepareData received");
 		// 501
 		if (investigationIds != null) {
@@ -157,7 +157,7 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
-			for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.PREPARE);
 			}
 		} catch (ICATSessionException e) {
@@ -200,9 +200,6 @@ public class WebService {
 		}
 
 		try {
-			// status =
-			// downloadRequestHelper.getDownloadRequestByPreparedId(preparedId).getStatus();
-			// // IDS1
 			status = requestHelper.getRequestByPreparedId(preparedId).getStatus().name();
 		} catch (EJBException e) {
 			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
@@ -258,7 +255,7 @@ public class WebService {
 	 * @return HTTP response containing the ZIP file
 	 */
 	public Response getData(String preparedId, String outname, String offset) {
-		final RequestEntity requestEntity;
+		final IdsRequestEntity requestEntity;
 		final Long offsetLong;
 		String name = null;
 
@@ -383,7 +380,7 @@ public class WebService {
 	public Response archive(@FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds) {
-		RequestEntity requestEntity = null;
+		IdsRequestEntity requestEntity = null;
 
 		// 501
 		if (investigationIds != null) {
@@ -414,7 +411,7 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
-			for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.ARCHIVE);
 			}
 		} catch (ICATSessionException e) {
@@ -504,7 +501,7 @@ public class WebService {
 
 		StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
 		if (!fastStorage.datasetExists(ds)) {
-			RequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
+			IdsRequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
 			requestHelper.addDatasets(sessionId, requestEntity, datasetId);
 			this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
 
@@ -533,7 +530,7 @@ public class WebService {
 	public Response restore(@FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds) {
-		RequestEntity requestEntity = null;
+		IdsRequestEntity requestEntity = null;
 		logger.info("restore received");
 		// 501
 		if (investigationIds != null) {
@@ -564,7 +561,7 @@ public class WebService {
 			if (datasetIds != null) {
 				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
 			}
-			for (Ids2DataEntity de : requestEntity.getDataEntities()) {
+			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.RESTORE);
 			}
 		} catch (ICATSessionException e) {
@@ -581,10 +578,10 @@ public class WebService {
 		return Response.status(200).build();
 	}
 
-	private void queue(Ids2DataEntity de, DeferredOp deferredOp) {
+	private void queue(IdsDataEntity de, DeferredOp deferredOp) {
 		logger.info("Requesting " + deferredOp + " of " + de);
 
-		Map<Ids2DataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
+		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 
 		synchronized (deferredOpsQueue) {
 			// PREPARE is a special case, as it's independent of the FSM state
@@ -600,9 +597,9 @@ public class WebService {
 			// So far the previous RequestedState will be set at most once, so
 			// there's
 			// no ambiguity. Be careful though when implementing Investigations!
-			Iterator<Ids2DataEntity> iter = deferredOpsQueue.keySet().iterator();
+			Iterator<IdsDataEntity> iter = deferredOpsQueue.keySet().iterator();
 			while (iter.hasNext()) {
-				Ids2DataEntity oldDe = iter.next();
+				IdsDataEntity oldDe = iter.next();
 				if (oldDe.overlapsWith(de)) {
 					requestHelper.setDataEntityStatus(oldDe, StatusInfo.INCOMPLETE);
 					state = deferredOpsQueue.get(oldDe);
@@ -689,6 +686,6 @@ public class WebService {
 	}
 	
 	private void restartUnfinishedWork() {
-		// TODO requeue unfinished requests from the ids db
+//		List<Request>requestHelper.getUnfinishedRequests();
 	}
 }

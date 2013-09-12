@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported.entity;
+package org.icatproject.ids.entity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,8 +20,8 @@ import org.icatproject.ids.util.StatusInfo;
 
 @SuppressWarnings("serial")
 @Entity
-@Table(name = "IDS2_DATAFILE")
-public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
+@Table(name = "IDS_DATAFILE")
+public class IdsDatafileEntity implements IdsDataEntity, Serializable {
 
     @Id
     @GeneratedValue
@@ -33,7 +33,7 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
     // only set when this single file is requested (not a dataset with this file)
     @JoinColumn(name = "REQUESTID", referencedColumnName = "ID")
     @ManyToOne(optional = true)
-    private RequestEntity request;
+    private IdsRequestEntity request;
     
 //    @JoinColumn(name = "DATASETID", referencedColumnName = "ID")
 //    @ManyToOne(optional = false)
@@ -50,7 +50,7 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
     @Transient
     private Datafile icatDatafile;
     
-    public Ids2DatafileEntity() {}
+    public IdsDatafileEntity() {}
 
 //    public Ids2DatafileEntity(Long id) {
 //        this.id = id;
@@ -81,11 +81,11 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
 	}
 
 	@Override
-	public RequestEntity getRequest() {
+	public IdsRequestEntity getRequest() {
 		return request;
 	}
 
-	public void setRequest(RequestEntity request) {
+	public void setRequest(IdsRequestEntity request) {
 		this.request = request;
 	}
 
@@ -122,13 +122,13 @@ public class Ids2DatafileEntity implements Ids2DataEntity, Serializable {
 	}
     
 	@Override
-	public boolean overlapsWith(Ids2DataEntity de) {
-		if (de instanceof Ids2DatafileEntity) {
-			Ids2DatafileEntity df = (Ids2DatafileEntity) de;
+	public boolean overlapsWith(IdsDataEntity de) {
+		if (de instanceof IdsDatafileEntity) {
+			IdsDatafileEntity df = (IdsDatafileEntity) de;
 			return this.icatDatafile.getDataset().getId().equals(df.getIcatDatafile().getDataset().getId());
 		}
-		if (de instanceof Ids2DatasetEntity) {
-			Ids2DatasetEntity ds = (Ids2DatasetEntity) de;
+		if (de instanceof IdsDatasetEntity) {
+			IdsDatasetEntity ds = (IdsDatasetEntity) de;
 			return this.icatDatafile.getDataset().getId().equals(ds.getIcatDataset().getId());
 		}
 		return false;
