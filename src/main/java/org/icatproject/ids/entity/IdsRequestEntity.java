@@ -177,7 +177,7 @@ public class IdsRequestEntity implements Serializable {
 		return res;
 	}
 
-	/**
+	/*
 	 * Returns all ICAT Datafiles that were requested directly (Datafiles from
 	 * requested Datasets don't count)
 	 */
@@ -189,7 +189,7 @@ public class IdsRequestEntity implements Serializable {
 		return datafiles;
 	}
 
-	/**
+	/*
 	 * Returns all ICAT Datasets that were requested directly (Datasets
 	 * operation on which has been caused by a requested Datafile don't count)
 	 */

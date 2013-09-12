@@ -100,7 +100,7 @@ public class RequestHelper {
 		for (String id : datasetIdList) {
 			IdsDatasetEntity newDataset = new IdsDatasetEntity();
 			newDataset.setIcatDatasetId(Long.parseLong(id));
-			newDataset.setIcatDataset(icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(id)));
+			newDataset.setIcatDataset(icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id)));
 			newDataset.setRequest(requestEntity);
 			newDataset.setStatus(StatusInfo.SUBMITTED);
 			newDatasetList.add(newDataset);

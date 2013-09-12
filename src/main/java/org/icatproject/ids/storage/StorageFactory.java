@@ -26,9 +26,6 @@ public class StorageFactory {
     	logger.info("creatingStorageInterface " + storageInterfaceImplementation.getCanonicalName());
     	StorageInterface ret = null;
     	try {
-//    		Constructor<StorageInterface> constructor = 
-//    				storageInterfaceImplementation.getConstructor(Map.class);
-//	    	ret = constructor.newInstance(props);
     		Constructor<StorageInterface> constructor = storageInterfaceImplementation.getConstructor();
     		ret = constructor.newInstance();
     	} catch (Exception e) {

@@ -7,27 +7,23 @@ import javax.ejb.Singleton;
 
 import org.icatproject.ids2.ported.RequestHelper;
 
-
 @Singleton
 public class RequestClearanceService {
 
-    @EJB
-    RequestHelper requestHelper;
+	@EJB
+	RequestHelper requestHelper;
 
-    // TODO adapt to the new RequestHelper
-    @Schedules({
-        @Schedule(hour = "*/1")
-    })
-    public void removeExpiredDownloadRequests() {
-//        downloadRequestHelper.removeExpiredDownloadRequests();
-    }
+	// TODO read the interval from ids.properties
+	@Schedules({ @Schedule(hour = "*/1") })
+	public void removeExpiredRequests() {
+		// TODO implement
+	}
 
-    @Schedules({
-        @Schedule(dayOfWeek = "Sun")
-    })
-    public void removeOldLocalCacheFiles() {
-//        StorageFactory sf = StorageFactory.getInstance();
-//        StorageInterface si = sf.createStorageInterface(null, null);
-//        si.clearUnusedFiles(PropertyHandler.getInstance().getNumberOfDaysToKeepFilesInCache()); // TODO implement clearing unused files (here or in some other class)
-    }
+	// TODO add a property to ids.properties determining what space usage
+	// threshold should trigger invocation of this method. It should not be
+	// scheduled, but run automatically when we start to run out of disk space
+	@Schedules({ @Schedule(dayOfWeek = "Sun") })
+	public void removeOldestLocalCacheFiles() {
+		// TODO implement
+	}
 }

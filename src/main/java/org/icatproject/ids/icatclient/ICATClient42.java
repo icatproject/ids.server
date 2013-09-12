@@ -2,7 +2,6 @@ package org.icatproject.ids.icatclient;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.namespace.QName;
@@ -21,12 +20,7 @@ import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
 import org.icatproject.ids.icatclient.exceptions.ICATObjectAlreadyExistsException;
 import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
 import org.icatproject.ids.icatclient.exceptions.ICATValidationException;
-import org.icatproject.ids.util.StatusInfo;
 
-/*
- * TODO: move out code that references DatafileEntity ie. make better
- * separation
- */
 public class ICATClient42 implements ICATClientBase {
 
 	private ICAT service;
@@ -79,7 +73,7 @@ public class ICATClient42 implements ICATClientBase {
 	}
 
 	@Override
-	public Dataset getDatasetForDatasetId(String sessionId, Long datasetId) throws ICATClientException {
+	public Dataset getDatasetWithDatafilesForDatasetId(String sessionId, Long datasetId) throws ICATClientException {
 		try {
 			Dataset icatDs = (Dataset) service.get(sessionId, "Dataset INCLUDE Datafile", datasetId);
 			return icatDs;

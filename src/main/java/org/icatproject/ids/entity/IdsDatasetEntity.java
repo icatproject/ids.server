@@ -33,31 +33,19 @@ public class IdsDatasetEntity implements IdsDataEntity, Serializable {
 	@ManyToOne(optional = false)
 	private IdsRequestEntity request;
 	
-//	@OneToMany(cascade = CascadeType.ALL, mappedBy = "dataset")
-//    private List<Ids2DatafileEntity> datafiles;
-	
 	private String location;	
-	private Long icatDatasetId; // this dataset's ID in ICAT database
+	private Long icatDatasetId;
 		
-	/**
+	/*
      * This file should always be set when object is correctly initialized!
      * The amount of data related to this object retrieved from ICAT should be
-     * sufficient for the overlapsWith method.
+     * sufficient for the overlapsWith method (so if Datafiles of this Dataset
+     * are needed, they should also be downloaded form ICAT)
      */
 	@Transient
 	private Dataset icatDataset;
 
-	public IdsDatasetEntity() {
-	}
-
-//	public Ids2DatasetEntity(Long id) {
-//		this.id = id;
-//	}
-//
-//	public Ids2DatasetEntity(Long id, Long datasetId) {
-//		this.id = id;
-//		this.icatDatasetId = datasetId;
-//	}
+	public IdsDatasetEntity() {}
 
 	public Long getId() {
 		return id;
@@ -86,14 +74,6 @@ public class IdsDatasetEntity implements IdsDataEntity, Serializable {
 		this.request = request;
 	}
 
-//	public List<Ids2DatafileEntity> getDatafiles() {
-//		return datafiles;
-//	}
-//
-//	public void setDatafiles(List<Ids2DatafileEntity> datafiles) {
-//		this.datafiles = datafiles;
-//	}
-
 	public String getLocation() {
 		return location;
 	}
@@ -118,26 +98,6 @@ public class IdsDatasetEntity implements IdsDataEntity, Serializable {
 	public void setIcatDataset(Dataset icatDataset) {
 		this.icatDataset = icatDataset;
 	}
-
-	// equality based on real dataset (in ICAT database), so it won't be
-	// possible to have duplicate restore requests (pertaining to the same real
-	// dataset) in queue
-//	@Override
-//	public boolean equals(Object o) {
-//		if (o == null)
-//			return false;
-//		if (o == this)
-//			return true;
-//		if (!(o instanceof Ids2DatasetEntity))
-//			return false;
-//		Ids2DatasetEntity rhs = (Ids2DatasetEntity) o;
-//		return this.getIcatDatasetId().equals(rhs.getId());
-//	}
-//
-//	@Override
-//	public int hashCode() {
-//		return this.getIcatDatasetId().hashCode();
-//	}
 
 	@Override
 	public boolean overlapsWith(IdsDataEntity de) {

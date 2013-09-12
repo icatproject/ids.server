@@ -1,19 +1,15 @@
 package org.icatproject.ids2.ported.thread;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
-import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
-import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids.util.ZipHelper;
 import org.icatproject.ids2.ported.RequestHelper;
 import org.icatproject.ids2.ported.RequestQueues;
 import org.icatproject.ids2.ported.RequestedState;

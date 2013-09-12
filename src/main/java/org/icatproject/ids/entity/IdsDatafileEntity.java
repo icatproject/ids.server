@@ -30,37 +30,23 @@ public class IdsDatafileEntity implements IdsDataEntity, Serializable {
     @Enumerated(EnumType.STRING)
     private StatusInfo status;
     
-    // only set when this single file is requested (not a dataset with this file)
     @JoinColumn(name = "REQUESTID", referencedColumnName = "ID")
     @ManyToOne(optional = true)
     private IdsRequestEntity request;
-    
-//    @JoinColumn(name = "DATASETID", referencedColumnName = "ID")
-//    @ManyToOne(optional = false)
-//    private Ids2DatasetEntity dataset; 
 
     private Long icatDatafileId;
     private String location;
     
-    /**
+    /*
      * This file should always be set when object is correctly initialized!
      * The amount of data related to this object retrieved from ICAT should be
-     * sufficient for the overlapsWith method.
+     * sufficient for the overlapsWith method (so if Dataset of this Datafile
+     * is needed, it should also be downloaded form ICAT)
      */
     @Transient
     private Datafile icatDatafile;
     
     public IdsDatafileEntity() {}
-
-//    public Ids2DatafileEntity(Long id) {
-//        this.id = id;
-//    }
-//
-//    public Ids2DatafileEntity(Long id, Long icatDatafileId, String location) {
-//        this.id = id;
-//        this.icatDatafileId = icatDatafileId;
-//        this.location = location;
-//    }
 
 	public Long getId() {
 		return id;
@@ -88,14 +74,6 @@ public class IdsDatafileEntity implements IdsDataEntity, Serializable {
 	public void setRequest(IdsRequestEntity request) {
 		this.request = request;
 	}
-
-//	public Ids2DatasetEntity getDataset() {
-//		return dataset;
-//	}
-//
-//	public void setDataset(Ids2DatasetEntity dataset) {
-//		this.dataset = dataset;
-//	}
 
 	public Long getIcatDatafileId() {
 		return icatDatafileId;

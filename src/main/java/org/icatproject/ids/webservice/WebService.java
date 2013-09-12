@@ -497,7 +497,7 @@ public class WebService {
 			throw new BadRequestException("The datasetId parameter must be set");
 		}
 
-		Dataset ds = icatClient.getDatasetForDatasetId(sessionId, Long.parseLong(datasetId));
+		Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(datasetId));
 
 		StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
 		if (!fastStorage.datasetExists(ds)) {
