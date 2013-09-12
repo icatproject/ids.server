@@ -88,7 +88,7 @@ public class WebService {
 		timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
 				.getProcessQueueIntervalSeconds() * 1000L);
 		icatClient = ICATClientFactory.getInstance().createICATInterface();
-		// restartUnfinishedWork();
+		restartUnfinishedWork();
 	}
 
 	/**
@@ -597,7 +597,8 @@ public class WebService {
 			// If we are overwriting a DE from a different request, we should
 			// set its status to INCOMPLETE and remove it from the
 			// deferredOpsQueue.
-			// So far the previous RequestedState will be set at most once, so there's
+			// So far the previous RequestedState will be set at most once, so
+			// there's
 			// no ambiguity. Be careful though when implementing Investigations!
 			Iterator<Ids2DataEntity> iter = deferredOpsQueue.keySet().iterator();
 			while (iter.hasNext()) {
@@ -685,5 +686,9 @@ public class WebService {
 		df.setId((Long) icatClient.registerDatafile(sessionid, df));
 		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at " + location);
 		return df.getId();
+	}
+	
+	private void restartUnfinishedWork() {
+		// TODO requeue unfinished requests from the ids db
 	}
 }

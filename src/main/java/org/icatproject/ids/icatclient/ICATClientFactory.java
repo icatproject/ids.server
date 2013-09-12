@@ -32,7 +32,9 @@ public class ICATClientFactory {
 		if (version.equals("4.2") || version.equals("4.3")) {
 			icat = new ICATClient42(url);
 		} else {
-			logger.error("Unsupported ICAT version : '" + tempICATClient.getICATVersion() + "'");
+			String msg = "Unsupported ICAT version : '" + tempICATClient.getICATVersion() + "'";
+			logger.error(msg);
+			throw new ICATClientException(msg);
 		}
 
 		return icat;
