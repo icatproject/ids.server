@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported.thread;
+package org.icatproject.ids.thread;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -9,14 +9,16 @@ import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.util.RequestHelper;
+import org.icatproject.ids.util.RequestQueues;
+import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids2.ported.RequestHelper;
-import org.icatproject.ids2.ported.RequestQueues;
-import org.icatproject.ids2.ported.RequestedState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//copies files from the archive to the local storage (in zip), also creates an unzipped copy
+/*
+ * Prepares zips for users to download using /getData
+ */
 public class Preparer implements Runnable {
 
 	private final static Logger logger = LoggerFactory.getLogger(ProcessQueue.class);

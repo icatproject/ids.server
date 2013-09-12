@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported;
+package org.icatproject.ids.webservice;
 
 public enum DeferredOp {
 	ARCHIVE, RESTORE, WRITE, PREPARE

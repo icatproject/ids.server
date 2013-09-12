@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported;
+package org.icatproject.ids.util;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -23,8 +23,6 @@ import org.icatproject.ids.entity.IdsRequestEntity;
 import org.icatproject.ids.icatclient.ICATClientBase;
 import org.icatproject.ids.icatclient.ICATClientFactory;
 import org.icatproject.ids.icatclient.exceptions.ICATClientException;
-import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids.util.StatusInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,17 +47,14 @@ public class RequestHelper {
 		return createRequest(sessionId, compress, zip, RequestedState.PREPARE_REQUESTED);
 	}
 
-//	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
 	public IdsRequestEntity createArchiveRequest(String sessionId) throws MalformedURLException, ICATClientException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.ARCHIVE_REQUESTED);
 	}
 
-//	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
 	public IdsRequestEntity createRestoreRequest(String sessionId) throws ICATClientException, MalformedURLException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
 	}
 	
-//	@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
 	public IdsRequestEntity createWriteRequest(String sessionId) throws ICATClientException, MalformedURLException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.WRITE_REQUESTED);
 	}
@@ -84,7 +79,6 @@ public class RequestHelper {
 
 		try{
 			em.persist(requestEntity);
-	//		em.flush();
 		} catch (Exception e) {
 			logger.error("Couldn't persist " + requestEntity + ", exception: " + e.getMessage());
 			throw new RuntimeException(e);
@@ -109,7 +103,6 @@ public class RequestHelper {
 
 		requestEntity.setDatasets(newDatasetList);
 		em.merge(requestEntity);
-		// em.flush();
 	}
 
 	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds) throws Exception {
@@ -128,12 +121,10 @@ public class RequestHelper {
 
 		requestEntity.setDatafiles(newDatafileList);
 		em.merge(requestEntity);
-		// em.flush();
 	}
 
 	public void setDataEntityStatus(IdsDataEntity de, StatusInfo status) {
 		logger.info("Changing status of " + de + " to " + status);
-		// de = em.merge(de);
 		de.setStatus(status);
 		setRequestCompletedIfEverythingDone(de.getRequest());
 		em.merge(de);
@@ -144,10 +135,8 @@ public class RequestHelper {
 		finalStatuses.add(StatusInfo.COMPLETED);
 		finalStatuses.add(StatusInfo.INCOMPLETE);
 
-		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED; // assuming
-																	// that
-																	// everything
-																	// went OK
+		// assuming that everything went OK
+		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED; 
 		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
 		for (IdsDataEntity de : request.getDataEntities()) {
 			logger.info("Status of " + de + " is " + de.getStatus());
@@ -165,7 +154,6 @@ public class RequestHelper {
 
 	public void setRequestStatus(IdsRequestEntity request, StatusInfo status) {
 		logger.info("Changing status of " + request + " to " + status);
-		// request = em.merge(request);
 		request.setStatus(status);
 		em.merge(request);
 	}

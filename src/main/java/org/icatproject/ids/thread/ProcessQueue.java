@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported.thread;
+package org.icatproject.ids.thread;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -10,9 +10,9 @@ import java.util.TimerTask;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids2.ported.RequestHelper;
-import org.icatproject.ids2.ported.RequestQueues;
-import org.icatproject.ids2.ported.RequestedState;
+import org.icatproject.ids.util.RequestHelper;
+import org.icatproject.ids.util.RequestQueues;
+import org.icatproject.ids.util.RequestedState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,10 +45,6 @@ public class ProcessQueue extends TimerTask {
 					final IdsDataEntity de = opEntry.getKey();
 					logger.info("Processing " + de);
 					if (!changing.contains(de)) {
-						// Dataset icatDs = (Dataset)
-						// this.icatClient.get(sessionId, "Dataset",
-						// ds.getDatasetId());
-						// ds.setLocation(icatDs.getLocation());
 						final RequestedState state = opEntry.getValue();
 						logger.info("Will process " + de + " with " + state);
 						if (state == RequestedState.WRITE_REQUESTED) {
@@ -64,6 +60,7 @@ public class ProcessQueue extends TimerTask {
 								writeTimes.remove(de.getIcatDataset());
 								changing.add(de.getIcatDataset());
 								it.remove();
+								// TODO implement? this work is already done by the Archiver
 								// final Thread w = new Thread(new
 								// WriteThenArchiver(location));
 								// w.start();
@@ -88,7 +85,6 @@ public class ProcessQueue extends TimerTask {
 				}
 			}
 		} finally {
-			// logger.info("Starting new Timer from ProcessQueue");
 			timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
 					.getProcessQueueIntervalSeconds() * 1000L);
 		}

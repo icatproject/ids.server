@@ -22,8 +22,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
+import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids2.ported.RequestedState;
 
 @SuppressWarnings("serial")
 @Entity

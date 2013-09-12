@@ -5,7 +5,7 @@ import javax.ejb.Schedule;
 import javax.ejb.Schedules;
 import javax.ejb.Singleton;
 
-import org.icatproject.ids2.ported.RequestHelper;
+import org.icatproject.ids.util.RequestHelper;
 
 @Singleton
 public class RequestClearanceService {

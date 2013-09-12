@@ -1,4 +1,4 @@
-package org.icatproject.ids2.ported;
+package org.icatproject.ids.util;
 
 import java.util.HashMap;
 import java.util.HashSet;

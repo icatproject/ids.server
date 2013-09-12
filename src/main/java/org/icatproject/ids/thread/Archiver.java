@@ -1,24 +1,24 @@
-package org.icatproject.ids2.ported.thread;
+package org.icatproject.ids.thread;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
-import org.icatproject.ids.util.PropertyHandler;
+import org.icatproject.ids.util.RequestHelper;
+import org.icatproject.ids.util.RequestQueues;
+import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids2.ported.RequestHelper;
-import org.icatproject.ids2.ported.RequestQueues;
-import org.icatproject.ids2.ported.RequestedState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//deletes files in the local storage (they'll stay in the archive)
+/*
+ * Moves datasets from across storages (fast to slow) and subsequently
+ * removes the files on the fast storage
+ */
 public class Archiver implements Runnable {
 	private final static Logger logger = LoggerFactory.getLogger(ProcessQueue.class);
 
