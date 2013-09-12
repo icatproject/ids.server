@@ -181,10 +181,10 @@ public class Setup {
 			writeToFile(new File(storageDir, df3.getLocation()), "df3 test content");
 			writeToFile(new File(storageDir, df4.getLocation()), "df4 test content");
 
-			filenameMD5.put(df1.getLocation(), computeMd5(df1));
-			filenameMD5.put(df2.getLocation(), computeMd5(df2));
-			filenameMD5.put(df3.getLocation(), computeMd5(df3));
-			filenameMD5.put(df4.getLocation(), computeMd5(df4));
+			addMD5s(df1, computeMd5(df1));
+			addMD5s(df2, computeMd5(df2));
+			addMD5s(df3, computeMd5(df3));
+			addMD5s(df4, computeMd5(df4));
 
 			zipDatasetToArchive(ds1);
 			zipDatasetToArchive(ds2);
@@ -224,6 +224,10 @@ public class Setup {
 		return sessionId;
 	}
 
+	/*
+	 * May be used in @AfterClass annotated method in tests to clean the test data
+	 * from the disk and the ICAT database
+	 */
 	public void cleanArchiveAndDb() throws NumberFormatException, IcatException_Exception,
 			IOException {
 		for (String id : datafileIds) {
@@ -323,6 +327,15 @@ public class Setup {
 		}
 		return res;
 	}
+	
+	/*
+	 * Adds an MD5 sum to the map for three possible locations that a Datafile can have in a zip file
+	 */
+	private void addMD5s(Datafile df, String md5) {
+		filenameMD5.put(df.getLocation(), md5);
+		filenameMD5.put("Datafile-" + df.getId(), md5);
+		filenameMD5.put(String.format("Dataset-%s/Datafile-%s", df.getDataset().getId(), df.getId()), md5);
+	}
 
 	private void zipDatasetToArchive(Dataset ds) throws IOException {
 		File zipFile = new File(new File(storageArchiveDir, ds.getLocation()), "files.zip");
@@ -331,7 +344,7 @@ public class Setup {
 		zipDataset(zipFile, ds, storageDir, false);
 	}
 
-	public static void zipDataset(File zipFile, Dataset dataset, String relativePath,
+	private void zipDataset(File zipFile, Dataset dataset, String relativePath,
 			boolean compress) {
 		if (dataset.getDatafiles().isEmpty()) {
 			// Create empty file
@@ -372,7 +385,7 @@ public class Setup {
 		}
 	}
 
-	public static void addToZip(String fileName, ZipOutputStream zos, String relativePath) {
+	private void addToZip(String fileName, ZipOutputStream zos, String relativePath) {
 		try {
 			File file = new File(relativePath, fileName);
 			FileInputStream fis = new FileInputStream(file);

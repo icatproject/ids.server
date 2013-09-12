@@ -21,16 +21,17 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class GetStatusTest {
-	
+
 	private static Setup setup = null;
-    private static ICAT icat;
+	@SuppressWarnings("unused")
+	private static ICAT icat;
 	private TestingClient testingClient;
-    
-    // value of the offset in bytes
-    final Integer goodOffset = 20;
-    final Integer badOffset = 99999999;
-    
-    @BeforeClass
+
+	// value of the offset in bytes
+	final Integer goodOffset = 20;
+	final Integer badOffset = 99999999;
+
+	@BeforeClass
 	public static void setup() throws Exception {
 		setup = new Setup();
 		final URL icatUrl = new URL(setup.getIcatUrl());
@@ -48,72 +49,69 @@ public class GetStatusTest {
 		storageZipDir.mkdir();
 		testingClient = new TestingClient(setup.getIdsUrl());
 	}
-	
-  @Test(expected = TestingClientBadRequestException.class)
-  public void badPreparedIdFormatTest() throws Exception {
-      testingClient.getStatusTest("bad preparedId format");
-  }
 
-  @Test(expected = TestingClientNotFoundException.class)
-  public void nonExistingPreparedIdTest() throws Exception {
-      testingClient.getStatusTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-  }
+	@Test(expected = TestingClientBadRequestException.class)
+	public void badPreparedIdFormatTest() throws Exception {
+		testingClient.getStatusTest("bad preparedId format");
+	}
 
-  @Test(expected = TestingClientNotFoundException.class)
-  public void notFoundIdsTest() throws Exception {
-      String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, "1,2,3,99999", null, null);
-      Status status = null;
-      do {
-    	  Thread.sleep(1000);
-          status = testingClient.getStatusTest(preparedId);
-      } while (Status.RESTORING.equals(status));
-  }
-  
-  @Test(expected = TestingClientNotFoundException.class)
-  public void notFoundSingleIdTest() throws Exception {
-      String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, "99999", null, null);
-      Status status = null;
-      do {
-    	  Thread.sleep(1000);
-          status = testingClient.getStatusTest(preparedId);
-      } while (Status.RESTORING.equals(status));
-  }
-  
-  @Test(expected = TestingClientNotFoundException.class)
-  public void notFoundDatasetSingleIdTest() throws Exception {
-      String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, "99999", null, null, null);
-      Status status = null;
-      do {
-    	  Thread.sleep(1000);
-          status = testingClient.getStatusTest(preparedId);
-      } while (Status.RESTORING.equals(status));
-  }
+	@Test(expected = TestingClientNotFoundException.class)
+	public void nonExistingPreparedIdTest() throws Exception {
+		testingClient.getStatusTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+	}
 
-  @Test(expected = TestingClientForbiddenException.class)
-  public void forbiddenTest() throws Exception {
-      String preparedId = testingClient.prepareDataTest(setup.getForbiddenSessionId(), null, null, setup.getCommaSepDatafileIds(),
-              null, null);
-      Status status = null;
-      do {
-    	  Thread.sleep(1000);
-          status = testingClient.getStatusTest(preparedId);
-      } while (Status.RESTORING.equals(status));
-  }
+	@Test(expected = TestingClientNotFoundException.class)
+	public void notFoundIdsTest() throws Exception {
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, "1,2,3,99999", null,
+				null);
+		Status status = null;
+		do {
+			Thread.sleep(1000);
+			status = testingClient.getStatusTest(preparedId);
+		} while (Status.RESTORING.equals(status));
+	}
 
-  @Test
-  public void correctBehaviourTest() throws Exception {
-      String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getCommaSepDatafileIds(), null, null);
-      Status status = null;
-      do {
-      	try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				System.out.println("sleep interrupted");
-				
-			}
-          status = testingClient.getStatusTest(preparedId);
-      } while (Status.RESTORING.equals(status));
-      assertEquals(Status.ONLINE, status);
-  }
+	@Test(expected = TestingClientNotFoundException.class)
+	public void notFoundSingleIdTest() throws Exception {
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, "99999", null, null);
+		Status status = null;
+		do {
+			Thread.sleep(1000);
+			status = testingClient.getStatusTest(preparedId);
+		} while (Status.RESTORING.equals(status));
+	}
+
+	@Test(expected = TestingClientNotFoundException.class)
+	public void notFoundDatasetSingleIdTest() throws Exception {
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, "99999", null, null, null);
+		Status status = null;
+		do {
+			Thread.sleep(1000);
+			status = testingClient.getStatusTest(preparedId);
+		} while (Status.RESTORING.equals(status));
+	}
+
+	@Test(expected = TestingClientForbiddenException.class)
+	public void forbiddenTest() throws Exception {
+		String preparedId = testingClient.prepareDataTest(setup.getForbiddenSessionId(), null, null,
+				setup.getCommaSepDatafileIds(), null, null);
+		Status status = null;
+		do {
+			Thread.sleep(1000);
+			status = testingClient.getStatusTest(preparedId);
+		} while (Status.RESTORING.equals(status));
+	}
+
+	@Test
+	public void correctBehaviourTest() throws Exception {
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+				setup.getCommaSepDatafileIds(), null, null);
+		Status status = null;
+		do {
+			Thread.sleep(1000);
+			status = testingClient.getStatusTest(preparedId);
+		} while (Status.RESTORING.equals(status));
+		assertEquals(Status.ONLINE, status);
+	}
 
 }

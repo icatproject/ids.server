@@ -62,11 +62,10 @@ public class PrepareDataTest {
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
 		Status status = null;
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
+		} while (Status.RESTORING.equals(status));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -92,11 +91,10 @@ public class PrepareDataTest {
 
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, dsIds, null, null, null);
 		Status status = null;
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
+		} while (Status.RESTORING.equals(status));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage1.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -120,11 +118,10 @@ public class PrepareDataTest {
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
+		} while (Status.RESTORING.equals(status));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -133,6 +130,7 @@ public class PrepareDataTest {
 				zipOnFastStorage.exists());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void prepareArchivedDatafileAndItsDataset() throws Exception {
 		final int DF_NUM_FROM_PROPS = 0;
@@ -146,14 +144,12 @@ public class PrepareDataTest {
 				.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
 						.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
+		} while (Status.RESTORING.equals(status));
 
 		assertThat("Status info should be ONLINE or INCOMPLETE, is " + status.name(), status, anyOf(equalTo(Status.ONLINE), equalTo(Status.INCOMPLETE)));
-//		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -227,10 +223,9 @@ public class PrepareDataTest {
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 		
 		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
@@ -240,11 +235,10 @@ public class PrepareDataTest {
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
 		Status status = null;
-		retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (status.equals(Status.RESTORING) && retryLimit-- > 0);
+		} while (status.equals(Status.RESTORING));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		File preparedFile = new File(setup.getStoragePreparedDir(), preparedId + ".zip");
@@ -268,11 +262,10 @@ public class PrepareDataTest {
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
 		
 		testingClient.restoreTest(setup.getGoodSessionId(), null, dsIds, null);
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists() ||
-				!zipOnFastStorage2.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists() ||
+				!zipOnFastStorage2.exists());
 
 		assertTrue("File " + dirOnFastStorage1.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage1.exists());
@@ -285,11 +278,10 @@ public class PrepareDataTest {
 
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, dsIds, null, null, null);
 		Status status = null;
-		retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (status.equals(Status.RESTORING) && retryLimit-- > 0);
+		} while (status.equals(Status.RESTORING));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		File preparedFile = new File(setup.getStoragePreparedDir(), preparedId + ".zip");
@@ -306,10 +298,9 @@ public class PrepareDataTest {
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 		
 		testingClient.restoreTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
@@ -319,11 +310,10 @@ public class PrepareDataTest {
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
-		retryLimit = 5;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (status.equals(Status.RESTORING) && retryLimit-- > 0);
+		} while (status.equals(Status.RESTORING));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		File preparedFile = new File(setup.getStoragePreparedDir(), preparedId + ".zip");
@@ -342,10 +332,9 @@ public class PrepareDataTest {
 		
 		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), 
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
@@ -356,11 +345,10 @@ public class PrepareDataTest {
 				null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), 
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
-		retryLimit = 10;
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatusTest(preparedId);
-		} while (Status.RESTORING.equals(status) && retryLimit-- > 0);
+		} while (Status.RESTORING.equals(status));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
 		File preparedFile = new File(setup.getStoragePreparedDir(), preparedId + ".zip");

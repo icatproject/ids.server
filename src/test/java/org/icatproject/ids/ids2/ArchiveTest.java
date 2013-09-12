@@ -53,10 +53,9 @@ public class ArchiveTest {
 		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
@@ -64,8 +63,7 @@ public class ArchiveTest {
 				zipOnFastStorage.exists());
 
 		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		retryLimit = 10;
-		while ((dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) && retryLimit-- > 0) {
+		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
 		}
 		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath() + " should have been cleaned, but still contains files",

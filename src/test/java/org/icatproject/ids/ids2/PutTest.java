@@ -6,11 +6,9 @@ import java.net.URL;
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.FileUtils;
-import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.Setup;
 import org.icatproject.ids.util.TestingClient;
 import org.icatproject.idsclient.exception.TestingClientNotFoundException;
@@ -68,10 +66,9 @@ public class PutTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
 		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
@@ -79,16 +76,14 @@ public class PutTest {
 		
 		testingClient.putTest(setup.getGoodSessionId(), "uploaded_file2_"+timestamp, "xml", setup.getDatasetIds()
 				.get(DS_NUM_FROM_PROPS), null, null, null, null, fileOnUsersDisk);
-		retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while (!fileOnFastStorage.exists() && retryLimit-- > 0);
+		} while (!fileOnFastStorage.exists());
 		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
 				fileOnFastStorage.exists());
 		
 		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		retryLimit = 10;
-		while ((dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) && retryLimit-- > 0) {
+		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
 		}
 		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath() + " should have been cleaned, but still contains files",

@@ -14,7 +14,6 @@ import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.ids.util.Setup;
 import org.icatproject.ids.util.TestingClient;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,11 +30,6 @@ public class RestoreTest {
 		final URL icatUrl = new URL(setup.getIcatUrl());
 		final ICATService icatService = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
-	}
-	
-	@AfterClass
-	public static void cleanup() throws Exception {
-//		setup.cleanArchiveAndDb();
 	}
 
 	@Before
@@ -59,10 +53,9 @@ public class RestoreTest {
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
@@ -86,11 +79,10 @@ public class RestoreTest {
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null, dsIds, null);
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists() || 
-				!zipOnFastStorage2.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists() || 
+				!zipOnFastStorage2.exists());
 
 		assertTrue("File " + dirOnFastStorage1.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage1.exists());
@@ -112,10 +104,9 @@ public class RestoreTest {
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
@@ -134,10 +125,9 @@ public class RestoreTest {
 
 		testingClient.restoreTest(setup.getGoodSessionId(), null, 
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
-		int retryLimit = 5;
 		do {
 			Thread.sleep(1000);
-		} while ((!dirOnFastStorage.exists() || !zipOnFastStorage.exists()) && retryLimit-- > 0);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
