@@ -1,4 +1,4 @@
-package org.icatproject.ids.ids2;
+package org.icatproject.ids.test;
 
 import java.io.File;
 import java.net.URL;
@@ -9,9 +9,9 @@ import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.util.Setup;
-import org.icatproject.ids.util.TestingClient;
-import org.icatproject.idsclient.exception.TestingClientNotFoundException;
+import org.icatproject.ids.test.exception.TestingClientNotFoundException;
+import org.icatproject.ids.test.util.Setup;
+import org.icatproject.ids.test.util.TestingClient;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

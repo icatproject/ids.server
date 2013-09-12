@@ -1,4 +1,4 @@
-package org.icatproject.ids.util;
+package org.icatproject.ids.test.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -15,21 +15,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.ws.rs.core.MediaType;
-
+import org.icatproject.ids.test.exception.TestingClientBadRequestException;
+import org.icatproject.ids.test.exception.TestingClientForbiddenException;
+import org.icatproject.ids.test.exception.TestingClientInsufficientStorageException;
+import org.icatproject.ids.test.exception.TestingClientInternalServerErrorException;
+import org.icatproject.ids.test.exception.TestingClientNotFoundException;
+import org.icatproject.ids.test.exception.TestingClientNotImplementedException;
 import org.icatproject.ids.webservice.Status;
-import org.icatproject.idsclient.exception.TestingClientBadRequestException;
-import org.icatproject.idsclient.exception.TestingClientForbiddenException;
-import org.icatproject.idsclient.exception.TestingClientInsufficientStorageException;
-import org.icatproject.idsclient.exception.TestingClientInternalServerErrorException;
-import org.icatproject.idsclient.exception.TestingClientNotFoundException;
-import org.icatproject.idsclient.exception.TestingClientNotImplementedException;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
-
-/**
+/*
  * The test suite for the IDS makes use of the IDS client. This has some passive
  * validation built in (ie. parameters constrained to specific types). To be
  * able to test all possible combinations and values, new methods have been
@@ -53,7 +47,7 @@ public class TestingClient {
 		}
 	}
 
-	/**
+	/*
 	 * Based on the prepareData method but takes all parameters as strings. This
 	 * is used for testing and should not be used otherwise.
 	 */
@@ -78,7 +72,7 @@ public class TestingClient {
 		return response.getResponse().toString().trim();
 	}
 
-	/**
+	/*
 	 * Based on the restore method but takes all parameters as strings. This is
 	 * used for testing and should not be used otherwise.
 	 */
@@ -113,7 +107,7 @@ public class TestingClient {
 //		resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
 	}
 
-	/**
+	/*
 	 * Based on the archive method but takes all parameters as strings. This is
 	 * used for testing and should not be used otherwise.
 	 */
@@ -134,7 +128,7 @@ public class TestingClient {
 		response.getResponse().toString().trim();
 	}
 
-	/**
+	/*
 	 * Same as original getStatus but throws all exceptions
 	 */
 	public Status getStatusTest(String preparedId) throws Exception {
@@ -143,8 +137,8 @@ public class TestingClient {
 		Response response = HTTPConnect("GET", "getStatus", parameters, null);
 		return Status.valueOf(response.getResponse().toString().trim());
 	}
-
-	/**
+	
+	/*
 	 * Same as original getDataTest but throws all exceptions
 	 */
 	public Response getDataTest(String preparedId, String outname, Long offset) throws Exception {
@@ -258,7 +252,6 @@ public class TestingClient {
 		}
 
 		// convert response code into relevant IDSException
-//		System.err.println("SC = " + connection.getResponseCode());
 		switch (connection.getResponseCode()) {
 		case 200:
 			break;
@@ -314,7 +307,5 @@ public class TestingClient {
 		}
 		in.close();
 		out.close();
-		// this.processResponseCode(urlc);
-		// urlc.disconnect();
 	}
 }

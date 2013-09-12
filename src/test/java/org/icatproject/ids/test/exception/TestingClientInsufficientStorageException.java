@@ -1,4 +1,4 @@
-package org.icatproject.idsclient.exception;
+package org.icatproject.ids.test.exception;
 
 @SuppressWarnings("serial")
 public class TestingClientInsufficientStorageException extends TestingClientException

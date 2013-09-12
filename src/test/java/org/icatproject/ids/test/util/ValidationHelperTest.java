@@ -1,7 +1,8 @@
-package org.icatproject.ids.util;
+package org.icatproject.ids.test.util;
 
 import static org.junit.Assert.assertEquals;
 
+import org.icatproject.ids.util.ValidationHelper;
 import org.junit.Test;
 
 /*

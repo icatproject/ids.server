@@ -1,4 +1,4 @@
-package org.icatproject.ids.util;
+package org.icatproject.ids.test.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,7 +10,6 @@ import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -369,7 +368,6 @@ public class Setup {
 				// TODO: find efficient way of calculating CRC
 				zos.setMethod(ZipOutputStream.DEFLATED);
 				zos.setLevel(0);
-				// zos.setMethod(ZipOutputStream.STORED);
 			}
 			for (Datafile file : dataset.getDatafiles()) {
 				addToZip(file.getName(), zos,
