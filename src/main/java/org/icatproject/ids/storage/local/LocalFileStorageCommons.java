@@ -6,12 +6,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.icatproject.Dataset;
-import org.icatproject.ids.webservice.exceptions.BadRequestException;
 
 public class LocalFileStorageCommons {
 	

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import org.icatproject.ids.util.PropertyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

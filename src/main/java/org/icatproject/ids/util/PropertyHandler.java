@@ -24,7 +24,6 @@ public class PropertyHandler {
     private String icatUrl;
     private long writeDelaySeconds;
     private long processQueueIntervalSeconds;
-//    private int numberOfDaysToKeepFilesInCache;
     private Class<StorageInterface> fastStorageInterfaceImplementation;
     private Class<StorageInterface> slowStorageInterfaceImplementation;
 
@@ -71,16 +70,6 @@ public class PropertyHandler {
             logger.error(msg);
             throw new IllegalStateException(msg);
         }
-
-//        numberOfDaysToKeepFilesInCache = Integer.parseInt(props
-//                .getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE"));
-//        if (numberOfDaysToKeepFilesInCache < 1) {
-//            String msg = "Invalid property NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE ("
-//                    + props.getProperty("NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE")
-//                    + ") Must be an integer greater than 0.";
-//            logger.error(msg);
-//            throw new IllegalStateException(msg);
-//        }
         
         writeDelaySeconds = Long.parseLong(props.getProperty("writeDelaySeconds"));
         if (writeDelaySeconds < 1) {
@@ -151,10 +140,6 @@ public class PropertyHandler {
     public int getRequestExpireTimeDays() {
         return requestExpireTimeDays;
     }
-
-//    public int getNumberOfDaysToKeepFilesInCache() {
-//        return numberOfDaysToKeepFilesInCache;
-//    }
 
 	public Class<StorageInterface> getFastStorageInterfaceImplementation() {
 		return fastStorageInterfaceImplementation;

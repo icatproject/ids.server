@@ -1,9 +1,6 @@
 package org.icatproject.ids.webservice;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -65,7 +62,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of the IDS specification for the IDS Reference Implementation.
- * Only the download related methods have been implemented.
  */
 @Path("/")
 @Stateless
@@ -348,12 +344,6 @@ public class WebService {
 	}
 
 	/**
-	 * 
-	 * 
-	 * TODO: Implement properly for the IDS Reference Implementation!
-	 * 
-	 * 
-	 * 
 	 * This method is specifically tailored to the IDS. It will remove files
 	 * from the cache that match the userId and any of the dataset or datafile
 	 * ids.
@@ -426,10 +416,6 @@ public class WebService {
 
 		return Response.status(200).entity("").build();
 	}
-
-	/*
-	 * Unimplemented methods
-	 */
 
 	@GET
 	@Path("getStatus")
@@ -593,10 +579,9 @@ public class WebService {
 			RequestedState state = null;
 			// If we are overwriting a DE from a different request, we should
 			// set its status to INCOMPLETE and remove it from the
-			// deferredOpsQueue.
-			// So far the previous RequestedState will be set at most once, so
-			// there's
-			// no ambiguity. Be careful though when implementing Investigations!
+			// deferredOpsQueue. So far the previous RequestedState will be set
+			// at most once, so there's no ambiguity. Be careful though when
+			// implementing Investigations!
 			Iterator<IdsDataEntity> iter = deferredOpsQueue.keySet().iterator();
 			while (iter.hasNext()) {
 				IdsDataEntity oldDe = iter.next();
@@ -684,8 +669,9 @@ public class WebService {
 		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at " + location);
 		return df.getId();
 	}
-	
+
 	private void restartUnfinishedWork() {
-//		List<Request>requestHelper.getUnfinishedRequests();
+		// TODO implement
+		// List<Request>requestHelper.getUnfinishedRequests();
 	}
 }

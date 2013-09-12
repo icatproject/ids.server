@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
+/*
  * This class provides validation function for the parameters of the RESTful methods.
  */
 public class ValidationHelper {
@@ -20,7 +20,7 @@ public class ValidationHelper {
     // http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx#file_and_directory_names
     private static final Pattern filenameRegExp = Pattern.compile(".*[/\\\\:*?\"<>|]+.*");
 
-    /**
+    /*
      * Checks to see if the preparedId or sessionId conform to the correct UUID format. Does not
      * accept a null value.
      */
@@ -28,7 +28,7 @@ public class ValidationHelper {
         return id != null && uuidRegExp.matcher(id).matches();
     }
 
-    /**
+    /*
      * Checks to see if the investigation, dataset or datafile id list is a valid comma separated
      * list of longs. No spaces or leading 0's. Also accepts null.
      */
@@ -55,7 +55,7 @@ public class ValidationHelper {
         return valid;
     }
 
-    /**
+    /*
      * Check to see if string is either true or false or null
      */
     public static boolean isValidBoolean(String bool) {
@@ -66,7 +66,7 @@ public class ValidationHelper {
         return valid;
     }
 
-    /**
+    /*
      * Check to see if file offset is valid ie. positive integer. Also accepts null.
      */
     public static boolean isValidOffset(String offset) {
@@ -78,7 +78,7 @@ public class ValidationHelper {
         return valid;
     }
 
-    /**
+    /*
      * Check to see if string is valid for a filename ie. dose not contain: / ? * : ; { } \ | Also
      * accepts null.
      */

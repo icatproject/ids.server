@@ -9,7 +9,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collection;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -80,7 +79,6 @@ public class FastLocalFileStorage implements StorageInterface {
 			throw new FileNotFoundException(zipFile.getAbsolutePath());
 		}
 		fsCommons.writeInputStreamToFile(file, is);
-		// TODO write new file to zip; what should be new file's location in zip?
 		
 		Datafile tmpDatafile = new Datafile();
 		tmpDatafile.setName(name);
@@ -143,7 +141,6 @@ public class FastLocalFileStorage implements StorageInterface {
                 // TODO: find efficient way of calculating CRC
                 zos.setMethod(ZipOutputStream.DEFLATED);
                 zos.setLevel(0);
-                //zos.setMethod(ZipOutputStream.STORED);
             }
             for (Datafile df : datafiles) {
                 addToZip("Datafile-" + df.getId(), zos, new File(storageRootPath, df.getLocation()).getAbsolutePath());
@@ -163,8 +160,8 @@ public class FastLocalFileStorage implements StorageInterface {
         }
 	}
 	
-	/**
-	 * @param newDatafile a datafile that should be zipped with the rest of the dataset, but
+	/*
+	 * newDatafile is a datafile that should be zipped with the rest of the dataset, but
 	 * has not yet been added to it (because it hasn't been persisted to ICAT yet)
 	 * Should be null if no such file is necessary.
 	 */
@@ -193,7 +190,6 @@ public class FastLocalFileStorage implements StorageInterface {
                 // TODO: find efficient way of calculating CRC
                 zos.setMethod(ZipOutputStream.DEFLATED);
                 zos.setLevel(0);
-                //zos.setMethod(ZipOutputStream.STORED);
             }
             for (Datafile file : dataset.getDatafiles()) {
             	logger.info("Adding file " + file.getName() + " to zip");
