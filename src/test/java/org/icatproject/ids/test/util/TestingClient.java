@@ -3,20 +3,15 @@ package org.icatproject.ids.test.util;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.io.IOUtils;
-import org.icatproject.ids.test.exception.TestingClientBadRequestException;
-import org.icatproject.ids.test.exception.TestingClientException;
-import org.icatproject.ids.test.exception.TestingClientForbiddenException;
-import org.icatproject.ids.test.exception.TestingClientInsufficientStorageException;
-import org.icatproject.ids.test.exception.TestingClientInternalServerErrorException;
-import org.icatproject.ids.test.exception.TestingClientNotFoundException;
-import org.icatproject.ids.test.exception.TestingClientNotImplementedException;
 import org.icatproject.ids.webservice.Status;
 
 import com.sun.jersey.api.client.Client;
@@ -70,11 +65,7 @@ public class TestingClient {
 		if (zip != null)
 			form.add("zip", zip);
 		WebResource resource = client.resource(idsUrl).path("prepareData");
-		try {
 			return resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(String.class, form).trim();
-		} catch (UniformInterfaceException e) {
-			throw mapJerseyClientException(e);
-		}
 	}
 
 	/*
@@ -93,11 +84,7 @@ public class TestingClient {
 		if (datafileIds != null)
 			form.add("datafileIds", datafileIds);
 		WebResource resource = client.resource(idsUrl).path("restore");
-		try {
 			resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
-		} catch (UniformInterfaceException e) {
-			throw mapJerseyClientException(e);
-		}
 	}
 
 	/*
@@ -116,11 +103,7 @@ public class TestingClient {
 		if (datafileIds != null)
 			form.add("datafileIds", datafileIds);
 		WebResource resource = client.resource(idsUrl).path("archive");
-		try {
 			resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
-		} catch (UniformInterfaceException e) {
-			throw mapJerseyClientException(e);
-		}
 	}
 
 	/*
@@ -131,11 +114,7 @@ public class TestingClient {
 		MultivaluedMap<String, String> params = new MultivaluedMapImpl();
 		params.add("preparedId", preparedId);
 		WebResource resource = client.resource(idsUrl).path("getStatus");
-		try {
 			return Status.valueOf(resource.queryParams(params).accept(MediaType.TEXT_PLAIN_TYPE).get(String.class).trim());
-		} catch (UniformInterfaceException e) {
-			throw mapJerseyClientException(e);
-		}
 	}
 	
 	/*
@@ -150,7 +129,6 @@ public class TestingClient {
 		if (offset != null)
 			params.add("offset", offset.toString());
 		WebResource resource = client.resource(idsUrl).path("getData");
-		try {
 			ClientResponse response = resource.queryParams(params).accept(MediaType.APPLICATION_OCTET_STREAM_TYPE).get(ClientResponse.class);
 			// if we use ClientResponse, the UniformInterfaceException is not thrown automatically; see:
 			// http://jersey.java.net/nonav/apidocs/1.8/jersey/com/sun/jersey/api/client/WebResource.Builder.html#get(java.lang.Class)
@@ -160,9 +138,6 @@ public class TestingClient {
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			IOUtils.copy(response.getEntityInputStream(), os);
 			return new Response(os, response.getHeaders());
-		} catch (UniformInterfaceException e) {
-			throw mapJerseyClientException(e);
-		}
 	}
 
 	public String putTest(String sessionId, String name, String datafileFormatId, String datasetId,
@@ -183,31 +158,27 @@ public class TestingClient {
 		if (datafileModTime != null)
 			params.add("datafileModTime", datafileModTime);
 		WebResource resource = client.resource(idsUrl).path("put");
-		try {
 			InputStream in = new FileInputStream(file);
 			return resource.queryParams(params).type(MediaType.APPLICATION_OCTET_STREAM_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).put(String.class, in);
-		} catch (UniformInterfaceException e) {
-			throw mapJerseyClientException(e);
-		}
 	}
 	
-	private TestingClientException mapJerseyClientException(UniformInterfaceException e) {
-		String msg = e.getResponse().getEntity(String.class);
-		switch (e.getResponse().getStatus()) {
-		case 400:
-			return new TestingClientBadRequestException(msg);
-		case 403:
-			return new TestingClientForbiddenException(msg);
-		case 404:
-			return new TestingClientNotFoundException(msg);
-		case 500:
-			return new TestingClientInternalServerErrorException(msg);
-		case 501:
-			return new TestingClientNotImplementedException(msg);
-		case 507:
-			return new TestingClientInsufficientStorageException(msg);
-		default:
-			return new TestingClientException("unknown exception, shouldn't appear");
-		}
-	}
+//	private TestingClientException mapJerseyClientException(UniformInterfaceException e) {
+//		String msg = e.getResponse().getEntity(String.class);
+//		switch (e.getResponse().getStatus()) {
+//		case 400:
+//			return new TestingClientBadRequestException(msg);
+//		case 403:
+//			return new TestingClientForbiddenException(msg);
+//		case 404:
+//			return new TestingClientNotFoundException(msg);
+//		case 500:
+//			return new TestingClientInternalServerErrorException(msg);
+//		case 501:
+//			return new TestingClientNotImplementedException(msg);
+//		case 507:
+//			return new TestingClientInsufficientStorageException(msg);
+//		default:
+//			return new TestingClientException("unknown exception, shouldn't appear");
+//		}
+//	}
 }

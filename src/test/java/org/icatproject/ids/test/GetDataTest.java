@@ -1,5 +1,7 @@
 package org.icatproject.ids.test;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -19,9 +21,6 @@ import javax.xml.namespace.QName;
 import org.apache.commons.io.FileUtils;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.exception.TestingClientBadRequestException;
-import org.icatproject.ids.test.exception.TestingClientForbiddenException;
-import org.icatproject.ids.test.exception.TestingClientNotFoundException;
 import org.icatproject.ids.test.util.Response;
 import org.icatproject.ids.test.util.Setup;
 import org.icatproject.ids.test.util.TestingClient;
@@ -31,6 +30,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.sun.jersey.api.client.UniformInterfaceException;
 
 /*
  * Test the getData method for the IDS. This is a bit more involved than the
@@ -69,84 +70,110 @@ public class GetDataTest {
 		testingClient = new TestingClient(setup.getIdsUrl());
 	}
     
-//	@Test(expected = TestingClientBadRequestException.class)
-//    public void badPreparedIdFormatTest() throws Exception {
-//        testingClient.getDataTest("bad preparedId format", null, null);
-//    }
     @Test
     public void badPreparedIdFormatTest() throws Exception {
-//        try {
-//			testingClient.getDataTest("bad preparedId format", null, null);
-//			fail("Expected " + ExceptionClass.class);
-//		} catch (Exception e) {
-//			assertEquals(SomeEx.class, e.getClass())
-//			assertEquals(e.getMessage()....) // not necessary, omit for now
-//		}
-    }
-
-    @Test(expected = TestingClientBadRequestException.class)
-    public void badFileNameFormatTest() throws Exception {
-        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
-                null, null);
-
-        Status status = null;
-        do {
-        	Thread.sleep(1000);
-            status = testingClient.getStatusTest(preparedId);
-        } while (Status.RESTORING.equals(status));
-
-        testingClient.getDataTest(preparedId, "this/is/a/bad/file/name", null);
-    }
-
-    @Test(expected = TestingClientBadRequestException.class)
-    public void badOffsetFormatTest() throws Exception {
-        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
-                null, null);
-
-        Status status = null;
-        do {
-        	Thread.sleep(1000);
-            status = testingClient.getStatusTest(preparedId);
-        } while (Status.RESTORING.equals(status));
-
-        testingClient.getDataTest(preparedId, null, -10L);
-    }
-
-    @Test(expected = TestingClientNotFoundException.class)
-    public void nonExistantPreparedIdTest() throws Exception {
-        testingClient.getDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null);
-    }
-
-    @Test(expected = TestingClientForbiddenException.class)
-    public void forbiddenTest() throws Exception {
-        String preparedId = testingClient.prepareDataTest(setup.getForbiddenSessionId(), null, null,
-                setup.getDatafileIds().get(0), null, null);
-
+    	int expectedSc = 400;
         try {
-            Status status = null;
-            do {
-            	Thread.sleep(1000);
-                status = testingClient.getStatusTest(preparedId);
-            } while (Status.RESTORING.equals(status));
-        } catch (ForbiddenException e) {
-            // ignore because testing to see if getData throws a ForbiddenException as well
-        }
+			testingClient.getDataTest("bad preparedId format", null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
+    }
 
-        testingClient.getDataTest(preparedId, null, null);
+    @Test
+    public void badFileNameFormatTest() throws Exception {
+    	int expectedSc = 400;
+    	try {
+	        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
+	                null, null);
+	
+	        Status status = null;
+	        do {
+	        	Thread.sleep(1000);
+	            status = testingClient.getStatusTest(preparedId);
+	        } while (Status.RESTORING.equals(status));
+	
+	        testingClient.getDataTest(preparedId, "this/is/a/bad/file/name", null);
+	        fail("Expected SC " + expectedSc);
+    	} catch (UniformInterfaceException e) {
+    		assertEquals(expectedSc, e.getResponse().getStatus());
+    	}
+    }
+
+    @Test
+    public void badOffsetFormatTest() throws Exception {
+    	int expectedSc = 400;
+    	try{
+	        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
+	                null, null);
+	
+	        Status status = null;
+	        do {
+	        	Thread.sleep(1000);
+	            status = testingClient.getStatusTest(preparedId);
+	        } while (Status.RESTORING.equals(status));
+	
+	        testingClient.getDataTest(preparedId, null, -10L);
+	        fail("Expected SC " + expectedSc);
+    	} catch (UniformInterfaceException e) {
+    		assertEquals(expectedSc, e.getResponse().getStatus());
+    	}
+    }
+
+    @Test
+    public void nonExistantPreparedIdTest() throws Exception {
+    	int expectedSc = 404;
+    	try {
+    		testingClient.getDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null);
+    		fail("Expected SC " + expectedSc);
+    	} catch (UniformInterfaceException e) {
+    		assertEquals(expectedSc, e.getResponse().getStatus());
+    	}
+    }
+
+    @Test
+    public void forbiddenTest() throws Exception {
+        int expectedSc = 403;
+        try {
+	        String preparedId = testingClient.prepareDataTest(setup.getForbiddenSessionId(), null, null,
+	                setup.getDatafileIds().get(0), null, null);
+	
+	        try {
+	            Status status = null;
+	            do {
+	            	Thread.sleep(1000);
+	                status = testingClient.getStatusTest(preparedId);
+	            } while (Status.RESTORING.equals(status));
+	        } catch (ForbiddenException e) {
+	            // ignore because testing to see if getData throws a ForbiddenException as well
+	        }
+	
+	        testingClient.getDataTest(preparedId, null, null);
+	        fail("Expected SC " + expectedSc);
+        } catch (UniformInterfaceException e) {
+        	assertEquals(expectedSc, e.getResponse().getStatus());
+        }
     }
     
-    @Test(expected = TestingClientBadRequestException.class)
+    @Test
     public void offsetTooBigTest() throws Exception {
-        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
-                null, null);
-
-        Status status = null;
-        do {
-        	Thread.sleep(1000);
-            status = testingClient.getStatusTest(preparedId);
-        } while (Status.RESTORING.equals(status));
-
-        testingClient.getDataTest(preparedId, null, badOffset.longValue());
+    	int expectedSc = 400;
+    	try {
+	        String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(0),
+	                null, null);
+	
+	        Status status = null;
+	        do {
+	        	Thread.sleep(1000);
+	            status = testingClient.getStatusTest(preparedId);
+	        } while (Status.RESTORING.equals(status));
+	
+	        testingClient.getDataTest(preparedId, null, badOffset.longValue());
+	        fail("Expected SC " + expectedSc);
+    	} catch (UniformInterfaceException e) {
+    		assertEquals(expectedSc, e.getResponse().getStatus());
+    	}
     }
 
     @Test

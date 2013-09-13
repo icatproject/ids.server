@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.AnyOf.anyOf;
 
@@ -17,14 +18,14 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.exception.TestingClientBadRequestException;
-import org.icatproject.ids.test.exception.TestingClientForbiddenException;
 import org.icatproject.ids.test.util.Setup;
 import org.icatproject.ids.test.util.TestingClient;
 import org.icatproject.ids.webservice.Status;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.sun.jersey.api.client.UniformInterfaceException;
 
 public class PrepareDataTest {
 
@@ -115,8 +116,8 @@ public class PrepareDataTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
-				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
+				.get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
@@ -149,61 +150,110 @@ public class PrepareDataTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status));
 
-		assertThat("Status info should be ONLINE or INCOMPLETE, is " + status.name(), status, anyOf(equalTo(Status.ONLINE), equalTo(Status.INCOMPLETE)));
+		assertThat("Status info should be ONLINE or INCOMPLETE, is " + status.name(), status,
+				anyOf(equalTo(Status.ONLINE), equalTo(Status.INCOMPLETE)));
 		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage.exists());
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void restoreNonExistentDataset() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		// dataset id -1 shouldn't exist in the DB
-		client.prepareDataTest(setup.getGoodSessionId(), null, "-1", null, null, null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			// dataset id -1 shouldn't exist in the DB
+			client.prepareDataTest(setup.getGoodSessionId(), null, "-1", null, null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void badSessionIdFormatTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.prepareDataTest("bad sessionId format", null, null, null, null, null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.prepareDataTest("bad sessionId format", null, null, null, null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void badDatafileIdListTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.prepareDataTest(setup.getGoodSessionId(), null, null, "1, 2, a", null, null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.prepareDataTest(setup.getGoodSessionId(), null, null, "1, 2, a", null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void badDatasetIdListTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.prepareDataTest(setup.getGoodSessionId(), null, "", null, null, null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.prepareDataTest(setup.getGoodSessionId(), null, "", null, null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void tooBigIdTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.prepareDataTest(setup.getGoodSessionId(), null, "99999999999999999999", null, null, null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.prepareDataTest(setup.getGoodSessionId(), null, "99999999999999999999", null, null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void noIdsTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, null, null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.prepareDataTest(setup.getGoodSessionId(), null, null, null, null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void badCompressTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.prepareDataTest(setup.getGoodSessionId(), null, null, null, "flase", null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.prepareDataTest(setup.getGoodSessionId(), null, null, null, "flase", null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientForbiddenException.class)
+	@Test
 	public void nonExistingSessionIdTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.prepareDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null, setup.getCommaSepDatafileIds(),
-				null, null);
+		int expectedSc = 403;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.prepareDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null, setup.getCommaSepDatafileIds(),
+					null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
 	@Test
@@ -213,7 +263,7 @@ public class PrepareDataTest {
 				setup.getCommaSepDatafileIds(), null, null);
 		assertNotNull(preparedId);
 	}
-	
+
 	@Test
 	public void prepareRestoredDataset() throws Exception {
 		final int DS_NUM_FROM_PROPS = 0;
@@ -221,7 +271,7 @@ public class PrepareDataTest {
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
-		
+
 		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
@@ -260,12 +310,12 @@ public class PrepareDataTest {
 		File zipOnFastStorage2 = new File(setup.getStorageZipDir(), icatDs2.getLocation());
 		String dsIds = setup.getDatasetIds().get(DS1_NUM_FROM_PROPS) + ", "
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
-		
+
 		testingClient.restoreTest(setup.getGoodSessionId(), null, dsIds, null);
 		do {
 			Thread.sleep(1000);
-		} while (!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists() ||
-				!zipOnFastStorage2.exists());
+		} while (!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists()
+				|| !zipOnFastStorage2.exists());
 
 		assertTrue("File " + dirOnFastStorage1.getAbsolutePath() + " should have been restored, but doesn't exist",
 				dirOnFastStorage1.exists());
@@ -296,7 +346,7 @@ public class PrepareDataTest {
 				Long.parseLong(setup.getDatafileIds().get(DF_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
-		
+
 		testingClient.restoreTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
 		do {
 			Thread.sleep(1000);
@@ -307,8 +357,8 @@ public class PrepareDataTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
-				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
+		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
+				.get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
@@ -329,9 +379,9 @@ public class PrepareDataTest {
 				Long.parseLong(setup.getDatafileIds().get(DF_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
-		
-		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), 
-				setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
+
+		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
+				.getDatafileIds().get(DF_NUM_FROM_PROPS));
 		do {
 			Thread.sleep(1000);
 		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
@@ -341,9 +391,9 @@ public class PrepareDataTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), 
-				null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), 
-				setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
+		String preparedId = testingClient
+				.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
+						.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);

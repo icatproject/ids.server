@@ -1,6 +1,6 @@
 package org.icatproject.ids.test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.net.URL;
@@ -11,13 +11,13 @@ import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.exception.TestingClientBadRequestException;
-import org.icatproject.ids.test.exception.TestingClientForbiddenException;
 import org.icatproject.ids.test.util.Setup;
 import org.icatproject.ids.test.util.TestingClient;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.sun.jersey.api.client.UniformInterfaceException;
 
 public class ArchiveTest {
 
@@ -66,40 +66,70 @@ public class ArchiveTest {
 		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
 		}
-		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath() + " should have been cleaned, but still contains files",
-				dirOnFastStorage.listFiles().length == 0);
+		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath()
+				+ " should have been cleaned, but still contains files", dirOnFastStorage.listFiles().length == 0);
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
 				!zipOnFastStorage.exists());
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void badSessionIdFormatTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.archiveTest("bad sessionId format", null, null, "1,2");
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.archiveTest("bad sessionId format", null, null, "1,2");
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void badDatafileIdFormatTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.archiveTest(setup.getGoodSessionId(), null, null, "1,2,a");
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.archiveTest(setup.getGoodSessionId(), null, null, "1,2,a");
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void badDatasetIdFormatTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.archiveTest(setup.getGoodSessionId(), null, "", null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.archiveTest(setup.getGoodSessionId(), null, "", null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientBadRequestException.class)
+	@Test
 	public void noIdsTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.archiveTest(setup.getGoodSessionId(), null, null, null);
+		int expectedSc = 400;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.archiveTest(setup.getGoodSessionId(), null, null, null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
-	@Test(expected = TestingClientForbiddenException.class)
+	@Test
 	public void nonExistingSessionIdTest() throws Exception {
-		TestingClient client = new TestingClient(setup.getIdsUrl());
-		client.archiveTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, "1,2", null);
+		int expectedSc = 403;
+		try {
+			TestingClient client = new TestingClient(setup.getIdsUrl());
+			client.archiveTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, "1,2", null);
+			fail("Expected SC " + expectedSc);
+		} catch (UniformInterfaceException e) {
+			assertEquals(expectedSc, e.getResponse().getStatus());
+		}
 	}
 
 }
