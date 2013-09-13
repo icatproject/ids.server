@@ -69,9 +69,19 @@ public class GetDataTest {
 		testingClient = new TestingClient(setup.getIdsUrl());
 	}
     
-    @Test(expected = TestingClientBadRequestException.class)
+//	@Test(expected = TestingClientBadRequestException.class)
+//    public void badPreparedIdFormatTest() throws Exception {
+//        testingClient.getDataTest("bad preparedId format", null, null);
+//    }
+    @Test
     public void badPreparedIdFormatTest() throws Exception {
-        testingClient.getDataTest("bad preparedId format", null, null);
+//        try {
+//			testingClient.getDataTest("bad preparedId format", null, null);
+//			fail("Expected " + ExceptionClass.class);
+//		} catch (Exception e) {
+//			assertEquals(SomeEx.class, e.getClass())
+//			assertEquals(e.getMessage()....) // not necessary, omit for now
+//		}
     }
 
     @Test(expected = TestingClientBadRequestException.class)

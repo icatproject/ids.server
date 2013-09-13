@@ -413,7 +413,7 @@ public class WebService {
 			throw new InternalServerErrorException(t.getMessage());
 		}
 
-		return Response.status(200).entity("").build();
+		return Response.status(200).build();
 	}
 
 	@GET
@@ -439,7 +439,7 @@ public class WebService {
 
 	@GET
 	@Path("getData")
-	@Produces("application/zip")
+	@Produces("application/octet-stream")
 	public Response getData(@QueryParam("preparedId") String preparedId, @QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds, @QueryParam("compress") String compress,

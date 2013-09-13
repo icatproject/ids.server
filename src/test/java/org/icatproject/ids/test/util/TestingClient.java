@@ -3,25 +3,28 @@ package org.icatproject.ids.test.util;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.io.IOUtils;
 import org.icatproject.ids.test.exception.TestingClientBadRequestException;
+import org.icatproject.ids.test.exception.TestingClientException;
 import org.icatproject.ids.test.exception.TestingClientForbiddenException;
 import org.icatproject.ids.test.exception.TestingClientInsufficientStorageException;
 import org.icatproject.ids.test.exception.TestingClientInternalServerErrorException;
 import org.icatproject.ids.test.exception.TestingClientNotFoundException;
 import org.icatproject.ids.test.exception.TestingClientNotImplementedException;
 import org.icatproject.ids.webservice.Status;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.UniformInterfaceException;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.representation.Form;
+import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 /*
  * The test suite for the IDS makes use of the IDS client. This has some passive
@@ -53,23 +56,25 @@ public class TestingClient {
 	 */
 	public String prepareDataTest(String sessionId, String investigationIds, String datasetIds, String datafileIds,
 			String compress, String zip) throws Exception {
-		Map<String, String> parameters = new HashMap<String, String>();
-
-		// create parameter list
-		parameters.put("sessionId", sessionId);
+		Client client = Client.create();
+		Form form = new Form();
+		form.add("sessionId", sessionId);
 		if (investigationIds != null)
-			parameters.put("investigationIds", investigationIds);
+			form.add("investigationIds", investigationIds);
 		if (datasetIds != null)
-			parameters.put("datasetIds", datasetIds);
+			form.add("datasetIds", datasetIds);
 		if (datafileIds != null)
-			parameters.put("datafileIds", datafileIds);
+			form.add("datafileIds", datafileIds);
 		if (compress != null)
-			parameters.put("compress", compress);
+			form.add("compress", compress);
 		if (zip != null)
-			parameters.put("zip", zip);
-
-		Response response = HTTPConnect("POST", "prepareData", parameters, null);
-		return response.getResponse().toString().trim();
+			form.add("zip", zip);
+		WebResource resource = client.resource(idsUrl).path("prepareData");
+		try {
+			return resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(String.class, form).trim();
+		} catch (UniformInterfaceException e) {
+			throw mapJerseyClientException(e);
+		}
 	}
 
 	/*
@@ -78,33 +83,21 @@ public class TestingClient {
 	 */
 	public void restoreTest(String sessionId, String investigationIds, String datasetIds, String datafileIds)
 			throws Exception {
-		 Map<String, String> parameters = new HashMap<String, String>();
-		
-		 // create parameter list
-		 parameters.put("sessionId", sessionId);
-		 if (investigationIds != null)
-		 parameters.put("investigationIds", investigationIds);
-		 if (datasetIds != null)
-		 parameters.put("datasetIds", datasetIds);
-		 if (datafileIds != null)
-		 parameters.put("datafileIds", datafileIds);
-		
-		 Response response = HTTPConnect("POST", "restore", parameters, null);
-		 response.getResponse().toString().trim();
-
-//		Client client = Client.create();
-//
-//		Form form = new Form();
-//		form.add("sessionId", sessionId);
-//		if (investigationIds != null)
-//			form.add("investigationIds", investigationIds);
-//		if (datasetIds != null)
-//			form.add("datasetIds", datasetIds);
-//		if (datafileIds != null)
-//			form.add("datafileIds", datafileIds);
-//		WebResource resource = client.resource(idsUrl).path("restore");
-//
-//		resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
+		Client client = Client.create();
+		Form form = new Form();
+		form.add("sessionId", sessionId);
+		if (investigationIds != null)
+			form.add("investigationIds", investigationIds);
+		if (datasetIds != null)
+			form.add("datasetIds", datasetIds);
+		if (datafileIds != null)
+			form.add("datafileIds", datafileIds);
+		WebResource resource = client.resource(idsUrl).path("restore");
+		try {
+			resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
+		} catch (UniformInterfaceException e) {
+			throw mapJerseyClientException(e);
+		}
 	}
 
 	/*
@@ -113,199 +106,108 @@ public class TestingClient {
 	 */
 	public void archiveTest(String sessionId, String investigationIds, String datasetIds, String datafileIds)
 			throws Exception {
-		Map<String, String> parameters = new HashMap<String, String>();
-
-		// create parameter list
-		parameters.put("sessionId", sessionId);
+		Client client = Client.create();
+		Form form = new Form();
+		form.add("sessionId", sessionId);
 		if (investigationIds != null)
-			parameters.put("investigationIds", investigationIds);
+			form.add("investigationIds", investigationIds);
 		if (datasetIds != null)
-			parameters.put("datasetIds", datasetIds);
+			form.add("datasetIds", datasetIds);
 		if (datafileIds != null)
-			parameters.put("datafileIds", datafileIds);
-
-		Response response = HTTPConnect("POST", "archive", parameters, null);
-		response.getResponse().toString().trim();
+			form.add("datafileIds", datafileIds);
+		WebResource resource = client.resource(idsUrl).path("archive");
+		try {
+			resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).post(form);
+		} catch (UniformInterfaceException e) {
+			throw mapJerseyClientException(e);
+		}
 	}
 
 	/*
 	 * Same as original getStatus but throws all exceptions
 	 */
 	public Status getStatusTest(String preparedId) throws Exception {
-		Map<String, String> parameters = new HashMap<String, String>();
-		parameters.put("preparedId", preparedId);
-		Response response = HTTPConnect("GET", "getStatus", parameters, null);
-		return Status.valueOf(response.getResponse().toString().trim());
+		Client client = Client.create();
+		MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+		params.add("preparedId", preparedId);
+		WebResource resource = client.resource(idsUrl).path("getStatus");
+		try {
+			return Status.valueOf(resource.queryParams(params).accept(MediaType.TEXT_PLAIN_TYPE).get(String.class).trim());
+		} catch (UniformInterfaceException e) {
+			throw mapJerseyClientException(e);
+		}
 	}
 	
 	/*
 	 * Same as original getDataTest but throws all exceptions
 	 */
 	public Response getDataTest(String preparedId, String outname, Long offset) throws Exception {
-		Map<String, String> parameters = new HashMap<String, String>();
-
-		// create parameter list
-		parameters.put("preparedId", preparedId);
+		Client client = Client.create();
+		MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+		params.add("preparedId", preparedId);
 		if (outname != null)
-			parameters.put("outname", outname);
+			params.add("outname", outname);
 		if (offset != null)
-			parameters.put("offset", offset.toString());
-
-		return HTTPConnect("GET", "getData", parameters, null);
+			params.add("offset", offset.toString());
+		WebResource resource = client.resource(idsUrl).path("getData");
+		try {
+			ClientResponse response = resource.queryParams(params).accept(MediaType.APPLICATION_OCTET_STREAM_TYPE).get(ClientResponse.class);
+			// if we use ClientResponse, the UniformInterfaceException is not thrown automatically; see:
+			// http://jersey.java.net/nonav/apidocs/1.8/jersey/com/sun/jersey/api/client/WebResource.Builder.html#get(java.lang.Class)
+			if (response.getStatus() != 200) {
+				throw new UniformInterfaceException(response);
+			}
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			IOUtils.copy(response.getEntityInputStream(), os);
+			return new Response(os, response.getHeaders());
+		} catch (UniformInterfaceException e) {
+			throw mapJerseyClientException(e);
+		}
 	}
 
-	public Response putTest(String sessionId, String name, String datafileFormatId, String datasetId,
+	public String putTest(String sessionId, String name, String datafileFormatId, String datasetId,
 			String description, String doi, String datafileCreateTime, String datafileModTime, File file)
 			throws Exception {
-		Map<String, String> parameters = new HashMap<String, String>();
-
-		parameters.put("sessionId", sessionId);
-		parameters.put("name", name);
-		parameters.put("datafileFormatId", datafileFormatId);
-		parameters.put("datasetId", datasetId);
+		Client client = Client.create();
+		MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+		params.add("sessionId", sessionId);
+		params.add("name", name);
+		params.add("datafileFormatId", datafileFormatId);
+		params.add("datasetId", datasetId);
 		if (description != null)
-			parameters.put("description", description);
+			params.add("description", description);
 		if (doi != null)
-			parameters.put("doi", doi);
+			params.add("doi", doi);
 		if (datafileCreateTime != null)
-			parameters.put("datafileCreateTime", datafileCreateTime);
+			params.add("datafileCreateTime", datafileCreateTime);
 		if (datafileModTime != null)
-			parameters.put("datafileModTime", datafileModTime);
-
-		return HTTPConnect("PUT", "put", parameters, file);
-	}
-
-	/*
-	 * Create HTTP request of type defined by method to 'page' defined by
-	 * relativeURL. Converts parameter list into format suitable for either URL
-	 * (GET, DELETE, PUT) or message body (POST).
-	 */
-	protected Response HTTPConnect(String method, String relativeUrl, Map<String, String> parameters, File file)
-			throws Exception {
-		StringBuilder url = new StringBuilder();
-		HttpURLConnection connection;
-
-		// construct url
-		url.append(idsUrl);
-
-		// check if idsURL ends with a /
-		if (idsUrl.toString().charAt(idsUrl.toString().length() - 1) != '/') {
-			url.append("/");
-		}
-		url.append(relativeUrl);
-
-		// add parameters to url for GET and DELETE requests
-		if ("GET".equals(method) || "DELETE".equals(method) || "PUT".equals(method)) {
-			url.append("?");
-			url.append(parametersToString(parameters));
-		}
-		System.out.println("prepared url = " + url.toString());
-		// setup connection
-		connection = (HttpURLConnection) new URL(url.toString()).openConnection();
-		connection.setDoOutput(true);
-		connection.setDoInput(true);
-		connection.setUseCaches(false);
-		connection.setAllowUserInteraction(false);
-		connection.setRequestMethod(method);
-
-		// add parameters to message body for POST requests
-		if ("POST".equals(method)) {
-			String messageBody = parametersToString(parameters);
-			OutputStream os = null;
-			try {
-				os = connection.getOutputStream();
-				os.write(messageBody.getBytes());
-			} finally {
-				if (os != null) {
-					os.close();
-				}
-			}
-		}
-
-		if ("PUT".equals(method)) {
-			writeFileToBody(file, connection);
-		}
-
-		// read in response
-		InputStream is = null;
-		ByteArrayOutputStream os = null;
+			params.add("datafileModTime", datafileModTime);
+		WebResource resource = client.resource(idsUrl).path("put");
 		try {
-			os = new ByteArrayOutputStream();
-			if (connection.getResponseCode() != 200) {
-				is = connection.getErrorStream();
-			} else {
-				is = connection.getInputStream();
-			}
-
-			int len;
-			byte[] buffer = new byte[1024];
-			while ((len = is.read(buffer)) != -1) {
-				os.write(buffer, 0, len);
-			}
-		} finally {
-			if (is != null) {
-				is.close();
-			}
-			if (os != null) {
-				os.close();
-			}
+			InputStream in = new FileInputStream(file);
+			return resource.queryParams(params).type(MediaType.APPLICATION_OCTET_STREAM_TYPE).accept(MediaType.TEXT_PLAIN_TYPE).put(String.class, in);
+		} catch (UniformInterfaceException e) {
+			throw mapJerseyClientException(e);
 		}
-
-		// convert response code into relevant IDSException
-		switch (connection.getResponseCode()) {
-		case 200:
-			break;
+	}
+	
+	private TestingClientException mapJerseyClientException(UniformInterfaceException e) {
+		String msg = e.getResponse().getEntity(String.class);
+		switch (e.getResponse().getStatus()) {
 		case 400:
-			throw new TestingClientBadRequestException(os.toString());
+			return new TestingClientBadRequestException(msg);
 		case 403:
-			throw new TestingClientForbiddenException(os.toString());
+			return new TestingClientForbiddenException(msg);
 		case 404:
-			throw new TestingClientNotFoundException(os.toString());
+			return new TestingClientNotFoundException(msg);
 		case 500:
-			throw new TestingClientInternalServerErrorException(os.toString());
+			return new TestingClientInternalServerErrorException(msg);
 		case 501:
-			throw new TestingClientNotImplementedException(os.toString());
+			return new TestingClientNotImplementedException(msg);
 		case 507:
-			throw new TestingClientInsufficientStorageException(os.toString());
+			return new TestingClientInsufficientStorageException(msg);
 		default:
-			throw new TestingClientInternalServerErrorException("Unknown response " + connection.getResponseCode()
-					+ ": " + os.toString());
+			return new TestingClientException("unknown exception, shouldn't appear");
 		}
-
-		connection.disconnect();
-
-		return new Response(os, connection.getHeaderFields());
-	}
-
-	/*
-	 * Turn a list of key-value pairs into format suitable for HTTP GET request
-	 * ie. key=value&key=value
-	 */
-	private String parametersToString(Map<String, String> parameters) throws UnsupportedEncodingException {
-		StringBuilder sb = new StringBuilder();
-		Iterator<Map.Entry<String, String>> it = parameters.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<String, String> pair = (Map.Entry<String, String>) it.next();
-			sb.append(pair.getKey() + "=" + URLEncoder.encode(pair.getValue(), "UTF-8"));
-			if (it.hasNext()) {
-				sb.append("&");
-			}
-			it.remove();
-		}
-		return sb.toString();
-	}
-
-	private void writeFileToBody(File file, HttpURLConnection urlc) throws IOException {
-		OutputStream out = null;
-		InputStream in = null;
-		int n = 0;
-		final byte[] bytes = new byte[1024];
-		out = urlc.getOutputStream();
-		in = new FileInputStream(file);
-		while ((n = in.read(bytes)) != -1) {
-			out.write(bytes, 0, n);
-		}
-		in.close();
-		out.close();
 	}
 }
