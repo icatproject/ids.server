@@ -113,13 +113,14 @@ public class Setup {
 			dsType.setFacility(fac);
 			dsType.setName("DatasetType_" + timestamp);
 			dsType.setId(icat.create(goodSessionId, dsType));
-			
+
 			supportedDatafileFormat = "test_format";
 			DatafileFormat dfFormat = new DatafileFormat();
 			dfFormat.setFacility(fac);
 			dfFormat.setName(supportedDatafileFormat);
+			dfFormat.setVersion("42.0.0");
 			dfFormat.setId(icat.create(goodSessionId, dfFormat));
-			
+
 			InvestigationType invType = new InvestigationType();
 			invType.setName("Not null");
 			invType.setFacility(fac);
@@ -195,7 +196,7 @@ public class Setup {
 
 			zipDatasetToArchive(ds1);
 			zipDatasetToArchive(ds2);
-			
+
 			newFileLocation = new File(userLocalDir, "new_file_" + timestamp).getAbsolutePath();
 			writeToFile(new File(newFileLocation), "new_file test content");
 		} catch (Exception e) {
@@ -232,8 +233,8 @@ public class Setup {
 	}
 
 	/*
-	 * May be used in @AfterClass annotated method in tests to clean the test data
-	 * from the disk and the ICAT database
+	 * May be used in @AfterClass annotated method in tests to clean the test data from the disk and
+	 * the ICAT database
 	 */
 	public void cleanArchiveAndDb() throws NumberFormatException, IcatException_Exception,
 			IOException {
@@ -297,7 +298,7 @@ public class Setup {
 	public String getUserLocalDir() {
 		return userLocalDir;
 	}
-	
+
 	public String getNewFileLocation() {
 		return newFileLocation;
 	}
@@ -305,7 +306,7 @@ public class Setup {
 	public String getIcatUrl() {
 		return icatUrl;
 	}
-	
+
 	public String getSupportedDatafileFormat() {
 		return supportedDatafileFormat;
 	}
@@ -338,14 +339,16 @@ public class Setup {
 		}
 		return res;
 	}
-	
+
 	/*
-	 * Adds an MD5 sum to the map for three possible locations that a Datafile can have in a zip file
+	 * Adds an MD5 sum to the map for three possible locations that a Datafile can have in a zip
+	 * file
 	 */
 	private void addMD5s(Datafile df, String md5) {
 		filenameMD5.put(df.getLocation(), md5);
 		filenameMD5.put("Datafile-" + df.getId(), md5);
-		filenameMD5.put(String.format("Dataset-%s/Datafile-%s", df.getDataset().getId(), df.getId()), md5);
+		filenameMD5.put(
+				String.format("Dataset-%s/Datafile-%s", df.getDataset().getId(), df.getId()), md5);
 	}
 
 	private void zipDatasetToArchive(Dataset ds) throws IOException {
@@ -355,8 +358,7 @@ public class Setup {
 		zipDataset(zipFile, ds, storageDir, false);
 	}
 
-	private void zipDataset(File zipFile, Dataset dataset, String relativePath,
-			boolean compress) {
+	private void zipDataset(File zipFile, Dataset dataset, String relativePath, boolean compress) {
 		if (dataset.getDatafiles().isEmpty()) {
 			// Create empty file
 			try {
