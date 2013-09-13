@@ -23,6 +23,7 @@ import javax.xml.namespace.QName;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.icatproject.Datafile;
+import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
 import org.icatproject.DatasetType;
 import org.icatproject.Facility;
@@ -61,8 +62,9 @@ public class Setup {
 	private String userLocalDir;
 
 	private ICAT icat;
-	Facility fac;
-	DatasetType dsType;
+	private Facility fac;
+	private DatasetType dsType;
+	private String supportedDatafileFormat;
 
 	public Setup() throws Exception {
 		InputStream is = getClass().getResourceAsStream("/test.properties");
@@ -111,6 +113,12 @@ public class Setup {
 			dsType.setFacility(fac);
 			dsType.setName("DatasetType_" + timestamp);
 			dsType.setId(icat.create(goodSessionId, dsType));
+			
+			supportedDatafileFormat = "test_format";
+			DatafileFormat dfFormat = new DatafileFormat();
+			dfFormat.setFacility(fac);
+			dfFormat.setName(supportedDatafileFormat);
+			dfFormat.setId(icat.create(goodSessionId, dfFormat));
 			
 			InvestigationType invType = new InvestigationType();
 			invType.setName("Not null");
@@ -296,6 +304,10 @@ public class Setup {
 
 	public String getIcatUrl() {
 		return icatUrl;
+	}
+	
+	public String getSupportedDatafileFormat() {
+		return supportedDatafileFormat;
 	}
 
 	private void writeToFile(File dst, String content) throws IOException {

@@ -54,7 +54,7 @@ public class PutTest {
 			final int DS_NUM_FROM_PROPS = 0;
 			// this file will be uploaded
 			File fileOnUsersDisk = new File(setup.getNewFileLocation());
-			testingClient.putTest(setup.getGoodSessionId(), "uploaded_file1_" + timestamp, "xml", setup.getDatasetIds()
+			testingClient.putTest(setup.getGoodSessionId(), "uploaded_file1_" + timestamp, setup.getSupportedDatafileFormat(), setup.getDatasetIds()
 					.get(DS_NUM_FROM_PROPS), null, null, null, null, fileOnUsersDisk);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -83,7 +83,7 @@ public class PutTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 
-		testingClient.putTest(setup.getGoodSessionId(), "uploaded_file2_" + timestamp, "xml", setup.getDatasetIds()
+		testingClient.putTest(setup.getGoodSessionId(), "uploaded_file2_" + timestamp, setup.getSupportedDatafileFormat(), setup.getDatasetIds()
 				.get(DS_NUM_FROM_PROPS), null, null, null, null, fileOnUsersDisk);
 		do {
 			Thread.sleep(1000);
