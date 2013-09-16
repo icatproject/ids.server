@@ -45,10 +45,10 @@ public class FastLocalFileStorage implements StorageInterface {
 	@Override
 	public void deleteDataset(Dataset dataset) throws IOException {
 		fsCommons.deleteDataset(dataset, STORAGE_ZIP_DIR);
-		for (Datafile df : dataset.getDatafiles()) {
-			File explodedFile = new File(STORAGE_DIR, df.getLocation());
-			explodedFile.delete();
-		}
+//		for (Datafile df : dataset.getDatafiles()) {
+//			File explodedFile = new File(STORAGE_DIR, df.getLocation());
+//			explodedFile.delete();
+//		}
 	}
 	
 	@Override
@@ -71,6 +71,12 @@ public class FastLocalFileStorage implements StorageInterface {
 		fsCommons.writeInputStreamToFile(file, is);
 		return file.length();
 	};
+	
+	@Override
+	public void deleteDatafile(Datafile datafile) throws IOException {
+		File file = new File(STORAGE_DIR, datafile.getLocation());
+		file.delete();
+	}
 	
 	@Override
 	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws IOException {

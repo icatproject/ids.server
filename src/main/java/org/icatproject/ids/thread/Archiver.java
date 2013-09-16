@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.storage.StorageFactory;
@@ -47,6 +48,9 @@ public class Archiver implements Runnable {
 				InputStream is = fastStorageInterface.getDataset(ds);
 				slowStorageInterface.putDataset(ds, is);
 				fastStorageInterface.deleteDataset(ds);
+				for (Datafile df : ds.getDatafiles()) {
+					fastStorageInterface.deleteDatafile(df);
+				}
 			}
 			logger.info("Archive of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {

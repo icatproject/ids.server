@@ -59,4 +59,9 @@ public class SlowLocalFileStorage implements StorageInterface {
 		throw new UnsupportedOperationException("Single files cannot be added directly to the slow storage");
 	}
 
+	@Override
+	public void deleteDatafile(Datafile datafile) throws IOException {
+		throw new UnsupportedOperationException("Single files cannot be deleted directly from the slow storage");
+	}
+
 }

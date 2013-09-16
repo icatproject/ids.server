@@ -26,6 +26,7 @@ public interface StorageInterface {
 	 */
 	public long putDatafile(Datafile datafile, InputStream is) throws IOException;
 	public long putDatafile(String relativeLocation, InputStream is) throws IOException;
+	public void deleteDatafile(Datafile datafile) throws IOException;
 	
 	/*
 	 * Prepares a zip file for the user to download. The hierarchy of the files within
