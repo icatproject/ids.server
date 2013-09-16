@@ -1,5 +1,6 @@
 package org.icatproject.ids.storage.local;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Set;
@@ -14,43 +15,48 @@ public class SlowLocalFileStorage implements StorageInterface {
 	final LocalFileStorageCommons fsCommons = new LocalFileStorageCommons();
 	
 	@Override
-	public boolean datasetExists(Dataset dataset) throws Exception {
+	public boolean datasetExists(Dataset dataset) throws IOException {
 		return fsCommons.datasetExists(dataset, STORAGE_ARCHIVE_DIR);
 	}
 	
 	@Override
-	public void getDataset(Dataset dataset, OutputStream os) throws Exception {
-		fsCommons.getDataset(dataset, os, STORAGE_ARCHIVE_DIR);
-	}
-	
-	@Override
-	public InputStream getDatasetInputStream(Dataset dataset) throws Exception {
+	public InputStream getDataset(Dataset dataset) throws IOException {
 		return fsCommons.getDatasetInputStream(dataset, STORAGE_ARCHIVE_DIR);
 	}
 	
 	@Override
-	public void putDataset(Dataset dataset, InputStream is) throws Exception {
+	public void putDataset(Dataset dataset, InputStream is) throws IOException {
 		fsCommons.putDataset(dataset, is, STORAGE_ARCHIVE_DIR);
 	}
 	
 	@Override
-	public void deleteDataset(Dataset dataset) throws Exception {
+	public void deleteDataset(Dataset dataset) throws IOException {
 		fsCommons.deleteDataset(dataset, STORAGE_ARCHIVE_DIR);
 	}
 	
 	@Override
-	public long putDatafile(String name, InputStream is, Dataset dataset) throws Exception {
+	public long putDatafile(Datafile datafile, InputStream is) throws IOException {
 		throw new UnsupportedOperationException("Single files cannot be added directly to the slow storage");
 	}
 	
 	@Override
-	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
+	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws IOException {
 		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
 	}
 	
 	@Override
-	public void getPreparedZip(String zipName, OutputStream os, long offset) throws Exception {
+	public void getPreparedZip(String zipName, OutputStream os, long offset) throws IOException {
 		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
+	}
+
+	@Override
+	public InputStream getDatafile(Datafile datafile) throws IOException {
+		throw new UnsupportedOperationException("This storage can't stream single datafiles");
+	}
+
+	@Override
+	public long putDatafile(String relativeLocation, InputStream is) throws IOException {
+		throw new UnsupportedOperationException("Single files cannot be added directly to the slow storage");
 	}
 
 }

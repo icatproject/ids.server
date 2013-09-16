@@ -44,7 +44,7 @@ public class Archiver implements Runnable {
 			StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
 			StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
 			if (fastStorageInterface.datasetExists(ds)) {
-				InputStream is = fastStorageInterface.getDatasetInputStream(ds);
+				InputStream is = fastStorageInterface.getDataset(ds);
 				slowStorageInterface.putDataset(ds, is);
 				fastStorageInterface.deleteDataset(ds);
 			}

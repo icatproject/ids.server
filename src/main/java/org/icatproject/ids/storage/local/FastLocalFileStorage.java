@@ -33,37 +33,17 @@ public class FastLocalFileStorage implements StorageInterface {
 	final LocalFileStorageCommons fsCommons = new LocalFileStorageCommons();
 	
 	@Override
-	public boolean datasetExists(Dataset dataset) throws Exception {
-		return fsCommons.datasetExists(dataset, STORAGE_ZIP_DIR);
-	}
-	
-	@Override
-	public void getDataset(Dataset dataset, OutputStream os) throws Exception {
-		fsCommons.getDataset(dataset, os, STORAGE_ZIP_DIR);
-	}
-	
-	@Override
-	public InputStream getDatasetInputStream(Dataset dataset) throws Exception {
+	public InputStream getDataset(Dataset dataset) throws IOException {
 		return fsCommons.getDatasetInputStream(dataset, STORAGE_ZIP_DIR);
 	}
 	
 	@Override
-	public void putDataset(Dataset dataset, InputStream is) throws Exception {
+	public void putDataset(Dataset dataset, InputStream is) throws IOException {
 		fsCommons.putDataset(dataset, is, STORAGE_ZIP_DIR);
-		
-		// unzip the dataset
-		File tempdir = File.createTempFile("tmp", null, new File(STORAGE_DIR));
-		File dir = new File(STORAGE_DIR, dataset.getLocation());
-		File archdir = new File(STORAGE_ZIP_DIR, dataset.getLocation());
-		tempdir.delete();
-		tempdir.mkdir();
-		dir.getParentFile().mkdirs();
-		unzip(new File(archdir, "files.zip"), tempdir);
-		tempdir.renameTo(dir);		
 	}
 	
 	@Override
-	public void deleteDataset(Dataset dataset) throws Exception {
+	public void deleteDataset(Dataset dataset) throws IOException {
 		fsCommons.deleteDataset(dataset, STORAGE_ZIP_DIR);
 		for (Datafile df : dataset.getDatafiles()) {
 			File explodedFile = new File(STORAGE_DIR, df.getLocation());
@@ -71,26 +51,29 @@ public class FastLocalFileStorage implements StorageInterface {
 		}
 	}
 	
-	public long putDatafile(String name, InputStream is, Dataset dataset) throws Exception {
-		File file = new File(new File(STORAGE_DIR, dataset.getLocation()), name);
-		File zipFile = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
-		if (!zipFile.exists()) {
-			logger.warn("Couldn't find zipped DS: " + zipFile.getAbsolutePath() + " in Fast.putDatafile");
-			throw new FileNotFoundException(zipFile.getAbsolutePath());
+	@Override
+	public boolean datasetExists(Dataset dataset) throws IOException {
+		return fsCommons.datasetExists(dataset, STORAGE_ZIP_DIR);
+	}
+	
+	@Override
+	public InputStream getDatafile(Datafile datafile) throws FileNotFoundException {
+		File file = new File(STORAGE_DIR, datafile.getLocation());
+		if (!file.exists()) {
+			throw new FileNotFoundException(file.getAbsolutePath());
 		}
+		return new BufferedInputStream(new FileInputStream(file));
+	}
+	
+	@Override
+	public long putDatafile(Datafile datafile, InputStream is) throws IOException {
+		File file = new File(new File(STORAGE_DIR, datafile.getDataset().getLocation()), datafile.getName());
 		fsCommons.writeInputStreamToFile(file, is);
-		
-		Datafile tmpDatafile = new Datafile();
-		tmpDatafile.setName(name);
-		tmpDatafile.setDataset(dataset);
-		tmpDatafile.setLocation(new File(dataset.getLocation(), name).getPath());
-		
-		zipDataset(zipFile, dataset, STORAGE_DIR, false, tmpDatafile);
 		return file.length();
 	};
 	
 	@Override
-	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws Exception {
+	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws IOException {
 		logger.info(String.format("zipping %s datafiles", datafiles.size()));
         long startTime = System.currentTimeMillis();
         File zipFile = new File(STORAGE_PREPARED_DIR, zipName);
@@ -100,7 +83,7 @@ public class FastLocalFileStorage implements StorageInterface {
 	}
 	
 	@Override
-	public void getPreparedZip(String zipName, OutputStream os, long offset) throws Exception {
+	public void getPreparedZip(String zipName, OutputStream os, long offset) throws IOException {
 		fsCommons.getPreparedZip(zipName, os, offset, STORAGE_PREPARED_DIR);
 	}
 	
@@ -235,5 +218,12 @@ public class FastLocalFileStorage implements StorageInterface {
             logger.error("addToZip", ex);
         }
     }
+
+	@Override
+	public long putDatafile(String relativeLocation, InputStream is) throws IOException {
+		File file = new File(STORAGE_DIR, relativeLocation);
+		fsCommons.writeInputStreamToFile(file, is);
+		return file.length();
+	}
 
 }

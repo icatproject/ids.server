@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
-
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
@@ -51,6 +50,7 @@ import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids.util.ValidationHelper;
+import org.icatproject.ids.util.ZipHelper;
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
 import org.icatproject.ids.webservice.exceptions.ForbiddenException;
 import org.icatproject.ids.webservice.exceptions.InternalServerErrorException;
@@ -489,12 +489,23 @@ public class WebService {
 			IdsRequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
 			requestHelper.addDatasets(sessionId, requestEntity, datasetId);
 			this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
-
 			throw new NotFoundException(
 					"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 		}
-		long tbytes = fastStorage.putDatafile(name, body, ds);
+		Datafile dummy = new Datafile();
+		dummy.setName(name);
+		dummy.setDataset(ds);
+		long tbytes = fastStorage.putDatafile(dummy, body);
 		registerDatafile(sessionId, name, datafileFormatId, tbytes, ds);
+		// refresh the DS (contains the new DF)
+		ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(datasetId));
+		try {
+			InputStream is = ZipHelper.zipDataset(ds, false, fastStorage);
+			fastStorage.putDataset(ds, is);
+		} catch (IOException e) {
+			logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
+			throw new InternalServerErrorException(e.getMessage());
+		}
 
 		return Response.status(200).entity(name).build();
 	}

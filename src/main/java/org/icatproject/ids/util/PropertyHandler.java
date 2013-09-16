@@ -26,6 +26,7 @@ public class PropertyHandler {
     private long processQueueIntervalSeconds;
     private Class<StorageInterface> fastStorageInterfaceImplementation;
     private Class<StorageInterface> slowStorageInterfaceImplementation;
+    private String tmpDir;
 
     @SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -116,6 +117,8 @@ public class PropertyHandler {
         	logger.error(msg);
         	throw new IllegalStateException(msg);
         }
+        
+        tmpDir = setICATDirFromProperties(props, "tmpDir");
     }
 
     public static PropertyHandler getInstance() {
@@ -147,5 +150,26 @@ public class PropertyHandler {
 	
 	public Class<StorageInterface> getSlowStorageInterfaceImplementation() {
 		return slowStorageInterfaceImplementation;
+	}
+	
+	public String getTmpDir() {
+		return tmpDir;
+	}
+	
+	private String setICATDirFromProperties(Properties props, String property) {
+		String res = props.getProperty(property);
+		if (res == null) {
+			String msg = "Property " + property + " must be set.";
+			logger.error(msg);
+			throw new IllegalStateException(msg);
+		}
+
+		File tmp = new File(res);
+		if (!tmp.exists()) {
+			String msg = "Invalid " + property + ". Directory " + res + " not found. Please create.";
+			logger.error(msg);
+			throw new IllegalStateException(msg);
+		}
+		return res;
 	}
 }

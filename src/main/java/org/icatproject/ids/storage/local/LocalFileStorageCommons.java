@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -15,22 +16,22 @@ public class LocalFileStorageCommons {
 	
 	final int BUFSIZ = 2048;
 	
-	public boolean datasetExists(Dataset dataset, String storageDir) throws Exception {
+	public boolean datasetExists(Dataset dataset, String storageDir) {
 		File zippedDs = new File(new File(storageDir, dataset.getLocation()), "files.zip");
 		return zippedDs.exists();
 	}
 	
-	public void getDataset(Dataset dataset, OutputStream os, String storageDir) throws Exception {
+	public void getDataset(Dataset dataset, OutputStream os, String storageDir) throws IOException {
 		File zippedDs = new File(new File(storageDir, dataset.getLocation()), "files.zip");
 		writeFileToOutputStream(zippedDs, os, 0L);
 	}
 	
-	public void getPreparedZip(String zipName, OutputStream os, long offset, String preparedDir) throws Exception {
+	public void getPreparedZip(String zipName, OutputStream os, long offset, String preparedDir) throws IOException {
 		File preparedZip = new File(preparedDir, zipName);
 		writeFileToOutputStream(preparedZip, os, offset);
 	}
 	
-	private void writeFileToOutputStream(File file, OutputStream os, Long offset) throws Exception {
+	private void writeFileToOutputStream(File file, OutputStream os, Long offset) throws IOException {
 		if (!file.exists()) {
 			throw new FileNotFoundException(file.getAbsolutePath());
 		}
@@ -65,7 +66,7 @@ public class LocalFileStorageCommons {
 		}
 	}
 	
-	public InputStream getDatasetInputStream(Dataset dataset, String storageDir) throws Exception {
+	public InputStream getDatasetInputStream(Dataset dataset, String storageDir) throws IOException {
 		File zippedDs = new File(new File(storageDir, dataset.getLocation()), "files.zip");
 		if (!zippedDs.exists()) {
 			throw new FileNotFoundException(zippedDs.getAbsolutePath());
@@ -73,7 +74,7 @@ public class LocalFileStorageCommons {
 		return new BufferedInputStream(new FileInputStream(zippedDs));
 	}
 	
-	public void putDataset(Dataset dataset, InputStream is, String storageDir) throws Exception {
+	public void putDataset(Dataset dataset, InputStream is, String storageDir) throws IOException {
 		File zippedDs = new File(new File(storageDir, dataset.getLocation()), "files.zip");
 		File zippedDsDir = zippedDs.getParentFile();
 		zippedDsDir.mkdirs();
@@ -81,7 +82,7 @@ public class LocalFileStorageCommons {
 		writeInputStreamToFile(zippedDs, is);
 	}
 	
-	public void writeInputStreamToFile(File file, InputStream is) throws Exception {
+	public void writeInputStreamToFile(File file, InputStream is) throws IOException {
 		File fileDir = file.getParentFile();
 		fileDir.mkdirs();
 		
@@ -98,16 +99,16 @@ public class LocalFileStorageCommons {
 				bos.write(buffer, 0, bytesRead);
 			}
 		} finally {
-			if (bis != null) {
-				bis.close();
-			}
+//			if (bis != null) {
+//				bis.close();
+//			}
 			if (bos != null) {
 				bos.close();
 			}
 		}
 	}
 	
-	public void deleteDataset(Dataset dataset, String storageDir) throws Exception {
+	public void deleteDataset(Dataset dataset, String storageDir) {
 		File zippedDs = new File(new File(storageDir, dataset.getLocation()), "files.zip");
 		zippedDs.delete();
 	}

@@ -91,13 +91,13 @@ public class PutTest {
 		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
 				fileOnFastStorage.exists());
 
-		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
-		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
-			Thread.sleep(1000);
-		}
-		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath()
-				+ " should have been cleaned, but still contains files", dirOnFastStorage.listFiles().length == 0);
-		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
-				!zipOnFastStorage.exists());
+//		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+//		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
+//			Thread.sleep(1000);
+//		}
+//		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath()
+//				+ " should have been cleaned, but still contains files", dirOnFastStorage.listFiles().length == 0);
+//		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
+//				!zipOnFastStorage.exists());
 	}
 }

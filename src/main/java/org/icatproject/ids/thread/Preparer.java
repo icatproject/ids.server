@@ -1,9 +1,13 @@
 package org.icatproject.ids.thread;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
@@ -55,10 +59,21 @@ public class Preparer implements Runnable {
 		}
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // let's assume that everything will go OK		
 		// restore the dataset if needed
+		InputStream slowIS = null;
+		ZipInputStream fastIS = null;
 		try {
 			if (!fastStorageInterface.datasetExists(de.getIcatDataset())) {
-				InputStream is = slowStorageInterface.getDatasetInputStream(de.getIcatDataset());
-				fastStorageInterface.putDataset(de.getIcatDataset(), is);
+				slowIS = slowStorageInterface.getDataset(de.getIcatDataset());
+				fastStorageInterface.putDataset(de.getIcatDataset(), slowIS);
+				fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()));
+				ZipEntry entry;
+				while ((entry = fastIS.getNextEntry()) != null) {
+					if (entry.isDirectory()) {
+						continue;
+					}
+					String datafileLocation = new File(de.getIcatDataset().getLocation(), entry.getName()).getPath();
+					fastStorageInterface.putDatafile(datafileLocation, fastIS);
+				}
 			}
 		} catch (FileNotFoundException e) {
 			logger.warn("Could not restore " + de.getIcatDataset() + " (file doesn't exist): " + e.getMessage());
@@ -66,6 +81,21 @@ public class Preparer implements Runnable {
 		} catch (Exception e) {
 			logger.warn("Could not restore " + de.getIcatDataset() + " (reason uknonwn): " + e.getMessage());
 			resultingStatus = StatusInfo.ERROR;
+		} finally {
+			if (slowIS != null) {
+				try {
+					slowIS.close();
+				} catch (IOException e) {
+					logger.warn("Couldn't close an input stream from the slow storage");
+				}
+			}
+			if (fastIS != null) {
+				try {
+					fastIS.close();
+				} catch (IOException e) {
+					logger.warn("Couldn't close an input stream from the fast storage");
+				}
+			}
 		}
 		
 		synchronized (deferredOpsQueue) {

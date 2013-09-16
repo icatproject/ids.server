@@ -163,25 +163,4 @@ public class TestingClient {
 		return resource.queryParams(params).type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
 				.accept(MediaType.TEXT_PLAIN_TYPE).put(String.class, in);
 	}
-
-	// private TestingClientException
-	// mapJerseyClientException(UniformInterfaceException e) {
-	// String msg = e.getResponse().getEntity(String.class);
-	// switch (e.getResponse().getStatus()) {
-	// case 400:
-	// return new TestingClientBadRequestException(msg);
-	// case 403:
-	// return new TestingClientForbiddenException(msg);
-	// case 404:
-	// return new TestingClientNotFoundException(msg);
-	// case 500:
-	// return new TestingClientInternalServerErrorException(msg);
-	// case 501:
-	// return new TestingClientNotImplementedException(msg);
-	// case 507:
-	// return new TestingClientInsufficientStorageException(msg);
-	// default:
-	// return new TestingClientException("unknown exception, shouldn't appear");
-	// }
-	// }
 }
