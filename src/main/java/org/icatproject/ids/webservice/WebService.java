@@ -646,7 +646,6 @@ public class WebService {
 	}
 
 	private void restartUnfinishedWork() {
-		// TODO implement
-		// List<Request>requestHelper.getUnfinishedRequests();
+//		List<Request> unfinishedRequests = em.
 	}
 }

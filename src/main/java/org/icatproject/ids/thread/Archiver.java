@@ -38,12 +38,17 @@ public class Archiver implements Runnable {
 		logger.info("starting archiver");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
-		Dataset ds = de.getIcatDataset();
+		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
+		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
 		
+		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
+		Dataset ds = de.getIcatDataset();		
 		try {
-			StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
-			StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
+			if (slowStorageInterface == null) {
+				logger.error("Archiver can't perform because there's no slow storage");
+				resultingStatus = StatusInfo.ERROR;
+				return;
+			}
 			if (fastStorageInterface.datasetExists(ds)) {
 				InputStream is = fastStorageInterface.getDataset(ds);
 				slowStorageInterface.putDataset(ds, is);

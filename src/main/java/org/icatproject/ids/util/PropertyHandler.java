@@ -106,16 +106,17 @@ public class PropertyHandler {
         
         String slowStorageInterfaceImplementationName = props.getProperty("plugin.archive");
         if (slowStorageInterfaceImplementationName == null) {
-        	String msg = "Property plugin.archive must be set.";
-        	logger.error(msg);
-        	throw new IllegalStateException(msg);
-        }
-        try {
-        	slowStorageInterfaceImplementation = (Class<StorageInterface>) Class.forName(slowStorageInterfaceImplementationName);
-        } catch (Exception e) {
-        	String msg = "Could not get class implementing StorageInterface from " + slowStorageInterfaceImplementationName;
-        	logger.error(msg);
-        	throw new IllegalStateException(msg);
+        	String msg = "Property plugin.archive left unset set, single storage enabled.";
+        	logger.info(msg);
+        	slowStorageInterfaceImplementation = null;
+        } else {
+	        try {
+	        	slowStorageInterfaceImplementation = (Class<StorageInterface>) Class.forName(slowStorageInterfaceImplementationName);
+	        } catch (Exception e) {
+	        	String msg = "Could not get class implementing StorageInterface from " + slowStorageInterfaceImplementationName;
+	        	logger.error(msg);
+	        	throw new IllegalStateException(msg);
+	        }
         }
         
         tmpDir = setICATDirFromProperties(props, "tmpDir");

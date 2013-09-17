@@ -42,21 +42,27 @@ public class Restorer implements Runnable {
 		logger.info("starting restorer");
 		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
 		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
+		
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming, that everything will go OK
 		InputStream slowIS = null;
 		ZipInputStream fastIS = null;
 		try {
 			if (!fastStorageInterface.datasetExists(de.getIcatDataset())) {
-				slowIS = slowStorageInterface.getDataset(de.getIcatDataset());
-				fastStorageInterface.putDataset(de.getIcatDataset(), slowIS);
-				fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()));
-				ZipEntry entry;
-				while ((entry = fastIS.getNextEntry()) != null) {
-					if (entry.isDirectory()) {
-						continue;
+				if (slowStorageInterface == null) {
+					logger.error("Restorer can't perform because there's no slow storage");
+					resultingStatus = StatusInfo.ERROR;
+				} else {
+					slowIS = slowStorageInterface.getDataset(de.getIcatDataset());
+					fastStorageInterface.putDataset(de.getIcatDataset(), slowIS);
+					fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()));
+					ZipEntry entry;
+					while ((entry = fastIS.getNextEntry()) != null) {
+						if (entry.isDirectory()) {
+							continue;
+						}
+						String datafileLocation = new File(de.getIcatDataset().getLocation(), entry.getName()).getPath();
+						fastStorageInterface.putDatafile(datafileLocation, fastIS);
 					}
-					String datafileLocation = new File(de.getIcatDataset().getLocation(), entry.getName()).getPath();
-					fastStorageInterface.putDatafile(datafileLocation, fastIS);
 				}
 			}
 		} catch (FileNotFoundException e) {
@@ -80,15 +86,15 @@ public class Restorer implements Runnable {
 					logger.warn("Couldn't close an input stream from the fast storage");
 				}
 			}
-		}
-		
+		}	
+
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
 		synchronized (deferredOpsQueue) {
 			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
 			requestHelper.setDataEntityStatus(de, resultingStatus);
 			changing.remove(de.getIcatDataset());
-		}
+		}	
 	}
 
 }

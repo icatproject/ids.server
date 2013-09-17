@@ -64,16 +64,21 @@ public class Preparer implements Runnable {
 		ZipInputStream fastIS = null;
 		try {
 			if (!fastStorageInterface.datasetExists(de.getIcatDataset())) {
-				slowIS = slowStorageInterface.getDataset(de.getIcatDataset());
-				fastStorageInterface.putDataset(de.getIcatDataset(), slowIS);
-				fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()));
-				ZipEntry entry;
-				while ((entry = fastIS.getNextEntry()) != null) {
-					if (entry.isDirectory()) {
-						continue;
+				if (slowStorageInterface == null) {
+					logger.error("Preparer can't perform because there's no slow storage");
+					resultingStatus = StatusInfo.ERROR;
+				} else {
+					slowIS = slowStorageInterface.getDataset(de.getIcatDataset());
+					fastStorageInterface.putDataset(de.getIcatDataset(), slowIS);
+					fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()));
+					ZipEntry entry;
+					while ((entry = fastIS.getNextEntry()) != null) {
+						if (entry.isDirectory()) {
+							continue;
+						}
+						String datafileLocation = new File(de.getIcatDataset().getLocation(), entry.getName()).getPath();
+						fastStorageInterface.putDatafile(datafileLocation, fastIS);
 					}
-					String datafileLocation = new File(de.getIcatDataset().getLocation(), entry.getName()).getPath();
-					fastStorageInterface.putDatafile(datafileLocation, fastIS);
 				}
 			}
 		} catch (FileNotFoundException e) {
