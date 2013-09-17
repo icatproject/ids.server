@@ -17,6 +17,7 @@ import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
+import org.icatproject.ids.util.ZipHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,10 +107,9 @@ public class Preparer implements Runnable {
 		
 		// if it's the last DataEntity of the Request and all of them were successful
 		if (de.getRequest().getStatus() == StatusInfo.COMPLETED) {
-			String preparedZipName = de.getRequest().getPreparedId() + ".zip";
 			try {
-				fastStorageInterface.prepareZipForRequest(de.getRequest().getIcatDatasets(), 
-						de.getRequest().getIcatDatafiles(), preparedZipName, de.getRequest().isCompress());
+				InputStream is = ZipHelper.prepareZipForUserRequest(de.getRequest(), fastStorageInterface);
+				fastStorageInterface.putPreparedZip(de.getRequest().getPreparedId() + ".zip", is);
 			} catch (Exception e) {
 				logger.warn(String.format("Could not prepare the zip. Reason: " + e.getMessage()));
 				synchronized (deferredOpsQueue) {

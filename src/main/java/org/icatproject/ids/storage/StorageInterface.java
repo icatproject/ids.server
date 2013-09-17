@@ -3,8 +3,6 @@ package org.icatproject.ids.storage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Set;
-
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 
@@ -34,7 +32,7 @@ public interface StorageInterface {
 	 * zipName is the name of the zip that is to be created. It will be relative
 	 * to the path specified in storagePreparedDir property in ids-storage.properties
 	 */
-	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws IOException;
+//	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws IOException;
 	
 	/*
 	 * Starts streaming the data from the prepared zip through the passed OutputStream.
@@ -44,4 +42,5 @@ public interface StorageInterface {
 	 * under the path specified by storagePreparedDir property in ids-storage.properties
 	 */
 	public void getPreparedZip(String zipName, OutputStream os, long offset) throws IOException;
+	public void putPreparedZip(String zipName, InputStream is) throws IOException;
 }

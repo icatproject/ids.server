@@ -3,8 +3,6 @@ package org.icatproject.ids.storage.local;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Set;
-
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
@@ -40,11 +38,6 @@ public class SlowLocalFileStorage implements StorageInterface {
 	}
 	
 	@Override
-	public void prepareZipForRequest(Set<Dataset> datasets, Set<Datafile> datafiles, String zipName, boolean compress) throws IOException {
-		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
-	}
-	
-	@Override
 	public void getPreparedZip(String zipName, OutputStream os, long offset) throws IOException {
 		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
 	}
@@ -62,6 +55,11 @@ public class SlowLocalFileStorage implements StorageInterface {
 	@Override
 	public void deleteDatafile(Datafile datafile) throws IOException {
 		throw new UnsupportedOperationException("Single files cannot be deleted directly from the slow storage");
+	}
+
+	@Override
+	public void putPreparedZip(String zipName, InputStream is) throws IOException {
+		throw new UnsupportedOperationException("This storage can't prepare zip files for users");
 	}
 
 }
