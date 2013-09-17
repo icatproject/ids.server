@@ -22,12 +22,12 @@ public class StorageFactory {
         return instance;
     }
 
-    private StorageInterface createStorageInterface(Class<StorageInterface> storageInterfaceImplementation) {
+    private StorageInterface createStorageInterface(Class<StorageInterface> storageInterfaceImplementation, StorageType storageType) {
     	logger.info("creatingStorageInterface " + storageInterfaceImplementation.getCanonicalName());
     	StorageInterface ret = null;
     	try {
-    		Constructor<StorageInterface> constructor = storageInterfaceImplementation.getConstructor();
-    		ret = constructor.newInstance();
+    		Constructor<StorageInterface> constructor = storageInterfaceImplementation.getConstructor(StorageType.class);
+    		ret = constructor.newInstance(storageType);
     	} catch (Exception e) {
     		logger.error("Could not instantiate StorageInterface implementation " + storageInterfaceImplementation.getCanonicalName());
     		throw new RuntimeException(e);
@@ -37,10 +37,10 @@ public class StorageFactory {
     }
     
     public StorageInterface createFastStorageInterface() {
-    	return createStorageInterface(properties.getFastStorageInterfaceImplementation());
+    	return createStorageInterface(properties.getFastStorageInterfaceImplementation(), StorageType.FAST);
     }
     
     public StorageInterface createSlowStorageInterface() {
-    	return createStorageInterface(properties.getSlowStorageInterfaceImplementation());
+    	return createStorageInterface(properties.getSlowStorageInterfaceImplementation(), StorageType.SLOW);
     }
 }

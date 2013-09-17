@@ -232,6 +232,7 @@ public class GetDataTest {
 
         Status status = null;
         do {
+        	System.out.println("preparing...");
         	Thread.sleep(1000);
             status = testingClient.getStatusTest(preparedId);
         } while (Status.RESTORING.equals(status));

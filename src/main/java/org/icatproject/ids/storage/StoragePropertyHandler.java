@@ -1,4 +1,4 @@
-package org.icatproject.ids.storage.local;
+package org.icatproject.ids.storage;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,10 +12,12 @@ public class StoragePropertyHandler {
 	private static final Logger logger = LoggerFactory.getLogger(StoragePropertyHandler.class);
 	private static StoragePropertyHandler instance = null;
 
-	private String storageArchiveDir;
-	private String storageZipDir;
-	private String storageDir;
-	private String storagePreparedDir;
+	private String fastStorageZipDir;
+	private String fastStorageDir;
+	private String fastStoragePreparedDir;
+	private String slowStorageZipDir;
+	private String slowStorageDir;
+	private String slowStoragePreparedDir;
 
 	private StoragePropertyHandler() {
 		File f = new File("ids-storage.properties");
@@ -28,11 +30,14 @@ public class StoragePropertyHandler {
 			logger.error(msg);
 			throw new IllegalStateException(msg);
 		}
+		
+		fastStorageZipDir = setICATDirFromProperties(props, "fast.storageZipDir");
+		fastStorageDir = setICATDirFromProperties(props, "fast.storageDir");
+		fastStoragePreparedDir = setICATDirFromProperties(props, "fast.storagePreparedDir");
 
-		storageArchiveDir = setICATDirFromProperties(props, "storageArchiveDir");
-		storageZipDir = setICATDirFromProperties(props, "storageZipDir");
-		storageDir = setICATDirFromProperties(props, "storageDir");
-		storagePreparedDir = setICATDirFromProperties(props, "storagePreparedDir");
+		slowStorageZipDir = setICATDirFromProperties(props, "slow.storageZipDir");
+		slowStorageDir = setICATDirFromProperties(props, "slow.storageDir");
+		slowStoragePreparedDir = setICATDirFromProperties(props, "slow.storagePreparedDir");
 	}
 	
 	public static StoragePropertyHandler getInstance() {
@@ -40,30 +45,38 @@ public class StoragePropertyHandler {
             instance = new StoragePropertyHandler();
         }
         return instance;
-    }
+    }	
 
-	public String getStorageArchiveDir() {
-		return storageArchiveDir;
+	public String getFastStorageZipDir() {
+		return fastStorageZipDir;
 	}
 
-	public String getStorageDir() {
-		return storageDir;
+	public String getFastStorageDir() {
+		return fastStorageDir;
 	}
 
-	public String getStorageZipDir() {
-		return storageZipDir;
+	public String getFastStoragePreparedDir() {
+		return fastStoragePreparedDir;
 	}
 
-	public String getStoragePreparedDir() {
-		return storagePreparedDir;
+	public String getSlowStorageZipDir() {
+		return slowStorageZipDir;
+	}
+
+	public String getSlowStorageDir() {
+		return slowStorageDir;
+	}
+
+	public String getSlowStoragePreparedDir() {
+		return slowStoragePreparedDir;
 	}
 
 	private String setICATDirFromProperties(Properties props, String property) {
 		String res = props.getProperty(property);
 		if (res == null) {
-			String msg = "Property " + property + " must be set.";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
+			String msg = "Property " + property + " left unset.";
+			logger.info(msg);
+			return null;
 		}
 
 		File tmp = new File(res);

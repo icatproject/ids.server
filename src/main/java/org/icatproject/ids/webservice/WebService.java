@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
+
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
@@ -30,6 +31,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
+import org.apache.commons.io.IOUtils;
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
@@ -332,7 +334,7 @@ public class WebService {
 			@Override
 			public void write(OutputStream output) throws IOException, WebApplicationException {
 				try {
-					fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip", output, offsetLong);
+					IOUtils.copy(fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip", offsetLong), output);
 				} catch (Exception e) {
 					throw new WebApplicationException(e);
 				}
