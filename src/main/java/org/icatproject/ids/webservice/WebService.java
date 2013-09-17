@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
@@ -71,7 +70,6 @@ public class WebService {
 
 	private final static Logger logger = LoggerFactory.getLogger(WebService.class);
 
-	private long archiveWriteDelayMillis = PropertyHandler.getInstance().getWriteDelaySeconds() * 1000L;
 	private Timer timer = new Timer();
 	private RequestQueues requestQueues = RequestQueues.getInstance();
 	private ICATClientBase icatClient;
@@ -608,60 +606,25 @@ public class WebService {
 			// prepared we can safely create a new request (DEs scheduled for
 			// preparation are processed independently)
 			if (state == null || state == RequestedState.PREPARE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setDelay(de.getIcatDataset());
-				} else if (deferredOp == DeferredOp.ARCHIVE) {
+				if (deferredOp == DeferredOp.ARCHIVE) {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				}
 			} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setDelay(de.getIcatDataset());
-				} else if (deferredOp == DeferredOp.RESTORE) {
+				if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				}
 			} else if (state == RequestedState.RESTORE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setDelay(de.getIcatDataset());
-				} else if (deferredOp == DeferredOp.ARCHIVE) {
+				if (deferredOp == DeferredOp.ARCHIVE) {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				}
-			} else if (state == RequestedState.WRITE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-					this.setDelay(de.getIcatDataset());
-				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-				} else {
-					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-				}
-			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-				if (deferredOp == DeferredOp.WRITE) {
-					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-					this.setDelay(de.getIcatDataset());
-				} else if (deferredOp == DeferredOp.RESTORE) {
-					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
-				} else {
-					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
-				}
 			}
 		}
-	}
-
-	private void setDelay(Dataset ds) {
-		Map<Dataset, Long> writeTimes = requestQueues.getWriteTimes();
-
-		writeTimes.put(ds, System.currentTimeMillis() + archiveWriteDelayMillis);
-		final Date d = new Date(writeTimes.get(ds));
-		logger.info("Requesting delay of writing of " + ds + " till " + d);
 	}
 
 	private Long registerDatafile(String sessionid, String name, String datafileFormatId, long tbytes, Dataset dataset)

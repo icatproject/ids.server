@@ -54,10 +54,6 @@ public class RequestHelper {
 	public IdsRequestEntity createRestoreRequest(String sessionId) throws ICATClientException, MalformedURLException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
 	}
-	
-	public IdsRequestEntity createWriteRequest(String sessionId) throws ICATClientException, MalformedURLException {
-		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.WRITE_REQUESTED);
-	}
 
 	public IdsRequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
 			throws ICATClientException, MalformedURLException {
