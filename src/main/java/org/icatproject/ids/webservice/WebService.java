@@ -158,8 +158,10 @@ public class WebService {
 		} catch (ICATSessionException e) {
 			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
 		} catch (ICATInsufficientPrivilegesException e) {
+			requestHelper.setRequestStatus(requestEntity, StatusInfo.ERROR);
 			throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
 		} catch (ICATNoSuchObjectException e) {
+			requestHelper.setRequestStatus(requestEntity, StatusInfo.NOT_FOUND);
 			throw new NotFoundException("Could not find requested objects");
 		} catch (ICATInternalException e) {
 			throw new InternalServerErrorException("Unable to connect to ICAT server");
@@ -646,6 +648,6 @@ public class WebService {
 	}
 
 	private void restartUnfinishedWork() {
-//		List<Request> unfinishedRequests = em.
+		requestHelper.getUnfinishedRequests();
 	}
 }

@@ -159,5 +159,15 @@ public class RequestHelper {
 				"preparedId", preparedId);
 		return (IdsRequestEntity) q.getSingleResult();
 	}
+	
+	public List<IdsRequestEntity> getUnfinishedRequests() {
+		Query q = em.createQuery("SELECT r FROM IdsRequestEntity r "
+				+ "WHERE r.status = org.icatproject.ids.util.StatusInfo.SUBMITTED "
+				+ "OR r.status = org.icatproject.ids.util.StatusInfo.RETRIVING");
+		@SuppressWarnings("unchecked")
+		List<IdsRequestEntity> requests = (List<IdsRequestEntity>) q.getResultList();
+		logger.info("Found " + requests.size() + " unfinished requests");
+		return null;
+	}
 
 }
