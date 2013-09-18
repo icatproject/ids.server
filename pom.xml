@@ -146,12 +146,15 @@
 			<artifactId>commons-codec</artifactId>
 			<version>1.8</version>
 		</dependency>
+		
+		<!-- Contains embedded glassfish classes -->
 		<!-- <dependency>
-    		<groupId>org.apache.wink</groupId>
-    		<artifactId>wink-client</artifactId>
-    		<version>1.3.0</version>
+			<groupId>org.glassfish.extras</groupId>
+			<artifactId>glassfish-embedded-all</artifactId>
+			<version>3.1.1</version>
+			<scope>test</scope>
 		</dependency> -->
-
+            
     </dependencies>
     <build>
         <plugins>

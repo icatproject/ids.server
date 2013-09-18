@@ -167,7 +167,7 @@ public class RequestHelper {
 		@SuppressWarnings("unchecked")
 		List<IdsRequestEntity> requests = (List<IdsRequestEntity>) q.getResultList();
 		logger.info("Found " + requests.size() + " unfinished requests");
-		return null;
+		return requests;
 	}
 
 }

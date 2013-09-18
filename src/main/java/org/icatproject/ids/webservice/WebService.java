@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
@@ -16,6 +17,7 @@ import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.persistence.PersistenceException;
+import javax.resource.spi.IllegalStateException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -647,7 +649,28 @@ public class WebService {
 		return df.getId();
 	}
 
-	private void restartUnfinishedWork() {
-		requestHelper.getUnfinishedRequests();
+	private void restartUnfinishedWork() throws IllegalStateException {
+		List<IdsRequestEntity> requests = requestHelper.getUnfinishedRequests();
+		for (IdsRequestEntity request : requests) {
+			for (IdsDataEntity de : request.getDataEntities()) {
+				DeferredOp deferredOp;
+				switch (request.getRequestedState()) {
+				case RESTORE_REQUESTED:
+					deferredOp = DeferredOp.RESTORE;
+					break;
+				case PREPARE_REQUESTED:
+					deferredOp = DeferredOp.PREPARE;
+					break;
+				case ARCHIVE_REQUESTED:
+					deferredOp = DeferredOp.ARCHIVE;
+					break;
+				default:
+					String msg = "Unrecognized state when restarting unfinished work " + request.getRequestedState();
+					logger.error(msg);
+					throw new IllegalStateException(msg);
+				}
+				queue(de, deferredOp);
+			}
+		}
 	}
 }
