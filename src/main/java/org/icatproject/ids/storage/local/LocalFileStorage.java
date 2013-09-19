@@ -129,6 +129,16 @@ public class LocalFileStorage implements StorageInterface {
 		File file = new File(STORAGE_DIR, datafile.getLocation());
 		file.delete();
 	}
+	
+	@Override
+	public boolean datafileExists(Datafile datafile) throws IOException {
+		if (STORAGE_DIR == null) {
+			throw new UnsupportedOperationException(String.format("Storage %s doesn't support single Datafiles",
+					storageType));
+		}
+		File file = new File(STORAGE_DIR, datafile.getLocation());
+		return file.exists();
+	}
 
 	@Override
 	public InputStream getPreparedZip(String zipName, long offset) throws IOException {

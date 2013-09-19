@@ -1,10 +1,13 @@
 package org.icatproject.ids.webservice;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -175,66 +178,6 @@ public class WebService {
 			throw new InternalServerErrorException(t.getMessage());
 		}
 		return Response.status(200).entity(requestEntity.getPreparedId() + "\n").build();
-	}
-
-	/**
-	 * Returns the current status of a download request. The current status
-	 * values that can be returned are ONLINE and RESTORING.
-	 * 
-	 * TODO: determine if database connection lost TODO: check if INCOMPLETE
-	 * status should be implemented
-	 * 
-	 * @param preparedId
-	 *            The ID of the download request
-	 * @return HTTP response containing the current status of the download
-	 *         request (ONLINE, IMCOMPLETE, RESTORING, ARCHIVED) Note: only
-	 *         ONELINE and RESTORING are implemented
-	 */
-	public Response getStatus(String preparedId) {
-		String status = null;
-
-		// 400
-		if (ValidationHelper.isValidId(preparedId) == false) {
-			throw new BadRequestException("The preparedId parameter is invalid");
-		}
-
-		try {
-			status = requestHelper.getRequestByPreparedId(preparedId).getStatus().name();
-		} catch (EJBException e) {
-			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
-		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
-		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
-		}
-
-		logger.info("New webservice request: getStatus " + "preparedId='" + preparedId + "'");
-
-		// convert internal status to appropriate external status
-		switch (StatusInfo.valueOf(status)) {
-		case SUBMITTED:
-		case INFO_RETRIVING:
-		case INFO_RETRIVED:
-		case RETRIVING:
-			status = Status.RESTORING.name();
-			break;
-		case COMPLETED:
-			status = Status.ONLINE.name();
-			break;
-		case INCOMPLETE:
-			status = Status.INCOMPLETE.name();
-			break;
-		case DENIED:
-			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
-		case NOT_FOUND:
-			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
-		case ERROR:
-			throw new InternalServerErrorException("Unable to find files in storage");
-		default:
-			break;
-		}
-
-		return Response.status(200).entity(status + "\n").build();
 	}
 
 	/**
@@ -436,9 +379,151 @@ public class WebService {
 		return status;
 	}
 
-	public Response getStatus(String sessionId, String investigationIds, String datasetIds, String datafilesIds) {
-		throw new NotImplementedException("The method 'getStatus(sessionId, investigationIds, datasetIds, "
-				+ "datafilesIds)' has not been implemented");
+	/**
+	 * Returns the current status of a download request. The current status
+	 * values that can be returned are ONLINE and RESTORING.
+	 * 
+	 * TODO: determine if database connection lost TODO: check if INCOMPLETE
+	 * status should be implemented
+	 * 
+	 * @param preparedId
+	 *            The ID of the download request
+	 * @return HTTP response containing the current status of the download
+	 *         request (ONLINE, IMCOMPLETE, RESTORING, ARCHIVED) Note: only
+	 *         ONELINE and RESTORING are implemented
+	 */
+	public Response getStatus(String preparedId) {
+		String status = null;
+
+		// 400
+		if (ValidationHelper.isValidId(preparedId) == false) {
+			throw new BadRequestException("The preparedId parameter is invalid");
+		}
+
+		try {
+			status = requestHelper.getRequestByPreparedId(preparedId).getStatus().name();
+		} catch (EJBException e) {
+			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
+		} catch (Exception e) {
+			throw new InternalServerErrorException(e.getMessage());
+		} catch (Throwable t) {
+			throw new InternalServerErrorException(t.getMessage());
+		}
+
+		logger.info("New webservice request: getStatus " + "preparedId='" + preparedId + "'");
+
+		// convert internal status to appropriate external status
+		switch (StatusInfo.valueOf(status)) {
+		case SUBMITTED:
+		case INFO_RETRIVING:
+		case INFO_RETRIVED:
+		case RETRIVING:
+			status = Status.RESTORING.name();
+			break;
+		case COMPLETED:
+			status = Status.ONLINE.name();
+			break;
+		case INCOMPLETE:
+			status = Status.INCOMPLETE.name();
+			break;
+		case DENIED:
+			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
+		case NOT_FOUND:
+			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
+		case ERROR:
+			throw new InternalServerErrorException("Unable to find files in storage");
+		default:
+			break;
+		}
+
+		return Response.status(200).entity(status + "\n").build();
+	}
+
+	public Response getStatus(String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+		// 501
+		if (investigationIds != null) {
+			throw new NotImplementedException("investigationIds are not supported");
+		}
+		// 400
+		if (ValidationHelper.isValidId(sessionId) == false) {
+			throw new BadRequestException("The sessionId parameter is invalid");
+		}
+		if (ValidationHelper.isValidIdList(datasetIds) == false) {
+			throw new BadRequestException("The datasetIds parameter is invalid");
+		}
+		if (ValidationHelper.isValidIdList(datafileIds) == false) {
+			throw new BadRequestException("The datafileIds parameter is invalid");
+		}
+		if (datasetIds == null && datafileIds == null) {
+			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+		}
+
+		logger.info(String.format("New webservice request: getStatus investigationIds=%s, datasetIds=%s, datafileIds=%s",
+				investigationIds, datasetIds, datafileIds));
+
+		 // assuming everything is available
+		StatusInfo internalStatus = StatusInfo.COMPLETED;
+		List<Datafile> datafiles = new ArrayList<Datafile>();
+		List<Dataset> datasets = new ArrayList<Dataset>();		
+		try {
+			// check, if ICAT will permit access to the requested files
+			if (datafileIds != null) {
+				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
+				for (String id : datafileIdList) {
+					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+					datafiles.add(df);
+				}
+			}
+			if (datasetIds != null) {
+				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
+				for (String id : datasetIdList) {
+					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+					datasets.add(ds);
+				}
+			}
+			
+			// check the files availability on fast storage
+			StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+			for (Datafile df : datafiles) {
+				if (!fastStorage.datafileExists(df)) {
+					internalStatus = StatusInfo.INCOMPLETE;
+					break;
+				}
+			}
+			if (internalStatus == StatusInfo.COMPLETED) {
+				for (Dataset ds : datasets) {
+					if (!fastStorage.datasetExists(ds)) {
+						internalStatus = StatusInfo.INCOMPLETE;
+						break;
+					}
+				}
+			}
+		} catch (ICATNoSuchObjectException e) {
+			throw new NotFoundException(e.getMessage());
+		} catch (ICATInsufficientPrivilegesException e) {
+			throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+		} catch (FileNotFoundException e) {
+			throw new NotFoundException(e.getMessage());
+		} catch (Exception e) {
+			throw new InternalServerErrorException(e.getMessage());
+		} catch (Throwable t) {
+			throw new InternalServerErrorException(t.getMessage());
+		}
+
+		// convert internal status to appropriate external status
+		Status status = null;
+		switch (internalStatus) {
+		case COMPLETED:
+			status = Status.ONLINE;
+			break;
+		case INCOMPLETE:
+			status = Status.ARCHIVED;
+			break;
+		default:
+			break;
+		}
+
+		return Response.status(200).entity(status + "\n").build();
 	}
 
 	@GET

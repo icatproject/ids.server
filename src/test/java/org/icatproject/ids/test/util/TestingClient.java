@@ -117,6 +117,21 @@ public class TestingClient {
 		return Status.valueOf(resource.queryParams(params).accept(MediaType.TEXT_PLAIN_TYPE).get(String.class).trim());
 	}
 
+	public Status getStatusTest(String sessionId, String investigationIds, String datasetIds, String datafileIds)
+			throws Exception {
+		Client client = Client.create();
+		MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+		params.add("sessionId", sessionId);
+		if (investigationIds != null)
+			params.add("investigationIds", investigationIds);
+		if (datasetIds != null)
+			params.add("datasetIds", datasetIds);
+		if (datafileIds != null)
+			params.add("datafileIds", datafileIds);
+		WebResource resource = client.resource(idsUrl).path("getStatus");
+		return Status.valueOf(resource.queryParams(params).accept(MediaType.TEXT_PLAIN_TYPE).get(String.class).trim());
+	}
+
 	/*
 	 * Same as original getDataTest but throws all exceptions
 	 */

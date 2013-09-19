@@ -15,6 +15,7 @@ public interface StorageInterface {
 	public long putDatafile(Datafile datafile, InputStream is) throws IOException;
 	public long putDatafile(String relativeLocation, InputStream is) throws IOException;
 	public void deleteDatafile(Datafile datafile) throws IOException;
+	public boolean datafileExists(Datafile datafile) throws IOException;
 	
 	public InputStream getPreparedZip(String zipName, long offset) throws IOException;
 	public void putPreparedZip(String zipName, InputStream is) throws IOException;

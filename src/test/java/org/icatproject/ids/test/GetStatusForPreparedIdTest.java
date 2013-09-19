@@ -20,16 +20,12 @@ import com.sun.jersey.api.client.UniformInterfaceException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class GetStatusTest {
+public class GetStatusForPreparedIdTest {
 
 	private static Setup setup = null;
 	@SuppressWarnings("unused")
 	private static ICAT icat;
 	private TestingClient testingClient;
-
-	// value of the offset in bytes
-	final Integer goodOffset = 20;
-	final Integer badOffset = 99999999;
 
 	@BeforeClass
 	public static void setup() throws Exception {
