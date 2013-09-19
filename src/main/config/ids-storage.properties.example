@@ -1,13 +1,13 @@
 # slow storage
-storageArchiveDir = /home/fisher/icat/icatarchive/
+slow.storageZipDir = /home/fisher/icat/icatarchive/
 
 # fast storage
 
 # contains zipped datasets restored from the slow storage
-storageZipDir = /home/fisher/icat/icatzipdata/
+fast.storageZipDir = /home/fisher/icat/icatzipdata/
 
 # contains unpacked datafiles from restored datasets
-storageDir = /home/wojtek/fisher/icatdata/
+fast.storageDir = /home/wojtek/fisher/icatdata/
 
 # contains zips prepared for users to download (results of /prepareData)
-storagePreparedDir = /home/fisher/icat/icatprepareddata/
+fast.storagePreparedDir = /home/fisher/icat/icatprepareddata/

@@ -14,6 +14,11 @@ requestExpireTimeDays = 7
 # TODO change to space constraint instead of time constraint
 # NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE = 30
 
-# Canonical name of the class implementing StorageInterface, must be on classpath
-plugin.main = org.icatproject.ids.storage.local.FastLocalFileStorage
-plugin.archive = org.icatproject.ids.storage.local.SlowLocalFileStorage
+# Canonical name of the class implementing StorageInterface, must be on classpath.
+# The plugin.archive propety can be removed, a single storage model will be used then.
+plugin.main = org.icatproject.ids.storage.local.LocalFileStorage
+plugin.archive = org.icatproject.ids.storage.local.LocalFileStorage
+
+# A directory, where temporary files are placed, e.g. when preparing a zip
+# for a user request or copying a dataset between storages
+tmpDir = /home/fisher/icat/servertmp/
