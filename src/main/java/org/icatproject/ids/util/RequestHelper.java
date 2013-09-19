@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -167,6 +168,23 @@ public class RequestHelper {
 		@SuppressWarnings("unchecked")
 		List<IdsRequestEntity> requests = (List<IdsRequestEntity>) q.getResultList();
 		logger.info("Found " + requests.size() + " unfinished requests");
+		Iterator<IdsRequestEntity> it = requests.iterator();
+		while(it.hasNext()) {
+			IdsRequestEntity request = it.next();
+			try {
+				for (IdsDatafileEntity df : request.getDatafiles()) {
+					df.setIcatDatafile(icatClient.getDatafileWithDatasetForDatafileId(request.getSessionId(), df.getIcatDatafileId()));
+				}
+				for (IdsDatasetEntity ds : request.getDatasets()) {
+					ds.setIcatDataset(icatClient.getDatasetWithDatafilesForDatasetId(request.getSessionId(), ds.getIcatDatasetId()));
+				}
+			} catch (ICATClientException e) {
+				logger.warn("Couldn't resume processing " + request);
+				setRequestStatus(request, StatusInfo.INCOMPLETE);
+				it.remove();
+			}
+		}
+		logger.info(requests.size() + " unfinished requests ready to be resumed");
 		return requests;
 	}
 
