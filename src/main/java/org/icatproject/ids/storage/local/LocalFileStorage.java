@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
@@ -155,7 +156,7 @@ public class LocalFileStorage implements StorageInterface {
 					+ preparedZip.length() + " bytes)");
 		}
 		InputStream res = new BufferedInputStream(new FileInputStream(preparedZip));
-		res.skip(offset);
+		IOUtils.skip(res, offset);
 		return res;
 	}
 

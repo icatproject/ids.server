@@ -149,7 +149,38 @@ public class TestingClient {
 		// if we use ClientResponse, the UniformInterfaceException is not thrown
 		// automatically; see:
 		// http://jersey.java.net/nonav/apidocs/1.8/jersey/com/sun/jersey/api/client/WebResource.Builder.html#get(java.lang.Class)
-		if (response.getStatus() != 200) {
+		if (response.getStatus() >=300) {
+			throw new UniformInterfaceException(response);
+		}
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		IOUtils.copy(response.getEntityInputStream(), os);
+		return new Response(os, response.getHeaders());
+	}
+	
+	public Response getDataTest(String sessionId, String investigationIds, String datasetIds, String datafileIds,
+			String compress, String zip, String outname, String offset) throws Exception {
+		Client client = Client.create();
+		MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+		params.add("sessionId", sessionId);
+		if (investigationIds != null)
+			params.add("investigationIds", investigationIds);
+		if (datasetIds != null)
+			params.add("datasetIds", datasetIds);
+		if (datafileIds != null)
+			params.add("datafileIds", datafileIds);
+		if (compress != null)
+			params.add("compress", compress);
+		if (zip != null)
+			params.add("zip", zip);
+		if (outname != null)
+			params.add("outname", outname);
+		if (offset != null)
+			params.add("offset", offset);
+		
+		WebResource resource = client.resource(idsUrl).path("getData");
+		ClientResponse response = resource.queryParams(params).accept(MediaType.APPLICATION_OCTET_STREAM_TYPE)
+				.get(ClientResponse.class);
+		if (response.getStatus() >=300) {
 			throw new UniformInterfaceException(response);
 		}
 		ByteArrayOutputStream os = new ByteArrayOutputStream();

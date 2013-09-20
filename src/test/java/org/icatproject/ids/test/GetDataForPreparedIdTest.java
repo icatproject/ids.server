@@ -2,20 +2,9 @@ package org.icatproject.ids.test;
 
 import static org.junit.Assert.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.FileUtils;
@@ -24,6 +13,7 @@ import org.icatproject.ICATService;
 import org.icatproject.ids.test.util.Response;
 import org.icatproject.ids.test.util.Setup;
 import org.icatproject.ids.test.util.TestingClient;
+import org.icatproject.ids.test.util.TestingUtils;
 import org.icatproject.ids.webservice.Status;
 import org.icatproject.ids.webservice.exceptions.ForbiddenException;
 import org.junit.Assert;
@@ -40,7 +30,7 @@ import com.sun.jersey.api.client.UniformInterfaceException;
  * 
  * TODO: move offsets into test.properties?
  */
-public class GetDataTest {
+public class GetDataForPreparedIdTest {
     
     private static Setup setup = null;
     @SuppressWarnings("unused") 
@@ -188,8 +178,8 @@ public class GetDataTest {
         } while (Status.RESTORING.equals(status));
 
         Response response = testingClient.getDataTest(preparedId, null, null);
-        Map<String, String> map = filenameMD5Map(response.getResponse());
-        checkMD5Values(map);
+        Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
+        TestingUtils.checkMD5Values(map, setup);
     }
 
     @Test
@@ -204,8 +194,8 @@ public class GetDataTest {
         } while (Status.RESTORING.equals(status));
 
         Response response = testingClient.getDataTest(preparedId, null, null);
-        Map<String, String> map = filenameMD5Map(response.getResponse());
-        checkMD5Values(map);
+        Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
+        TestingUtils.checkMD5Values(map, setup);
     }
 
     @Test
@@ -220,8 +210,8 @@ public class GetDataTest {
         } while (Status.RESTORING.equals(status));
 
         Response response = testingClient.getDataTest(preparedId, null, null);
-        Map<String, String> map = filenameMD5Map(response.getResponse());
-        checkMD5Values(map);
+        Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
+        TestingUtils.checkMD5Values(map, setup);
     }
 
     @Test
@@ -238,8 +228,8 @@ public class GetDataTest {
         } while (Status.RESTORING.equals(status));
 
         Response response = testingClient.getDataTest(preparedId, null, null);
-        Map<String, String> map = filenameMD5Map(response.getResponse());
-        checkMD5Values(map);
+        Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
+        TestingUtils.checkMD5Values(map, setup);
     }
 
     @Test
@@ -258,8 +248,8 @@ public class GetDataTest {
         Response zipoffset = testingClient.getDataTest(preparedId, null, goodOffset.longValue());
 
         // check that the full zip file is valid
-        Map<String, String> map = filenameMD5Map(zip.getResponse());
-        checkMD5Values(map);
+        Map<String, String> map = TestingUtils.filenameMD5Map(zip.getResponse());
+        TestingUtils.checkMD5Values(map, setup);
 
         // compare the two zip files byte by byte taking into account the offset
         byte[] a = zip.getResponse().toByteArray();
@@ -299,60 +289,5 @@ public class GetDataTest {
         Response response = testingClient.getDataTest(preparedId, "testfilenamewithoutextension", null);
         Assert.assertEquals("Downloaded filename does not match requested filename",
                 response.getFilename(), "testfilenamewithoutextension.zip");
-    }
-
-    /*
-     * Takes in a outputstream of a zip file. Creates a mapping between the filenames and their MD5
-     * sums.
-     */
-    private Map<String, String> filenameMD5Map(ByteArrayOutputStream file) throws IOException,
-            NoSuchAlgorithmException {
-        Map<String, String> filenameMD5map = new HashMap<String, String>();
-        ZipInputStream zis = null;
-        ByteArrayOutputStream os = null;
-        ZipEntry entry = null;
-        try {
-            zis = new ZipInputStream(new ByteArrayInputStream(file.toByteArray()));
-            while ((entry = zis.getNextEntry()) != null) {
-                os = new ByteArrayOutputStream();
-                int len;
-                byte[] buffer = new byte[1024];
-                while ((len = zis.read(buffer)) != -1) { // zis.read will read up to last byte of the entry
-                    os.write(buffer, 0, len);
-                }
-                
-                MessageDigest m = MessageDigest.getInstance("MD5");
-                m.reset();
-                m.update(os.toByteArray());
-                String md5sum = new BigInteger(1, m.digest()).toString(16);
-                while(md5sum.length() < 32 ){
-                    md5sum = "0" + md5sum;
-                }
-                filenameMD5map.put(entry.getName(), md5sum);
-            }
-        } finally {
-            if (zis != null) {
-                zis.close();
-            }
-            if (os != null) {
-                os.close();
-            }
-        }
-        return filenameMD5map;
-    }
-
-    private void checkMD5Values(Map<String, String> map) {
-        Iterator<Map.Entry<String, String>> it = map.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, String> pairs = (Map.Entry<String, String>) it.next();
-            String correctMD5 = setup.getFilenameMD5().get(pairs.getKey());
-            if (correctMD5 == null) {
-                Assert.fail("Cannot find MD5 sum for filename '" + pairs.getKey() + "'");
-            }
-            
-            Assert.assertEquals("Stored MD5 sum for " + pairs.getKey()
-                    + " does not match downloaded file", correctMD5, pairs.getValue());
-            it.remove();
-        }
     }
 }
