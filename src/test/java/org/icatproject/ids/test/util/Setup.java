@@ -64,7 +64,7 @@ public class Setup {
 	private ICAT icat;
 	private Facility fac;
 	private DatasetType dsType;
-	private String supportedDatafileFormat;
+	private DatafileFormat supportedDatafileFormat;
 
 	public Setup() throws Exception {
 		InputStream is = getClass().getResourceAsStream("/test.properties");
@@ -114,12 +114,11 @@ public class Setup {
 			dsType.setName("DatasetType_" + timestamp);
 			dsType.setId(icat.create(goodSessionId, dsType));
 
-			supportedDatafileFormat = "test_format";
-			DatafileFormat dfFormat = new DatafileFormat();
-			dfFormat.setFacility(fac);
-			dfFormat.setName(supportedDatafileFormat);
-			dfFormat.setVersion("42.0.0");
-			dfFormat.setId(icat.create(goodSessionId, dfFormat));
+			supportedDatafileFormat = new DatafileFormat();
+			supportedDatafileFormat.setFacility(fac);
+			supportedDatafileFormat.setName("test_format");
+			supportedDatafileFormat.setVersion("42.0.0");
+			supportedDatafileFormat.setId(icat.create(goodSessionId, supportedDatafileFormat));
 
 			InvestigationType invType = new InvestigationType();
 			invType.setName("Not null");
@@ -307,7 +306,7 @@ public class Setup {
 		return icatUrl;
 	}
 
-	public String getSupportedDatafileFormat() {
+	public DatafileFormat getSupportedDatafileFormat() {
 		return supportedDatafileFormat;
 	}
 

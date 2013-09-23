@@ -40,17 +40,14 @@ import org.apache.commons.io.IOUtils;
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
+import org.icatproject.IcatExceptionType;
+import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
-import org.icatproject.ids.icatclient.ICATClientBase;
-import org.icatproject.ids.icatclient.ICATClientFactory;
-import org.icatproject.ids.icatclient.exceptions.ICATInsufficientPrivilegesException;
-import org.icatproject.ids.icatclient.exceptions.ICATInternalException;
-import org.icatproject.ids.icatclient.exceptions.ICATNoSuchObjectException;
-import org.icatproject.ids.icatclient.exceptions.ICATSessionException;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.thread.ProcessQueue;
+import org.icatproject.ids.util.Icat;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
@@ -78,7 +75,9 @@ public class WebService {
 
 	private Timer timer = new Timer();
 	private RequestQueues requestQueues = RequestQueues.getInstance();
-	private ICATClientBase icatClient;
+	
+	@EJB
+	private Icat icatClient;
 
 	@EJB
 	private RequestHelper requestHelper;
@@ -88,7 +87,6 @@ public class WebService {
 		logger.info("creating WebService");
 		timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
 				.getProcessQueueIntervalSeconds() * 1000L);
-		icatClient = ICATClientFactory.getInstance().createICATInterface();
 		restartUnfinishedWork();
 	}
 
@@ -161,16 +159,22 @@ public class WebService {
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.PREPARE);
 			}
-		} catch (ICATSessionException e) {
-			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
-		} catch (ICATInsufficientPrivilegesException e) {
-			requestHelper.setRequestStatus(requestEntity, StatusInfo.ERROR);
-			throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
-		} catch (ICATNoSuchObjectException e) {
-			requestHelper.setRequestStatus(requestEntity, StatusInfo.NOT_FOUND);
-			throw new NotFoundException("Could not find requested objects");
-		} catch (ICATInternalException e) {
-			throw new InternalServerErrorException("Unable to connect to ICAT server");
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			switch (type) {
+			case SESSION:
+				throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+			case INSUFFICIENT_PRIVILEGES:
+				requestHelper.setRequestStatus(requestEntity, StatusInfo.ERROR);
+				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+			case NO_SUCH_OBJECT_FOUND:
+				requestHelper.setRequestStatus(requestEntity, StatusInfo.NOT_FOUND);
+				throw new NotFoundException("Could not find requested objects");
+			case INTERNAL:
+				throw new InternalServerErrorException("Unable to connect to ICAT server");
+			default:
+				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+			}
 		} catch (PersistenceException e) {
 			throw new InternalServerErrorException("Unable to connect to the database");
 		} catch (Exception e) {
@@ -242,8 +246,14 @@ public class WebService {
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.ARCHIVE);
 			}
-		} catch (ICATSessionException e) {
-			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			switch (type) {
+			case SESSION:
+				throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+			default:
+				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+			}
 		} catch (PersistenceException e) {
 			throw new InternalServerErrorException("Unable to connect to the database");
 		} catch (Exception e) {
@@ -391,10 +401,16 @@ public class WebService {
 					}
 				}
 			}
-		} catch (ICATNoSuchObjectException e) {
-			throw new NotFoundException(e.getMessage());
-		} catch (ICATInsufficientPrivilegesException e) {
-			throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			switch (type) {
+			case INSUFFICIENT_PRIVILEGES:
+				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+			case NO_SUCH_OBJECT_FOUND:
+				throw new NotFoundException(e.getMessage());
+			default:
+				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+			}
 		} catch (FileNotFoundException e) {
 			throw new NotFoundException(e.getMessage());
 		} catch (Exception e) {
@@ -603,10 +619,16 @@ public class WebService {
 					requestHelper.addDataset(sessionId, restoreRequest, ds);
 				}
 			}
-		} catch (ICATNoSuchObjectException e) {
-			throw new NotFoundException(e.getMessage());
-		} catch (ICATInsufficientPrivilegesException e) {
-			throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			switch (type) {
+			case INSUFFICIENT_PRIVILEGES:
+				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+			case NO_SUCH_OBJECT_FOUND:
+				throw new NotFoundException(e.getMessage());
+			default:
+				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+			}
 		} catch (FileNotFoundException e) {
 			throw new NotFoundException(e.getMessage());
 		} catch (Exception e) {
@@ -674,11 +696,12 @@ public class WebService {
 	@Path("put")
 	@Consumes("application/octet-stream")
 	public Response put(InputStream body, @QueryParam("sessionId") String sessionId, @QueryParam("name") String name,
-			@QueryParam("datafileFormatId") String datafileFormatId, @QueryParam("datasetId") String datasetId,
+			@QueryParam("datafileFormatId") String datafileFormatIdString, @QueryParam("datasetId") String datasetId,
 			@QueryParam("description") String description, @QueryParam("doi") String doi,
 			@QueryParam("datafileCreateTime") String datafileCreateTime,
 			@QueryParam("datafileModTime") String datafileModTime) throws Exception {
 		logger.info(String.format("put received, name=%s", name));
+		long datafileFormatId;
 
 		if (ValidationHelper.isValidId(sessionId) == false) {
 			throw new BadRequestException("The sessionId parameter is invalid");
@@ -686,8 +709,13 @@ public class WebService {
 		if (name == null) {
 			throw new BadRequestException("The name parameter must be set");
 		}
-		if (datafileFormatId == null) {
+		if (datafileFormatIdString == null) {
 			throw new BadRequestException("The datafileFormatId parameter must be set");
+		}
+		try {
+			datafileFormatId = Long.parseLong(datafileFormatIdString);
+		} catch (NumberFormatException e) {
+			throw new BadRequestException("The datafileFormatId parameter must be of type long");
 		}
 		if (datasetId == null) {
 			throw new BadRequestException("The datasetId parameter must be set");
@@ -771,10 +799,16 @@ public class WebService {
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.RESTORE);
 			}
-		} catch (ICATSessionException e) {
-			throw new ForbiddenException("The sessionId parameter is invalid or has expired");
-		} catch (ICATInternalException e) {
-			throw new InternalServerErrorException("Unable to connect to ICAT server");
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			switch (type) {
+			case SESSION:
+				throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+			case INTERNAL:
+				throw new InternalServerErrorException("Unable to connect to ICAT server");
+			default:
+				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+			}
 		} catch (PersistenceException e) {
 			throw new InternalServerErrorException("Unable to connect to the database");
 		} catch (Exception e) {
@@ -838,7 +872,7 @@ public class WebService {
 		}
 	}
 
-	private Long registerDatafile(String sessionid, String name, String datafileFormatId, long tbytes, Dataset dataset)
+	private Long registerDatafile(String sessionid, String name, long datafileFormatId, long tbytes, Dataset dataset)
 			throws Exception {
 		final Datafile df = new Datafile();
 		String location = new File(dataset.getLocation(), name).getPath();

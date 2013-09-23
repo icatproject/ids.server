@@ -1,6 +1,5 @@
 package org.icatproject.ids.util;
 
-import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -10,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -18,13 +17,11 @@ import javax.persistence.Query;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
+import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsDatafileEntity;
 import org.icatproject.ids.entity.IdsDatasetEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
-import org.icatproject.ids.icatclient.ICATClientBase;
-import org.icatproject.ids.icatclient.ICATClientFactory;
-import org.icatproject.ids.icatclient.exceptions.ICATClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,36 +31,32 @@ public class RequestHelper {
 	private final static String DEFAULT_ZIP = "false";
 	private final static Logger logger = LoggerFactory.getLogger(RequestHelper.class);
 	private PropertyHandler properties = PropertyHandler.getInstance();
-	private ICATClientBase icatClient;
 
 	@PersistenceContext(unitName = "IDS-PU")
 	private EntityManager em;
 
-	@PostConstruct
-	public void postConstruct() throws MalformedURLException, ICATClientException {
-		icatClient = ICATClientFactory.getInstance().createICATInterface();
-	}
+	@EJB
+	private Icat icatServiceFacade;
 
 	public IdsRequestEntity createPrepareRequest(String sessionId, String compress, String zip)
-			throws ICATClientException, MalformedURLException {
+			throws IcatException_Exception {
 		return createRequest(sessionId, compress, zip, RequestedState.PREPARE_REQUESTED);
 	}
 
-	public IdsRequestEntity createArchiveRequest(String sessionId) throws MalformedURLException, ICATClientException {
+	public IdsRequestEntity createArchiveRequest(String sessionId) throws IcatException_Exception {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.ARCHIVE_REQUESTED);
 	}
 
-	public IdsRequestEntity createRestoreRequest(String sessionId) throws ICATClientException, MalformedURLException {
+	public IdsRequestEntity createRestoreRequest(String sessionId) throws IcatException_Exception {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
 	}
 
 	private IdsRequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
-			throws ICATClientException, MalformedURLException {
-		ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
+			throws IcatException_Exception {
 		Calendar expireDate = Calendar.getInstance();
 		expireDate.add(Calendar.DATE, properties.getRequestExpireTimeDays());
 
-		String username = client.getUserId(sessionId);
+		String username = icatServiceFacade.getUserName(sessionId);
 
 		IdsRequestEntity requestEntity = new IdsRequestEntity();
 		requestEntity.setSessionId(sessionId);
@@ -75,7 +68,7 @@ public class RequestHelper {
 		requestEntity.setExpireTime(expireDate.getTime());
 		requestEntity.setRequestedState(requestedState);
 
-		try{
+		try {
 			em.persist(requestEntity);
 		} catch (Exception e) {
 			logger.error("Couldn't persist " + requestEntity + ", exception: " + e.getMessage());
@@ -85,16 +78,16 @@ public class RequestHelper {
 		return requestEntity;
 	}
 
-	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds) throws Exception {
+	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds) throws NumberFormatException, IcatException_Exception {
 		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 
 		for (String id : datasetIdList) {
-			Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+			Dataset ds = icatServiceFacade.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
 			addDataset(sessionId, requestEntity, ds);
 		}
 	}
-	
-	public void addDataset(String sessionId, IdsRequestEntity requestEntity, Dataset dataset) throws Exception {
+
+	public void addDataset(String sessionId, IdsRequestEntity requestEntity, Dataset dataset) {
 		IdsDatasetEntity newDataset = new IdsDatasetEntity();
 		newDataset.setIcatDatasetId(dataset.getId());
 		newDataset.setIcatDataset(dataset);
@@ -105,16 +98,16 @@ public class RequestHelper {
 		em.merge(requestEntity);
 	}
 
-	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds) throws Exception {
+	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds) throws NumberFormatException, IcatException_Exception {
 		List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
 
 		for (String id : datafileIdList) {
-			Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+			Datafile df = icatServiceFacade.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
 			addDatafile(sessionId, requestEntity, df);
 		}
 	}
-	
-	public void addDatafile(String sessionId, IdsRequestEntity requestEntity, Datafile datafile) throws Exception {
+
+	public void addDatafile(String sessionId, IdsRequestEntity requestEntity, Datafile datafile) {
 		IdsDatafileEntity newDatafile = new IdsDatafileEntity();
 		newDatafile.setIcatDatafileId(datafile.getId());
 		newDatafile.setIcatDatafile(datafile);
@@ -138,7 +131,7 @@ public class RequestHelper {
 		finalStatuses.add(StatusInfo.INCOMPLETE);
 
 		// assuming that everything went OK
-		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED; 
+		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED;
 		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
 		for (IdsDataEntity de : request.getDataEntities()) {
 			logger.info("Status of " + de + " is " + de.getStatus());
@@ -165,7 +158,7 @@ public class RequestHelper {
 				"preparedId", preparedId);
 		return (IdsRequestEntity) q.getSingleResult();
 	}
-	
+
 	public List<IdsRequestEntity> getUnfinishedRequests() {
 		Query q = em.createQuery("SELECT r FROM IdsRequestEntity r "
 				+ "WHERE r.status = org.icatproject.ids.util.StatusInfo.SUBMITTED "
@@ -174,16 +167,18 @@ public class RequestHelper {
 		List<IdsRequestEntity> requests = (List<IdsRequestEntity>) q.getResultList();
 		logger.info("Found " + requests.size() + " unfinished requests");
 		Iterator<IdsRequestEntity> it = requests.iterator();
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			IdsRequestEntity request = it.next();
 			try {
 				for (IdsDatafileEntity df : request.getDatafiles()) {
-					df.setIcatDatafile(icatClient.getDatafileWithDatasetForDatafileId(request.getSessionId(), df.getIcatDatafileId()));
+					df.setIcatDatafile(icatServiceFacade.getDatafileWithDatasetForDatafileId(request.getSessionId(),
+							df.getIcatDatafileId()));
 				}
 				for (IdsDatasetEntity ds : request.getDatasets()) {
-					ds.setIcatDataset(icatClient.getDatasetWithDatafilesForDatasetId(request.getSessionId(), ds.getIcatDatasetId()));
+					ds.setIcatDataset(icatServiceFacade.getDatasetWithDatafilesForDatasetId(request.getSessionId(),
+							ds.getIcatDatasetId()));
 				}
-			} catch (ICATClientException e) {
+			} catch (IcatException_Exception e) {
 				logger.warn("Couldn't resume processing " + request);
 				setRequestStatus(request, StatusInfo.INCOMPLETE);
 				it.remove();
