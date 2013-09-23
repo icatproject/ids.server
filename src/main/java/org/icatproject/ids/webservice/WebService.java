@@ -355,7 +355,7 @@ public class WebService {
 				investigationIds, datasetIds, datafileIds));
 
 		// assuming everything is available
-		StatusInfo internalStatus = StatusInfo.COMPLETED;
+		Status status = Status.ONLINE;
 		List<Datafile> datafiles = new ArrayList<Datafile>();
 		List<Dataset> datasets = new ArrayList<Dataset>();
 		try {
@@ -379,14 +379,14 @@ public class WebService {
 			StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
 			for (Datafile df : datafiles) {
 				if (!fastStorage.datafileExists(df)) {
-					internalStatus = StatusInfo.INCOMPLETE;
+					status = Status.ARCHIVED;
 					break;
 				}
 			}
-			if (internalStatus == StatusInfo.COMPLETED) {
+			if (status != Status.ARCHIVED) {
 				for (Dataset ds : datasets) {
 					if (!fastStorage.datasetExists(ds)) {
-						internalStatus = StatusInfo.INCOMPLETE;
+						status = Status.ARCHIVED;
 						break;
 					}
 				}
@@ -401,19 +401,6 @@ public class WebService {
 			throw new InternalServerErrorException(e.getMessage());
 		} catch (Throwable t) {
 			throw new InternalServerErrorException(t.getMessage());
-		}
-
-		// convert internal status to appropriate external status
-		Status status = null;
-		switch (internalStatus) {
-		case COMPLETED:
-			status = Status.ONLINE;
-			break;
-		case INCOMPLETE:
-			status = Status.ARCHIVED;
-			break;
-		default:
-			break;
 		}
 
 		return Response.status(200).entity(status + "\n").build();
@@ -577,6 +564,8 @@ public class WebService {
 
 		final List<Datafile> datafiles = new ArrayList<Datafile>();
 		final List<Dataset> datasets = new ArrayList<Dataset>();
+		Status status = Status.ONLINE;
+		IdsRequestEntity restoreRequest = null;
 		try {
 			// check, if ICAT will permit access to the requested files
 			if (datafileIds != null) {
@@ -598,12 +587,20 @@ public class WebService {
 			StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
 			for (Datafile df : datafiles) {
 				if (!fastStorage.datafileExists(df)) {
-					throw new FileNotFoundException(df.toString());
+					status = Status.ARCHIVED;
+					if (restoreRequest == null) {
+						restoreRequest = requestHelper.createRestoreRequest(sessionId);
+					}
+					requestHelper.addDatafile(sessionId, restoreRequest, df);
 				}
 			}
 			for (Dataset ds : datasets) {
 				if (!fastStorage.datasetExists(ds)) {
-					throw new FileNotFoundException(ds.toString());
+					status = Status.ARCHIVED;
+					if (restoreRequest == null) {
+						restoreRequest = requestHelper.createRestoreRequest(sessionId);
+					}
+					requestHelper.addDataset(sessionId, restoreRequest, ds);
 				}
 			}
 		} catch (ICATNoSuchObjectException e) {
@@ -616,6 +613,15 @@ public class WebService {
 			throw new InternalServerErrorException(e.getMessage());
 		} catch (Throwable t) {
 			throw new InternalServerErrorException(t.getMessage());
+		}
+		
+		if (restoreRequest != null) {
+			for (IdsDataEntity de : restoreRequest.getDataEntities()) {
+				queue(de, DeferredOp.RESTORE);
+			}
+		}		
+		if (status == Status.ARCHIVED) {
+			throw new NotFoundException("Some files have not been restored. Restoration requested");
 		}
 
 		// if no outname supplied give default name also suffix with .zip if

@@ -1,7 +1,6 @@
 package org.icatproject.ids.util;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -17,6 +16,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 
+import org.icatproject.Datafile;
+import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsDatafileEntity;
 import org.icatproject.ids.entity.IdsDatasetEntity;
@@ -56,7 +57,7 @@ public class RequestHelper {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
 	}
 
-	public IdsRequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
+	private IdsRequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
 			throws ICATClientException, MalformedURLException {
 		ICATClientBase client = ICATClientFactory.getInstance().createICATInterface();
 		Calendar expireDate = Calendar.getInstance();
@@ -86,37 +87,41 @@ public class RequestHelper {
 
 	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds) throws Exception {
 		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
-		List<IdsDatasetEntity> newDatasetList = new ArrayList<IdsDatasetEntity>();
 
 		for (String id : datasetIdList) {
-			IdsDatasetEntity newDataset = new IdsDatasetEntity();
-			newDataset.setIcatDatasetId(Long.parseLong(id));
-			newDataset.setIcatDataset(icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id)));
-			newDataset.setRequest(requestEntity);
-			newDataset.setStatus(StatusInfo.SUBMITTED);
-			newDatasetList.add(newDataset);
-			em.persist(newDataset);
+			Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+			addDataset(sessionId, requestEntity, ds);
 		}
-
-		requestEntity.setDatasets(newDatasetList);
+	}
+	
+	public void addDataset(String sessionId, IdsRequestEntity requestEntity, Dataset dataset) throws Exception {
+		IdsDatasetEntity newDataset = new IdsDatasetEntity();
+		newDataset.setIcatDatasetId(dataset.getId());
+		newDataset.setIcatDataset(dataset);
+		newDataset.setRequest(requestEntity);
+		newDataset.setStatus(StatusInfo.SUBMITTED);
+		em.persist(newDataset);
+		requestEntity.getDatasets().add(newDataset);
 		em.merge(requestEntity);
 	}
 
 	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds) throws Exception {
 		List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
-		List<IdsDatafileEntity> newDatafileList = new ArrayList<IdsDatafileEntity>();
 
 		for (String id : datafileIdList) {
-			IdsDatafileEntity newDatafile = new IdsDatafileEntity();
-			newDatafile.setIcatDatafileId(Long.parseLong(id));
-			newDatafile.setIcatDatafile(icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id)));
-			newDatafile.setRequest(requestEntity);
-			newDatafile.setStatus(StatusInfo.SUBMITTED);
-			newDatafileList.add(newDatafile);
-			em.persist(newDatafile);
+			Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+			addDatafile(sessionId, requestEntity, df);
 		}
-
-		requestEntity.setDatafiles(newDatafileList);
+	}
+	
+	public void addDatafile(String sessionId, IdsRequestEntity requestEntity, Datafile datafile) throws Exception {
+		IdsDatafileEntity newDatafile = new IdsDatafileEntity();
+		newDatafile.setIcatDatafileId(datafile.getId());
+		newDatafile.setIcatDatafile(datafile);
+		newDatafile.setRequest(requestEntity);
+		newDatafile.setStatus(StatusInfo.SUBMITTED);
+		em.persist(newDatafile);
+		requestEntity.getDatafiles().add(newDatafile);
 		em.merge(requestEntity);
 	}
 

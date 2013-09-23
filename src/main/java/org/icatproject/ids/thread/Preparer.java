@@ -47,11 +47,11 @@ public class Preparer implements Runnable {
 		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
 		
 		// if one of the previous DataEntities of the Request failed, there's no point continuing with this one
-		if (de.getRequest().getStatus() == StatusInfo.INCOMPLETE) {
-			synchronized (deferredOpsQueue) {
-				requestHelper.setDataEntityStatus(de, StatusInfo.INCOMPLETE);
-			}
-		}		
+//		if (de.getRequest().getStatus() == StatusInfo.INCOMPLETE) {
+//			synchronized (deferredOpsQueue) {
+//				requestHelper.setDataEntityStatus(de, StatusInfo.INCOMPLETE);
+//			}
+//		}		
 		// if this is the first DE of the Request being processed, set the Request status to RETRIVING
 		if (de.getRequest().getStatus() == StatusInfo.SUBMITTED) {
 			synchronized (deferredOpsQueue) {
