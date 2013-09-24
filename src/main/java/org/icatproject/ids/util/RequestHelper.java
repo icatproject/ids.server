@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,6 +23,7 @@ import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsDatafileEntity;
 import org.icatproject.ids.entity.IdsDatasetEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
+import org.icatproject.ids.entity.IdsWriteTimesEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,7 +80,8 @@ public class RequestHelper {
 		return requestEntity;
 	}
 
-	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds) throws NumberFormatException, IcatException_Exception {
+	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds)
+			throws NumberFormatException, IcatException_Exception {
 		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 
 		for (String id : datasetIdList) {
@@ -98,7 +101,8 @@ public class RequestHelper {
 		em.merge(requestEntity);
 	}
 
-	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds) throws NumberFormatException, IcatException_Exception {
+	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds)
+			throws NumberFormatException, IcatException_Exception {
 		List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
 
 		for (String id : datafileIdList) {
@@ -186,6 +190,37 @@ public class RequestHelper {
 		}
 		logger.info(requests.size() + " unfinished requests ready to be resumed");
 		return requests;
+	}
+
+	/*
+	 * This method has to be synchronized manually on deferredOpsQueue. This
+	 * caveat applies also to other methods operating on IdsWriteTimeEntity. It
+	 * doesn't synchronize by default in order to avoid deadlocks and improve
+	 * flexibility.
+	 */
+	public void setWriteTime(Dataset ds, Long time) {
+		IdsWriteTimesEntity oldWriteTime = em.find(IdsWriteTimesEntity.class, ds.getId());
+		if (oldWriteTime == null) {
+			IdsWriteTimesEntity newWriteTime = new IdsWriteTimesEntity(ds.getId(), time);
+			em.persist(newWriteTime);
+		} else {
+			oldWriteTime.setWriteTime(time);
+			em.merge(oldWriteTime);
+		}
+
+		Map<Dataset, Long> writeTimes = RequestQueues.getInstance().getWriteTimes();
+		writeTimes.put(ds, time);
+	}
+
+	public void removeWriteTime(Dataset ds) {
+		IdsWriteTimesEntity oldWriteTime = em.find(IdsWriteTimesEntity.class, ds.getId());
+		if (oldWriteTime == null) {
+			throw new IllegalArgumentException(String.format(
+					"Write time for Dataset %s doesn't exist in the database and cannot be removed", ds.getId()));
+		}
+		em.remove(oldWriteTime);
+		Map<Dataset, Long> writeTimes = RequestQueues.getInstance().getWriteTimes();
+		writeTimes.remove(ds);
 	}
 
 }

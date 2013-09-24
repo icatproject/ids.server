@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Preparer implements Runnable {
 
-	private final static Logger logger = LoggerFactory.getLogger(ProcessQueue.class);
+	private final static Logger logger = LoggerFactory.getLogger(Preparer.class);
 
 	private IdsDataEntity de;
 	private RequestQueues requestQueues;

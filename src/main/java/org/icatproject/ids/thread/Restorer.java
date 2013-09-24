@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Restorer implements Runnable {
 
-	private final static Logger logger = LoggerFactory.getLogger(ProcessQueue.class);
+	private final static Logger logger = LoggerFactory.getLogger(Restorer.class);
 
 	private IdsDataEntity de;
 	private RequestQueues requestQueues;

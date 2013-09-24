@@ -73,9 +73,10 @@ public class WebService {
 
 	private final static Logger logger = LoggerFactory.getLogger(WebService.class);
 
+	private long archiveWriteDelayMillis = PropertyHandler.getInstance().getWriteDelaySeconds() * 1000L;
 	private Timer timer = new Timer();
 	private RequestQueues requestQueues = RequestQueues.getInstance();
-	
+
 	@EJB
 	private Icat icatClient;
 
@@ -636,12 +637,12 @@ public class WebService {
 		} catch (Throwable t) {
 			throw new InternalServerErrorException(t.getMessage());
 		}
-		
+
 		if (restoreRequest != null) {
 			for (IdsDataEntity de : restoreRequest.getDataEntities()) {
 				queue(de, DeferredOp.RESTORE);
 			}
-		}		
+		}
 		if (status == Status.ARCHIVED) {
 			throw new NotFoundException("Some files have not been restored. Restoration requested");
 		}
@@ -679,8 +680,8 @@ public class WebService {
 							datasets, datafiles, finalCompress, fastStorage);
 					long skipped = IOUtils.skip(in, offsetLong);
 					if (skipped != offsetLong) {
-						throw new IllegalArgumentException("Offset (" + offsetLong + " bytes) is larger than file size ("
-								+ skipped + " bytes)");
+						throw new IllegalArgumentException("Offset (" + offsetLong
+								+ " bytes) is larger than file size (" + skipped + " bytes)");
 					}
 					IOUtils.copy(in, output);
 				} catch (Exception e) {
@@ -851,25 +852,59 @@ public class WebService {
 			// prepared we can safely create a new request (DEs scheduled for
 			// preparation are processed independently)
 			if (state == null || state == RequestedState.PREPARE_REQUESTED) {
-				if (deferredOp == DeferredOp.ARCHIVE) {
+				if (deferredOp == DeferredOp.WRITE) {
+					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+					this.setDelay(de.getIcatDataset());
+				} else if (deferredOp == DeferredOp.ARCHIVE) {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				}
 			} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-				if (deferredOp == DeferredOp.RESTORE) {
+				if (deferredOp == DeferredOp.WRITE) {
+					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+					this.setDelay(de.getIcatDataset());
+				} else if (deferredOp == DeferredOp.RESTORE) {
 					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				}
 			} else if (state == RequestedState.RESTORE_REQUESTED) {
-				if (deferredOp == DeferredOp.ARCHIVE) {
+				if (deferredOp == DeferredOp.WRITE) {
+					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+					this.setDelay(de.getIcatDataset());
+				} else if (deferredOp == DeferredOp.ARCHIVE) {
 					deferredOpsQueue.put(de, RequestedState.ARCHIVE_REQUESTED);
 				} else {
 					deferredOpsQueue.put(de, RequestedState.RESTORE_REQUESTED);
 				}
+			} else if (state == RequestedState.WRITE_REQUESTED) {
+				if (deferredOp == DeferredOp.WRITE) {
+					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+					this.setDelay(de.getIcatDataset());
+				} else if (deferredOp == DeferredOp.ARCHIVE) {
+					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+				} else {
+					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+				}
+			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+				if (deferredOp == DeferredOp.WRITE) {
+					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+					this.setDelay(de.getIcatDataset());
+				} else if (deferredOp == DeferredOp.RESTORE) {
+					deferredOpsQueue.put(de, RequestedState.WRITE_REQUESTED);
+				} else {
+					deferredOpsQueue.put(de, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+				}
 			}
 		}
+	}
+
+	private void setDelay(Dataset ds) {
+		long newWriteTime = System.currentTimeMillis() + archiveWriteDelayMillis;
+		requestHelper.setWriteTime(ds, newWriteTime);
+		final Date d = new Date(newWriteTime);
+		logger.info("Requesting delay of writing of " + ds + " till " + d);
 	}
 
 	private Long registerDatafile(String sessionid, String name, long datafileFormatId, long tbytes, Dataset dataset)

@@ -34,9 +34,11 @@ public class ProcessQueue extends TimerTask {
 	public void run() {
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
+		Map<Dataset, Long> writeTimes = requestQueues.getWriteTimes();
 
 		try {
 			synchronized (deferredOpsQueue) {
+				final long now = System.currentTimeMillis();
 				final Iterator<Entry<IdsDataEntity, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
 				while (it.hasNext()) {
 					final Entry<IdsDataEntity, RequestedState> opEntry = it.next();
@@ -45,7 +47,23 @@ public class ProcessQueue extends TimerTask {
 					if (!changing.contains(de)) {
 						final RequestedState state = opEntry.getValue();
 						logger.info("Will process " + de + " with " + state);
-						if (state == RequestedState.ARCHIVE_REQUESTED) {
+						if (state == RequestedState.WRITE_REQUESTED) {
+							if (now > writeTimes.get(de.getIcatDataset())) {
+								requestHelper.removeWriteTime(de.getIcatDataset());
+								changing.add(de.getIcatDataset());
+								it.remove();
+								final Thread w = new Thread(new Writer(de, requestHelper));
+								w.start();
+							}
+						} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+							if (now > writeTimes.get(de.getIcatDataset())) {
+								requestHelper.removeWriteTime(de.getIcatDataset());
+								changing.add(de.getIcatDataset());
+								it.remove();
+								final Thread w = new Thread(new WriteThenArchiver(de, requestHelper));
+								w.start();
+							}
+						} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 							changing.add(de.getIcatDataset());
 							it.remove();
 							final Thread w = new Thread(new Archiver(de, requestHelper));

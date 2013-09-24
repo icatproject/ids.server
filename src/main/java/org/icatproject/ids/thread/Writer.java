@@ -1,5 +1,6 @@
 package org.icatproject.ids.thread;
 
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,16 +17,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /*
- * Removes datasets from the fast storage (doesn't write them to slow storage)
+ * Copies datasets across storages (fast to slow)
  */
-public class Archiver implements Runnable {
-	private final static Logger logger = LoggerFactory.getLogger(Archiver.class);
+public class Writer implements Runnable {
+	
+	private final static Logger logger = LoggerFactory.getLogger(Writer.class);
 
 	private IdsDataEntity de;
 	private RequestQueues requestQueues;
 	private RequestHelper requestHelper;
 
-	public Archiver(IdsDataEntity de, RequestHelper requestHelper) {
+	public Writer(IdsDataEntity de, RequestHelper requestHelper) {
 		this.de = de;
 		this.requestQueues = RequestQueues.getInstance();
 		this.requestHelper = requestHelper;
@@ -33,21 +35,31 @@ public class Archiver implements Runnable {
 	
 	@Override
 	public void run() {
-		logger.info("starting Archiver");
+		logger.info("starting WriteThenArchiver");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
+		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
 		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
 		
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
-		Dataset ds = de.getIcatDataset();
+		Dataset ds = de.getIcatDataset();		
 		try {
-			fastStorageInterface.deleteDataset(ds);
-			for (Datafile df : ds.getDatafiles()) {
-				fastStorageInterface.deleteDatafile(df);
+			if (slowStorageInterface == null) {
+				logger.error("WriteThenArchiver can't perform because there's no slow storage");
+				resultingStatus = StatusInfo.ERROR;
+				return;
 			}
-			logger.info("Archive of  " + ds.getLocation() + " succesful");
+			if (fastStorageInterface.datasetExists(ds)) {
+				InputStream is = fastStorageInterface.getDataset(ds);
+				slowStorageInterface.putDataset(ds, is);
+				fastStorageInterface.deleteDataset(ds);
+				for (Datafile df : ds.getDatafiles()) {
+					fastStorageInterface.deleteDatafile(df);
+				}
+			}
+			logger.info("WriteThenArchive of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {
-			logger.error("Archive of " + ds.getLocation() + " failed due to " + e.getMessage());
+			logger.error("WriteThenArchive of " + ds.getLocation() + " failed due to " + e.getMessage());
 			resultingStatus = StatusInfo.INCOMPLETE;
 		} finally {
 			synchronized (deferredOpsQueue) {
@@ -57,4 +69,5 @@ public class Archiver implements Runnable {
 			}
 		}
 	}
+
 }
