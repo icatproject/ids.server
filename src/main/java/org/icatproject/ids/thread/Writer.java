@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
 
-import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.storage.StorageFactory;
@@ -35,7 +34,7 @@ public class Writer implements Runnable {
 	
 	@Override
 	public void run() {
-		logger.info("starting WriteThenArchiver");
+		logger.info("starting Writer");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
 		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
@@ -45,21 +44,17 @@ public class Writer implements Runnable {
 		Dataset ds = de.getIcatDataset();		
 		try {
 			if (slowStorageInterface == null) {
-				logger.error("WriteThenArchiver can't perform because there's no slow storage");
+				logger.error("Writer can't perform because there's no slow storage");
 				resultingStatus = StatusInfo.ERROR;
 				return;
 			}
 			if (fastStorageInterface.datasetExists(ds)) {
 				InputStream is = fastStorageInterface.getDataset(ds);
 				slowStorageInterface.putDataset(ds, is);
-				fastStorageInterface.deleteDataset(ds);
-				for (Datafile df : ds.getDatafiles()) {
-					fastStorageInterface.deleteDatafile(df);
-				}
 			}
-			logger.info("WriteThenArchive of  " + ds.getLocation() + " succesful");
+			logger.info("Write of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {
-			logger.error("WriteThenArchive of " + ds.getLocation() + " failed due to " + e.getMessage());
+			logger.error("Write of " + ds.getLocation() + " failed due to " + e.getMessage());
 			resultingStatus = StatusInfo.INCOMPLETE;
 		} finally {
 			synchronized (deferredOpsQueue) {

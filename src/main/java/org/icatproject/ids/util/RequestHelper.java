@@ -52,6 +52,10 @@ public class RequestHelper {
 	public IdsRequestEntity createRestoreRequest(String sessionId) throws IcatException_Exception {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
 	}
+	
+	public IdsRequestEntity createWriteRequest(String sessionId) throws IcatException_Exception {
+		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.WRITE_REQUESTED);
+	}
 
 	private IdsRequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
 			throws IcatException_Exception {
@@ -199,13 +203,15 @@ public class RequestHelper {
 	 * flexibility.
 	 */
 	public void setWriteTime(Dataset ds, Long time) {
+		logger.info(String.format("Setting write time %s for dataset %s\n", time, ds.getId()));
 		IdsWriteTimesEntity oldWriteTime = em.find(IdsWriteTimesEntity.class, ds.getId());
 		if (oldWriteTime == null) {
 			IdsWriteTimesEntity newWriteTime = new IdsWriteTimesEntity(ds.getId(), time);
 			em.persist(newWriteTime);
 		} else {
+			logger.info(String.format("Updating oldWriteTime from %s to %s", oldWriteTime.getWriteTime(), time));
 			oldWriteTime.setWriteTime(time);
-			em.merge(oldWriteTime);
+			em.persist(oldWriteTime);
 		}
 
 		Map<Dataset, Long> writeTimes = RequestQueues.getInstance().getWriteTimes();
@@ -213,6 +219,7 @@ public class RequestHelper {
 	}
 
 	public void removeWriteTime(Dataset ds) {
+		logger.info("Removing write time for dataset " + ds.getId());
 		IdsWriteTimesEntity oldWriteTime = em.find(IdsWriteTimesEntity.class, ds.getId());
 		if (oldWriteTime == null) {
 			throw new IllegalArgumentException(String.format(

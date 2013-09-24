@@ -746,6 +746,12 @@ public class WebService {
 			logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
 			throw new InternalServerErrorException(e.getMessage());
 		}
+		
+		IdsRequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
+		requestHelper.addDataset(sessionId, requestEntity, ds);
+		for (IdsDataEntity de : requestEntity.getDataEntities()) {
+			queue(de, DeferredOp.WRITE);
+		}
 
 		return Response.status(201).entity(name).build();
 	}
@@ -903,8 +909,7 @@ public class WebService {
 	private void setDelay(Dataset ds) {
 		long newWriteTime = System.currentTimeMillis() + archiveWriteDelayMillis;
 		requestHelper.setWriteTime(ds, newWriteTime);
-		final Date d = new Date(newWriteTime);
-		logger.info("Requesting delay of writing of " + ds + " till " + d);
+		logger.info("Requesting delay of writing of " + ds.getId() + " till " + newWriteTime);
 	}
 
 	private Long registerDatafile(String sessionid, String name, long datafileFormatId, long tbytes, Dataset dataset)

@@ -1,7 +1,5 @@
 package org.icatproject.ids.util;
 
-import java.util.List;
-
 import javax.annotation.PostConstruct;
 import javax.ejb.Stateless;
 
@@ -9,7 +7,6 @@ import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
-import org.icatproject.IcatException;
 import org.icatproject.IcatException_Exception;
 
 @Stateless

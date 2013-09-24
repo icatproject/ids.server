@@ -75,6 +75,8 @@ public class PutTest {
 
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
+		File zipOnSlowStorage = new File(new File(setup.getStorageArchiveDir(), icatDs.getLocation()), "files.zip");
+		
 		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
@@ -84,15 +86,18 @@ public class PutTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 
+		zipOnSlowStorage.delete(); // to check, if the dataset really is going to be written
 		testingClient.putTest(setup.getGoodSessionId(), "uploaded_file2_" + timestamp, setup
 				.getSupportedDatafileFormat().getId().toString(), setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null,
 				null, null, null, fileOnUsersDisk);
 		do {
 			Thread.sleep(1000);
-		} while (!fileOnFastStorage.exists());
+		} while (!fileOnFastStorage.exists() || !zipOnSlowStorage.exists());
 		assertTrue("File " + fileOnFastStorage.getAbsolutePath() + " should have been created, but doesn't exist",
 				fileOnFastStorage.exists());
-
+		assertTrue("File " + zipOnSlowStorage.getAbsolutePath() + " should have been created, but doesn't exist",
+				zipOnSlowStorage.exists());
+		
 		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
