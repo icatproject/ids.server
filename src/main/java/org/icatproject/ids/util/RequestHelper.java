@@ -102,7 +102,6 @@ public class RequestHelper {
 		newDataset.setStatus(StatusInfo.SUBMITTED);
 		em.persist(newDataset);
 		requestEntity.getDatasets().add(newDataset);
-		em.merge(requestEntity);
 	}
 
 	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds)
@@ -123,7 +122,6 @@ public class RequestHelper {
 		newDatafile.setStatus(StatusInfo.SUBMITTED);
 		em.persist(newDatafile);
 		requestEntity.getDatafiles().add(newDatafile);
-		em.merge(requestEntity);
 	}
 
 	public void setDataEntityStatus(IdsDataEntity de, StatusInfo status) {
@@ -140,7 +138,8 @@ public class RequestHelper {
 
 		// assuming that everything went OK
 		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED;
-		logger.info("Will check status of " + request.getDataEntities().size() + " data entities");
+		logger.info(String.format("Will check status of %s data entities (%s DS, %s DF)", 
+				request.getDataEntities().size(), request.getDatasets().size(), request.getDatafiles().size()));
 		for (IdsDataEntity de : request.getDataEntities()) {
 			logger.info("Status of " + de + " is " + de.getStatus());
 			if (!finalStatuses.contains(de.getStatus())) {

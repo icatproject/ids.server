@@ -35,7 +35,11 @@ public class ProcessQueue extends TimerTask {
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
 		Map<Dataset, Long> writeTimes = requestQueues.getWriteTimes();
-
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} // TODO remove; for testing purposes
 		try {
 			synchronized (deferredOpsQueue) {
 				final long now = System.currentTimeMillis();

@@ -792,7 +792,7 @@ public class WebService {
 			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
 		}
 		// at this point we're sure, that all arguments are valid
-		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
+		logger.info("New webservice request: restore " + "investigationIds='" + investigationIds + "' "
 				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
 		try {
@@ -848,6 +848,7 @@ public class WebService {
 			while (iter.hasNext()) {
 				IdsDataEntity oldDe = iter.next();
 				if (oldDe.overlapsWith(de)) {
+					logger.info(String.format("%s will replace %s in the queue", de, oldDe));
 					requestHelper.setDataEntityStatus(oldDe, StatusInfo.INCOMPLETE);
 					state = deferredOpsQueue.get(oldDe);
 					iter.remove();
