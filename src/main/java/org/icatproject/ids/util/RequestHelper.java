@@ -229,5 +229,9 @@ public class RequestHelper {
 		Map<Dataset, Long> writeTimes = RequestQueues.getInstance().getWriteTimes();
 		writeTimes.remove(ds);
 	}
+	
+	public List<IdsWriteTimesEntity> getAllPersistedWriteTimes() {
+		return em.createQuery("select writeTimes from IdsWriteTimesEntity writeTimes", IdsWriteTimesEntity.class).getResultList();
+	}
 
 }

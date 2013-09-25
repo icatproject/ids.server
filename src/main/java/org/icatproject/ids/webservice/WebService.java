@@ -44,6 +44,7 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
+import org.icatproject.ids.entity.IdsWriteTimesEntity;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.thread.ProcessQueue;
@@ -932,6 +933,16 @@ public class WebService {
 	}
 
 	private void restartUnfinishedWork() throws IllegalStateException {
+		// no way to get a sessionId to retrieve a proper Dataset
+		// could be worked around:
+		// -store Dataset IDs instead of Datasets in writeTimes queue
+		// -perform writeTimes queue retrieval in the "for request : requests" loop
+		
+//		List<IdsWriteTimesEntity> writeTimes = requestHelper.getAllPersistedWriteTimes();
+//		for (IdsWriteTimesEntity wt : writeTimes) {
+//			Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, datasetId)
+//		}
+		
 		List<IdsRequestEntity> requests = requestHelper.getUnfinishedRequests();
 		for (IdsRequestEntity request : requests) {
 			for (IdsDataEntity de : request.getDataEntities()) {
