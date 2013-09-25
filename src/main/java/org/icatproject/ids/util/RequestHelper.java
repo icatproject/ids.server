@@ -24,6 +24,7 @@ import org.icatproject.ids.entity.IdsDatafileEntity;
 import org.icatproject.ids.entity.IdsDatasetEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
 import org.icatproject.ids.entity.IdsWriteTimesEntity;
+import org.icatproject.ids.webservice.DeferredOp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,22 +43,22 @@ public class RequestHelper {
 
 	public IdsRequestEntity createPrepareRequest(String sessionId, String compress, String zip)
 			throws IcatException_Exception {
-		return createRequest(sessionId, compress, zip, RequestedState.PREPARE_REQUESTED);
+		return createRequest(sessionId, compress, zip, DeferredOp.PREPARE);
 	}
 
 	public IdsRequestEntity createArchiveRequest(String sessionId) throws IcatException_Exception {
-		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.ARCHIVE_REQUESTED);
+		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.ARCHIVE);
 	}
 
 	public IdsRequestEntity createRestoreRequest(String sessionId) throws IcatException_Exception {
-		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.RESTORE_REQUESTED);
+		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.RESTORE);
 	}
 	
 	public IdsRequestEntity createWriteRequest(String sessionId) throws IcatException_Exception {
-		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, RequestedState.WRITE_REQUESTED);
+		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.WRITE);
 	}
 
-	private IdsRequestEntity createRequest(String sessionId, String compress, String zip, RequestedState requestedState)
+	private IdsRequestEntity createRequest(String sessionId, String compress, String zip, DeferredOp deferredOp)
 			throws IcatException_Exception {
 		Calendar expireDate = Calendar.getInstance();
 		expireDate.add(Calendar.DATE, properties.getRequestExpireTimeDays());
@@ -72,7 +73,7 @@ public class RequestHelper {
 		requestEntity.setCompress(Boolean.parseBoolean(compress));
 		requestEntity.setSubmittedTime(new Date());
 		requestEntity.setExpireTime(expireDate.getTime());
-		requestEntity.setRequestedState(requestedState);
+		requestEntity.setDeferredOp(deferredOp);
 
 		try {
 			em.persist(requestEntity);

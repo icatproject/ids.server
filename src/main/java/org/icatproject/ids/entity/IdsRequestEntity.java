@@ -22,8 +22,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
-import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
+import org.icatproject.ids.webservice.DeferredOp;
 
 @SuppressWarnings("serial")
 @Entity
@@ -51,7 +51,7 @@ public class IdsRequestEntity implements Serializable {
 	private List<IdsDatasetEntity> datasets;
 
 	@Enumerated(EnumType.STRING)
-	private RequestedState requestedState;
+	private DeferredOp deferredOp;
 
 	private String preparedId;
 	private String sessionId;
@@ -68,13 +68,13 @@ public class IdsRequestEntity implements Serializable {
 	}
 
 	public IdsRequestEntity(Long id, String preparedId, String userId, Date submittedTime, Date expireTime,
-			RequestedState type) {
+			DeferredOp type) {
 		this.id = id;
 		this.preparedId = preparedId;
 		this.userId = userId;
 		this.submittedTime = submittedTime;
 		this.expireTime = expireTime;
-		this.requestedState = type;
+		this.deferredOp = type;
 	}
 
 	public Long getId() {
@@ -125,12 +125,12 @@ public class IdsRequestEntity implements Serializable {
 		this.datasets = datasets;
 	}
 
-	public RequestedState getRequestedState() {
-		return requestedState;
+	public DeferredOp getDeferredOp() {
+		return deferredOp;
 	}
 
-	public void setRequestedState(RequestedState requestedState) {
-		this.requestedState = requestedState;
+	public void setDeferredOp(DeferredOp deferredOp) {
+		this.deferredOp = deferredOp;
 	}
 
 	public String getPreparedId() {
@@ -167,7 +167,7 @@ public class IdsRequestEntity implements Serializable {
 
 	@Override
 	public String toString() {
-		return String.format("RequestEntity id=%s, requestedState=%s", id, requestedState);
+		return String.format("RequestEntity id=%s, requestedState=%s", id, deferredOp);
 	}
 
 	public List<IdsDataEntity> getDataEntities() {

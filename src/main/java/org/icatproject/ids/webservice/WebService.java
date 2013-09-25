@@ -935,23 +935,7 @@ public class WebService {
 		List<IdsRequestEntity> requests = requestHelper.getUnfinishedRequests();
 		for (IdsRequestEntity request : requests) {
 			for (IdsDataEntity de : request.getDataEntities()) {
-				DeferredOp deferredOp;
-				switch (request.getRequestedState()) {
-				case RESTORE_REQUESTED:
-					deferredOp = DeferredOp.RESTORE;
-					break;
-				case PREPARE_REQUESTED:
-					deferredOp = DeferredOp.PREPARE;
-					break;
-				case ARCHIVE_REQUESTED:
-					deferredOp = DeferredOp.ARCHIVE;
-					break;
-				default:
-					String msg = "Unrecognized state when restarting unfinished work " + request.getRequestedState();
-					logger.error(msg);
-					throw new IllegalStateException(msg);
-				}
-				queue(de, deferredOp);
+				queue(de, request.getDeferredOp());
 			}
 		}
 	}
