@@ -44,7 +44,6 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
-import org.icatproject.ids.entity.IdsWriteTimesEntity;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.thread.ProcessQueue;
@@ -747,7 +746,7 @@ public class WebService {
 			logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
 			throw new InternalServerErrorException(e.getMessage());
 		}
-		
+
 		IdsRequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
 		requestHelper.addDataset(sessionId, requestEntity, ds);
 		for (IdsDataEntity de : requestEntity.getDataEntities()) {
@@ -763,7 +762,117 @@ public class WebService {
 	public Response delete(@QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds) {
-		throw new NotImplementedException("The method 'delete' has not been implemented");
+		logger.info("delete received");
+		// 501
+		if (investigationIds != null) {
+			throw new NotImplementedException("investigationIds are not supported");
+		}
+		// 400
+		if (ValidationHelper.isValidId(sessionId) == false) {
+			throw new BadRequestException("The sessionId parameter is invalid");
+		}
+		if (ValidationHelper.isValidIdList(datasetIds) == false) {
+			throw new BadRequestException("The datasetIds parameter is invalid");
+		}
+		if (ValidationHelper.isValidIdList(datafileIds) == false) {
+			throw new BadRequestException("The datafileIds parameter is invalid");
+		}
+		if (datasetIds == null && datafileIds == null) {
+			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+		}
+
+		// at this point we're sure, that all arguments are valid
+		logger.info("New webservice request: delete " + "investigationIds='" + investigationIds + "' "
+				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+		
+		final List<Datafile> datafiles = new ArrayList<Datafile>();
+		final List<Dataset> datasets = new ArrayList<Dataset>();
+		Status status = Status.ONLINE;
+		IdsRequestEntity restoreRequest = null;
+		try {
+			// check, if ICAT will permit access to the requested files
+			if (datafileIds != null) {
+				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
+				for (String id : datafileIdList) {
+					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+					datafiles.add(df);
+				}
+			}
+			if (datasetIds != null) {
+				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
+				for (String id : datasetIdList) {
+					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+					datasets.add(ds);
+				}
+			}
+
+			// check the files availability on fast storage
+			StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+			for (Datafile df : datafiles) {
+				if (!fastStorage.datafileExists(df)) {
+					status = Status.ARCHIVED;
+					if (restoreRequest == null) {
+						restoreRequest = requestHelper.createRestoreRequest(sessionId);
+					}
+					requestHelper.addDatafile(sessionId, restoreRequest, df);
+				}
+			}
+			for (Dataset ds : datasets) {
+				if (!fastStorage.datasetExists(ds)) {
+					status = Status.ARCHIVED;
+					if (restoreRequest == null) {
+						restoreRequest = requestHelper.createRestoreRequest(sessionId);
+					}
+					requestHelper.addDataset(sessionId, restoreRequest, ds);
+				}
+			}
+			
+			if (restoreRequest != null) {
+				for (IdsDataEntity de : restoreRequest.getDataEntities()) {
+					queue(de, DeferredOp.RESTORE);
+				}
+			}
+			if (status == Status.ARCHIVED) {
+				throw new FileNotFoundException("Some files have not been restored. Restoration requested");
+			}
+			
+			// if all the files are on the fast storage, delete and request WRITE
+			// TODO in case of datafile deletion, this datafile has to be deleted from its dataset
+			// this should also work after reboot of the service
+			// TODO in case of dataset deletion, it won't be possible to get its location
+			// from ICAT after reboot. Use the location from IdsDatasetEntity in Writer
+			IdsRequestEntity writeRequest = requestHelper.createWriteRequest(sessionId);
+			for (Datafile df : datafiles) {
+				icatClient.deleteDatafile(sessionId, df);
+				requestHelper.addDataset(sessionId, writeRequest, df.getDataset());
+			}
+			for (Dataset ds : datasets) {
+				icatClient.deleteDataset(sessionId, ds);
+				requestHelper.addDataset(sessionId, writeRequest, ds);
+			}
+			for (IdsDataEntity de : writeRequest.getDataEntities()) {
+				queue(de, DeferredOp.WRITE);
+			}
+			
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			switch (type) {
+			case INSUFFICIENT_PRIVILEGES:
+				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+			case NO_SUCH_OBJECT_FOUND:
+				throw new NotFoundException(e.getMessage());
+			default:
+				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+			}
+		} catch (FileNotFoundException e) {
+			throw new NotFoundException(e.getMessage());
+		} catch (Exception e) {
+			throw new InternalServerErrorException(e.getMessage());
+		} catch (Throwable t) {
+			throw new InternalServerErrorException(t.getMessage());
+		}
+
+		return Response.status(200).build();
 	}
 
 	@POST
@@ -910,7 +1019,8 @@ public class WebService {
 
 	private void setDelay(Dataset ds) {
 		long newWriteTime = System.currentTimeMillis() + archiveWriteDelayMillis;
-		requestHelper.setWriteTime(ds, newWriteTime);
+		Map<Dataset, Long> writeTimes = requestQueues.getWriteTimes();
+		writeTimes.put(ds, newWriteTime);
 		logger.info("Requesting delay of writing of " + ds.getId() + " till " + newWriteTime);
 	}
 
@@ -933,16 +1043,6 @@ public class WebService {
 	}
 
 	private void restartUnfinishedWork() throws IllegalStateException {
-		// no way to get a sessionId to retrieve a proper Dataset
-		// could be worked around:
-		// -store Dataset IDs instead of Datasets in writeTimes queue
-		// -perform writeTimes queue retrieval in the "for request : requests" loop
-		
-//		List<IdsWriteTimesEntity> writeTimes = requestHelper.getAllPersistedWriteTimes();
-//		for (IdsWriteTimesEntity wt : writeTimes) {
-//			Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, datasetId)
-//		}
-		
 		List<IdsRequestEntity> requests = requestHelper.getUnfinishedRequests();
 		for (IdsRequestEntity request : requests) {
 			for (IdsDataEntity de : request.getDataEntities()) {

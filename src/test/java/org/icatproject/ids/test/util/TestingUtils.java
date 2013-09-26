@@ -2,6 +2,8 @@ package org.icatproject.ids.test.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -69,6 +71,22 @@ public class TestingUtils {
                     + " does not match downloaded file", correctMD5, pairs.getValue());
             it.remove();
         }
+    }
+    
+    public static int countZipEntries(File zip) throws IOException {
+    	int res = 0;
+    	ZipInputStream in = null;
+    	try {
+	    	in = new ZipInputStream(new FileInputStream(zip));
+	    	while (in.getNextEntry() != null) {
+	    		res++;
+	    	}
+    	} finally {
+    		if (in != null) {
+    			in.close();
+    		}
+    	}
+    	return res;
     }
 
 }

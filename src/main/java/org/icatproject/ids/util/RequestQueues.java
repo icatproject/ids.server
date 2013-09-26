@@ -35,15 +35,6 @@ public class RequestQueues {
 		return changing;
 	}
 
-	/*
-	 * writeTimes map should be changed by RequestHelper only.
-	 * This method should be invoked by other classes only as read-only.
-	 * RequestHelper keeps the map synchronized with the IDS_WRITE_TIMES
-	 * table in the IDS database.
-	 * Clients wishing to add or update the write time for a particular
-	 * dataset should invoke RequestHelper.setWriteTime
-	 * and RequestHelper.removeWriteTime
-	 */
 	public Map<Dataset, Long> getWriteTimes() {
 		return writeTimes;
 	}

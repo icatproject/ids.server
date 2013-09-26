@@ -209,4 +209,18 @@ public class TestingClient {
 		return resource.queryParams(params).type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
 				.accept(MediaType.TEXT_PLAIN_TYPE).put(String.class, in);
 	}
+	
+	public void deleteTest(String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+		Client client = Client.create();
+		MultivaluedMap<String, String> params = new MultivaluedMapImpl();
+		params.add("sessionId", sessionId);
+		if (investigationIds != null)
+			params.add("investigationIds", investigationIds);
+		if (datasetIds != null)
+			params.add("datasetIds", datasetIds);
+		if (datafileIds != null)
+			params.add("datafileIds", datafileIds);
+		WebResource resource = client.resource(idsUrl).path("delete");
+		resource.queryParams(params).delete();
+	}
 }

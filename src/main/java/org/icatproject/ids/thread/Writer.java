@@ -41,8 +41,8 @@ public class Writer implements Runnable {
 		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
 		
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
-		Dataset ds = de.getIcatDataset();		
-		try {
+		Dataset ds = de.getIcatDataset();
+		try {			
 			if (slowStorageInterface == null) {
 				logger.error("Writer can't perform because there's no slow storage");
 				resultingStatus = StatusInfo.ERROR;

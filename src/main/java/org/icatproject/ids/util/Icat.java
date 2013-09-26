@@ -40,4 +40,12 @@ public class Icat {
 	public Long registerDatafile(String sessionId, Datafile datafile) throws IcatException_Exception {
 		return (Long) service.create(sessionId, datafile);
 	}
+	
+	public void deleteDatafile(String sessionId, Datafile df) throws IcatException_Exception {
+		service.delete(sessionId, df);
+	}
+	
+	public void deleteDataset(String sessionId, Dataset ds) throws IcatException_Exception {
+		service.delete(sessionId, ds); // deletes also all the datafiles associated with this dataset
+	}
 }

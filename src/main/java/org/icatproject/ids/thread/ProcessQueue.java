@@ -53,7 +53,7 @@ public class ProcessQueue extends TimerTask {
 						logger.info("Will process " + de + " with " + state);
 						if (state == RequestedState.WRITE_REQUESTED) {
 							if (now > writeTimes.get(de.getIcatDataset())) {
-								requestHelper.removeWriteTime(de.getIcatDataset());
+								writeTimes.remove(de.getIcatDataset());
 								changing.add(de.getIcatDataset());
 								it.remove();
 								final Thread w = new Thread(new Writer(de, requestHelper));
@@ -61,7 +61,7 @@ public class ProcessQueue extends TimerTask {
 							}
 						} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 							if (now > writeTimes.get(de.getIcatDataset())) {
-								requestHelper.removeWriteTime(de.getIcatDataset());
+								writeTimes.remove(de.getIcatDataset());
 								changing.add(de.getIcatDataset());
 								it.remove();
 								final Thread w = new Thread(new WriteThenArchiver(de, requestHelper));
