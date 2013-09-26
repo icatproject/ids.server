@@ -15,7 +15,7 @@ public class StorageFactory {
 
     private StorageFactory() {}
 
-    public static StorageFactory getInstance() {
+    public synchronized static StorageFactory getInstance() {
         if (instance == null) {
             instance = new StorageFactory();
         }

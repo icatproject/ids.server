@@ -40,7 +40,7 @@ public class StoragePropertyHandler {
 		slowStoragePreparedDir = setICATDirFromProperties(props, "slow.storagePreparedDir");
 	}
 	
-	public static StoragePropertyHandler getInstance() {
+	public synchronized static StoragePropertyHandler getInstance() {
         if (instance == null) {
             instance = new StoragePropertyHandler();
         }

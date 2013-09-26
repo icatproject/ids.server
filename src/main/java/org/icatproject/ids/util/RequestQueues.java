@@ -21,7 +21,7 @@ public class RequestQueues {
 		writeTimes = new HashMap<Dataset, Long>();
 	}
 
-	public static RequestQueues getInstance() {
+	public synchronized static RequestQueues getInstance() {
 		if (instance == null)
 			instance = new RequestQueues();
 		return instance;
