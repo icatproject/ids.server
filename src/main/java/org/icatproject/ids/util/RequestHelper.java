@@ -162,15 +162,13 @@ public class RequestHelper {
 	}
 
 	public IdsRequestEntity getRequestByPreparedId(String preparedId) {
-		Query q = em.createQuery("SELECT d FROM IdsRequestEntity d WHERE d.preparedId = :preparedId").setParameter(
+		Query q = em.createNamedQuery("findRequestByPreparedId").setParameter(
 				"preparedId", preparedId);
 		return (IdsRequestEntity) q.getSingleResult();
 	}
 
 	public List<IdsRequestEntity> getUnfinishedRequests() {
-		Query q = em.createQuery("SELECT r FROM IdsRequestEntity r "
-				+ "WHERE r.status = org.icatproject.ids.util.StatusInfo.SUBMITTED "
-				+ "OR r.status = org.icatproject.ids.util.StatusInfo.RETRIVING");
+		Query q = em.createNamedQuery("findUnfinishedRequests"); // TODO untested, was explicit query before
 		@SuppressWarnings("unchecked")
 		List<IdsRequestEntity> requests = (List<IdsRequestEntity>) q.getResultList();
 		logger.info("Found " + requests.size() + " unfinished requests");

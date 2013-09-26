@@ -14,6 +14,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -29,6 +31,12 @@ import org.icatproject.ids.webservice.DeferredOp;
 @Entity
 @Table(name = "IDS_REQUEST")
 @XmlRootElement
+@NamedQueries({
+	@NamedQuery(name="findRequestByPreparedId", query="SELECT d FROM IdsRequestEntity d WHERE d.preparedId = :preparedId"),
+	@NamedQuery(name="findUnfinishedRequests", query="SELECT r FROM IdsRequestEntity r "
+				+ "WHERE r.status = org.icatproject.ids.util.StatusInfo.SUBMITTED "
+				+ "OR r.status = org.icatproject.ids.util.StatusInfo.RETRIVING")
+})
 public class IdsRequestEntity implements Serializable {
 
 	@Id
