@@ -739,13 +739,13 @@ public class WebService {
 		registerDatafile(sessionId, name, datafileFormatId, tbytes, ds);
 		// refresh the DS (contains the new DF)
 		ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(datasetId));
-		try {
-			InputStream is = ZipHelper.zipDataset(ds, false, fastStorage);
-			fastStorage.putDataset(ds, is);
-		} catch (IOException e) {
-			logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
-			throw new InternalServerErrorException(e.getMessage());
-		}
+//		try {
+//			InputStream is = ZipHelper.zipDataset(ds, false, fastStorage);
+//			fastStorage.putDataset(ds, is);
+//		} catch (IOException e) {
+//			logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
+//			throw new InternalServerErrorException(e.getMessage());
+//		}
 
 		IdsRequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
 		requestHelper.addDataset(sessionId, requestEntity, ds);
@@ -836,18 +836,18 @@ public class WebService {
 				throw new FileNotFoundException("Some files have not been restored. Restoration requested");
 			}
 			
-			// if all the files are on the fast storage, delete and request WRITE
-			// TODO in case of datafile deletion, this datafile has to be deleted from its dataset
-			// this should also work after reboot of the service
-			// TODO in case of dataset deletion, it won't be possible to get its location
-			// from ICAT after reboot. Use the location from IdsDatasetEntity in Writer
 			IdsRequestEntity writeRequest = requestHelper.createWriteRequest(sessionId);
 			for (Datafile df : datafiles) {
 				icatClient.deleteDatafile(sessionId, df);
-				requestHelper.addDataset(sessionId, writeRequest, df.getDataset());
+				// update dataset
+				Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, df.getDataset().getId());
+				requestHelper.addDataset(sessionId, writeRequest, ds);
 			}
 			for (Dataset ds : datasets) {
 				icatClient.deleteDataset(sessionId, ds);
+				fastStorage.deleteDataset(ds);
+//				Dataset tmpDs = new Dataset();
+//				tmpDs.setLocation(ds.getLocation());				
 				requestHelper.addDataset(sessionId, writeRequest, ds);
 			}
 			for (IdsDataEntity de : writeRequest.getDataEntities()) {

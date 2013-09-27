@@ -6,12 +6,14 @@ import java.util.Set;
 
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
+import org.icatproject.ids.entity.IdsDatasetEntity;
 import org.icatproject.ids.storage.StorageFactory;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
+import org.icatproject.ids.util.ZipHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +43,18 @@ public class Writer implements Runnable {
 		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
 		
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
-		Dataset ds = de.getIcatDataset();
-		try {			
+		Dataset ds = null;
+		try {
+			if (de instanceof IdsDatasetEntity && !fastStorageInterface.datasetExists(de.getLocation())) {
+				if (slowStorageInterface != null) {
+					slowStorageInterface.deleteDataset(de.getLocation());
+				}
+				return;
+			}
+			ds = de.getIcatDataset();
+			InputStream zipIs = ZipHelper.zipDataset(ds, false, fastStorageInterface);
+			fastStorageInterface.putDataset(ds, zipIs);
+			
 			if (slowStorageInterface == null) {
 				logger.error("Writer can't perform because there's no slow storage");
 				resultingStatus = StatusInfo.ERROR;

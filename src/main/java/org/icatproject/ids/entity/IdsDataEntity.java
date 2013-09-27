@@ -24,4 +24,6 @@ public interface IdsDataEntity {
 	public void setStatus(StatusInfo status);
 
 	public IdsRequestEntity getRequest();
+	
+	public String getLocation();
 }

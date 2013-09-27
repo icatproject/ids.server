@@ -18,7 +18,6 @@ import org.icatproject.ids.test.util.TestingClient;
 import org.icatproject.ids.test.util.TestingUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -61,7 +60,6 @@ public class DeleteTest {
 	}
 	
 	@Test
-	@Ignore // doesn't pass with the current implementation of /delete
 	public void deleteDatafileFromRestoredDatasetTest() throws Exception {
 		final int DF_NUM_FROM_PROPS = 3;
 		final int DS_NUM_FROM_PROPS = 1;
@@ -89,6 +87,35 @@ public class DeleteTest {
 		assertTrue("File " + zipOnSlowStorage.getAbsolutePath() + " should have been created, but doesn't exist",
 				zipOnSlowStorage.exists());
 		assertEquals(1, TestingUtils.countZipEntries(zipOnSlowStorage));
+	}
+	
+	@Test
+	public void deleteRestoredDatasetTest() throws Exception {
+		final int DS_NUM_FROM_PROPS = 1;
+		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
+				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
+
+		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
+		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
+		File zipOnSlowStorage = new File(new File(setup.getStorageArchiveDir(), icatDs.getLocation()), "files.zip");
+		
+		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		do {
+			Thread.sleep(1000);
+		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
+		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				dirOnFastStorage.exists());
+		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
+				zipOnFastStorage.exists());
+
+		testingClient.deleteTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		do {
+			Thread.sleep(1000);
+		} while (zipOnSlowStorage.exists());		
+		assertTrue("File " + zipOnFastStorage.getAbsolutePath() + " should have been deleted, but still exists",
+				!zipOnFastStorage.exists());
+		assertTrue("File " + zipOnSlowStorage.getAbsolutePath() + " should have been deleted, but still exists",
+				!zipOnSlowStorage.exists());
 	}
 	
 }

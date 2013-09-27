@@ -76,6 +76,15 @@ public class LocalFileStorage implements StorageInterface {
 		File zippedDs = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
 		zippedDs.delete();
 	}
+	
+	@Override
+	public void deleteDataset(String location) throws IOException {
+		if (STORAGE_ZIP_DIR == null) {
+			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
+		}
+		File zippedDs = new File(new File(STORAGE_ZIP_DIR, location), "files.zip");
+		zippedDs.delete();
+	}
 
 	@Override
 	public boolean datasetExists(Dataset dataset) throws IOException {
@@ -83,6 +92,15 @@ public class LocalFileStorage implements StorageInterface {
 			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
 		}
 		File zippedDs = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
+		return zippedDs.exists();
+	}
+	
+	@Override
+	public boolean datasetExists(String location) throws IOException {
+		if (STORAGE_ZIP_DIR == null) {
+			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
+		}
+		File zippedDs = new File(new File(STORAGE_ZIP_DIR, location), "files.zip");
 		return zippedDs.exists();
 	}
 
