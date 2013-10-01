@@ -8,18 +8,18 @@
 
     <fileSets>
         <fileSet>
-            <outputDirectory>ids</outputDirectory>
+            <outputDirectory>ids.server</outputDirectory>
             <directory>${basedir}/src/main/scripts</directory>
             <excludes>
                 <exclude>*.dump</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <outputDirectory>ids</outputDirectory>
+            <outputDirectory>ids.server</outputDirectory>
             <directory>${basedir}/src/main/config</directory>
         </fileSet>
         <fileSet>
-            <outputDirectory>ids</outputDirectory>
+            <outputDirectory>ids.server</outputDirectory>
             <directory>${basedir}</directory>
             <filtered>true</filtered>
             <includes>
@@ -31,15 +31,15 @@
 
     <dependencySets>
         <dependencySet>
-            <outputDirectory>ids</outputDirectory>
+            <outputDirectory>ids.server</outputDirectory>
             <useTransitiveDependencies>false</useTransitiveDependencies>
             <includes>
-                <include>org.icatproject:ids</include>
+                <include>org.icatproject:ids.server</include>
             </includes>
         </dependencySet>
 
         <dependencySet>
-            <outputDirectory>ids</outputDirectory>
+            <outputDirectory>ids.server</outputDirectory>
             <useTransitiveDependencies>false</useTransitiveDependencies>
             <unpack>true</unpack>
             <unpackOptions>

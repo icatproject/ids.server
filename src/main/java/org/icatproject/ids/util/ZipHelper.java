@@ -22,10 +22,11 @@ public class ZipHelper {
 
 	private final static Logger logger = LoggerFactory.getLogger(ZipHelper.class);
 
-	public static InputStream zipDataset(Dataset dataset, boolean compress, StorageInterface storageInterface)
-			throws IOException {
-		File tmpZipFile = new File(PropertyHandler.getInstance().getTmpDir(),
-				new Long(System.currentTimeMillis()).toString() + ".zip");
+	public static InputStream zipDataset(Dataset dataset, boolean compress,
+			StorageInterface storageInterface) throws IOException {
+		File tmpZipFile = new File(PropertyHandler.getInstance().getTmpDir(), new Long(
+				System.currentTimeMillis()).toString()
+				+ ".zip");
 		if (dataset.getDatafiles().isEmpty()) {
 			// Create empty file
 			tmpZipFile.createNewFile();
@@ -48,7 +49,7 @@ public class ZipHelper {
 			}
 			for (Datafile df : dataset.getDatafiles()) {
 				logger.info("Adding file " + df.getName() + " to zip");
-				addToZip(df.getName(), zos, storageInterface.getDatafile(df));
+				addToZip(df.getName(), zos, storageInterface.getDatafile(df.getLocation()));
 			}
 		} finally {
 			if (zos != null) {
@@ -62,14 +63,15 @@ public class ZipHelper {
 		return new FileInputStream(tmpZipFile);
 	}
 
-	public static InputStream prepareZipForUserRequest(IdsRequestEntity request, StorageInterface storageInterface)
-			throws IOException {
+	public static InputStream prepareZipForUserRequest(IdsRequestEntity request,
+			StorageInterface storageInterface) throws IOException {
 		return prepareTemporaryZip(request.getPreparedId() + ".zip", request.getIcatDatasets(),
 				request.getIcatDatafiles(), request.isCompress(), storageInterface);
 	}
 
 	public static InputStream prepareTemporaryZip(String zipName, Collection<Dataset> datasets,
-			Collection<Datafile> datafiles, boolean compress, StorageInterface storageInterface) throws IOException {
+			Collection<Datafile> datafiles, boolean compress, StorageInterface storageInterface)
+			throws IOException {
 		File tmpZipFile = new File(PropertyHandler.getInstance().getTmpDir(), zipName);
 		ZipOutputStream zos = null;
 		try {
@@ -87,12 +89,13 @@ public class ZipHelper {
 				zos.setLevel(0);
 			}
 			for (Datafile df : datafiles) {
-				addToZip("Datafile-" + df.getId(), zos, storageInterface.getDatafile(df));
+				addToZip("Datafile-" + df.getId(), zos,
+						storageInterface.getDatafile(df.getLocation()));
 			}
 			for (Dataset ds : datasets) {
 				for (Datafile df : ds.getDatafiles()) {
 					addToZip(String.format("Dataset-%s/Datafile-%s", ds.getId(), df.getId()), zos,
-							storageInterface.getDatafile(df));
+							storageInterface.getDatafile(df.getLocation()));
 				}
 			}
 		} finally {

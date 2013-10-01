@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * removes the files on the fast storage
  */
 public class WriteThenArchiver implements Runnable {
-	
+
 	private final static Logger logger = LoggerFactory.getLogger(WriteThenArchiver.class);
 
 	private IdsDataEntity de;
@@ -33,34 +33,37 @@ public class WriteThenArchiver implements Runnable {
 		this.requestQueues = RequestQueues.getInstance();
 		this.requestHelper = requestHelper;
 	}
-	
+
 	@Override
 	public void run() {
 		logger.info("starting WriteThenArchiver");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
-		
+		StorageInterface slowStorageInterface = StorageFactory.getInstance()
+				.createSlowStorageInterface();
+		StorageInterface fastStorageInterface = StorageFactory.getInstance()
+				.createFastStorageInterface();
+
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
-		Dataset ds = de.getIcatDataset();		
+		Dataset ds = de.getIcatDataset();
 		try {
 			if (slowStorageInterface == null) {
 				logger.error("WriteThenArchiver can't perform because there's no slow storage");
 				resultingStatus = StatusInfo.ERROR;
 				return;
 			}
-			if (fastStorageInterface.datasetExists(ds)) {
-				InputStream is = fastStorageInterface.getDataset(ds);
-				slowStorageInterface.putDataset(ds, is);
-				fastStorageInterface.deleteDataset(ds);
+			if (fastStorageInterface.datasetExists(ds.getLocation())) {
+				InputStream is = fastStorageInterface.getDataset(ds.getLocation());
+				slowStorageInterface.putDataset(ds.getLocation(), is);
+				fastStorageInterface.deleteDataset(ds.getLocation());
 				for (Datafile df : ds.getDatafiles()) {
-					fastStorageInterface.deleteDatafile(df);
+					fastStorageInterface.deleteDatafile(df.getLocation());
 				}
 			}
 			logger.info("WriteThenArchive of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {
-			logger.error("WriteThenArchive of " + ds.getLocation() + " failed due to " + e.getMessage());
+			logger.error("WriteThenArchive of " + ds.getLocation() + " failed due to "
+					+ e.getMessage());
 			resultingStatus = StatusInfo.INCOMPLETE;
 		} finally {
 			synchronized (deferredOpsQueue) {

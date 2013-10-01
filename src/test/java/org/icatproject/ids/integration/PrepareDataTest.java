@@ -1,12 +1,12 @@
-package org.icatproject.ids.test;
+package org.icatproject.ids.integration;
 
+import static org.hamcrest.core.AnyOf.anyOf;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.AnyOf.anyOf;
 
 import java.io.File;
 import java.net.URL;
@@ -18,8 +18,8 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.util.Setup;
-import org.icatproject.ids.test.util.TestingClient;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.TestingClient;
 import org.icatproject.ids.webservice.Status;
 import org.junit.Before;
 import org.junit.BeforeClass;

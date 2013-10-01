@@ -1,12 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.icatproject</groupId>
-    <artifactId>ids</artifactId>
+    <artifactId>ids.server</artifactId>
     <packaging>war</packaging>
     <version>1.0.0-SNAPSHOT</version>
     <name>IDS</name>
-    
-     <distributionManagement>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <distributionManagement>
         <downloadUrl>http://www.icatproject.org/mvn/repo</downloadUrl>
         <site>
             <id>website</id>
@@ -16,8 +21,8 @@
             <id>repo</id>
             <url>scp://www.icatproject.org/var/www/html/mvn/repo</url>
         </repository>
-    </distributionManagement>  
-    
+    </distributionManagement>
+
     <description>ICAT Data Service to provide a uniform interface to data.</description>
     <issueManagement>
         <url>http://code.google.com/p/icat-data-service/issues/list</url>
@@ -89,7 +94,6 @@
             <artifactId>protobuf-java</artifactId>
             <version>2.4.1</version>
         </dependency>
-        <!-- <dependency> <groupId>javax</groupId> <artifactId>javaee-api</artifactId> <version>6.0</version> <scope>provided</scope> </dependency> -->
 
         <!-- Contains concrete JEE6 classes instead of just interfaces (in javax/javaee-api). This is only used for testing. When deploying to the container, 
             the interfaces will be used and all the concrete classes will be provided by the container -->
@@ -106,21 +110,31 @@
             <artifactId>icat.client</artifactId>
             <version>4.2.5</version>
         </dependency>
+
+        <!-- <dependency> -->
+        <!-- <groupId>org.icatproject</groupId> -->
+        <!-- <artifactId>ids.plugin</artifactId> -->
+        <!-- <version>1.0.0-SNAPSHOT</version> -->
+        <!-- </dependency> -->
+
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.1</version>
         </dependency>
+
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
             <version>2.3</version>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.6.4</version>
         </dependency>
+
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -131,6 +145,7 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.4</version>
         </dependency>
+
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-client</artifactId>
@@ -141,12 +156,13 @@
             <artifactId>icat.utils</artifactId>
             <version>4.3.0-SNAPSHOT</version>
         </dependency>
-		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-			<version>1.8</version>
-		</dependency>
-            
+
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.8</version>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>
@@ -159,29 +175,24 @@
                     <target>1.6</target>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.16</version>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            **/integration/*Test.java
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>2.0.2</version>
-                <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
-                    <webResources>
-                        <resource>
-                            <directory>src</directory>
-                            <targetPath>WEB-INF</targetPath>
-                            <includes>
-                                <include>wsdl/**</include>
-                            </includes>
-                        </resource>
-                        <resource>
-                            <directory>src/main/resources/META-INF</directory>
-                            <targetPath>WEB-INF/classes/META-INF</targetPath>
-                            <includes>
-                                <include>**/**</include>
-                            </includes>
-                        </resource>
-                    </webResources>
-                </configuration>
             </plugin>
 
             <plugin>
@@ -204,6 +215,30 @@
             </plugin>
 
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>Deploy to glassfish</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>asadmin</executable>
+                            <arguments>
+                                <argument>deploy</argument>
+                                <argument>--force</argument>
+                                <argument>target/ids.server-${project.version}.war</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.1</version>
@@ -215,37 +250,28 @@
                     </dependency>
                 </dependencies>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.16</version>
+                <configuration>
+                    <includes>
+                        <include>**/integration/*Test.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
-        <pluginManagement>
-            <plugins>
-                <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself. -->
-                <plugin>
-                    <groupId>org.eclipse.m2e</groupId>
-                    <artifactId>lifecycle-mapping</artifactId>
-                    <version>1.0.0</version>
-                    <configuration>
-                        <lifecycleMappingMetadata>
-                            <pluginExecutions>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>org.codehaus.mojo</groupId>
-                                        <artifactId>jaxws-maven-plugin</artifactId>
-                                        <versionRange>[1.10,)</versionRange>
-                                        <goals>
-                                            <goal>wsimport</goal>
-                                        </goals>
-                                        jar
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore></ignore>
-                                    </action>
-                                </pluginExecution>
-                            </pluginExecutions>
-                        </lifecycleMappingMetadata>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+
     </build>
 
 
@@ -274,39 +300,5 @@
         </plugins>
     </reporting>
 
-    <profiles>
-        <profile>
-            <id>endorsed</id>
-            <activation>
-                <property>
-                    <name>sun.boot.class.path</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>2.3.2</version>
-                        <configuration>
-                            <!-- javaee6 contains upgrades of APIs contained within the JDK itself. As such these need to be placed on the bootclasspath, 
-                                rather than classpath of the compiler. If you don't make use of these new updated API, you can delete the profile. On non-SUN jdk, you will need to create 
-                                a similar profile for your jdk, with the similar property as sun.boot.class.path in Sun's JDK. -->
-                            <compilerArguments>
-                                <bootclasspath>${settings.localRepository}/javax/javaee-endorsed-api/6.0/javaee-endorsed-api-6.0.jar${path.separator}${sun.boot.class.path}</bootclasspath>
-                            </compilerArguments>
-                        </configuration>
-                        <dependencies>
-                            <dependency>
-                                <groupId>javax</groupId>
-                                <artifactId>javaee-endorsed-api</artifactId>
-                                <version>6.0</version>
-                            </dependency>
-                        </dependencies>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
 

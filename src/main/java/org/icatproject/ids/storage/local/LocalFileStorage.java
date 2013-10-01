@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
-import org.icatproject.Datafile;
-import org.icatproject.Dataset;
 import org.icatproject.ids.storage.StorageInterface;
 import org.icatproject.ids.storage.StoragePropertyHandler;
 import org.icatproject.ids.storage.StorageType;
@@ -44,11 +42,12 @@ public class LocalFileStorage implements StorageInterface {
 	}
 
 	@Override
-	public InputStream getDataset(Dataset dataset) throws IOException {
+	public InputStream getDataset(String location) throws IOException {
 		if (STORAGE_ZIP_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support Datasets", storageType));
 		}
-		File zippedDs = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
+		File zippedDs = new File(new File(STORAGE_ZIP_DIR, location), "files.zip");
 		if (!zippedDs.exists()) {
 			throw new FileNotFoundException(zippedDs.getAbsolutePath());
 		}
@@ -56,11 +55,12 @@ public class LocalFileStorage implements StorageInterface {
 	}
 
 	@Override
-	public void putDataset(Dataset dataset, InputStream is) throws IOException {
+	public void putDataset(String location, InputStream is) throws IOException {
 		if (STORAGE_ZIP_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support Datasets", storageType));
 		}
-		File zippedDs = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
+		File zippedDs = new File(new File(STORAGE_ZIP_DIR, location), "files.zip");
 		File zippedDsDir = zippedDs.getParentFile();
 		zippedDsDir.mkdirs();
 		zippedDs.createNewFile();
@@ -69,48 +69,32 @@ public class LocalFileStorage implements StorageInterface {
 	}
 
 	@Override
-	public void deleteDataset(Dataset dataset) throws IOException {
-		if (STORAGE_ZIP_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
-		}
-		File zippedDs = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
-		zippedDs.delete();
-	}
-	
-	@Override
 	public void deleteDataset(String location) throws IOException {
 		if (STORAGE_ZIP_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support Datasets", storageType));
 		}
 		File zippedDs = new File(new File(STORAGE_ZIP_DIR, location), "files.zip");
 		zippedDs.delete();
 	}
 
-	@Override
-	public boolean datasetExists(Dataset dataset) throws IOException {
-		if (STORAGE_ZIP_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
-		}
-		File zippedDs = new File(new File(STORAGE_ZIP_DIR, dataset.getLocation()), "files.zip");
-		return zippedDs.exists();
-	}
-	
 	@Override
 	public boolean datasetExists(String location) throws IOException {
 		if (STORAGE_ZIP_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support Datasets", storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support Datasets", storageType));
 		}
 		File zippedDs = new File(new File(STORAGE_ZIP_DIR, location), "files.zip");
 		return zippedDs.exists();
 	}
 
 	@Override
-	public InputStream getDatafile(Datafile datafile) throws FileNotFoundException {
+	public InputStream getDatafile(String location) throws FileNotFoundException {
 		if (STORAGE_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support single Datafiles",
-					storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support single Datafiles", storageType));
 		}
-		File file = new File(STORAGE_DIR, datafile.getLocation());
+		File file = new File(STORAGE_DIR, location);
 		if (!file.exists()) {
 			throw new FileNotFoundException(file.getAbsolutePath());
 		}
@@ -118,44 +102,33 @@ public class LocalFileStorage implements StorageInterface {
 	}
 
 	@Override
-	public long putDatafile(Datafile datafile, InputStream is) throws IOException {
+	public long putDatafile(String location, InputStream is) throws IOException {
 		if (STORAGE_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support single Datafiles",
-					storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support single Datafiles", storageType));
 		}
-		File file = new File(new File(STORAGE_DIR, datafile.getDataset().getLocation()), datafile.getName());
-		writeInputStreamToFile(file, is);
-		return file.length();
-	};
-
-	@Override
-	public long putDatafile(String relativeLocation, InputStream is) throws IOException {
-		if (STORAGE_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support single Datafiles",
-					storageType));
-		}
-		File file = new File(STORAGE_DIR, relativeLocation);
+		File file = new File(STORAGE_DIR, location);
 		writeInputStreamToFile(file, is);
 		return file.length();
 	}
 
 	@Override
-	public void deleteDatafile(Datafile datafile) throws IOException {
+	public void deleteDatafile(String location) throws IOException {
 		if (STORAGE_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support single Datafiles",
-					storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support single Datafiles", storageType));
 		}
-		File file = new File(STORAGE_DIR, datafile.getLocation());
+		File file = new File(STORAGE_DIR, location);
 		file.delete();
 	}
-	
+
 	@Override
-	public boolean datafileExists(Datafile datafile) throws IOException {
+	public boolean datafileExists(String location) throws IOException {
 		if (STORAGE_DIR == null) {
-			throw new UnsupportedOperationException(String.format("Storage %s doesn't support single Datafiles",
-					storageType));
+			throw new UnsupportedOperationException(String.format(
+					"Storage %s doesn't support single Datafiles", storageType));
 		}
-		File file = new File(STORAGE_DIR, datafile.getLocation());
+		File file = new File(STORAGE_DIR, location);
 		return file.exists();
 	}
 
@@ -170,8 +143,8 @@ public class LocalFileStorage implements StorageInterface {
 			throw new FileNotFoundException(preparedZip.getAbsolutePath());
 		}
 		if (offset >= preparedZip.length()) {
-			throw new IllegalArgumentException("Offset (" + offset + " bytes) is larger than file size ("
-					+ preparedZip.length() + " bytes)");
+			throw new IllegalArgumentException("Offset (" + offset
+					+ " bytes) is larger than file size (" + preparedZip.length() + " bytes)");
 		}
 		InputStream res = new BufferedInputStream(new FileInputStream(preparedZip));
 		IOUtils.skip(res, offset);

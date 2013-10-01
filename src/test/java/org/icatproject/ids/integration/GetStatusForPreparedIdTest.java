@@ -1,4 +1,7 @@
-package org.icatproject.ids.test;
+package org.icatproject.ids.integration;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.URL;
@@ -8,17 +11,14 @@ import javax.xml.namespace.QName;
 import org.apache.commons.io.FileUtils;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.util.Setup;
-import org.icatproject.ids.test.util.TestingClient;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.TestingClient;
 import org.icatproject.ids.webservice.Status;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class GetStatusForPreparedIdTest {
 

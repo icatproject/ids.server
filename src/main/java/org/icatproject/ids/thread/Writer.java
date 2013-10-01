@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * Copies datasets across storages (fast to slow)
  */
 public class Writer implements Runnable {
-	
+
 	private final static Logger logger = LoggerFactory.getLogger(Writer.class);
 
 	private IdsDataEntity de;
@@ -33,19 +33,22 @@ public class Writer implements Runnable {
 		this.requestQueues = RequestQueues.getInstance();
 		this.requestHelper = requestHelper;
 	}
-	
+
 	@Override
 	public void run() {
 		logger.info("starting Writer");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
-		
+		StorageInterface slowStorageInterface = StorageFactory.getInstance()
+				.createSlowStorageInterface();
+		StorageInterface fastStorageInterface = StorageFactory.getInstance()
+				.createFastStorageInterface();
+
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
 		Dataset ds = null;
 		try {
-			if (de instanceof IdsDatasetEntity && !fastStorageInterface.datasetExists(de.getLocation())) {
+			if (de instanceof IdsDatasetEntity
+					&& !fastStorageInterface.datasetExists(de.getLocation())) {
 				if (slowStorageInterface != null) {
 					slowStorageInterface.deleteDataset(de.getLocation());
 				}
@@ -53,16 +56,16 @@ public class Writer implements Runnable {
 			}
 			ds = de.getIcatDataset();
 			InputStream zipIs = ZipHelper.zipDataset(ds, false, fastStorageInterface);
-			fastStorageInterface.putDataset(ds, zipIs);
-			
+			fastStorageInterface.putDataset(ds.getLocation(), zipIs);
+
 			if (slowStorageInterface == null) {
 				logger.error("Writer can't perform because there's no slow storage");
 				resultingStatus = StatusInfo.ERROR;
 				return;
 			}
-			if (fastStorageInterface.datasetExists(ds)) {
-				InputStream is = fastStorageInterface.getDataset(ds);
-				slowStorageInterface.putDataset(ds, is);
+			if (fastStorageInterface.datasetExists(ds.getLocation())) {
+				InputStream is = fastStorageInterface.getDataset(ds.getLocation());
+				slowStorageInterface.putDataset(ds.getLocation(), is);
 			}
 			logger.info("Write of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {

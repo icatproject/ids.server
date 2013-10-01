@@ -30,20 +30,21 @@ public class Archiver implements Runnable {
 		this.requestQueues = RequestQueues.getInstance();
 		this.requestHelper = requestHelper;
 	}
-	
+
 	@Override
 	public void run() {
 		logger.info("starting Archiver");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
-		
+		StorageInterface fastStorageInterface = StorageFactory.getInstance()
+				.createFastStorageInterface();
+
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
 		Dataset ds = de.getIcatDataset();
 		try {
-			fastStorageInterface.deleteDataset(ds);
+			fastStorageInterface.deleteDataset(ds.getLocation());
 			for (Datafile df : ds.getDatafiles()) {
-				fastStorageInterface.deleteDatafile(df);
+				fastStorageInterface.deleteDatafile(df.getLocation());
 			}
 			logger.info("Archive of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {

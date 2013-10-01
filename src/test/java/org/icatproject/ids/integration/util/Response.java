@@ -1,4 +1,4 @@
-package org.icatproject.ids.test.util;
+package org.icatproject.ids.integration.util;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;

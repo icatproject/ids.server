@@ -1,4 +1,4 @@
-package org.icatproject.ids.test;
+package org.icatproject.ids.integration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -11,8 +11,8 @@ import javax.xml.namespace.QName;
 import org.apache.commons.io.FileUtils;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.util.Setup;
-import org.icatproject.ids.test.util.TestingClient;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.TestingClient;
 import org.icatproject.ids.webservice.Status;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -21,17 +21,18 @@ import org.junit.Test;
 import com.sun.jersey.api.client.UniformInterfaceException;
 
 public class GetStatusExplicitTest {
-	
+
 	private static Setup setup = null;
 	@SuppressWarnings("unused")
 	private static ICAT icat;
 	private TestingClient testingClient;
-	
+
 	@BeforeClass
 	public static void setup() throws Exception {
 		setup = new Setup();
 		final URL icatUrl = new URL(setup.getIcatUrl());
-		final ICATService icatService = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"));
+		final ICATService icatService = new ICATService(icatUrl, new QName(
+				"http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
 	}
 
@@ -45,7 +46,7 @@ public class GetStatusExplicitTest {
 		storageZipDir.mkdir();
 		testingClient = new TestingClient(setup.getIdsUrl());
 	}
-	
+
 	@Test
 	public void notFoundDatasetIdTest() throws Exception {
 		int expectedSc = 404;
@@ -56,7 +57,7 @@ public class GetStatusExplicitTest {
 			assertEquals(expectedSc, e.getResponse().getStatus());
 		}
 	}
-	
+
 	@Test
 	public void notFoundDatafileIdsTest() throws Exception {
 		int expectedSc = 404;
@@ -67,18 +68,19 @@ public class GetStatusExplicitTest {
 			assertEquals(expectedSc, e.getResponse().getStatus());
 		}
 	}
-	
+
 	@Test
 	public void forbiddenTest() throws Exception {
 		int expectedSc = 403;
 		try {
-			testingClient.getStatusTest(setup.getForbiddenSessionId(), null, null, setup.getCommaSepDatafileIds());
+			testingClient.getStatusTest(setup.getForbiddenSessionId(), null, null,
+					setup.getCommaSepDatafileIds());
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
 		}
 	}
-	
+
 	@Test
 	public void correctBehaviourTest() throws Exception {
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
@@ -89,10 +91,11 @@ public class GetStatusExplicitTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status));
 		assertEquals(Status.ONLINE, status);
-		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, null, setup.getCommaSepDatafileIds());
+		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, null,
+				setup.getCommaSepDatafileIds());
 		assertEquals(Status.ONLINE, status);
 	}
-	
+
 	@Test
 	public void restoringDatafileRestoresItsDatasetTest() throws Exception {
 		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
@@ -103,9 +106,11 @@ public class GetStatusExplicitTest {
 			status = testingClient.getStatusTest(preparedId);
 		} while (Status.RESTORING.equals(status));
 		assertEquals(Status.ONLINE, status);
-		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(0), null);
+		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, setup.getDatasetIds()
+				.get(0), null);
 		assertEquals(Status.ONLINE, status);
-		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(1), null);
+		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, setup.getDatasetIds()
+				.get(1), null);
 		assertEquals(Status.ARCHIVED, status);
 	}
 

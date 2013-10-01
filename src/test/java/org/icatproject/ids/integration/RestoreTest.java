@@ -1,4 +1,4 @@
-package org.icatproject.ids.test;
+package org.icatproject.ids.integration;
 
 import static org.junit.Assert.assertTrue;
 
@@ -12,8 +12,8 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.util.Setup;
-import org.icatproject.ids.test.util.TestingClient;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.TestingClient;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

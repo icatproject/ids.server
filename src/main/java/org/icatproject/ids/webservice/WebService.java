@@ -92,9 +92,8 @@ public class WebService {
 	}
 
 	/**
-	 * Creates a new download request. Does not accept investigationIds or the
-	 * zip parameter as all requested files will always be returned in a zip
-	 * file.
+	 * Creates a new download request. Does not accept investigationIds or the zip parameter as all
+	 * requested files will always be returned in a zip file.
 	 * 
 	 * @param sessionId
 	 *            An ICAT session ID
@@ -105,8 +104,7 @@ public class WebService {
 	 * @param datafileIds
 	 *            A list of datafile IDs (optional)
 	 * @param compress
-	 *            Compress ZIP archive of files (dependent on ZIP parameter
-	 *            below) (optional)
+	 *            Compress ZIP archive of files (dependent on ZIP parameter below) (optional)
 	 * @param zip
 	 *            Request data to be packaged in a ZIP archive (not implemented)
 	 * @return HTTP response containing a preparedId for the download request
@@ -116,9 +114,11 @@ public class WebService {
 	@Consumes("application/x-www-form-urlencoded")
 	@Produces("text/plain")
 	public Response prepareData(@FormParam("sessionId") String sessionId,
-			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+			@FormParam("investigationIds") String investigationIds,
+			@FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds,
-			@DefaultValue("false") @FormParam("compress") String compress, @FormParam("zip") String zip) {
+			@DefaultValue("false") @FormParam("compress") String compress,
+			@FormParam("zip") String zip) {
 		IdsRequestEntity requestEntity = null;
 		logger.info("prepareData received");
 		// 501
@@ -139,15 +139,16 @@ public class WebService {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+			throw new BadRequestException(
+					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 		if (ValidationHelper.isValidBoolean(compress) == false) {
 			throw new BadRequestException("The compress parameter is invalid");
 		}
 		// at this point we're sure, that all arguments are valid
-		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
-				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "' " + "compress='" + compress
-				+ "' " + "zip='" + zip + "'");
+		logger.info("New webservice request: prepareData " + "investigationIds='"
+				+ investigationIds + "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='"
+				+ datafileIds + "' " + "compress='" + compress + "' " + "zip='" + zip + "'");
 
 		try {
 			requestEntity = requestHelper.createPrepareRequest(sessionId, compress, zip);
@@ -167,7 +168,8 @@ public class WebService {
 				throw new ForbiddenException("The sessionId parameter is invalid or has expired");
 			case INSUFFICIENT_PRIVILEGES:
 				requestHelper.setRequestStatus(requestEntity, StatusInfo.ERROR);
-				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+				throw new ForbiddenException(
+						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
 				requestHelper.setRequestStatus(requestEntity, StatusInfo.NOT_FOUND);
 				throw new NotFoundException("Could not find requested objects");
@@ -187,12 +189,10 @@ public class WebService {
 	}
 
 	/**
-	 * This method is specifically tailored to the IDS. It will remove files
-	 * from the cache that match the userId and any of the dataset or datafile
-	 * ids.
+	 * This method is specifically tailored to the IDS. It will remove files from the cache that
+	 * match the userId and any of the dataset or datafile ids.
 	 * 
-	 * TODO: try doing better queries -> join with DOWNLOAD_REQUEST and check
-	 * for username
+	 * TODO: try doing better queries -> join with DOWNLOAD_REQUEST and check for username
 	 * 
 	 * TODO: throw FileNotFoundException if no matching requests are found !
 	 * 
@@ -211,8 +211,8 @@ public class WebService {
 	@Consumes("application/x-www-form-urlencoded")
 	@Produces("text/plain")
 	public Response archive(@FormParam("sessionId") String sessionId,
-			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
-			@FormParam("datafileIds") String datafileIds) {
+			@FormParam("investigationIds") String investigationIds,
+			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds) {
 		IdsRequestEntity requestEntity = null;
 
 		// 501
@@ -230,11 +230,12 @@ public class WebService {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+			throw new BadRequestException(
+					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
-		logger.info("New webservice request: archive " + "investigationIds='" + investigationIds + "' "
-				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+		logger.info("New webservice request: archive " + "investigationIds='" + investigationIds
+				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
 		try {
 			requestEntity = requestHelper.createArchiveRequest(sessionId);
@@ -269,8 +270,10 @@ public class WebService {
 	@GET
 	@Path("getStatus")
 	@Produces("text/plain")
-	public Response getStatus(@QueryParam("preparedId") String preparedId, @QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+	public Response getStatus(@QueryParam("preparedId") String preparedId,
+			@QueryParam("sessionId") String sessionId,
+			@QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafilesIds) {
 		Response status = null;
 		logger.info("received getStatus with preparedId = " + preparedId);
@@ -283,17 +286,16 @@ public class WebService {
 	}
 
 	/**
-	 * Returns the current status of a download request. The current status
-	 * values that can be returned are ONLINE and RESTORING.
+	 * Returns the current status of a download request. The current status values that can be
+	 * returned are ONLINE and RESTORING.
 	 * 
-	 * TODO: determine if database connection lost TODO: check if INCOMPLETE
-	 * status should be implemented
+	 * TODO: determine if database connection lost TODO: check if INCOMPLETE status should be
+	 * implemented
 	 * 
 	 * @param preparedId
 	 *            The ID of the download request
-	 * @return HTTP response containing the current status of the download
-	 *         request (ONLINE, IMCOMPLETE, RESTORING, ARCHIVED) Note: only
-	 *         ONELINE and RESTORING are implemented
+	 * @return HTTP response containing the current status of the download request (ONLINE,
+	 *         IMCOMPLETE, RESTORING, ARCHIVED) Note: only ONELINE and RESTORING are implemented
 	 */
 	public Response getStatus(String preparedId) {
 		String status = null;
@@ -330,9 +332,11 @@ public class WebService {
 			status = Status.INCOMPLETE.name();
 			break;
 		case DENIED:
-			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
+			throw new ForbiddenException(
+					"You do not have permission to download one or more of the requested files");
 		case NOT_FOUND:
-			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
+			throw new NotFoundException(
+					"Some of the requested datafile / dataset ids were not found");
 		case ERROR:
 			throw new InternalServerErrorException("Unable to find files in storage");
 		default:
@@ -342,7 +346,8 @@ public class WebService {
 		return Response.status(200).entity(status + "\n").build();
 	}
 
-	public Response getStatus(String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+	public Response getStatus(String sessionId, String investigationIds, String datasetIds,
+			String datafileIds) {
 		// 501
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
@@ -358,12 +363,13 @@ public class WebService {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+			throw new BadRequestException(
+					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
-		logger.info(String.format(
-				"New webservice request: getStatus investigationIds=%s, datasetIds=%s, datafileIds=%s",
-				investigationIds, datasetIds, datafileIds));
+		logger.info(String
+				.format("New webservice request: getStatus investigationIds=%s, datasetIds=%s, datafileIds=%s",
+						investigationIds, datasetIds, datafileIds));
 
 		// assuming everything is available
 		Status status = Status.ONLINE;
@@ -374,29 +380,32 @@ public class WebService {
 			if (datafileIds != null) {
 				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
 				for (String id : datafileIdList) {
-					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId,
+							Long.parseLong(id));
 					datafiles.add(df);
 				}
 			}
 			if (datasetIds != null) {
 				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 				for (String id : datasetIdList) {
-					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId,
+							Long.parseLong(id));
 					datasets.add(ds);
 				}
 			}
 
 			// check the files availability on fast storage
-			StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+			StorageInterface fastStorage = StorageFactory.getInstance()
+					.createFastStorageInterface();
 			for (Datafile df : datafiles) {
-				if (!fastStorage.datafileExists(df)) {
+				if (!fastStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
 					break;
 				}
 			}
 			if (status != Status.ARCHIVED) {
 				for (Dataset ds : datasets) {
-					if (!fastStorage.datasetExists(ds)) {
+					if (!fastStorage.datasetExists(ds.getLocation())) {
 						status = Status.ARCHIVED;
 						break;
 					}
@@ -406,7 +415,8 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case INSUFFICIENT_PRIVILEGES:
-				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+				throw new ForbiddenException(
+						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
 				throw new NotFoundException(e.getMessage());
 			default:
@@ -426,15 +436,19 @@ public class WebService {
 	@GET
 	@Path("getData")
 	@Produces("application/octet-stream")
-	public Response getData(@QueryParam("preparedId") String preparedId, @QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+	public Response getData(@QueryParam("preparedId") String preparedId,
+			@QueryParam("sessionId") String sessionId,
+			@QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds, @QueryParam("compress") String compress,
-			@QueryParam("zip") String zip, @QueryParam("outname") String outname, @QueryParam("offset") String offset) {
+			@QueryParam("zip") String zip, @QueryParam("outname") String outname,
+			@QueryParam("offset") String offset) {
 		Response data = null;
 		if (preparedId != null) {
 			data = getData(preparedId, outname, offset);
 		} else {
-			data = getData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname, offset);
+			data = getData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip,
+					outname, offset);
 		}
 		return data;
 	}
@@ -442,10 +456,9 @@ public class WebService {
 	/**
 	 * Returns a zip file containing the requested files.
 	 * 
-	 * TODO: find out how to catch the IOException in order to throw 404-file
-	 * not longer in cache TODO: work out how to differentiate between NOT FOUND
-	 * because of bad preparedId, INCOMPLETE, or some of the requested ids were
-	 * not found
+	 * TODO: find out how to catch the IOException in order to throw 404-file not longer in cache
+	 * TODO: work out how to differentiate between NOT FOUND because of bad preparedId, INCOMPLETE,
+	 * or some of the requested ids were not found
 	 * 
 	 * @param preparedId
 	 *            The ID of the download request
@@ -471,8 +484,8 @@ public class WebService {
 			throw new BadRequestException("The offset parameter is invalid");
 		}
 
-		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' " + "outname='" + outname
-				+ "' " + "offset='" + offset + "'");
+		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' "
+				+ "outname='" + outname + "' " + "offset='" + offset + "'");
 
 		try {
 			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
@@ -496,12 +509,15 @@ public class WebService {
 			throw new NotFoundException("Requested files are not ready for download");
 		case DENIED:
 			// TODO: return a list of the 'bad' files?
-			throw new ForbiddenException("You do not have permission to download one or more of the requested files");
+			throw new ForbiddenException(
+					"You do not have permission to download one or more of the requested files");
 		case NOT_FOUND:
 			// TODO: return list of the 'bad' ids?
-			throw new NotFoundException("Some of the requested datafile / dataset ids were not found");
+			throw new NotFoundException(
+					"Some of the requested datafile / dataset ids were not found");
 		case INCOMPLETE:
-			throw new NotFoundException("Some of the requested files are no longer avaliable in ICAT.");
+			throw new NotFoundException(
+					"Some of the requested files are no longer avaliable in ICAT.");
 		case ERROR:
 			// TODO: return list of the missing files?
 			throw new InternalServerErrorException("Unable to find files in storage");
@@ -513,7 +529,8 @@ public class WebService {
 		// if no outname supplied give default name also suffix with .zip if
 		// absent
 		if (outname == null) {
-			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity.getSubmittedTime());
+			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity
+					.getSubmittedTime());
 			name = name + ".zip";
 		} else {
 			name = outname;
@@ -530,24 +547,27 @@ public class WebService {
 			offsetLong = 0L;
 		}
 
-		final StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+		final StorageInterface fastStorage = StorageFactory.getInstance()
+				.createFastStorageInterface();
 		// create output stream of the zip file
 		StreamingOutput strOut = new StreamingOutput() {
 			@Override
 			public void write(OutputStream output) throws IOException, WebApplicationException {
 				try {
-					IOUtils.copy(fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip", offsetLong), output);
+					IOUtils.copy(fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip",
+							offsetLong), output);
 				} catch (Exception e) {
 					throw new WebApplicationException(e);
 				}
 			}
 		};
-		return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
+		return Response.ok(strOut)
+				.header("Content-Disposition", "attachment; filename=\"" + name + "\"")
 				.header("Accept-Ranges", "bytes").build();
 	}
 
-	public Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			String compress, String zip, String outname, String offset) {
+	public Response getData(String sessionId, String investigationIds, String datasetIds,
+			String datafileIds, String compress, String zip, String outname, String offset) {
 		final Long offsetLong;
 		String name = null;
 
@@ -566,7 +586,8 @@ public class WebService {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+			throw new BadRequestException(
+					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 		if (ValidationHelper.isValidName(outname) == false) {
 			throw new BadRequestException("The outname parameter is invalid");
@@ -576,8 +597,9 @@ public class WebService {
 			throw new BadRequestException("The offset parameter is invalid");
 		}
 
-		logger.info(String.format("New webservice request: getData investigationIds=%s, datasetIds=%s, datafileIds=%s",
-				investigationIds, datasetIds, datafileIds));
+		logger.info(String
+				.format("New webservice request: getData investigationIds=%s, datasetIds=%s, datafileIds=%s",
+						investigationIds, datasetIds, datafileIds));
 
 		final List<Datafile> datafiles = new ArrayList<Datafile>();
 		final List<Dataset> datasets = new ArrayList<Dataset>();
@@ -588,22 +610,25 @@ public class WebService {
 			if (datafileIds != null) {
 				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
 				for (String id : datafileIdList) {
-					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId,
+							Long.parseLong(id));
 					datafiles.add(df);
 				}
 			}
 			if (datasetIds != null) {
 				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 				for (String id : datasetIdList) {
-					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId,
+							Long.parseLong(id));
 					datasets.add(ds);
 				}
 			}
 
 			// check the files availability on fast storage
-			StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+			StorageInterface fastStorage = StorageFactory.getInstance()
+					.createFastStorageInterface();
 			for (Datafile df : datafiles) {
-				if (!fastStorage.datafileExists(df)) {
+				if (!fastStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -612,7 +637,7 @@ public class WebService {
 				}
 			}
 			for (Dataset ds : datasets) {
-				if (!fastStorage.datasetExists(ds)) {
+				if (!fastStorage.datasetExists(ds.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -624,7 +649,8 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case INSUFFICIENT_PRIVILEGES:
-				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+				throw new ForbiddenException(
+						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
 				throw new NotFoundException(e.getMessage());
 			default:
@@ -670,14 +696,16 @@ public class WebService {
 		final boolean finalCompress = "true".equals(compress) ? true : false;
 		final String finalName = name;
 		final String finalSessionId = sessionId;
-		final StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+		final StorageInterface fastStorage = StorageFactory.getInstance()
+				.createFastStorageInterface();
 		// create output stream of the zip file
 		StreamingOutput strOut = new StreamingOutput() {
 			@Override
 			public void write(OutputStream output) throws IOException, WebApplicationException {
 				try {
-					InputStream in = ZipHelper.prepareTemporaryZip(String.format("%s_%s", finalName, finalSessionId),
-							datasets, datafiles, finalCompress, fastStorage);
+					InputStream in = ZipHelper.prepareTemporaryZip(
+							String.format("%s_%s", finalName, finalSessionId), datasets, datafiles,
+							finalCompress, fastStorage);
 					long skipped = IOUtils.skip(in, offsetLong);
 					if (skipped != offsetLong) {
 						throw new IllegalArgumentException("Offset (" + offsetLong
@@ -689,15 +717,18 @@ public class WebService {
 				}
 			}
 		};
-		return Response.ok(strOut).header("Content-Disposition", "attachment; filename=\"" + name + "\"")
+		return Response.ok(strOut)
+				.header("Content-Disposition", "attachment; filename=\"" + name + "\"")
 				.header("Accept-Ranges", "bytes").build();
 	}
 
 	@PUT
 	@Path("put")
 	@Consumes("application/octet-stream")
-	public Response put(InputStream body, @QueryParam("sessionId") String sessionId, @QueryParam("name") String name,
-			@QueryParam("datafileFormatId") String datafileFormatIdString, @QueryParam("datasetId") String datasetId,
+	public Response put(InputStream body, @QueryParam("sessionId") String sessionId,
+			@QueryParam("name") String name,
+			@QueryParam("datafileFormatId") String datafileFormatIdString,
+			@QueryParam("datasetId") String datasetId,
 			@QueryParam("description") String description, @QueryParam("doi") String doi,
 			@QueryParam("datafileCreateTime") String datafileCreateTime,
 			@QueryParam("datafileModTime") String datafileModTime) throws Exception {
@@ -722,10 +753,11 @@ public class WebService {
 			throw new BadRequestException("The datasetId parameter must be set");
 		}
 
-		Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(datasetId));
+		Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId,
+				Long.parseLong(datasetId));
 
 		StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
-		if (!fastStorage.datasetExists(ds)) {
+		if (!fastStorage.datasetExists(ds.getLocation())) {
 			IdsRequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
 			requestHelper.addDatasets(sessionId, requestEntity, datasetId);
 			this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
@@ -735,17 +767,17 @@ public class WebService {
 		Datafile dummy = new Datafile();
 		dummy.setName(name);
 		dummy.setDataset(ds);
-		long tbytes = fastStorage.putDatafile(dummy, body);
+		long tbytes = fastStorage.putDatafile((new File(ds.getLocation(), name)).getPath(), body);
 		registerDatafile(sessionId, name, datafileFormatId, tbytes, ds);
 		// refresh the DS (contains the new DF)
 		ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(datasetId));
-//		try {
-//			InputStream is = ZipHelper.zipDataset(ds, false, fastStorage);
-//			fastStorage.putDataset(ds, is);
-//		} catch (IOException e) {
-//			logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
-//			throw new InternalServerErrorException(e.getMessage());
-//		}
+		// try {
+		// InputStream is = ZipHelper.zipDataset(ds, false, fastStorage);
+		// fastStorage.putDataset(ds, is);
+		// } catch (IOException e) {
+		// logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
+		// throw new InternalServerErrorException(e.getMessage());
+		// }
 
 		IdsRequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
 		requestHelper.addDataset(sessionId, requestEntity, ds);
@@ -760,7 +792,8 @@ public class WebService {
 	@Path("delete")
 	@Produces("text/plain")
 	public Response delete(@QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+			@QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds) {
 		logger.info("delete received");
 		// 501
@@ -778,13 +811,14 @@ public class WebService {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+			throw new BadRequestException(
+					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
 		// at this point we're sure, that all arguments are valid
-		logger.info("New webservice request: delete " + "investigationIds='" + investigationIds + "' "
-				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		
+		logger.info("New webservice request: delete " + "investigationIds='" + investigationIds
+				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+
 		final List<Datafile> datafiles = new ArrayList<Datafile>();
 		final List<Dataset> datasets = new ArrayList<Dataset>();
 		Status status = Status.ONLINE;
@@ -794,22 +828,25 @@ public class WebService {
 			if (datafileIds != null) {
 				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
 				for (String id : datafileIdList) {
-					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+					Datafile df = icatClient.getDatafileWithDatasetForDatafileId(sessionId,
+							Long.parseLong(id));
 					datafiles.add(df);
 				}
 			}
 			if (datasetIds != null) {
 				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 				for (String id : datasetIdList) {
-					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+					Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId,
+							Long.parseLong(id));
 					datasets.add(ds);
 				}
 			}
 
 			// check the files availability on fast storage
-			StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
+			StorageInterface fastStorage = StorageFactory.getInstance()
+					.createFastStorageInterface();
 			for (Datafile df : datafiles) {
-				if (!fastStorage.datafileExists(df)) {
+				if (!fastStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -818,7 +855,7 @@ public class WebService {
 				}
 			}
 			for (Dataset ds : datasets) {
-				if (!fastStorage.datasetExists(ds)) {
+				if (!fastStorage.datasetExists(ds.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -826,39 +863,42 @@ public class WebService {
 					requestHelper.addDataset(sessionId, restoreRequest, ds);
 				}
 			}
-			
+
 			if (restoreRequest != null) {
 				for (IdsDataEntity de : restoreRequest.getDataEntities()) {
 					queue(de, DeferredOp.RESTORE);
 				}
 			}
 			if (status == Status.ARCHIVED) {
-				throw new FileNotFoundException("Some files have not been restored. Restoration requested");
+				throw new FileNotFoundException(
+						"Some files have not been restored. Restoration requested");
 			}
-			
+
 			IdsRequestEntity writeRequest = requestHelper.createWriteRequest(sessionId);
 			for (Datafile df : datafiles) {
 				icatClient.deleteDatafile(sessionId, df);
 				// update dataset
-				Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, df.getDataset().getId());
+				Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, df
+						.getDataset().getId());
 				requestHelper.addDataset(sessionId, writeRequest, ds);
 			}
 			for (Dataset ds : datasets) {
 				icatClient.deleteDataset(sessionId, ds);
-				fastStorage.deleteDataset(ds);
-//				Dataset tmpDs = new Dataset();
-//				tmpDs.setLocation(ds.getLocation());				
+				fastStorage.deleteDataset(ds.getLocation());
+				// Dataset tmpDs = new Dataset();
+				// tmpDs.setLocation(ds.getLocation());
 				requestHelper.addDataset(sessionId, writeRequest, ds);
 			}
 			for (IdsDataEntity de : writeRequest.getDataEntities()) {
 				queue(de, DeferredOp.WRITE);
 			}
-			
+
 		} catch (IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case INSUFFICIENT_PRIVILEGES:
-				throw new ForbiddenException("You don't have sufficient privileges to perform this operation");
+				throw new ForbiddenException(
+						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
 				throw new NotFoundException(e.getMessage());
 			default:
@@ -880,8 +920,8 @@ public class WebService {
 	@Consumes("application/x-www-form-urlencoded")
 	@Produces("text/plain")
 	public Response restore(@FormParam("sessionId") String sessionId,
-			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
-			@FormParam("datafileIds") String datafileIds) {
+			@FormParam("investigationIds") String investigationIds,
+			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds) {
 		IdsRequestEntity requestEntity = null;
 		logger.info("restore received");
 		// 501
@@ -899,11 +939,12 @@ public class WebService {
 			throw new BadRequestException("The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException("At least one of datasetIds or datafileIds parameters must be set");
+			throw new BadRequestException(
+					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 		// at this point we're sure, that all arguments are valid
-		logger.info("New webservice request: restore " + "investigationIds='" + investigationIds + "' "
-				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+		logger.info("New webservice request: restore " + "investigationIds='" + investigationIds
+				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
 		try {
 			requestEntity = requestHelper.createRestoreRequest(sessionId);
@@ -1024,8 +1065,8 @@ public class WebService {
 		logger.info("Requesting delay of writing of " + ds.getId() + " till " + newWriteTime);
 	}
 
-	private Long registerDatafile(String sessionid, String name, long datafileFormatId, long tbytes, Dataset dataset)
-			throws Exception {
+	private Long registerDatafile(String sessionid, String name, long datafileFormatId,
+			long tbytes, Dataset dataset) throws Exception {
 		final Datafile df = new Datafile();
 		String location = new File(dataset.getLocation(), name).getPath();
 		DatafileFormat format = icatClient.findDatafileFormatById(sessionid, datafileFormatId);
@@ -1038,7 +1079,8 @@ public class WebService {
 		df.setName(name);
 		df.setDataset(dataset);
 		df.setId((Long) icatClient.registerDatafile(sessionid, df));
-		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at " + location);
+		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at "
+				+ location);
 		return df.getId();
 	}
 

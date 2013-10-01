@@ -1,4 +1,4 @@
-package org.icatproject.ids.test;
+package org.icatproject.ids.integration;
 
 import static org.junit.Assert.*;
 
@@ -11,8 +11,8 @@ import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
-import org.icatproject.ids.test.util.Setup;
-import org.icatproject.ids.test.util.TestingClient;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.TestingClient;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,7 +29,8 @@ public class ArchiveTest {
 	public static void setup() throws Exception {
 		setup = new Setup();
 		final URL icatUrl = new URL(setup.getIcatUrl());
-		final ICATService icatService = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"));
+		final ICATService icatService = new ICATService(icatUrl, new QName(
+				"http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
 	}
 
@@ -50,26 +51,30 @@ public class ArchiveTest {
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
 				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
-		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()), "files.zip");
+		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()),
+				"files.zip");
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		testingClient.restoreTest(setup.getGoodSessionId(), null,
+				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
 		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
 
-		assertTrue("File " + dirOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
-				dirOnFastStorage.exists());
-		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
-				zipOnFastStorage.exists());
+		assertTrue("File " + dirOnFastStorage.getAbsolutePath()
+				+ " should have been restored, but doesn't exist", dirOnFastStorage.exists());
+		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath()
+				+ " should have been restored, but doesn't exist", zipOnFastStorage.exists());
 
-		testingClient.archiveTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		testingClient.archiveTest(setup.getGoodSessionId(), null,
+				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
 		}
 		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath()
-				+ " should have been cleaned, but still contains files", dirOnFastStorage.listFiles().length == 0);
-		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been archived, but still exists",
-				!zipOnFastStorage.exists());
+				+ " should have been cleaned, but still contains files",
+				dirOnFastStorage.listFiles().length == 0);
+		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath()
+				+ " should have been archived, but still exists", !zipOnFastStorage.exists());
 	}
 
 	@Test

@@ -36,40 +36,46 @@ public class Restorer implements Runnable {
 		this.requestQueues = RequestQueues.getInstance();
 		this.requestHelper = requestHelper;
 	}
-	
+
 	@Override
 	public void run() {
 		logger.info("starting restorer");
-		StorageInterface slowStorageInterface = StorageFactory.getInstance().createSlowStorageInterface();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance().createFastStorageInterface();
-		
+		StorageInterface slowStorageInterface = StorageFactory.getInstance()
+				.createSlowStorageInterface();
+		StorageInterface fastStorageInterface = StorageFactory.getInstance()
+				.createFastStorageInterface();
+
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming, that everything will go OK
 		InputStream slowIS = null;
 		ZipInputStream fastIS = null;
 		try {
-			if (!fastStorageInterface.datasetExists(de.getIcatDataset())) {
+			if (!fastStorageInterface.datasetExists(de.getIcatDataset().getLocation())) {
 				if (slowStorageInterface == null) {
 					logger.error("Restorer can't perform because there's no slow storage");
 					resultingStatus = StatusInfo.ERROR;
 				} else {
-					slowIS = slowStorageInterface.getDataset(de.getIcatDataset());
-					fastStorageInterface.putDataset(de.getIcatDataset(), slowIS);
-					fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()));
+					slowIS = slowStorageInterface.getDataset(de.getIcatDataset().getLocation());
+					fastStorageInterface.putDataset(de.getIcatDataset().getLocation(), slowIS);
+					fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()
+							.getLocation()));
 					ZipEntry entry;
 					while ((entry = fastIS.getNextEntry()) != null) {
 						if (entry.isDirectory()) {
 							continue;
 						}
-						String datafileLocation = new File(de.getIcatDataset().getLocation(), entry.getName()).getPath();
+						String datafileLocation = new File(de.getIcatDataset().getLocation(),
+								entry.getName()).getPath();
 						fastStorageInterface.putDatafile(datafileLocation, fastIS);
 					}
 				}
 			}
 		} catch (FileNotFoundException e) {
-			logger.warn("Could not restore " + de.getIcatDataset() + " (file doesn't exist): " + e.getMessage());
+			logger.warn("Could not restore " + de.getIcatDataset() + " (file doesn't exist): "
+					+ e.getMessage());
 			resultingStatus = StatusInfo.NOT_FOUND;
 		} catch (Exception e) {
-			logger.warn("Could not restore " + de.getIcatDataset() + " (reason unknonwn): " + e.getMessage());
+			logger.warn("Could not restore " + de.getIcatDataset() + " (reason unknonwn): "
+					+ e.getMessage());
 			resultingStatus = StatusInfo.ERROR;
 		} finally {
 			if (slowIS != null) {
@@ -86,7 +92,7 @@ public class Restorer implements Runnable {
 					logger.warn("Couldn't close an input stream from the fast storage");
 				}
 			}
-		}	
+		}
 
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
@@ -94,7 +100,7 @@ public class Restorer implements Runnable {
 			logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
 			requestHelper.setDataEntityStatus(de, resultingStatus);
 			changing.remove(de.getIcatDataset());
-		}	
+		}
 	}
 
 }
