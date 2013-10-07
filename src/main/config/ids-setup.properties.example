@@ -17,9 +17,5 @@ glassfish=/home/fisher/pf/glassfish3
 #
 port=4848
 
-# The request timeout specifies in seconds the maximum time glassfish will
-# keep a connection open. Warning: setting this value too low can result in
-# downloads being cut off before they have finished. Set to -1 to disable 
-# timeout.
-#
-requestTimeout=-1
+# Any libraries needed (space separated list of jars in domain's lib/applibs
+libraries=ids.storage_file*.jar

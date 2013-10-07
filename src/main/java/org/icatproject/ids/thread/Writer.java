@@ -7,8 +7,8 @@ import java.util.Set;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsDatasetEntity;
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
+import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
@@ -39,10 +39,10 @@ public class Writer implements Runnable {
 		logger.info("starting Writer");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface slowStorageInterface = StorageFactory.getInstance()
-				.createSlowStorageInterface();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance()
-				.createFastStorageInterface();
+		StorageInterface fastStorageInterface = PropertyHandler.getInstance()
+				.getMainStorage();
+		StorageInterface slowStorageInterface = PropertyHandler.getInstance()
+				.getArchiveStorage();
 
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
 		Dataset ds = null;
@@ -57,6 +57,7 @@ public class Writer implements Runnable {
 			ds = de.getIcatDataset();
 			InputStream zipIs = ZipHelper.zipDataset(ds, false, fastStorageInterface);
 			fastStorageInterface.putDataset(ds.getLocation(), zipIs);
+			zipIs.close();
 
 			if (slowStorageInterface == null) {
 				logger.error("Writer can't perform because there's no slow storage");
@@ -66,6 +67,7 @@ public class Writer implements Runnable {
 			if (fastStorageInterface.datasetExists(ds.getLocation())) {
 				InputStream is = fastStorageInterface.getDataset(ds.getLocation());
 				slowStorageInterface.putDataset(ds.getLocation(), is);
+				is.close();
 			}
 			logger.info("Write of  " + ds.getLocation() + " succesful");
 		} catch (Exception e) {

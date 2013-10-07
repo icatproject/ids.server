@@ -16,12 +16,10 @@ import java.util.Timer;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
-import javax.ejb.EJBException;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.persistence.PersistenceException;
-import javax.resource.spi.IllegalStateException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -44,8 +42,7 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
 import org.icatproject.ids.thread.ProcessQueue;
 import org.icatproject.ids.util.Icat;
 import org.icatproject.ids.util.PropertyHandler;
@@ -83,12 +80,18 @@ public class WebService {
 	@EJB
 	private RequestHelper requestHelper;
 
+	private StorageInterface fastStorage;
+
 	@PostConstruct
 	public void postConstructInit() throws Exception {
 		logger.info("creating WebService");
-		timer.schedule(new ProcessQueue(timer, requestHelper), PropertyHandler.getInstance()
-				.getProcessQueueIntervalSeconds() * 1000L);
+		PropertyHandler ph = PropertyHandler.getInstance();
+		fastStorage = ph.getMainStorage();
+
+		timer.schedule(new ProcessQueue(timer, requestHelper),
+				ph.getProcessQueueIntervalSeconds() * 1000L);
 		restartUnfinishedWork();
+		logger.info("created WebService");
 	}
 
 	/**
@@ -297,7 +300,7 @@ public class WebService {
 	 * @return HTTP response containing the current status of the download request (ONLINE,
 	 *         IMCOMPLETE, RESTORING, ARCHIVED) Note: only ONELINE and RESTORING are implemented
 	 */
-	public Response getStatus(String preparedId) {
+	private Response getStatus(String preparedId) {
 		String status = null;
 
 		// 400
@@ -305,48 +308,41 @@ public class WebService {
 			throw new BadRequestException("The preparedId parameter is invalid");
 		}
 
-		try {
-			status = requestHelper.getRequestByPreparedId(preparedId).getStatus().name();
-		} catch (EJBException e) {
+		List<IdsRequestEntity> requests = requestHelper.getRequestByPreparedId(preparedId);
+		if (requests.size() == 0) {
 			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
-		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
-		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
 		}
+		if (requests.size() > 1) {
+			String msg = "More than one match found for preparedId \"" + preparedId + "\"";
+			logger.error(msg);
+			throw new InternalServerErrorException(msg);
+		}
+		status = requests.get(0).getStatus().name();
 
 		logger.info("New webservice request: getStatus " + "preparedId='" + preparedId + "'");
 
 		// convert internal status to appropriate external status
-		switch (StatusInfo.valueOf(status)) {
-		case SUBMITTED:
-		case INFO_RETRIVING:
-		case INFO_RETRIVED:
-		case RETRIVING:
-			status = Status.RESTORING.name();
-			break;
-		case COMPLETED:
+		StatusInfo statusinfo = StatusInfo.valueOf(status);
+		if (statusinfo == StatusInfo.COMPLETED) {
 			status = Status.ONLINE.name();
-			break;
-		case INCOMPLETE:
+		} else if (statusinfo == StatusInfo.INCOMPLETE) {
 			status = Status.INCOMPLETE.name();
-			break;
-		case DENIED:
+		} else if (statusinfo == StatusInfo.DENIED) {
 			throw new ForbiddenException(
 					"You do not have permission to download one or more of the requested files");
-		case NOT_FOUND:
+		} else if (statusinfo == StatusInfo.NOT_FOUND) {
 			throw new NotFoundException(
 					"Some of the requested datafile / dataset ids were not found");
-		case ERROR:
+		} else if (statusinfo == StatusInfo.ERROR) {
 			throw new InternalServerErrorException("Unable to find files in storage");
-		default:
-			break;
+		} else {
+			status = Status.RESTORING.name();
 		}
 
 		return Response.status(200).entity(status + "\n").build();
 	}
 
-	public Response getStatus(String sessionId, String investigationIds, String datasetIds,
+	private Response getStatus(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) {
 		// 501
 		if (investigationIds != null) {
@@ -395,8 +391,6 @@ public class WebService {
 			}
 
 			// check the files availability on fast storage
-			StorageInterface fastStorage = StorageFactory.getInstance()
-					.createFastStorageInterface();
 			for (Datafile df : datafiles) {
 				if (!fastStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
@@ -468,7 +462,8 @@ public class WebService {
 	 *            The desired offset of the file (optional)
 	 * @return HTTP response containing the ZIP file
 	 */
-	public Response getData(String preparedId, String outname, String offset) {
+	private Response getData(String preparedId, String outname, String offset) {
+
 		final IdsRequestEntity requestEntity;
 		final Long offsetLong;
 		String name = null;
@@ -487,25 +482,24 @@ public class WebService {
 		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' "
 				+ "outname='" + outname + "' " + "offset='" + offset + "'");
 
-		try {
-			requestEntity = requestHelper.getRequestByPreparedId(preparedId);
-		} catch (PersistenceException e) {
-			throw new InternalServerErrorException("Unable to connect to the database");
-		} catch (EJBException e) {
+		List<IdsRequestEntity> requests = requestHelper.getRequestByPreparedId(preparedId);
+		if (requests.size() == 0) {
 			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
-		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
-		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
 		}
+		if (requests.size() > 1) {
+			String msg = "More than one match found for preparedId \"" + preparedId + "\"";
+			logger.error(msg);
+			throw new InternalServerErrorException(msg);
+		}
+		requestEntity = requests.get(0);
 
 		// the internal download request status must be COMPLETE in order to
 		// download the zip
 		switch (requestEntity.getStatus()) {
 		case SUBMITTED:
-		case INFO_RETRIVING:
-		case INFO_RETRIVED:
-		case RETRIVING:
+		case INFO_RETRIEVING:
+		case INFO_RETRIEVED:
+		case RETRIEVING:
 			throw new NotFoundException("Requested files are not ready for download");
 		case DENIED:
 			// TODO: return a list of the 'bad' files?
@@ -517,17 +511,18 @@ public class WebService {
 					"Some of the requested datafile / dataset ids were not found");
 		case INCOMPLETE:
 			throw new NotFoundException(
-					"Some of the requested files are no longer avaliable in ICAT.");
+					"Some of the requested files are no longer available in ICAT.");
 		case ERROR:
 			// TODO: return list of the missing files?
-			throw new InternalServerErrorException("Unable to find files in storage");
+			String msg = "Unable to find files in storage";
+			logger.error(msg);
+			throw new InternalServerErrorException(msg);
 		case COMPLETED:
 		default:
 			break;
 		}
 
-		// if no outname supplied give default name also suffix with .zip if
-		// absent
+		/* if no outname supplied give default name also suffix with .zip if absent */
 		if (outname == null) {
 			name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(requestEntity
 					.getSubmittedTime());
@@ -547,8 +542,6 @@ public class WebService {
 			offsetLong = 0L;
 		}
 
-		final StorageInterface fastStorage = StorageFactory.getInstance()
-				.createFastStorageInterface();
 		// create output stream of the zip file
 		StreamingOutput strOut = new StreamingOutput() {
 			@Override
@@ -564,9 +557,10 @@ public class WebService {
 		return Response.ok(strOut)
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"")
 				.header("Accept-Ranges", "bytes").build();
+
 	}
 
-	public Response getData(String sessionId, String investigationIds, String datasetIds,
+	private Response getData(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds, String compress, String zip, String outname, String offset) {
 		final Long offsetLong;
 		String name = null;
@@ -601,8 +595,8 @@ public class WebService {
 				.format("New webservice request: getData investigationIds=%s, datasetIds=%s, datafileIds=%s",
 						investigationIds, datasetIds, datafileIds));
 
-		final List<Datafile> datafiles = new ArrayList<Datafile>();
-		final List<Dataset> datasets = new ArrayList<Dataset>();
+		final List<Datafile> datafiles = new ArrayList<>();
+		final List<Dataset> datasets = new ArrayList<>();
 		Status status = Status.ONLINE;
 		IdsRequestEntity restoreRequest = null;
 		try {
@@ -625,8 +619,6 @@ public class WebService {
 			}
 
 			// check the files availability on fast storage
-			StorageInterface fastStorage = StorageFactory.getInstance()
-					.createFastStorageInterface();
 			for (Datafile df : datafiles) {
 				if (!fastStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
@@ -654,14 +646,16 @@ public class WebService {
 			case NO_SUCH_OBJECT_FOUND:
 				throw new NotFoundException(e.getMessage());
 			default:
-				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+				String msg = "Unrecognized ICAT exception " + e;
+				logger.error(msg);
+				throw new InternalServerErrorException(msg);
 			}
 		} catch (FileNotFoundException e) {
 			throw new NotFoundException(e.getMessage());
-		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
 		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
+			String msg = t.getClass() + " " + t.getMessage();
+			logger.error(msg);
+			throw new InternalServerErrorException(msg);
 		}
 
 		if (restoreRequest != null) {
@@ -696,8 +690,6 @@ public class WebService {
 		final boolean finalCompress = "true".equals(compress) ? true : false;
 		final String finalName = name;
 		final String finalSessionId = sessionId;
-		final StorageInterface fastStorage = StorageFactory.getInstance()
-				.createFastStorageInterface();
 		// create output stream of the zip file
 		StreamingOutput strOut = new StreamingOutput() {
 			@Override
@@ -756,7 +748,6 @@ public class WebService {
 		Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId,
 				Long.parseLong(datasetId));
 
-		StorageInterface fastStorage = StorageFactory.getInstance().createFastStorageInterface();
 		if (!fastStorage.datasetExists(ds.getLocation())) {
 			IdsRequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
 			requestHelper.addDatasets(sessionId, requestEntity, datasetId);
@@ -843,8 +834,6 @@ public class WebService {
 			}
 
 			// check the files availability on fast storage
-			StorageInterface fastStorage = StorageFactory.getInstance()
-					.createFastStorageInterface();
 			for (Datafile df : datafiles) {
 				if (!fastStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
@@ -1084,7 +1073,7 @@ public class WebService {
 		return df.getId();
 	}
 
-	private void restartUnfinishedWork() throws IllegalStateException {
+	private void restartUnfinishedWork() {
 		List<IdsRequestEntity> requests = requestHelper.getUnfinishedRequests();
 		for (IdsRequestEntity request : requests) {
 			for (IdsDataEntity de : request.getDataEntities()) {

@@ -11,8 +11,8 @@ import java.util.zip.ZipInputStream;
 
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
+import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
@@ -43,10 +43,10 @@ public class Preparer implements Runnable {
 		logger.info("starting preparer");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance()
-				.createFastStorageInterface();
-		StorageInterface slowStorageInterface = StorageFactory.getInstance()
-				.createSlowStorageInterface();
+		StorageInterface fastStorageInterface = PropertyHandler.getInstance()
+				.getMainStorage();
+		StorageInterface slowStorageInterface = PropertyHandler.getInstance()
+				.getArchiveStorage();
 
 		// if one of the previous DataEntities of the Request failed, there's no point continuing
 		// with this one
@@ -56,10 +56,10 @@ public class Preparer implements Runnable {
 		// }
 		// }
 		// if this is the first DE of the Request being processed, set the Request status to
-		// RETRIVING
+		// RETRIEVING
 		if (de.getRequest().getStatus() == StatusInfo.SUBMITTED) {
 			synchronized (deferredOpsQueue) {
-				requestHelper.setRequestStatus(de.getRequest(), StatusInfo.RETRIVING);
+				requestHelper.setRequestStatus(de.getRequest(), StatusInfo.RETRIEVING);
 			}
 		}
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // let's assume that everything will go
@@ -75,6 +75,7 @@ public class Preparer implements Runnable {
 				} else {
 					slowIS = slowStorageInterface.getDataset(de.getIcatDataset().getLocation());
 					fastStorageInterface.putDataset(de.getIcatDataset().getLocation(), slowIS);
+					slowIS.close();
 					fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()
 							.getLocation()));
 					ZipEntry entry;
@@ -125,6 +126,7 @@ public class Preparer implements Runnable {
 				InputStream is = ZipHelper.prepareZipForUserRequest(de.getRequest(),
 						fastStorageInterface);
 				fastStorageInterface.putPreparedZip(de.getRequest().getPreparedId() + ".zip", is);
+				is.close();
 			} catch (Exception e) {
 				logger.warn(String.format("Could not prepare the zip. Reason: " + e.getMessage()));
 				synchronized (deferredOpsQueue) {

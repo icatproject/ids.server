@@ -2,17 +2,17 @@
 from setup_utils import *
 import os
 
-# ids
+# ids.server
 
 actions, options, arg = getActions()
-props = actions.getGlassfish("ids-setup.properties", ["connectionProperties", "glassfish", "driver", "port"])
+props = actions.getGlassfish("ids-setup.properties", ["connectionProperties", "glassfish", "driver", "port", "libraries"])
 
 prop_name = "ids.properties"
-prop_list = []
+prop_list = ["icat.url", "writeDelaySeconds", "processQueueIntervalSeconds", "requestExpireTimeDays",
+             "tmpDir", "plugin.main.class", "plugin.main.properties"]
 
 if arg == "CONFIGURE":
     actions.configure(prop_name, prop_list)
-    actions.configure("ids-storage.properties", [])
     actions.setConfigured()
 
 elif arg == "INSTALL":
@@ -20,13 +20,21 @@ elif arg == "INSTALL":
     actions.checkConfigured()
     
     idsProperties = actions.getProperties(prop_name, prop_list)
-    storageProps = actions.getProperties("ids-storage.properties", [])
+    
+    sprops = idsProperties.get("plugin.main.properties")
+    if not actions.configFileExists(sprops):
+        abort ("ids.properties defined plugin.main.properties to be " + sprops + " but the file has not been deployed. Have you installed the necessary ids plugins?")
+    
+    if idsProperties.get("plugin.archive.class"):
+        sprops = idsProperties.get("plugin.archive.properties")
+        if not sprops: abort ("plugin.archive.class defined but not plugin.archive.properties")
+        if not actions.configFileExists(sprops):
+            abort ("ids.properties defined plugin.archive.properties to be " + sprops + " but the file has not been deployed. Have you installed the necessary ids plugins?")   
     
     actions.installFile("ids.properties")
-    actions.installFile("ids-storage.properties")
-    
+   
     try:          
-        app = actions.getAppName("ids")
+        app = actions.getAppName("ids.server")
         if app: actions.asadmin("undeploy " + app)
         
         actions.asadmin("delete-jdbc-resource jdbc/ids", tolerant=True)
@@ -38,7 +46,7 @@ elif arg == "INSTALL":
         
         actions.asadmin("create-jdbc-resource --connectionpoolid ids jdbc/ids")
                  
-        actions.deploy("ids-*.war", contextroot="ids")
+        actions.deploy("ids.server-*.war", libraries=props["libraries"].split())
                       
     except Exception, e:
         raise
@@ -50,7 +58,7 @@ else:  # UNINSTALL
     actions.removeFile("ids-storage.properties")
     
     try:
-        app = actions.getAppName("ids.war")
+        app = actions.getAppName("ids.server")
         if app: actions.asadmin("undeploy " + app)
         actions.asadmin("delete-jdbc-resource jdbc/ids", tolerant=True)
         actions.asadmin("delete-jdbc-connection-pool ids", tolerant=True)

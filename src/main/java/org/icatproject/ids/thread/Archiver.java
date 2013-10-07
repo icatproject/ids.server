@@ -6,8 +6,8 @@ import java.util.Set;
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
+import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
@@ -36,8 +36,8 @@ public class Archiver implements Runnable {
 		logger.info("starting Archiver");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance()
-				.createFastStorageInterface();
+		StorageInterface fastStorageInterface = PropertyHandler.getInstance()
+				.getMainStorage();
 
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
 		Dataset ds = de.getIcatDataset();

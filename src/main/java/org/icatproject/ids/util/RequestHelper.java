@@ -161,10 +161,9 @@ public class RequestHelper {
 		em.merge(request);
 	}
 
-	public IdsRequestEntity getRequestByPreparedId(String preparedId) {
-		Query q = em.createNamedQuery("findRequestByPreparedId").setParameter(
-				"preparedId", preparedId);
-		return (IdsRequestEntity) q.getSingleResult();
+	public List<IdsRequestEntity> getRequestByPreparedId(String preparedId) {
+		return em.createNamedQuery("findRequestByPreparedId", IdsRequestEntity.class).setParameter(
+				"preparedId", preparedId).getResultList();
 	}
 
 	public List<IdsRequestEntity> getUnfinishedRequests() {

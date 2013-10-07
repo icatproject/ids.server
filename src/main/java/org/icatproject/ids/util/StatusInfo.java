@@ -6,5 +6,5 @@ package org.icatproject.ids.util;
  * (which contains statuses mentioned in the specification)
  */
 public enum StatusInfo {
-	SUBMITTED, RETRIVING, ERROR, COMPLETED, DENIED, INFO_RETRIVED, INFO_RETRIVING, NOT_FOUND, INCOMPLETE
+	SUBMITTED, RETRIEVING, ERROR, COMPLETED, DENIED, INFO_RETRIEVED, INFO_RETRIEVING, NOT_FOUND, INCOMPLETE
 }

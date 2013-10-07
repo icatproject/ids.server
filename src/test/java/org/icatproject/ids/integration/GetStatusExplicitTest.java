@@ -51,7 +51,7 @@ public class GetStatusExplicitTest {
 	public void notFoundDatasetIdTest() throws Exception {
 		int expectedSc = 404;
 		try {
-			testingClient.getStatusTest(setup.getGoodSessionId(), null, "99999999", null);
+			testingClient.getStatus(setup.getGoodSessionId(), null, "99999999", null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -62,7 +62,7 @@ public class GetStatusExplicitTest {
 	public void notFoundDatafileIdsTest() throws Exception {
 		int expectedSc = 404;
 		try {
-			testingClient.getStatusTest(setup.getGoodSessionId(), null, null, "1,2,3,9999999");
+			testingClient.getStatus(setup.getGoodSessionId(), null, null, "1,2,3,9999999");
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -73,7 +73,7 @@ public class GetStatusExplicitTest {
 	public void forbiddenTest() throws Exception {
 		int expectedSc = 403;
 		try {
-			testingClient.getStatusTest(setup.getForbiddenSessionId(), null, null,
+			testingClient.getStatus(setup.getForbiddenSessionId(), null, null,
 					setup.getCommaSepDatafileIds());
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -83,33 +83,33 @@ public class GetStatusExplicitTest {
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getCommaSepDatafileIds(), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 		assertEquals(Status.ONLINE, status);
-		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, null,
+		status = testingClient.getStatus(setup.getGoodSessionId(), null, null,
 				setup.getCommaSepDatafileIds());
 		assertEquals(Status.ONLINE, status);
 	}
 
 	@Test
 	public void restoringDatafileRestoresItsDatasetTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(0), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 		assertEquals(Status.ONLINE, status);
-		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, setup.getDatasetIds()
+		status = testingClient.getStatus(setup.getGoodSessionId(), null, setup.getDatasetIds()
 				.get(0), null);
 		assertEquals(Status.ONLINE, status);
-		status = testingClient.getStatusTest(setup.getGoodSessionId(), null, setup.getDatasetIds()
+		status = testingClient.getStatus(setup.getGoodSessionId(), null, setup.getDatasetIds()
 				.get(1), null);
 		assertEquals(Status.ARCHIVED, status);
 	}

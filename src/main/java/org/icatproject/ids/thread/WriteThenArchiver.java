@@ -7,8 +7,8 @@ import java.util.Set;
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
+import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
@@ -39,10 +39,10 @@ public class WriteThenArchiver implements Runnable {
 		logger.info("starting WriteThenArchiver");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface slowStorageInterface = StorageFactory.getInstance()
-				.createSlowStorageInterface();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance()
-				.createFastStorageInterface();
+		StorageInterface fastStorageInterface = PropertyHandler.getInstance()
+				.getMainStorage();
+		StorageInterface slowStorageInterface = PropertyHandler.getInstance()
+				.getArchiveStorage();
 
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
 		Dataset ds = de.getIcatDataset();
@@ -55,6 +55,7 @@ public class WriteThenArchiver implements Runnable {
 			if (fastStorageInterface.datasetExists(ds.getLocation())) {
 				InputStream is = fastStorageInterface.getDataset(ds.getLocation());
 				slowStorageInterface.putDataset(ds.getLocation(), is);
+				is.close();
 				fastStorageInterface.deleteDataset(ds.getLocation());
 				for (Datafile df : ds.getDatafiles()) {
 					fastStorageInterface.deleteDatafile(df.getLocation());

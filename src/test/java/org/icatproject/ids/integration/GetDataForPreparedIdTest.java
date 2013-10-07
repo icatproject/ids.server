@@ -65,7 +65,7 @@ public class GetDataForPreparedIdTest {
 	public void badPreparedIdFormatTest() throws Exception {
 		int expectedSc = 400;
 		try {
-			testingClient.getDataTest("bad preparedId format", null, null);
+			testingClient.getData("bad preparedId format", null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -76,16 +76,16 @@ public class GetDataForPreparedIdTest {
 	public void badFileNameFormatTest() throws Exception {
 		int expectedSc = 400;
 		try {
-			String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+			String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 					setup.getDatafileIds().get(0), null, null);
 
 			Status status = null;
 			do {
 				Thread.sleep(1000);
-				status = testingClient.getStatusTest(preparedId);
+				status = testingClient.getStatus(preparedId);
 			} while (Status.RESTORING.equals(status));
 
-			testingClient.getDataTest(preparedId, "this/is/a/bad/file/name", null);
+			testingClient.getData(preparedId, "this/is/a/bad/file/name", null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -96,16 +96,16 @@ public class GetDataForPreparedIdTest {
 	public void badOffsetFormatTest() throws Exception {
 		int expectedSc = 400;
 		try {
-			String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+			String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 					setup.getDatafileIds().get(0), null, null);
 
 			Status status = null;
 			do {
 				Thread.sleep(1000);
-				status = testingClient.getStatusTest(preparedId);
+				status = testingClient.getStatus(preparedId);
 			} while (Status.RESTORING.equals(status));
 
-			testingClient.getDataTest(preparedId, null, -10L);
+			testingClient.getData(preparedId, null, -10L);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -116,7 +116,7 @@ public class GetDataForPreparedIdTest {
 	public void nonExistantPreparedIdTest() throws Exception {
 		int expectedSc = 404;
 		try {
-			testingClient.getDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null);
+			testingClient.getData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -127,20 +127,20 @@ public class GetDataForPreparedIdTest {
 	public void forbiddenTest() throws Exception {
 		int expectedSc = 403;
 		try {
-			String preparedId = testingClient.prepareDataTest(setup.getForbiddenSessionId(), null,
+			String preparedId = testingClient.prepareData(setup.getForbiddenSessionId(), null,
 					null, setup.getDatafileIds().get(0), null, null);
 
 			try {
 				Status status = null;
 				do {
 					Thread.sleep(1000);
-					status = testingClient.getStatusTest(preparedId);
+					status = testingClient.getStatus(preparedId);
 				} while (Status.RESTORING.equals(status));
 			} catch (ForbiddenException e) {
 				// ignore because testing to see if getData throws a ForbiddenException as well
 			}
 
-			testingClient.getDataTest(preparedId, null, null);
+			testingClient.getData(preparedId, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -151,16 +151,16 @@ public class GetDataForPreparedIdTest {
 	public void offsetTooBigTest() throws Exception {
 		int expectedSc = 400;
 		try {
-			String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+			String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 					setup.getDatafileIds().get(0), null, null);
 
 			Status status = null;
 			do {
 				Thread.sleep(1000);
-				status = testingClient.getStatusTest(preparedId);
+				status = testingClient.getStatus(preparedId);
 			} while (Status.RESTORING.equals(status));
 
-			testingClient.getDataTest(preparedId, null, badOffset.longValue());
+			testingClient.getData(preparedId, null, badOffset.longValue());
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -169,48 +169,48 @@ public class GetDataForPreparedIdTest {
 
 	@Test
 	public void correctBehaviourNoOffsetTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(0), null, null);
 
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
-		Response response = testingClient.getDataTest(preparedId, null, null);
+		Response response = testingClient.getData(preparedId, null, null);
 		Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
 		TestingUtils.checkMD5Values(map, setup);
 	}
 
 	@Test
 	public void correctBehaviourNoOffsetMultipleDatafilesTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getCommaSepDatafileIds(), null, null);
 
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
-		Response response = testingClient.getDataTest(preparedId, null, null);
+		Response response = testingClient.getData(preparedId, null, null);
 		Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
 		TestingUtils.checkMD5Values(map, setup);
 	}
 
 	@Test
 	public void correctBehaviourNoOffsetWithDatasetTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, setup
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, setup
 				.getDatasetIds().get(0), null, null, null);
 
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
-		Response response = testingClient.getDataTest(preparedId, null, null);
+		Response response = testingClient.getData(preparedId, null, null);
 		Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
 		TestingUtils.checkMD5Values(map, setup);
 	}
@@ -218,35 +218,35 @@ public class GetDataForPreparedIdTest {
 	@Test
 	public void correctBehaviourNoOffsetWithDatasetAndDatafileTest() throws Exception {
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, setup
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, setup
 				.getDatasetIds().get(0), setup.getCommaSepDatafileIds(), null, null);
 
 		Status status = null;
 		do {
 			System.out.println("preparing...");
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
-		Response response = testingClient.getDataTest(preparedId, null, null);
+		Response response = testingClient.getData(preparedId, null, null);
 		Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
 		TestingUtils.checkMD5Values(map, setup);
 	}
 
 	@Test
 	public void correctBehaviourWithOffsetTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(0), null, null);
 
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
 		// request the zip file twice, with and without an offset
-		Response zip = testingClient.getDataTest(preparedId, null, null);
-		Response zipoffset = testingClient.getDataTest(preparedId, null, goodOffset.longValue());
+		Response zip = testingClient.getData(preparedId, null, null);
+		Response zipoffset = testingClient.getData(preparedId, null, goodOffset.longValue());
 
 		// check that the full zip file is valid
 		Map<String, String> map = TestingUtils.filenameMD5Map(zip.getResponse());
@@ -262,16 +262,16 @@ public class GetDataForPreparedIdTest {
 
 	@Test
 	public void correctBehaviourFilenameWithExtensionTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(0), null, null);
 
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
-		Response response = testingClient.getDataTest(preparedId, "testfilenamewithextension.zip",
+		Response response = testingClient.getData(preparedId, "testfilenamewithextension.zip",
 				null);
 		Assert.assertEquals("Downloaded filename does not match requested filename",
 				response.getFilename(), "testfilenamewithextension.zip");
@@ -279,16 +279,16 @@ public class GetDataForPreparedIdTest {
 
 	@Test
 	public void correctBehaviourFilenameWithoutExtensionTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(0), null, null);
 
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
-		Response response = testingClient.getDataTest(preparedId, "testfilenamewithoutextension",
+		Response response = testingClient.getData(preparedId, "testfilenamewithoutextension",
 				null);
 		Assert.assertEquals("Downloaded filename does not match requested filename",
 				response.getFilename(), "testfilenamewithoutextension.zip");

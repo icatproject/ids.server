@@ -60,7 +60,7 @@ public class GetDataExplicitTest {
 	public void badPreparedIdFormatTest() throws Exception {
 		int expectedSc = 400;
 		try {
-			testingClient.getDataTest("bad preparedId format", null, null, null, null, null, null,
+			testingClient.getData("bad preparedId format", null, null, null, null, null, null,
 					null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -72,7 +72,7 @@ public class GetDataExplicitTest {
 	public void badDatafileIdFormatTest() throws Exception {
 		int expectedSc = 400;
 		try {
-			testingClient.getDataTest(setup.getGoodSessionId(), null, null, "notADatafile", null,
+			testingClient.getData(setup.getGoodSessionId(), null, null, "notADatafile", null,
 					null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -84,7 +84,7 @@ public class GetDataExplicitTest {
 	public void forbiddenTest() throws Exception {
 		int expectedSc = 403;
 		try {
-			testingClient.getDataTest(setup.getForbiddenSessionId(), null, null,
+			testingClient.getData(setup.getForbiddenSessionId(), null, null,
 					setup.getCommaSepDatafileIds(), null, null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -94,15 +94,15 @@ public class GetDataExplicitTest {
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getCommaSepDatafileIds(), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 		assertEquals(Status.ONLINE, status);
-		Response response = testingClient.getDataTest(setup.getGoodSessionId(), null, null,
+		Response response = testingClient.getData(setup.getGoodSessionId(), null, null,
 				setup.getCommaSepDatafileIds(), null, null, null, null);
 		Map<String, String> map = TestingUtils.filenameMD5Map(response.getResponse());
 		TestingUtils.checkMD5Values(map, setup);
@@ -124,7 +124,7 @@ public class GetDataExplicitTest {
 		File unrestoredZipOnFastStorage = new File(setup.getStorageZipDir(),
 				unrestoredIcatDs.getLocation());
 		try {
-			testingClient.getDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
+			testingClient.getData(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
 					.get(DF_NUM_FROM_PROPS), null, null, null, null);
 		} catch (UniformInterfaceException e) {
 			assertEquals(404, e.getResponse().getStatus());
@@ -157,7 +157,7 @@ public class GetDataExplicitTest {
 		File dirOnFastStorage1 = new File(setup.getStorageDir(), icatDs1.getLocation());
 		File zipOnFastStorage1 = new File(setup.getStorageZipDir(), icatDs1.getLocation());
 		try {
-			testingClient.getDataTest(setup.getGoodSessionId(), null,
+			testingClient.getData(setup.getGoodSessionId(), null,
 					setup.getDatasetIds().get(DS_NUM_FROM_PROPS),
 					setup.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null, null, null);
 		} catch (UniformInterfaceException e) {

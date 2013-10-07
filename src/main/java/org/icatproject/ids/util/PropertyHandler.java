@@ -1,17 +1,21 @@
 package org.icatproject.ids.util;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Properties;
 
 import javax.xml.namespace.QName;
 
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
+import org.icatproject.ids.plugin.StorageType;
+import org.icatproject.utils.CheckedProperties;
+import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,114 +31,97 @@ public class PropertyHandler {
 	private String icatUrl;
 	private long writeDelaySeconds;
 	private long processQueueIntervalSeconds;
-	private Class<StorageInterface> fastStorageInterfaceImplementation;
-	private Class<StorageInterface> slowStorageInterfaceImplementation;
-	private String tmpDir;
+	private StorageInterface mainStorage;
+	private StorageInterface archiveStorage;
+	private File tmpDir;
 	private ICAT icatService;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
-		File f = new File("ids.properties");
-		Properties props = new Properties();
-		try {
-			props.load(new FileInputStream(f));
-			logger.info("Property file " + f + " loaded");
-		} catch (Exception e) {
-			String msg = "Problem with " + f.getAbsolutePath() + ": " + e.getMessage();
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
 
-		// do some very basic error checking on the config options
-		icatUrl = props.getProperty("icat.url");
-		if (!icatUrl.endsWith("ICATService/ICAT?wsdl")) {
-			if (icatUrl.charAt(icatUrl.length() - 1) == '/') {
-				icatUrl = icatUrl + "ICATService/ICAT?wsdl";
-			} else {
-				icatUrl = icatUrl + "/ICATService/ICAT?wsdl";
+		CheckedProperties props = new CheckedProperties();
+
+		try {
+			props.loadFromFile("ids.properties");
+			logger.info("Property file ids.properties loaded");
+
+			// do some very basic error checking on the config options
+			icatUrl = props.getProperty("icat.url");
+			if (!icatUrl.endsWith("ICATService/ICAT?wsdl")) {
+				if (icatUrl.charAt(icatUrl.length() - 1) == '/') {
+					icatUrl = icatUrl + "ICATService/ICAT?wsdl";
+				} else {
+					icatUrl = icatUrl + "/ICATService/ICAT?wsdl";
+				}
 			}
-		}
 
-		try {
-			URL url = new URL(icatUrl);
-			icatService = new ICATService(url, new QName("http://icatproject.org", "ICATService"))
-					.getICATPort();
-		} catch (MalformedURLException e) {
-			String msg = "Invalid property icat.url (" + icatUrl + "). Check URL format";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-		try {
-			icatService.getApiVersion();// make a test call
-		} catch (IcatException_Exception e) {
-			String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " "
-					+ e.getMessage();
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-
-		requestExpireTimeDays = Integer.parseInt(props.getProperty("requestExpireTimeDays"));
-		if (requestExpireTimeDays < 1) {
-			String msg = "Invalid property requestExpireTimeDays ("
-					+ props.getProperty("requestExpireTimeDays")
-					+ "). Must be an integer greater than 0.";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-
-		writeDelaySeconds = Long.parseLong(props.getProperty("writeDelaySeconds"));
-		if (writeDelaySeconds < 1) {
-			String msg = "Invalid property writeDelaySeconds ("
-					+ props.getProperty("writeDelaySeconds")
-					+ "). Must be an integer greater than 0.";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-
-		processQueueIntervalSeconds = Long.parseLong(props
-				.getProperty("processQueueIntervalSeconds"));
-		if (processQueueIntervalSeconds < 1) {
-			String msg = "Invalid property processQueueIntervalSeconds ("
-					+ props.getProperty("processQueueIntervalSeconds")
-					+ "). Must be an integer greater than 0.";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-
-		String fastStorageInterfaceImplementationName = props.getProperty("plugin.main");
-		if (fastStorageInterfaceImplementationName == null) {
-			String msg = "Property plugin.main must be set.";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-		try {
-			fastStorageInterfaceImplementation = (Class<StorageInterface>) Class
-					.forName(fastStorageInterfaceImplementationName);
-		} catch (Exception e) {
-			String msg = "Could not get class implementing StorageInterface from "
-					+ fastStorageInterfaceImplementationName;
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-
-		String slowStorageInterfaceImplementationName = props.getProperty("plugin.archive");
-		if (slowStorageInterfaceImplementationName == null) {
-			String msg = "Property plugin.archive left unset set, single storage enabled.";
-			logger.info(msg);
-			slowStorageInterfaceImplementation = null;
-		} else {
 			try {
-				slowStorageInterfaceImplementation = (Class<StorageInterface>) Class
-						.forName(slowStorageInterfaceImplementationName);
-			} catch (Exception e) {
-				String msg = "Could not get class implementing StorageInterface from "
-						+ slowStorageInterfaceImplementationName;
+				URL url = new URL(icatUrl);
+				icatService = new ICATService(url, new QName("http://icatproject.org",
+						"ICATService")).getICATPort();
+			} catch (MalformedURLException e) {
+				String msg = "Invalid property icat.url (" + icatUrl + "). Check URL format";
 				logger.error(msg);
 				throw new IllegalStateException(msg);
 			}
-		}
+			try {
+				icatService.getApiVersion();// make a test call
+			} catch (IcatException_Exception e) {
+				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " "
+						+ e.getMessage();
+				logger.error(msg);
+				throw new IllegalStateException(msg);
+			}
 
-		tmpDir = setICATDirFromProperties(props, "tmpDir");
+			requestExpireTimeDays = props.getPositiveInt("requestExpireTimeDays");
+			writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
+			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
+
+			try {
+				Class<StorageInterface> klass = (Class<StorageInterface>) Class.forName(props
+						.getString("plugin.main.class"));
+				mainStorage = klass.getConstructor(File.class, StorageType.class).newInstance(
+						props.getFile("plugin.main.properties"), StorageType.MAIN);
+				logger.debug("mainStorage initialised");
+			} catch (InvocationTargetException e) {
+				Throwable cause = e.getCause();
+				abort(cause.getClass() + " " + cause.getMessage());
+			} catch (Exception e) {
+				abort(e.getClass() + " " + e.getMessage());
+			}
+
+			if (props.getProperty("plugin.archive.class") == null) {
+				logger.info("Property plugin.archive.class not set, single storage enabled.");
+			} else {
+				try {
+					Class<StorageInterface> klass = (Class<StorageInterface>) Class.forName(props
+							.getString("plugin.archive.class"));
+					archiveStorage = klass.getConstructor(File.class, StorageType.class)
+							.newInstance(props.getFile("plugin.archive.properties"),
+									StorageType.ARCHIVE);
+					logger.debug("archiveStorage initialised");
+				} catch (InvocationTargetException e) {
+					Throwable cause = e.getCause();
+					abort(cause.getClass() + " " + cause.getMessage());
+				} catch (Exception e) {
+					abort(e.getClass() + " " + e.getMessage());
+				}
+			}
+
+			tmpDir = props.getFile("tmpDir");
+			if (!tmpDir.isDirectory()) {
+				abort(tmpDir + " must be an existing directory");
+			}
+
+		} catch (CheckedPropertyException e) {
+			abort(e.getMessage());
+		}
+	}
+
+	private void abort(String msg) {
+		logger.error(msg);
+		logger.error("IllegalStateException being thrown");
+		throw new IllegalStateException(msg);
 	}
 
 	public synchronized static PropertyHandler getInstance() {
@@ -142,11 +129,6 @@ public class PropertyHandler {
 			instance = new PropertyHandler();
 		}
 		return instance;
-	}
-
-	@Deprecated
-	public String getIcatUrl() {
-		return icatUrl;
 	}
 
 	public long getWriteDelaySeconds() {
@@ -161,34 +143,16 @@ public class PropertyHandler {
 		return requestExpireTimeDays;
 	}
 
-	public Class<StorageInterface> getFastStorageInterfaceImplementation() {
-		return fastStorageInterfaceImplementation;
+	public StorageInterface getMainStorage() {
+		return mainStorage;
 	}
 
-	public Class<StorageInterface> getSlowStorageInterfaceImplementation() {
-		return slowStorageInterfaceImplementation;
+	public StorageInterface getArchiveStorage() {
+		return archiveStorage;
 	}
 
-	public String getTmpDir() {
+	public File getTmpDir() {
 		return tmpDir;
-	}
-
-	private String setICATDirFromProperties(Properties props, String property) {
-		String res = props.getProperty(property);
-		if (res == null) {
-			String msg = "Property " + property + " must be set.";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-
-		File tmp = new File(res);
-		if (!tmp.exists()) {
-			String msg = "Invalid " + property + ". Directory " + res
-					+ " not found. Please create.";
-			logger.error(msg);
-			throw new IllegalStateException(msg);
-		}
-		return res;
 	}
 
 	public ICAT getIcatService() {

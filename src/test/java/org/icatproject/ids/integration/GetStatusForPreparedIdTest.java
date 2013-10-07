@@ -50,7 +50,7 @@ public class GetStatusForPreparedIdTest {
 	public void badPreparedIdFormatTest() throws Exception {
 		int expectedSc = 400;
 		try {
-			testingClient.getStatusTest("bad preparedId format");
+			testingClient.getStatus("bad preparedId format");
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -61,7 +61,7 @@ public class GetStatusForPreparedIdTest {
 	public void nonExistingPreparedIdTest() throws Exception {
 		int expectedSc = 404;
 		try {
-			testingClient.getStatusTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+			testingClient.getStatus("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
 		}
@@ -71,12 +71,12 @@ public class GetStatusForPreparedIdTest {
 	public void notFoundIdsTest() throws Exception {
 		int expectedSc = 404;
 		try {
-			String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, "1,2,3,99999",
+			String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null, "1,2,3,99999",
 					null, null);
 			Status status = null;
 			do {
 				Thread.sleep(1000);
-				status = testingClient.getStatusTest(preparedId);
+				status = testingClient.getStatus(preparedId);
 			} while (Status.RESTORING.equals(status));
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -89,11 +89,11 @@ public class GetStatusForPreparedIdTest {
 		int expectedSc = 404;
 		try {
 			String preparedId = testingClient
-					.prepareDataTest(setup.getGoodSessionId(), null, null, "99999", null, null);
+					.prepareData(setup.getGoodSessionId(), null, null, "99999", null, null);
 			Status status = null;
 			do {
 				Thread.sleep(1000);
-				status = testingClient.getStatusTest(preparedId);
+				status = testingClient.getStatus(preparedId);
 			} while (Status.RESTORING.equals(status));
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -106,11 +106,11 @@ public class GetStatusForPreparedIdTest {
 		int expectedSc = 404;
 		try {
 			String preparedId = testingClient
-					.prepareDataTest(setup.getGoodSessionId(), null, "99999", null, null, null);
+					.prepareData(setup.getGoodSessionId(), null, "99999", null, null, null);
 			Status status = null;
 			do {
 				Thread.sleep(1000);
-				status = testingClient.getStatusTest(preparedId);
+				status = testingClient.getStatus(preparedId);
 			} while (Status.RESTORING.equals(status));
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -122,12 +122,12 @@ public class GetStatusForPreparedIdTest {
 	public void forbiddenTest() throws Exception {
 		int expectedSc = 403;
 		try {
-			String preparedId = testingClient.prepareDataTest(setup.getForbiddenSessionId(), null, null,
+			String preparedId = testingClient.prepareData(setup.getForbiddenSessionId(), null, null,
 					setup.getCommaSepDatafileIds(), null, null);
 			Status status = null;
 			do {
 				Thread.sleep(1000);
-				status = testingClient.getStatusTest(preparedId);
+				status = testingClient.getStatus(preparedId);
 			} while (Status.RESTORING.equals(status));
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -137,12 +137,12 @@ public class GetStatusForPreparedIdTest {
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getCommaSepDatafileIds(), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 		assertEquals(Status.ONLINE, status);
 	}

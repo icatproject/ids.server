@@ -14,7 +14,7 @@ import java.util.zip.ZipOutputStream;
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsRequestEntity;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

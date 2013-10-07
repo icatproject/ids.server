@@ -51,7 +51,7 @@ public class RestoreTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null,
+		testingClient.restore(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
@@ -78,7 +78,7 @@ public class RestoreTest {
 		String dsIds = setup.getDatasetIds().get(DS1_NUM_FROM_PROPS) + ", "
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null, dsIds, null);
+		testingClient.restore(setup.getGoodSessionId(), null, dsIds, null);
 		do {
 			Thread.sleep(1000);
 		} while (!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists() || 
@@ -102,7 +102,7 @@ public class RestoreTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null, null,
+		testingClient.restore(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
 		do {
 			Thread.sleep(1000);
@@ -123,7 +123,7 @@ public class RestoreTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null, 
+		testingClient.restore(setup.getGoodSessionId(), null, 
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
 		do {
 			Thread.sleep(1000);

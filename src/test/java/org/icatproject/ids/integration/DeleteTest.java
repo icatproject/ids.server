@@ -53,7 +53,7 @@ public class DeleteTest {
 		int expectedSc = 404;
 		try {
 			final int DS_NUM_FROM_PROPS = 0;
-			testingClient.deleteTest(setup.getGoodSessionId(), null,
+			testingClient.delete(setup.getGoodSessionId(), null,
 					setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -74,7 +74,7 @@ public class DeleteTest {
 		File zipOnSlowStorage = new File(new File(setup.getStorageArchiveDir(),
 				icatDs.getLocation()), "files.zip");
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null,
+		testingClient.restore(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
@@ -85,7 +85,7 @@ public class DeleteTest {
 				+ " should have been restored, but doesn't exist", zipOnFastStorage.exists());
 
 		zipOnSlowStorage.delete(); // to check, if the dataset really is going to be written
-		testingClient.deleteTest(setup.getGoodSessionId(), null, null,
+		testingClient.delete(setup.getGoodSessionId(), null, null,
 				setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
 		do {
 			Thread.sleep(1000);
@@ -107,7 +107,7 @@ public class DeleteTest {
 		File zipOnSlowStorage = new File(new File(setup.getStorageArchiveDir(),
 				icatDs.getLocation()), "files.zip");
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null,
+		testingClient.restore(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
@@ -117,7 +117,7 @@ public class DeleteTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath()
 				+ " should have been restored, but doesn't exist", zipOnFastStorage.exists());
 
-		testingClient.deleteTest(setup.getGoodSessionId(), null,
+		testingClient.delete(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);

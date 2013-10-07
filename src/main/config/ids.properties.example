@@ -1,6 +1,6 @@
 # The URL pointing to a running ICAT eg. http://example.com:8080/ICATService/ICAT?wsdl
 # The /ICATService/ICAT?wsdl suffix is optional
-icat.url = https://smfisher.esc.rl.ac.uk:8181/ICATService/ICAT?wsdl
+icat.url = https://smfisher.esc.rl.ac.uk:8181
 
 writeDelaySeconds = 60
 processQueueIntervalSeconds = 2
@@ -14,11 +14,14 @@ requestExpireTimeDays = 7
 # TODO change to space constraint instead of time constraint
 # NUMBER_OF_DAYS_TO_KEEP_FILES_IN_CACHE = 30
 
-# Canonical name of the class implementing StorageInterface, must be on classpath.
-# The plugin.archive propety can be removed, a single storage model will be used then.
-plugin.main = org.icatproject.ids.storage.local.LocalFileStorage
-plugin.archive = org.icatproject.ids.storage.local.LocalFileStorage
+# Canonical name of the classes implementing the StorageInterface.
+# If the plugin.archive property is omitted a single storage model will be used. 
+# For each class the configuration file must also be specified.
+plugin.main.class = org.icatproject.ids.storage.FileStorage
+plugin.main.properties = ids.storage_file.main.properties
 
-# A directory, where temporary files are placed, e.g. when preparing a zip
-# for a user request or copying a dataset between storages
+plugin.archive.class = org.icatproject.ids.storage.FileStorage
+plugin.archive.properties = ids.storage_file.archive.properties
+
+# A directory, where temporary files are placed
 tmpDir = /home/fisher/icat/servertmp/

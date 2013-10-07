@@ -60,12 +60,12 @@ public class PrepareDataTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
@@ -90,11 +90,11 @@ public class PrepareDataTest {
 		String dsIds = setup.getDatasetIds().get(DS1_NUM_FROM_PROPS) + ", "
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, dsIds, null, null, null);
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, dsIds, null, null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
@@ -116,12 +116,12 @@ public class PrepareDataTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
 				.get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
@@ -142,12 +142,12 @@ public class PrepareDataTest {
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
 		String preparedId = testingClient
-				.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
+				.prepareData(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
 						.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 
 		assertThat("Status info should be ONLINE or INCOMPLETE, is " + status.name(), status,
@@ -164,7 +164,7 @@ public class PrepareDataTest {
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
 			// dataset id -1 shouldn't exist in the DB
-			client.prepareDataTest(setup.getGoodSessionId(), null, "-1", null, null, null);
+			client.prepareData(setup.getGoodSessionId(), null, "-1", null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -176,7 +176,7 @@ public class PrepareDataTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.prepareDataTest("bad sessionId format", null, null, null, null, null);
+			client.prepareData("bad sessionId format", null, null, null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -188,7 +188,7 @@ public class PrepareDataTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.prepareDataTest(setup.getGoodSessionId(), null, null, "1, 2, a", null, null);
+			client.prepareData(setup.getGoodSessionId(), null, null, "1, 2, a", null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -200,7 +200,7 @@ public class PrepareDataTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.prepareDataTest(setup.getGoodSessionId(), null, "", null, null, null);
+			client.prepareData(setup.getGoodSessionId(), null, "", null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -212,7 +212,7 @@ public class PrepareDataTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.prepareDataTest(setup.getGoodSessionId(), null, "99999999999999999999", null, null, null);
+			client.prepareData(setup.getGoodSessionId(), null, "99999999999999999999", null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -224,7 +224,7 @@ public class PrepareDataTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.prepareDataTest(setup.getGoodSessionId(), null, null, null, null, null);
+			client.prepareData(setup.getGoodSessionId(), null, null, null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -236,7 +236,7 @@ public class PrepareDataTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.prepareDataTest(setup.getGoodSessionId(), null, null, null, "flase", null);
+			client.prepareData(setup.getGoodSessionId(), null, null, null, "flase", null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -248,7 +248,7 @@ public class PrepareDataTest {
 		int expectedSc = 403;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.prepareDataTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null, setup.getCommaSepDatafileIds(),
+			client.prepareData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, null, setup.getCommaSepDatafileIds(),
 					null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
@@ -259,7 +259,7 @@ public class PrepareDataTest {
 	@Test
 	public void correctBehaviourTest() throws Exception {
 		TestingClient client = new TestingClient(setup.getIdsUrl());
-		String preparedId = client.prepareDataTest(setup.getGoodSessionId(), null, null,
+		String preparedId = client.prepareData(setup.getGoodSessionId(), null, null,
 				setup.getCommaSepDatafileIds(), null, null);
 		assertNotNull(preparedId);
 	}
@@ -272,7 +272,7 @@ public class PrepareDataTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDs.getLocation());
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		testingClient.restore(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
 		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
@@ -282,12 +282,12 @@ public class PrepareDataTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null,
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
@@ -311,7 +311,7 @@ public class PrepareDataTest {
 		String dsIds = setup.getDatasetIds().get(DS1_NUM_FROM_PROPS) + ", "
 				+ setup.getDatasetIds().get(DS2_NUM_FROM_PROPS);
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null, dsIds, null);
+		testingClient.restore(setup.getGoodSessionId(), null, dsIds, null);
 		do {
 			Thread.sleep(1000);
 		} while (!dirOnFastStorage1.exists() || !zipOnFastStorage1.exists() || !dirOnFastStorage2.exists()
@@ -326,11 +326,11 @@ public class PrepareDataTest {
 		assertTrue("Zip in " + zipOnFastStorage2.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage2.exists());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, dsIds, null, null, null);
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, dsIds, null, null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
@@ -347,7 +347,7 @@ public class PrepareDataTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
+		testingClient.restore(setup.getGoodSessionId(), null, null, setup.getDatafileIds().get(DF_NUM_FROM_PROPS));
 		do {
 			Thread.sleep(1000);
 		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
@@ -357,12 +357,12 @@ public class PrepareDataTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath() + " should have been restored, but doesn't exist",
 				zipOnFastStorage.exists());
 
-		String preparedId = testingClient.prepareDataTest(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
+		String preparedId = testingClient.prepareData(setup.getGoodSessionId(), null, null, setup.getDatafileIds()
 				.get(DF_NUM_FROM_PROPS), null, null);
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);
@@ -380,7 +380,7 @@ public class PrepareDataTest {
 		File dirOnFastStorage = new File(setup.getStorageDir(), icatDf.getDataset().getLocation());
 		File zipOnFastStorage = new File(setup.getStorageZipDir(), icatDf.getDataset().getLocation());
 		System.out.println("a");
-		testingClient.restoreTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
+		testingClient.restore(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
 				.getDatafileIds().get(DF_NUM_FROM_PROPS));
 		do {
 			Thread.sleep(1000);
@@ -392,13 +392,13 @@ public class PrepareDataTest {
 				zipOnFastStorage.exists());
 		System.out.println("c");
 		String preparedId = testingClient
-				.prepareDataTest(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
+				.prepareData(setup.getGoodSessionId(), null, setup.getDatasetIds().get(DS_NUM_FROM_PROPS), setup
 						.getDatafileIds().get(DF_NUM_FROM_PROPS), null, null);
 		System.out.println("cc");
 		Status status = null;
 		do {
 			Thread.sleep(1000);
-			status = testingClient.getStatusTest(preparedId);
+			status = testingClient.getStatus(preparedId);
 		} while (Status.RESTORING.equals(status));
 		System.out.println("d");
 		assertEquals("Status info should be ONLINE, is " + status.name(), Status.ONLINE, status);

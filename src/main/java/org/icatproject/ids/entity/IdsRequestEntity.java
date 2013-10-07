@@ -32,11 +32,10 @@ import org.icatproject.ids.webservice.DeferredOp;
 @Table(name = "IDS_REQUEST")
 @XmlRootElement
 @NamedQueries({
-	@NamedQuery(name="findRequestByPreparedId", query="SELECT d FROM IdsRequestEntity d WHERE d.preparedId = :preparedId"),
-	@NamedQuery(name="findUnfinishedRequests", query="SELECT r FROM IdsRequestEntity r "
+		@NamedQuery(name = "findRequestByPreparedId", query = "SELECT d FROM IdsRequestEntity d WHERE d.preparedId = :preparedId"),
+		@NamedQuery(name = "findUnfinishedRequests", query = "SELECT r FROM IdsRequestEntity r "
 				+ "WHERE r.status = org.icatproject.ids.util.StatusInfo.SUBMITTED "
-				+ "OR r.status = org.icatproject.ids.util.StatusInfo.RETRIVING")
-})
+				+ "OR r.status = org.icatproject.ids.util.StatusInfo.RETRIEVING") })
 public class IdsRequestEntity implements Serializable {
 
 	@Id
@@ -75,8 +74,8 @@ public class IdsRequestEntity implements Serializable {
 		this.id = id;
 	}
 
-	public IdsRequestEntity(Long id, String preparedId, String userId, Date submittedTime, Date expireTime,
-			DeferredOp type) {
+	public IdsRequestEntity(Long id, String preparedId, String userId, Date submittedTime,
+			Date expireTime, DeferredOp type) {
 		this.id = id;
 		this.preparedId = preparedId;
 		this.userId = userId;
@@ -186,8 +185,8 @@ public class IdsRequestEntity implements Serializable {
 	}
 
 	/*
-	 * Returns all ICAT Datafiles that were requested directly (Datafiles from
-	 * requested Datasets don't count)
+	 * Returns all ICAT Datafiles that were requested directly (Datafiles from requested Datasets
+	 * don't count)
 	 */
 	public Set<Datafile> getIcatDatafiles() {
 		Set<Datafile> datafiles = new HashSet<Datafile>();
@@ -198,8 +197,8 @@ public class IdsRequestEntity implements Serializable {
 	}
 
 	/*
-	 * Returns all ICAT Datasets that were requested directly (Datasets
-	 * operation on which has been caused by a requested Datafile don't count)
+	 * Returns all ICAT Datasets that were requested directly (Datasets operation on which has been
+	 * caused by a requested Datafile don't count)
 	 */
 	public Set<Dataset> getIcatDatasets() {
 		Set<Dataset> datasets = new HashSet<Dataset>();

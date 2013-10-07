@@ -54,7 +54,7 @@ public class ArchiveTest {
 		File zipOnFastStorage = new File(new File(setup.getStorageZipDir(), icatDs.getLocation()),
 				"files.zip");
 
-		testingClient.restoreTest(setup.getGoodSessionId(), null,
+		testingClient.restore(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		do {
 			Thread.sleep(1000);
@@ -65,7 +65,7 @@ public class ArchiveTest {
 		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath()
 				+ " should have been restored, but doesn't exist", zipOnFastStorage.exists());
 
-		testingClient.archiveTest(setup.getGoodSessionId(), null,
+		testingClient.archive(setup.getGoodSessionId(), null,
 				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
 		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
@@ -82,7 +82,7 @@ public class ArchiveTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.archiveTest("bad sessionId format", null, null, "1,2");
+			client.archive("bad sessionId format", null, null, "1,2");
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -94,7 +94,7 @@ public class ArchiveTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.archiveTest(setup.getGoodSessionId(), null, null, "1,2,a");
+			client.archive(setup.getGoodSessionId(), null, null, "1,2,a");
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -106,7 +106,7 @@ public class ArchiveTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.archiveTest(setup.getGoodSessionId(), null, "", null);
+			client.archive(setup.getGoodSessionId(), null, "", null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -118,7 +118,7 @@ public class ArchiveTest {
 		int expectedSc = 400;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.archiveTest(setup.getGoodSessionId(), null, null, null);
+			client.archive(setup.getGoodSessionId(), null, null, null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());
@@ -130,7 +130,7 @@ public class ArchiveTest {
 		int expectedSc = 403;
 		try {
 			TestingClient client = new TestingClient(setup.getIdsUrl());
-			client.archiveTest("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, "1,2", null);
+			client.archive("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, "1,2", null);
 			fail("Expected SC " + expectedSc);
 		} catch (UniformInterfaceException e) {
 			assertEquals(expectedSc, e.getResponse().getStatus());

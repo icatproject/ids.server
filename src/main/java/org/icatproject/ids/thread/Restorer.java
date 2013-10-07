@@ -11,8 +11,8 @@ import java.util.zip.ZipInputStream;
 
 import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
-import org.icatproject.ids.storage.StorageFactory;
-import org.icatproject.ids.storage.StorageInterface;
+import org.icatproject.ids.plugin.StorageInterface;
+import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
@@ -40,10 +40,10 @@ public class Restorer implements Runnable {
 	@Override
 	public void run() {
 		logger.info("starting restorer");
-		StorageInterface slowStorageInterface = StorageFactory.getInstance()
-				.createSlowStorageInterface();
-		StorageInterface fastStorageInterface = StorageFactory.getInstance()
-				.createFastStorageInterface();
+		StorageInterface fastStorageInterface = PropertyHandler.getInstance()
+				.getMainStorage();
+		StorageInterface slowStorageInterface = PropertyHandler.getInstance()
+				.getArchiveStorage();
 
 		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming, that everything will go OK
 		InputStream slowIS = null;
@@ -56,6 +56,7 @@ public class Restorer implements Runnable {
 				} else {
 					slowIS = slowStorageInterface.getDataset(de.getIcatDataset().getLocation());
 					fastStorageInterface.putDataset(de.getIcatDataset().getLocation(), slowIS);
+					slowIS.close();
 					fastIS = new ZipInputStream(fastStorageInterface.getDataset(de.getIcatDataset()
 							.getLocation()));
 					ZipEntry entry;
