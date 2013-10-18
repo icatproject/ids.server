@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +23,6 @@ import java.util.zip.ZipOutputStream;
 import javax.xml.namespace.QName;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
@@ -44,8 +45,8 @@ public class Setup {
 
 	private Properties props = new Properties();
 
-	private String icatUrl = null;
-	private String idsUrl = null;
+	private URL icatUrl = null;
+	private URL idsUrl = null;
 
 	private String goodSessionId = null;
 	private String forbiddenSessionId = null;
@@ -74,16 +75,17 @@ public class Setup {
 			System.out.println("Problem loading test.properties\n" + e.getMessage());
 		}
 
-		icatUrl = props.getProperty("icat.url");
-		if (!icatUrl.endsWith("ICATService/ICAT?wsdl")) {
-			if (icatUrl.charAt(icatUrl.length() - 1) == '/') {
-				icatUrl = icatUrl + "ICATService/ICAT?wsdl";
+		String icatUrlString = props.getProperty("icat.url");
+		if (!icatUrlString.endsWith("ICATService/ICAT?wsdl")) {
+			if (icatUrlString.charAt(icatUrlString.length() - 1) == '/') {
+				icatUrlString = icatUrlString + "ICATService/ICAT?wsdl";
 			} else {
-				icatUrl = icatUrl + "/ICATService/ICAT?wsdl";
+				icatUrlString = icatUrlString + "/ICATService/ICAT?wsdl";
 			}
 		}
+		icatUrl = new URL(icatUrlString);
 
-		idsUrl = props.getProperty("ids.url");
+		idsUrl = new URL(props.getProperty("ids.url"));
 
 		goodSessionId = login(props.getProperty("authorizedIcatUsername"),
 				props.getProperty("authorizedIcatPassword"));
@@ -96,12 +98,10 @@ public class Setup {
 		storagePreparedDir = props.getProperty("storagePreparedDir");
 		userLocalDir = props.getProperty("userLocalDir");
 
-		// ICATClientBase icatClient = ICATClientFactory.getInstance().createICATInterface();
 		long timestamp = System.currentTimeMillis();
 
 		try {
-			final URL icatProperUrl = new URL(icatUrl);
-			final ICATService icatService = new ICATService(icatProperUrl, new QName(
+			final ICATService icatService = new ICATService(icatUrl, new QName(
 					"http://icatproject.org", "ICATService"));
 			icat = icatService.getICATPort();
 
@@ -206,14 +206,10 @@ public class Setup {
 
 	}
 
-	/*
-	 * This function may only work for ICAT version 4.2. If you want to use a different version, you
-	 * will need to include the appropriate ICATService, Entry, Credentials classes.
-	 */
 	public String login(String username, String password) throws IcatException_Exception,
 			MalformedURLException {
-		ICAT icat = new ICATService(new URL(icatUrl), new QName("http://icatproject.org",
-				"ICATService")).getICATPort();
+		ICAT icat = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"))
+				.getICATPort();
 
 		Credentials credentials = new Credentials();
 		List<Entry> entries = credentials.getEntry();
@@ -247,7 +243,12 @@ public class Setup {
 		}
 		icat.delete(goodSessionId, dsType);
 		icat.delete(goodSessionId, fac);
-		FileUtils.deleteDirectory(new File(storageArchiveDir, "test_dss"));
+
+		TreeDeleteVisitor treeDeleteVisitor = new TreeDeleteVisitor();
+
+		Files.walkFileTree(FileSystems.getDefault().getPath(storageArchiveDir, "test_dss"),
+				treeDeleteVisitor);
+
 	}
 
 	public String getCommaSepDatafileIds() {
@@ -262,7 +263,7 @@ public class Setup {
 		return goodSessionId;
 	}
 
-	public String getIdsUrl() throws MalformedURLException {
+	public URL getIdsUrl() {
 		return idsUrl;
 	}
 
@@ -302,7 +303,7 @@ public class Setup {
 		return newFileLocation;
 	}
 
-	public String getIcatUrl() {
+	public URL getIcatUrl() {
 		return icatUrl;
 	}
 

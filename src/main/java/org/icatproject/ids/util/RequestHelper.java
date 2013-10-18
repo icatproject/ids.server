@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 @Stateless
 public class RequestHelper {
-	private final static String DEFAULT_COMPRESS = "false";
+	private final static boolean DEFAULT_COMPRESS = false;
 	private final static String DEFAULT_ZIP = "false";
 	private final static Logger logger = LoggerFactory.getLogger(RequestHelper.class);
 	private PropertyHandler properties = PropertyHandler.getInstance();
@@ -39,7 +39,7 @@ public class RequestHelper {
 	@EJB
 	private Icat icatServiceFacade;
 
-	public IdsRequestEntity createPrepareRequest(String sessionId, String compress, String zip)
+	public IdsRequestEntity createPrepareRequest(String sessionId, boolean compress, String zip)
 			throws IcatException_Exception {
 		return createRequest(sessionId, compress, zip, DeferredOp.PREPARE);
 	}
@@ -51,13 +51,13 @@ public class RequestHelper {
 	public IdsRequestEntity createRestoreRequest(String sessionId) throws IcatException_Exception {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.RESTORE);
 	}
-	
+
 	public IdsRequestEntity createWriteRequest(String sessionId) throws IcatException_Exception {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.WRITE);
 	}
 
-	private IdsRequestEntity createRequest(String sessionId, String compress, String zip, DeferredOp deferredOp)
-			throws IcatException_Exception {
+	private IdsRequestEntity createRequest(String sessionId, boolean compress, String zip,
+			DeferredOp deferredOp) throws IcatException_Exception {
 		Calendar expireDate = Calendar.getInstance();
 		expireDate.add(Calendar.DATE, properties.getRequestExpireTimeDays());
 
@@ -68,17 +68,12 @@ public class RequestHelper {
 		requestEntity.setUserId(username);
 		requestEntity.setPreparedId(UUID.randomUUID().toString());
 		requestEntity.setStatus(StatusInfo.SUBMITTED);
-		requestEntity.setCompress(Boolean.parseBoolean(compress));
+		requestEntity.setCompress(compress);
 		requestEntity.setSubmittedTime(new Date());
 		requestEntity.setExpireTime(expireDate.getTime());
 		requestEntity.setDeferredOp(deferredOp);
 
-		try {
-			em.persist(requestEntity);
-		} catch (Exception e) {
-			logger.error("Couldn't persist " + requestEntity + ", exception: " + e.getMessage());
-			throw new RuntimeException(e);
-		}
+		em.persist(requestEntity);
 
 		return requestEntity;
 	}
@@ -88,7 +83,8 @@ public class RequestHelper {
 		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 
 		for (String id : datasetIdList) {
-			Dataset ds = icatServiceFacade.getDatasetWithDatafilesForDatasetId(sessionId, Long.parseLong(id));
+			Dataset ds = icatServiceFacade.getDatasetWithDatafilesForDatasetId(sessionId,
+					Long.parseLong(id));
 			addDataset(sessionId, requestEntity, ds);
 		}
 	}
@@ -109,7 +105,8 @@ public class RequestHelper {
 		List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
 
 		for (String id : datafileIdList) {
-			Datafile df = icatServiceFacade.getDatafileWithDatasetForDatafileId(sessionId, Long.parseLong(id));
+			Datafile df = icatServiceFacade.getDatafileWithDatasetForDatafileId(sessionId,
+					Long.parseLong(id));
 			addDatafile(sessionId, requestEntity, df);
 		}
 	}
@@ -139,8 +136,9 @@ public class RequestHelper {
 
 		// assuming that everything went OK
 		StatusInfo resultingRequestStatus = StatusInfo.COMPLETED;
-		logger.info(String.format("Will check status of %s data entities (%s DS, %s DF)", 
-				request.getDataEntities().size(), request.getDatasets().size(), request.getDatafiles().size()));
+		logger.info(String.format("Will check status of %s data entities (%s DS, %s DF)", request
+				.getDataEntities().size(), request.getDatasets().size(), request.getDatafiles()
+				.size()));
 		for (IdsDataEntity de : request.getDataEntities()) {
 			logger.info("Status of " + de + " is " + de.getStatus());
 			if (!finalStatuses.contains(de.getStatus())) {
@@ -162,12 +160,13 @@ public class RequestHelper {
 	}
 
 	public List<IdsRequestEntity> getRequestByPreparedId(String preparedId) {
-		return em.createNamedQuery("findRequestByPreparedId", IdsRequestEntity.class).setParameter(
-				"preparedId", preparedId).getResultList();
+		return em.createNamedQuery("findRequestByPreparedId", IdsRequestEntity.class)
+				.setParameter("preparedId", preparedId).getResultList();
 	}
 
 	public List<IdsRequestEntity> getUnfinishedRequests() {
-		Query q = em.createNamedQuery("findUnfinishedRequests"); // TODO untested, was explicit query before
+		Query q = em.createNamedQuery("findUnfinishedRequests"); // TODO untested, was explicit
+																	// query before
 		@SuppressWarnings("unchecked")
 		List<IdsRequestEntity> requests = (List<IdsRequestEntity>) q.getResultList();
 		logger.info("Found " + requests.size() + " unfinished requests");
@@ -176,12 +175,12 @@ public class RequestHelper {
 			IdsRequestEntity request = it.next();
 			try {
 				for (IdsDatafileEntity df : request.getDatafiles()) {
-					df.setIcatDatafile(icatServiceFacade.getDatafileWithDatasetForDatafileId(request.getSessionId(),
-							df.getIcatDatafileId()));
+					df.setIcatDatafile(icatServiceFacade.getDatafileWithDatasetForDatafileId(
+							request.getSessionId(), df.getIcatDatafileId()));
 				}
 				for (IdsDatasetEntity ds : request.getDatasets()) {
-					ds.setIcatDataset(icatServiceFacade.getDatasetWithDatafilesForDatasetId(request.getSessionId(),
-							ds.getIcatDatasetId()));
+					ds.setIcatDataset(icatServiceFacade.getDatasetWithDatafilesForDatasetId(
+							request.getSessionId(), ds.getIcatDatasetId()));
 				}
 			} catch (IcatException_Exception e) {
 				logger.warn("Couldn't resume processing " + request);

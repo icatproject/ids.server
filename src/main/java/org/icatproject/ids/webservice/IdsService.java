@@ -1,5 +1,7 @@
 package org.icatproject.ids.webservice;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -17,8 +19,6 @@ import java.util.Timer;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
 import javax.persistence.PersistenceException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -34,7 +34,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
-import org.apache.commons.io.IOUtils;
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
@@ -54,6 +53,8 @@ import org.icatproject.ids.util.ValidationHelper;
 import org.icatproject.ids.util.ZipHelper;
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
 import org.icatproject.ids.webservice.exceptions.ForbiddenException;
+import org.icatproject.ids.webservice.exceptions.IdsException;
+import org.icatproject.ids.webservice.exceptions.IdsException.Code;
 import org.icatproject.ids.webservice.exceptions.InternalServerErrorException;
 import org.icatproject.ids.webservice.exceptions.NotFoundException;
 import org.icatproject.ids.webservice.exceptions.NotImplementedException;
@@ -65,14 +66,16 @@ import org.slf4j.LoggerFactory;
  */
 @Path("/")
 @Stateless
-@TransactionAttribute(TransactionAttributeType.NEVER)
-public class WebService {
+// @TransactionAttribute(TransactionAttributeType.NEVER)
+public class IdsService {
 
-	private final static Logger logger = LoggerFactory.getLogger(WebService.class);
+	private final static Logger logger = LoggerFactory.getLogger(IdsService.class);
 
 	private long archiveWriteDelayMillis = PropertyHandler.getInstance().getWriteDelaySeconds() * 1000L;
 	private Timer timer = new Timer();
 	private RequestQueues requestQueues = RequestQueues.getInstance();
+
+	private static final int BUFSIZ = 2048;
 
 	@EJB
 	private Icat icatClient;
@@ -111,6 +114,11 @@ public class WebService {
 	 * @param zip
 	 *            Request data to be packaged in a ZIP archive (not implemented)
 	 * @return HTTP response containing a preparedId for the download request
+	 * @throws NotImplementedException
+	 * @throws BadRequestException
+	 * @throws ForbiddenException
+	 * @throws NotFoundException
+	 * @throws InternalServerErrorException
 	 */
 	@POST
 	@Path("prepareData")
@@ -120,34 +128,37 @@ public class WebService {
 			@FormParam("investigationIds") String investigationIds,
 			@FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds,
-			@DefaultValue("false") @FormParam("compress") String compress,
-			@FormParam("zip") String zip) {
+			@DefaultValue("false") @FormParam("compress") boolean compress,
+			@FormParam("zip") String zip) throws NotImplementedException, BadRequestException,
+			ForbiddenException, NotFoundException, InternalServerErrorException {
 		IdsRequestEntity requestEntity = null;
 		logger.info("prepareData received");
-		// 501
+
 		if (investigationIds != null) {
-			throw new NotImplementedException("investigationIds are not supported");
+			throw new NotImplementedException(Code.NOT_IMPLEMENTED,
+					"investigationIds are not supported");
 		}
 		if (zip != null) {
-			throw new NotImplementedException("the zip parameter is not supported");
+			throw new NotImplementedException(Code.NOT_IMPLEMENTED,
+					"the zip parameter is not supported");
 		}
 		// 400
 		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
+			throw new BadRequestException(Code.BAD_SESSION_ID, "The sessionId parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATASET_IDS,
+					"The datasetIds parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATAFILE_IDS,
+					"The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException(
+			throw new BadRequestException(Code.PARAMETER_MISSING,
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
-		if (ValidationHelper.isValidBoolean(compress) == false) {
-			throw new BadRequestException("The compress parameter is invalid");
-		}
+
 		// at this point we're sure, that all arguments are valid
 		logger.info("New webservice request: prepareData " + "investigationIds='"
 				+ investigationIds + "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='"
@@ -168,25 +179,29 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case SESSION:
-				throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+				throw new ForbiddenException(Code.BAD_SESSION_ID,
+						"The sessionId parameter is invalid or has expired");
 			case INSUFFICIENT_PRIVILEGES:
 				requestHelper.setRequestStatus(requestEntity, StatusInfo.ERROR);
-				throw new ForbiddenException(
+				throw new ForbiddenException(Code.DENIED,
 						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
 				requestHelper.setRequestStatus(requestEntity, StatusInfo.NOT_FOUND);
-				throw new NotFoundException("Could not find requested objects");
+				throw new NotFoundException(Code.NOT_IN_ICAT, "Could not find requested objects");
 			case INTERNAL:
-				throw new InternalServerErrorException("Unable to connect to ICAT server");
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+						"Unable to connect to ICAT server");
 			default:
-				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+						"Unrecognized ICAT exception " + e);
 			}
 		} catch (PersistenceException e) {
-			throw new InternalServerErrorException("Unable to connect to the database");
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+					"Unable to connect to the database");
 		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, e.getMessage());
 		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, t.getMessage());
 		}
 		return Response.status(200).entity(requestEntity.getPreparedId() + "\n").build();
 	}
@@ -208,6 +223,10 @@ public class WebService {
 	 * @param datafileIds
 	 *            A list of datafile IDs (optional)
 	 * @return Empty response
+	 * @throws BadRequestException
+	 * @throws ForbiddenException
+	 * @throws NotImplementedException
+	 * @throws InternalServerErrorException
 	 */
 	@POST
 	@Path("archive")
@@ -215,25 +234,30 @@ public class WebService {
 	@Produces("text/plain")
 	public Response archive(@FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds,
-			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds) {
+			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
+			throws BadRequestException, ForbiddenException, NotImplementedException,
+			InternalServerErrorException {
 		IdsRequestEntity requestEntity = null;
 
 		// 501
 		if (investigationIds != null) {
-			throw new NotImplementedException("investigationIds are not supported");
+			throw new NotImplementedException(Code.NOT_IMPLEMENTED,
+					"investigationIds are not supported");
 		}
 		// 400
 		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
+			throw new BadRequestException(Code.BAD_SESSION_ID, "The sessionId parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATASET_IDS,
+					"The datasetIds parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATAFILE_IDS,
+					"The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException(
+			throw new BadRequestException(Code.PARAMETER_MISSING,
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
@@ -255,16 +279,19 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case SESSION:
-				throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+				throw new ForbiddenException(Code.BAD_SESSION_ID,
+						"The sessionId parameter is invalid or has expired");
 			default:
-				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+						"Unrecognized ICAT exception " + e);
 			}
 		} catch (PersistenceException e) {
-			throw new InternalServerErrorException("Unable to connect to the database");
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+					"Unable to connect to the database");
 		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, e.getMessage());
 		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, t.getMessage());
 		}
 
 		return Response.status(200).build();
@@ -277,7 +304,9 @@ public class WebService {
 			@QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafilesIds) {
+			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException,
+			NotFoundException, InternalServerErrorException, ForbiddenException,
+			NotImplementedException {
 		Response status = null;
 		logger.info("received getStatus with preparedId = " + preparedId);
 		if (preparedId != null) {
@@ -299,23 +328,29 @@ public class WebService {
 	 *            The ID of the download request
 	 * @return HTTP response containing the current status of the download request (ONLINE,
 	 *         IMCOMPLETE, RESTORING, ARCHIVED) Note: only ONELINE and RESTORING are implemented
+	 * @throws BadRequestException
+	 * @throws NotFoundException
+	 * @throws InternalServerErrorException
+	 * @throws ForbiddenException
 	 */
-	private Response getStatus(String preparedId) {
+	private Response getStatus(String preparedId) throws BadRequestException, NotFoundException,
+			InternalServerErrorException, ForbiddenException {
 		String status = null;
 
-		// 400
 		if (ValidationHelper.isValidId(preparedId) == false) {
-			throw new BadRequestException("The preparedId parameter is invalid");
+			throw new BadRequestException(Code.BAD_PREPARED_ID,
+					"The preparedId parameter is invalid");
 		}
 
 		List<IdsRequestEntity> requests = requestHelper.getRequestByPreparedId(preparedId);
 		if (requests.size() == 0) {
-			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
+			throw new NotFoundException(Code.NO_PREPARED_ID, "No matches found for preparedId \""
+					+ preparedId + "\"");
 		}
 		if (requests.size() > 1) {
 			String msg = "More than one match found for preparedId \"" + preparedId + "\"";
 			logger.error(msg);
-			throw new InternalServerErrorException(msg);
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, msg);
 		}
 		status = requests.get(0).getStatus().name();
 
@@ -328,13 +363,14 @@ public class WebService {
 		} else if (statusinfo == StatusInfo.INCOMPLETE) {
 			status = Status.INCOMPLETE.name();
 		} else if (statusinfo == StatusInfo.DENIED) {
-			throw new ForbiddenException(
+			throw new ForbiddenException(Code.DENIED,
 					"You do not have permission to download one or more of the requested files");
 		} else if (statusinfo == StatusInfo.NOT_FOUND) {
-			throw new NotFoundException(
+			throw new NotFoundException(Code.NOT_IN_ICAT,
 					"Some of the requested datafile / dataset ids were not found");
 		} else if (statusinfo == StatusInfo.ERROR) {
-			throw new InternalServerErrorException("Unable to find files in storage");
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+					"Unable to find files in storage");
 		} else {
 			status = Status.RESTORING.name();
 		}
@@ -343,23 +379,28 @@ public class WebService {
 	}
 
 	private Response getStatus(String sessionId, String investigationIds, String datasetIds,
-			String datafileIds) {
+			String datafileIds) throws NotImplementedException, BadRequestException,
+			ForbiddenException, NotFoundException, InternalServerErrorException {
 		// 501
 		if (investigationIds != null) {
-			throw new NotImplementedException("investigationIds are not supported");
+			throw new NotImplementedException(Code.NOT_IMPLEMENTED,
+					"investigationIds are not supported");
 		}
 		// 400
 		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
+			throw new BadRequestException(IdsException.Code.BAD_SESSION_ID,
+					"The sessionId parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATASET_IDS,
+					"The datasetIds parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATAFILE_IDS,
+					"The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException(
+			throw new BadRequestException(Code.PARAMETER_MISSING,
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
@@ -409,19 +450,18 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case INSUFFICIENT_PRIVILEGES:
-				throw new ForbiddenException(
+				throw new ForbiddenException(Code.DENIED,
 						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
-				throw new NotFoundException(e.getMessage());
+				throw new NotFoundException(Code.CHECK_THIS_CODE, e.getMessage());
 			default:
-				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+						"Unrecognized ICAT exception " + e);
 			}
 		} catch (FileNotFoundException e) {
-			throw new NotFoundException(e.getMessage());
-		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
-		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
+			throw new NotFoundException(Code.CHECK_THIS_CODE, e.getMessage());
+		} catch (IOException e) {
+			throw new NotFoundException(Code.CHECK_THIS_CODE, e.getMessage());
 		}
 
 		return Response.status(200).entity(status + "\n").build();
@@ -436,8 +476,24 @@ public class WebService {
 			@QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds, @QueryParam("compress") String compress,
 			@QueryParam("zip") String zip, @QueryParam("outname") String outname,
-			@QueryParam("offset") String offset) {
+			@QueryParam("offset") String offsetString) throws BadRequestException,
+			NotFoundException, InternalServerErrorException, ForbiddenException,
+			NotImplementedException {
 		Response data = null;
+		long offset = 0;
+
+		if (offsetString != null) {
+			try {
+				offset = Long.parseLong(offsetString);
+				if (offset < 0) {
+					throw new BadRequestException(Code.NEGATIVE,
+							"The offset, if specified, must be a non-negative integer");
+				}
+			} catch (NumberFormatException e) {
+				throw new BadRequestException(Code.NEGATIVE,
+						"The offset, if specified, must be a non-negative integer");
+			}
+		}
 		if (preparedId != null) {
 			data = getData(preparedId, outname, offset);
 		} else {
@@ -461,22 +517,24 @@ public class WebService {
 	 * @param offset
 	 *            The desired offset of the file (optional)
 	 * @return HTTP response containing the ZIP file
+	 * @throws BadRequestException
+	 * @throws NotFoundException
+	 * @throws InternalServerErrorException
+	 * @throws ForbiddenException
 	 */
-	private Response getData(String preparedId, String outname, String offset) {
+	private Response getData(String preparedId, String outname, final long offset)
+			throws BadRequestException, NotFoundException, InternalServerErrorException,
+			ForbiddenException {
 
 		final IdsRequestEntity requestEntity;
-		final Long offsetLong;
 		String name = null;
 
-		// 400
 		if (ValidationHelper.isValidId(preparedId) == false) {
-			throw new BadRequestException("The preparedId parameter is invalid");
+			throw new BadRequestException(Code.BAD_PREPARED_ID,
+					"The preparedId parameter is invalid");
 		}
 		if (ValidationHelper.isValidName(outname) == false) {
-			throw new BadRequestException("The outname parameter is invalid");
-		}
-		if (ValidationHelper.isValidOffset(offset) == false) {
-			throw new BadRequestException("The offset parameter is invalid");
+			throw new BadRequestException(Code.BAD_OUTNAME, "The outname parameter is invalid");
 		}
 
 		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' "
@@ -484,12 +542,13 @@ public class WebService {
 
 		List<IdsRequestEntity> requests = requestHelper.getRequestByPreparedId(preparedId);
 		if (requests.size() == 0) {
-			throw new NotFoundException("No matches found for preparedId \"" + preparedId + "\"");
+			throw new NotFoundException(Code.NO_PREPARED_ID, "No matches found for preparedId \""
+					+ preparedId + "\"");
 		}
 		if (requests.size() > 1) {
 			String msg = "More than one match found for preparedId \"" + preparedId + "\"";
 			logger.error(msg);
-			throw new InternalServerErrorException(msg);
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, msg);
 		}
 		requestEntity = requests.get(0);
 
@@ -500,23 +559,24 @@ public class WebService {
 		case INFO_RETRIEVING:
 		case INFO_RETRIEVED:
 		case RETRIEVING:
-			throw new NotFoundException("Requested files are not ready for download");
+			throw new NotFoundException(Code.CHECK_THIS_CODE,
+					"Requested files are not ready for download");
 		case DENIED:
 			// TODO: return a list of the 'bad' files?
-			throw new ForbiddenException(
+			throw new ForbiddenException(Code.DENIED,
 					"You do not have permission to download one or more of the requested files");
 		case NOT_FOUND:
 			// TODO: return list of the 'bad' ids?
-			throw new NotFoundException(
+			throw new NotFoundException(Code.CHECK_THIS_CODE,
 					"Some of the requested datafile / dataset ids were not found");
 		case INCOMPLETE:
-			throw new NotFoundException(
+			throw new NotFoundException(Code.CHECK_THIS_CODE,
 					"Some of the requested files are no longer available in ICAT.");
 		case ERROR:
 			// TODO: return list of the missing files?
 			String msg = "Unable to find files in storage";
 			logger.error(msg);
-			throw new InternalServerErrorException(msg);
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, msg);
 		case COMPLETED:
 		default:
 			break;
@@ -535,20 +595,26 @@ public class WebService {
 			}
 		}
 
-		// calculate offset
-		if (offset != null) {
-			offsetLong = Long.parseLong(offset);
-		} else {
-			offsetLong = 0L;
+		// create output stream of the zip file
+		InputStream zipStream = null;
+		try {
+			zipStream = fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip", offset);
+			long skipped = zipStream.skip(offset);
+			if (skipped != offset) {
+				throw new IllegalArgumentException("Offset (" + offset
+						+ " bytes) is larger than file size (" + skipped + " bytes)");
+			}
+			zipStream.skip(offset);
+		} catch (IOException e) {
+			throw new WebApplicationException(e);
 		}
 
-		// create output stream of the zip file
 		StreamingOutput strOut = new StreamingOutput() {
 			@Override
 			public void write(OutputStream output) throws IOException, WebApplicationException {
 				try {
-					IOUtils.copy(fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip",
-							offsetLong), output);
+					copy(fastStorage.getPreparedZip(requestEntity.getPreparedId() + ".zip", offset),
+							output);
 				} catch (Exception e) {
 					throw new WebApplicationException(e);
 				}
@@ -561,34 +627,35 @@ public class WebService {
 	}
 
 	private Response getData(String sessionId, String investigationIds, String datasetIds,
-			String datafileIds, String compress, String zip, String outname, String offset) {
-		final Long offsetLong;
+			String datafileIds, String compress, String zip, String outname, final long offset)
+			throws BadRequestException, NotImplementedException, InternalServerErrorException,
+			ForbiddenException, NotFoundException {
+
 		String name = null;
 
 		// 501
 		if (investigationIds != null) {
-			throw new NotImplementedException("investigationIds are not supported");
+			throw new NotImplementedException(Code.NOT_IMPLEMENTED,
+					"investigationIds are not supported");
 		}
 		// 400
 		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
+			throw new BadRequestException(Code.BAD_SESSION_ID, "The sessionId parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATASET_IDS,
+					"The datasetIds parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATAFILE_IDS,
+					"The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException(
+			throw new BadRequestException(Code.PARAMETER_MISSING,
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 		if (ValidationHelper.isValidName(outname) == false) {
-			throw new BadRequestException("The outname parameter is invalid");
-		}
-
-		if (ValidationHelper.isValidOffset(offset) == false) {
-			throw new BadRequestException("The offset parameter is invalid");
+			throw new BadRequestException(Code.BAD_OUTNAME, "The outname parameter is invalid");
 		}
 
 		logger.info(String
@@ -641,21 +708,21 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case INSUFFICIENT_PRIVILEGES:
-				throw new ForbiddenException(
+				throw new ForbiddenException(Code.DENIED,
 						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
-				throw new NotFoundException(e.getMessage());
+				throw new NotFoundException(Code.CHECK_THIS_CODE, e.getMessage());
 			default:
 				String msg = "Unrecognized ICAT exception " + e;
 				logger.error(msg);
-				throw new InternalServerErrorException(msg);
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE, msg);
 			}
 		} catch (FileNotFoundException e) {
-			throw new NotFoundException(e.getMessage());
+			throw new NotFoundException(Code.CHECK_THIS_CODE, e.getMessage());
 		} catch (Throwable t) {
 			String msg = t.getClass() + " " + t.getMessage();
 			logger.error(msg);
-			throw new InternalServerErrorException(msg);
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, msg);
 		}
 
 		if (restoreRequest != null) {
@@ -664,7 +731,7 @@ public class WebService {
 			}
 		}
 		if (status == Status.ARCHIVED) {
-			throw new NotFoundException("Some files have not been restored. Restoration requested");
+			return Response.status(202).build();
 		}
 
 		// if no outname supplied give default name also suffix with .zip if
@@ -680,16 +747,10 @@ public class WebService {
 			}
 		}
 
-		// calculate offset
-		if (offset != null) {
-			offsetLong = Long.parseLong(offset);
-		} else {
-			offsetLong = 0L;
-		}
-
 		final boolean finalCompress = "true".equals(compress) ? true : false;
 		final String finalName = name;
 		final String finalSessionId = sessionId;
+
 		// create output stream of the zip file
 		StreamingOutput strOut = new StreamingOutput() {
 			@Override
@@ -698,12 +759,12 @@ public class WebService {
 					InputStream in = ZipHelper.prepareTemporaryZip(
 							String.format("%s_%s", finalName, finalSessionId), datasets, datafiles,
 							finalCompress, fastStorage);
-					long skipped = IOUtils.skip(in, offsetLong);
-					if (skipped != offsetLong) {
-						throw new IllegalArgumentException("Offset (" + offsetLong
+					long skipped = in.skip(offset);
+					if (skipped != offset) {
+						throw new IllegalArgumentException("Offset (" + offset
 								+ " bytes) is larger than file size (" + skipped + " bytes)");
 					}
-					IOUtils.copy(in, output);
+					copy(in, output);
 				} catch (Exception e) {
 					throw new WebApplicationException(e);
 				}
@@ -714,35 +775,54 @@ public class WebService {
 				.header("Accept-Ranges", "bytes").build();
 	}
 
+	public static void copy(InputStream is, OutputStream os) throws IOException {
+		BufferedInputStream bis = null;
+		BufferedOutputStream bos = null;
+		try {
+			int bytesRead = 0;
+			byte[] buffer = new byte[BUFSIZ];
+			bis = new BufferedInputStream(is);
+			bos = new BufferedOutputStream(os);
+
+			// write bytes to output stream
+			while ((bytesRead = bis.read(buffer)) > 0) {
+				bos.write(buffer, 0, bytesRead);
+			}
+		} finally {
+			if (bis != null) {
+				bis.close();
+			}
+			if (bos != null) {
+				bos.close();
+			}
+		}
+	}
+
 	@PUT
 	@Path("put")
 	@Consumes("application/octet-stream")
 	public Response put(InputStream body, @QueryParam("sessionId") String sessionId,
-			@QueryParam("name") String name,
-			@QueryParam("datafileFormatId") String datafileFormatIdString,
+			@QueryParam("name") String name, @QueryParam("datafileFormatId") Long datafileFormatId,
 			@QueryParam("datasetId") String datasetId,
 			@QueryParam("description") String description, @QueryParam("doi") String doi,
 			@QueryParam("datafileCreateTime") String datafileCreateTime,
 			@QueryParam("datafileModTime") String datafileModTime) throws Exception {
 		logger.info(String.format("put received, name=%s", name));
-		long datafileFormatId;
 
 		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
+			throw new BadRequestException(Code.BAD_SESSION_ID, "The sessionId parameter is invalid");
 		}
 		if (name == null) {
-			throw new BadRequestException("The name parameter must be set");
+			throw new BadRequestException(Code.PARAMETER_MISSING, "The name parameter must be set");
 		}
-		if (datafileFormatIdString == null) {
-			throw new BadRequestException("The datafileFormatId parameter must be set");
+		if (datafileFormatId == null) {
+			throw new BadRequestException(Code.PARAMETER_MISSING,
+					"The datafileFormatId parameter must be set");
 		}
-		try {
-			datafileFormatId = Long.parseLong(datafileFormatIdString);
-		} catch (NumberFormatException e) {
-			throw new BadRequestException("The datafileFormatId parameter must be of type long");
-		}
+
 		if (datasetId == null) {
-			throw new BadRequestException("The datasetId parameter must be set");
+			throw new BadRequestException(Code.PARAMETER_MISSING,
+					"The datasetId parameter must be set");
 		}
 
 		Dataset ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId,
@@ -752,7 +832,7 @@ public class WebService {
 			IdsRequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
 			requestHelper.addDatasets(sessionId, requestEntity, datasetId);
 			this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
-			throw new NotFoundException(
+			throw new NotFoundException(Code.CHECK_THIS_CODE,
 					"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 		}
 		Datafile dummy = new Datafile();
@@ -785,24 +865,29 @@ public class WebService {
 	public Response delete(@QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafileIds) {
+			@QueryParam("datafileIds") String datafileIds) throws NotImplementedException,
+			BadRequestException, ForbiddenException, NotFoundException,
+			InternalServerErrorException {
 		logger.info("delete received");
 		// 501
 		if (investigationIds != null) {
-			throw new NotImplementedException("investigationIds are not supported");
+			throw new NotImplementedException(Code.NOT_IMPLEMENTED,
+					"investigationIds are not supported");
 		}
 		// 400
 		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
+			throw new BadRequestException(Code.BAD_SESSION_ID, "The sessionId parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATASET_IDS,
+					"The datasetIds parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATAFILE_IDS,
+					"The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException(
+			throw new BadRequestException(Code.PARAMETER_MISSING,
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
@@ -886,19 +971,20 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case INSUFFICIENT_PRIVILEGES:
-				throw new ForbiddenException(
+				throw new ForbiddenException(Code.DENIED,
 						"You don't have sufficient privileges to perform this operation");
 			case NO_SUCH_OBJECT_FOUND:
-				throw new NotFoundException(e.getMessage());
+				throw new NotFoundException(Code.CHECK_THIS_CODE, e.getMessage());
 			default:
-				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+						"Unrecognized ICAT exception " + e);
 			}
 		} catch (FileNotFoundException e) {
-			throw new NotFoundException(e.getMessage());
+			throw new NotFoundException(Code.CHECK_THIS_CODE, e.getMessage());
 		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, e.getMessage());
 		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
+			throw new InternalServerErrorException(Code.CHECK_THIS_CODE, t.getMessage());
 		}
 
 		return Response.status(200).build();
@@ -910,25 +996,30 @@ public class WebService {
 	@Produces("text/plain")
 	public Response restore(@FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds,
-			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds) {
+			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
+			throws NotImplementedException, BadRequestException, ForbiddenException,
+			InternalServerErrorException {
 		IdsRequestEntity requestEntity = null;
 		logger.info("restore received");
-		// 501
+
 		if (investigationIds != null) {
-			throw new NotImplementedException("investigationIds are not supported");
+			throw new NotImplementedException(Code.NOT_IMPLEMENTED,
+					"investigationIds are not supported");
 		}
-		// 400
+
 		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
+			throw new BadRequestException(Code.BAD_SESSION_ID, "The sessionId parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATASET_IDS,
+					"The datasetIds parameter is invalid");
 		}
 		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
+			throw new BadRequestException(Code.BAD_DATAFILE_IDS,
+					"The datafileIds parameter is invalid");
 		}
 		if (datasetIds == null && datafileIds == null) {
-			throw new BadRequestException(
+			throw new BadRequestException(Code.PARAMETER_MISSING,
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 		// at this point we're sure, that all arguments are valid
@@ -950,20 +1041,24 @@ public class WebService {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			switch (type) {
 			case SESSION:
-				throw new ForbiddenException("The sessionId parameter is invalid or has expired");
+				throw new ForbiddenException(Code.DENIED,
+						"The sessionId parameter is invalid or has expired");
 			case INTERNAL:
-				throw new InternalServerErrorException("Unable to connect to ICAT server");
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE, e.getMessage());
 			default:
-				throw new InternalServerErrorException("Unrecognized ICAT exception " + e);
+				throw new InternalServerErrorException(Code.CHECK_THIS_CODE,
+						"Unexpected ICAT exception " + type + " " + e.getMessage());
 			}
-		} catch (PersistenceException e) {
-			throw new InternalServerErrorException("Unable to connect to the database");
-		} catch (Exception e) {
-			throw new InternalServerErrorException(e.getMessage());
-		} catch (Throwable t) {
-			throw new InternalServerErrorException(t.getMessage());
+			// } catch (PersistenceException e) {
+			// throw new InternalServerErrorException("Unable to connect to the database");
+			// } catch (Exception e) {
+			// throw new InternalServerErrorException(e.getMessage());
+			// } catch (Throwable t) {
+			// throw new InternalServerErrorException(t.getMessage());
 		}
-		return Response.status(200).build();
+		Response response = Response.ok().build();
+		logger.debug("Response: " + response.getStatus());
+		return response;
 	}
 
 	private void queue(IdsDataEntity de, DeferredOp deferredOp) {
@@ -1060,7 +1155,8 @@ public class WebService {
 		String location = new File(dataset.getLocation(), name).getPath();
 		DatafileFormat format = icatClient.findDatafileFormatById(sessionid, datafileFormatId);
 		if (format == null) {
-			throw new NotFoundException("DatafileFormatId " + datafileFormatId + " does not exist.");
+			throw new NotFoundException(Code.CHECK_THIS_CODE, "DatafileFormatId "
+					+ datafileFormatId + " does not exist.");
 		}
 		df.setDatafileFormat(format);
 		df.setLocation(location);

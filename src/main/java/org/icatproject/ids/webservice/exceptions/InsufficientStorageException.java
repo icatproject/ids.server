@@ -1,12 +1,12 @@
 package org.icatproject.ids.webservice.exceptions;
 
-public class InsufficientStorageException extends WebServiceException
-{
-    private static final long serialVersionUID = 1L;
- 
-    public InsufficientStorageException(String message)
-    {    
-        super(WebServiceException.Response.INSUFFICIENT_STORAGE, message);
-    }
-}
+import java.net.HttpURLConnection;
 
+public class InsufficientStorageException extends IdsException {
+	private static final long serialVersionUID = 1L;
+
+	@Deprecated
+	public InsufficientStorageException(String message) {
+		super(HttpURLConnection.HTTP_INTERNAL_ERROR, message);
+	}
+}

@@ -1,25 +1,29 @@
 package org.icatproject.ids.integration;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.net.URL;
+import java.io.FileInputStream;
+import java.net.HttpURLConnection;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.namespace.QName;
 
-import org.apache.commons.io.FileUtils;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.TestingClient;
+import org.icatproject.ids.integration.util.TestingClient.Method;
+import org.icatproject.ids.integration.util.TestingClient.ParmPos;
+import org.icatproject.ids.integration.util.TreeDeleteVisitor;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.sun.jersey.api.client.UniformInterfaceException;
 
 public class PutTest {
 
@@ -28,52 +32,47 @@ public class PutTest {
 	TestingClient testingClient;
 
 	private static long timestamp;
+	private Map<String, String> parameters;
 
 	@BeforeClass
 	public static void setup() throws Exception {
 		setup = new Setup();
-		final URL icatUrl = new URL(setup.getIcatUrl());
-		final ICATService icatService = new ICATService(icatUrl, new QName(
+		ICATService icatService = new ICATService(setup.getIcatUrl(), new QName(
 				"http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
 	}
 
 	@Before
 	public void clearFastStorage() throws Exception {
-		File storageDir = new File(setup.getStorageDir());
-		File storageZipDir = new File(setup.getStorageZipDir());
-		FileUtils.deleteDirectory(storageDir);
-		FileUtils.deleteDirectory(storageZipDir);
-		storageDir.mkdir();
-		storageZipDir.mkdir();
+		Path storageDir = FileSystems.getDefault().getPath(setup.getStorageDir());
+		Path storageZipDir = FileSystems.getDefault().getPath(setup.getStorageZipDir());
+		TreeDeleteVisitor treeDeleteVisitor = new TreeDeleteVisitor();
+		Files.walkFileTree(storageDir, treeDeleteVisitor);
+		Files.walkFileTree(storageZipDir, treeDeleteVisitor);
+		Files.createDirectories(storageDir);
+		Files.createDirectories(storageZipDir);
 		testingClient = new TestingClient(setup.getIdsUrl());
-		timestamp = System.currentTimeMillis();
+		parameters = new HashMap<>();
 	}
 
 	@Test
 	public void putToUnrestoredDataset() throws Exception {
-		int expectedSc = 404;
-		try {
-			final int DS_NUM_FROM_PROPS = 0;
-			// this file will be uploaded
-			File fileOnUsersDisk = new File(setup.getNewFileLocation());
-			testingClient.put(setup.getGoodSessionId(), "uploaded_file1_" + timestamp, setup
-					.getSupportedDatafileFormat().getId().toString(),
-					setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null, null,
-					fileOnUsersDisk);
-			fail("Expected SC " + expectedSc);
-		} catch (UniformInterfaceException e) {
-			assertEquals(expectedSc, e.getResponse().getStatus());
-		}
+		parameters.put("sessionId", setup.getGoodSessionId());
+		parameters.put("name", "uploaded_file1_" + timestamp);
+		parameters.put("datafileFormatId", setup.getSupportedDatafileFormat().getId().toString());
+		parameters.put("datasetId", setup.getDatasetIds().get(0));
+		HttpURLConnection response = testingClient.process("put", parameters, Method.PUT,
+				ParmPos.URL, new FileInputStream(setup.getNewFileLocation()));
+		TestingClient.print(response);
+		assertEquals(404, response.getResponseCode());
 	}
 
 	@Test
 	public void putOneFileTest() throws Exception {
-		final int DS_NUM_FROM_PROPS = 0;
+
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset",
-				Long.parseLong(setup.getDatasetIds().get(DS_NUM_FROM_PROPS)));
+				Long.parseLong(setup.getDatasetIds().get(0)));
 		// this file will be uploaded
-		File fileOnUsersDisk = new File(setup.getNewFileLocation());
 		String uploadedLocation = new File(icatDs.getLocation(), "uploaded_file2_" + timestamp)
 				.getPath();
 		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
@@ -84,38 +83,39 @@ public class PutTest {
 		File zipOnSlowStorage = new File(new File(setup.getStorageArchiveDir(),
 				icatDs.getLocation()), "files.zip");
 
-		testingClient.restore(setup.getGoodSessionId(), null,
-				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+		parameters.put("sessionId", setup.getGoodSessionId());
+		parameters.put("datasetIds", setup.getDatasetIds().get(0));
+		HttpURLConnection response = testingClient.process("restore", parameters, Method.POST,
+				ParmPos.BODY, null);
+		TestingClient.print(response);
+		assertEquals(200, response.getResponseCode());
+
 		do {
 			Thread.sleep(1000);
 		} while (!dirOnFastStorage.exists() || !zipOnFastStorage.exists());
-		assertTrue("File " + dirOnFastStorage.getAbsolutePath()
-				+ " should have been restored, but doesn't exist", dirOnFastStorage.exists());
-		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath()
-				+ " should have been restored, but doesn't exist", zipOnFastStorage.exists());
 
 		zipOnSlowStorage.delete(); // to check, if the dataset really is going to be written
-		testingClient.put(setup.getGoodSessionId(), "uploaded_file2_" + timestamp, setup
-				.getSupportedDatafileFormat().getId().toString(),
-				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null, null, null, null,
-				fileOnUsersDisk);
+
+		parameters.put("sessionId", setup.getGoodSessionId());
+		parameters.put("name", "uploaded_file2_" + timestamp);
+		parameters.put("datafileFormatId", setup.getSupportedDatafileFormat().getId().toString());
+		parameters.put("datasetId", setup.getDatasetIds().get(0));
+		response = testingClient.process("put", parameters, Method.PUT, ParmPos.URL,
+				new FileInputStream(setup.getNewFileLocation()));
+		TestingClient.print(response);
+		assertEquals(201, response.getResponseCode());
 		do {
 			Thread.sleep(1000);
 		} while (!fileOnFastStorage.exists() || !zipOnSlowStorage.exists());
-		assertTrue("File " + fileOnFastStorage.getAbsolutePath()
-				+ " should have been created, but doesn't exist", fileOnFastStorage.exists());
-		assertTrue("File " + zipOnSlowStorage.getAbsolutePath()
-				+ " should have been created, but doesn't exist", zipOnSlowStorage.exists());
-		
-		testingClient.archive(setup.getGoodSessionId(), null,
-				setup.getDatasetIds().get(DS_NUM_FROM_PROPS), null);
+
+		parameters.put("sessionId", setup.getGoodSessionId());
+		parameters.put("datasetId", setup.getDatasetIds().get(0));
+		response = testingClient.process("archive", parameters, Method.POST, ParmPos.BODY, null);
+		TestingClient.print(response);
+		assertEquals(200, response.getResponseCode());
+
 		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
 		}
-		assertTrue("Directory " + dirOnFastStorage.getAbsolutePath()
-				+ " should have been cleaned, but still contains files",
-				dirOnFastStorage.listFiles().length == 0);
-		assertTrue("Zip in " + zipOnFastStorage.getAbsolutePath()
-				+ " should have been archived, but still exists", !zipOnFastStorage.exists());
 	}
 }

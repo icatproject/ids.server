@@ -67,11 +67,8 @@ public class IdsRequestEntity implements Serializable {
 	@Column(name = "IDS_COMPRESS")
 	private boolean compress;
 
+	// For JPA
 	public IdsRequestEntity() {
-	}
-
-	public IdsRequestEntity(Long id) {
-		this.id = id;
 	}
 
 	public IdsRequestEntity(Long id, String preparedId, String userId, Date submittedTime,
@@ -189,7 +186,7 @@ public class IdsRequestEntity implements Serializable {
 	 * don't count)
 	 */
 	public Set<Datafile> getIcatDatafiles() {
-		Set<Datafile> datafiles = new HashSet<Datafile>();
+		Set<Datafile> datafiles = new HashSet<>();
 		for (IdsDatafileEntity df : this.getDatafiles()) {
 			datafiles.addAll(df.getIcatDatafiles()); // will only add one DF
 		}
@@ -201,7 +198,7 @@ public class IdsRequestEntity implements Serializable {
 	 * caused by a requested Datafile don't count)
 	 */
 	public Set<Dataset> getIcatDatasets() {
-		Set<Dataset> datasets = new HashSet<Dataset>();
+		Set<Dataset> datasets = new HashSet<>();
 		for (IdsDatasetEntity ds : this.getDatasets()) {
 			datasets.add(ds.getIcatDataset());
 		}

@@ -1,11 +1,11 @@
 package org.icatproject.ids.webservice.exceptions;
 
-public class BadRequestException extends WebServiceException
-{
-    private static final long serialVersionUID = 1L;
- 
-    public BadRequestException(String message)
-    {    
-        super(WebServiceException.Response.BAD_REQUEST, message);
-    }
+import java.net.HttpURLConnection;
+
+@SuppressWarnings("serial")
+public class BadRequestException extends IdsException {
+
+	public BadRequestException(Code code, String message) {
+		super(HttpURLConnection.HTTP_BAD_REQUEST, code, message);
+	}
 }

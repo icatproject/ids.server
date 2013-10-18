@@ -1,12 +1,11 @@
 package org.icatproject.ids.webservice.exceptions;
 
-public class NotFoundException extends WebServiceException
-{
-    private static final long serialVersionUID = 1L;
- 
-    public NotFoundException(String message)
-    {    
-        super(WebServiceException.Response.NOT_FOUND, message);
-    }
-}
+import java.net.HttpURLConnection;
 
+@SuppressWarnings("serial")
+public class NotFoundException extends IdsException {
+
+	public NotFoundException(Code code, String message) {
+		super(HttpURLConnection.HTTP_NOT_FOUND, code, message);
+	}
+}

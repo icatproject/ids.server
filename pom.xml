@@ -67,13 +67,38 @@
             </snapshots>
         </repository>
     </repositories>
+
     <dependencies>
+
+        <dependency>
+            <groupId>org.icatproject</groupId>
+            <artifactId>icat.client</artifactId>
+            <version>4.2.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.icatproject</groupId>
+            <artifactId>icat.utils</artifactId>
+            <version>4.3.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.icatproject</groupId>
+            <artifactId>ids.plugin</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.2.0</version>
         </dependency>
 
         <dependency>
@@ -89,49 +114,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-bundle</artifactId>
-            <version>1.8</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>2.4.1</version>
-        </dependency>
-
-        <!-- Contains concrete JEE6 classes instead of just interfaces (in javax/javaee-api). This is only used for testing. When deploying to the container, 
-            the interfaces will be used and all the concrete classes will be provided by the container -->
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.icatproject</groupId>
-            <artifactId>icat.client</artifactId>
-            <version>4.2.5</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.icatproject</groupId>
-            <artifactId>ids.plugin</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.3</version>
+            <groupId>javax</groupId>
+            <artifactId>javaee-api</artifactId>
+            <version>6.0</version>
         </dependency>
 
         <dependency>
@@ -145,6 +130,7 @@
             <artifactId>log4j</artifactId>
             <version>1.2.16</version>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
@@ -152,20 +138,10 @@
         </dependency>
 
         <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>1.8</version>
-        </dependency>
-        <dependency>
-            <groupId>org.icatproject</groupId>
-            <artifactId>icat.utils</artifactId>
-            <version>4.3.0-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.8</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

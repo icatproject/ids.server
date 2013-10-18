@@ -78,25 +78,6 @@ public class ValidationHelperTest {
 	}
 
 	@Test
-	public void testIsValidOffset() throws Exception {
-		String msg = "test empty";
-		assertEquals(msg, false, ValidationHelper.isValidOffset(""));
-
-		msg = "test invalid format";
-		assertEquals(msg, false, ValidationHelper.isValidOffset("-1234"));
-		assertEquals(msg, false, ValidationHelper.isValidOffset("abc123"));
-		assertEquals(msg, false, ValidationHelper.isValidOffset("123.456"));
-		assertEquals(msg, false, ValidationHelper.isValidOffset("123\n"));
-
-		msg = "valid";
-		assertEquals(msg, true, ValidationHelper.isValidOffset(null));
-		assertEquals(msg, true, ValidationHelper.isValidOffset("123"));
-		assertEquals(msg, true, ValidationHelper.isValidOffset("0123"));
-		assertEquals(msg, true, ValidationHelper.isValidOffset("0"));
-		assertEquals(msg, true, ValidationHelper.isValidOffset("99999999999999999999999999999999"));
-	}
-
-	@Test
 	public void testIsValidName() throws Exception {
 		String msg = "test empty";
 		assertEquals(msg, false, ValidationHelper.isValidName(""));

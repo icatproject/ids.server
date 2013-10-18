@@ -22,14 +22,14 @@ public class TestingUtils {
 	 * Takes in a outputstream of a zip file. Creates a mapping between the filenames and their MD5
 	 * sums.
 	 */
-	public static Map<String, String> filenameMD5Map(ByteArrayOutputStream file)
+	public static Map<String, String> filenameMD5Map(ByteArrayOutputStream contents)
 			throws IOException, NoSuchAlgorithmException {
 		Map<String, String> filenameMD5map = new HashMap<String, String>();
 		ZipInputStream zis = null;
 		ByteArrayOutputStream os = null;
 		ZipEntry entry = null;
 		try {
-			zis = new ZipInputStream(new ByteArrayInputStream(file.toByteArray()));
+			zis = new ZipInputStream(new ByteArrayInputStream(contents.toByteArray()));
 			while ((entry = zis.getNextEntry()) != null) {
 				os = new ByteArrayOutputStream();
 				int len;
