@@ -20,7 +20,7 @@ public class IdsExceptionMapper implements ExceptionMapper<IdsException> {
 	public Response toResponse(IdsException e) {
 		ObjectMapper om = new ObjectMapper();
 		ObjectNode error = om.createObjectNode();
-		error.put("code", e.getCode().name());
+		error.put("code", e.getClass().getSimpleName());
 		error.put("message", e.getShortMessage());
 		try {
 			return Response.status(e.getHttpStatusCode()).entity(om.writeValueAsString(error))

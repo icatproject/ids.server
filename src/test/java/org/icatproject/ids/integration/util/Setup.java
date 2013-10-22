@@ -52,8 +52,8 @@ public class Setup {
 	private String forbiddenSessionId = null;
 
 	private Map<String, String> filenameMD5 = new HashMap<String, String>();
-	private ArrayList<String> datasetIds = new ArrayList<String>();
-	private ArrayList<String> datafileIds = new ArrayList<String>();
+	private ArrayList<Long> datasetIds = new ArrayList<>();
+	private ArrayList<Long> datafileIds = new ArrayList<>();
 	private String newFileLocation;
 
 	private String storageArchiveDir;
@@ -159,6 +159,9 @@ public class Setup {
 			df2.setDataset(ds1);
 			df2.setId(icat.create(goodSessionId, df2));
 
+			System.out.println("ds " + ds1.getId() + " holds dfs " + df1.getId() + " and "
+					+ df2.getId());
+
 			Datafile df3 = new Datafile();
 			df3.setName("df3_" + timestamp);
 			df3.setLocation(ds2.getLocation() + "/df3_" + timestamp);
@@ -171,17 +174,20 @@ public class Setup {
 			df4.setDataset(ds2);
 			df4.setId(icat.create(goodSessionId, df4));
 
+			System.out.println("ds " + ds2.getId() + " holds dfs " + df3.getId() + " and "
+					+ df4.getId());
+
 			// update the datasets, so they contains references to their datafiles
 			ds1 = (Dataset) icat.get(goodSessionId, "Dataset INCLUDE Datafile", ds1.getId());
 			ds2 = (Dataset) icat.get(goodSessionId, "Dataset INCLUDE Datafile", ds2.getId());
 
-			datasetIds.add(ds1.getId().toString());
-			datasetIds.add(ds2.getId().toString());
+			datasetIds.add(ds1.getId());
+			datasetIds.add(ds2.getId());
 
-			datafileIds.add(df1.getId().toString());
-			datafileIds.add(df2.getId().toString());
-			datafileIds.add(df3.getId().toString());
-			datafileIds.add(df4.getId().toString());
+			datafileIds.add(df1.getId());
+			datafileIds.add(df2.getId());
+			datafileIds.add(df3.getId());
+			datafileIds.add(df4.getId());
 
 			writeToFile(new File(storageDir, df1.getLocation()), "df1 test content");
 			writeToFile(new File(storageDir, df2.getLocation()), "df2 test content");
@@ -233,12 +239,12 @@ public class Setup {
 	 */
 	public void cleanArchiveAndDb() throws NumberFormatException, IcatException_Exception,
 			IOException {
-		for (String id : datafileIds) {
-			Datafile df = (Datafile) icat.get(goodSessionId, "Datafile", Long.parseLong(id));
+		for (Long id : datafileIds) {
+			Datafile df = (Datafile) icat.get(goodSessionId, "Datafile", id);
 			icat.delete(goodSessionId, df);
 		}
-		for (String id : datasetIds) {
-			Dataset ds = (Dataset) icat.get(goodSessionId, "Dataset", Long.parseLong(id));
+		for (Long id : datasetIds) {
+			Dataset ds = (Dataset) icat.get(goodSessionId, "Dataset", id);
 			icat.delete(goodSessionId, ds);
 		}
 		icat.delete(goodSessionId, dsType);
@@ -251,6 +257,7 @@ public class Setup {
 
 	}
 
+	@Deprecated
 	public String getCommaSepDatafileIds() {
 		return datafileIds.toString().replace("[", "").replace("]", "").replace(" ", "");
 	}
@@ -271,11 +278,11 @@ public class Setup {
 		return filenameMD5;
 	}
 
-	public ArrayList<String> getDatasetIds() {
+	public ArrayList<Long> getDatasetIds() {
 		return datasetIds;
 	}
 
-	public ArrayList<String> getDatafileIds() {
+	public ArrayList<Long> getDatafileIds() {
 		return datafileIds;
 	}
 

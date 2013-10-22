@@ -17,19 +17,23 @@ import javax.persistence.Query;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
+import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.entity.IdsDatafileEntity;
 import org.icatproject.ids.entity.IdsDatasetEntity;
 import org.icatproject.ids.entity.IdsRequestEntity;
 import org.icatproject.ids.webservice.DeferredOp;
+import org.icatproject.ids.webservice.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.webservice.exceptions.InternalException;
+import org.icatproject.ids.webservice.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Stateless
 public class RequestHelper {
 	private final static boolean DEFAULT_COMPRESS = false;
-	private final static String DEFAULT_ZIP = "false";
+	private final static boolean DEFAULT_ZIP = false;
 	private final static Logger logger = LoggerFactory.getLogger(RequestHelper.class);
 	private PropertyHandler properties = PropertyHandler.getInstance();
 
@@ -39,29 +43,42 @@ public class RequestHelper {
 	@EJB
 	private Icat icatServiceFacade;
 
-	public IdsRequestEntity createPrepareRequest(String sessionId, boolean compress, String zip)
-			throws IcatException_Exception {
+	public IdsRequestEntity createPrepareRequest(String sessionId, boolean compress, boolean zip)
+			throws InsufficientPrivilegesException, InternalException {
 		return createRequest(sessionId, compress, zip, DeferredOp.PREPARE);
 	}
 
-	public IdsRequestEntity createArchiveRequest(String sessionId) throws IcatException_Exception {
+	public IdsRequestEntity createArchiveRequest(String sessionId)
+			throws InsufficientPrivilegesException, InternalException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.ARCHIVE);
 	}
 
-	public IdsRequestEntity createRestoreRequest(String sessionId) throws IcatException_Exception {
+	public IdsRequestEntity createRestoreRequest(String sessionId)
+			throws InsufficientPrivilegesException, InternalException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.RESTORE);
 	}
 
-	public IdsRequestEntity createWriteRequest(String sessionId) throws IcatException_Exception {
+	public IdsRequestEntity createWriteRequest(String sessionId)
+			throws InsufficientPrivilegesException, InternalException {
 		return createRequest(sessionId, DEFAULT_COMPRESS, DEFAULT_ZIP, DeferredOp.WRITE);
 	}
 
-	private IdsRequestEntity createRequest(String sessionId, boolean compress, String zip,
-			DeferredOp deferredOp) throws IcatException_Exception {
+	private IdsRequestEntity createRequest(String sessionId, boolean compress, boolean zip,
+			DeferredOp deferredOp) throws InsufficientPrivilegesException, InternalException {
 		Calendar expireDate = Calendar.getInstance();
 		expireDate.add(Calendar.DATE, properties.getRequestExpireTimeDays());
 
-		String username = icatServiceFacade.getUserName(sessionId);
+		String username;
+		try {
+			username = icatServiceFacade.getUserName(sessionId);
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
+					|| type == IcatExceptionType.SESSION) {
+				throw new InsufficientPrivilegesException(e.getMessage());
+			}
+			throw new InternalException(type + " " + e.getMessage());
+		}
 
 		IdsRequestEntity requestEntity = new IdsRequestEntity();
 		requestEntity.setSessionId(sessionId);
@@ -79,7 +96,7 @@ public class RequestHelper {
 	}
 
 	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds)
-			throws NumberFormatException, IcatException_Exception {
+			throws IcatException_Exception {
 		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 
 		for (String id : datasetIdList) {
@@ -87,6 +104,25 @@ public class RequestHelper {
 					Long.parseLong(id));
 			addDataset(sessionId, requestEntity, ds);
 		}
+	}
+
+	public void addDataset(String sessionId, IdsRequestEntity requestEntity, long id)
+			throws InsufficientPrivilegesException, InternalException, NotFoundException {
+		Dataset ds;
+		try {
+			ds = icatServiceFacade.getDatasetWithDatafilesForDatasetId(sessionId, id);
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
+					|| type == IcatExceptionType.SESSION) {
+				throw new InsufficientPrivilegesException(e.getMessage());
+			}
+			if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+				throw new NotFoundException(e.getMessage());
+			}
+			throw new InternalException(type + " " + e.getMessage());
+		}
+		addDataset(sessionId, requestEntity, ds);
 	}
 
 	public void addDataset(String sessionId, IdsRequestEntity requestEntity, Dataset dataset) {

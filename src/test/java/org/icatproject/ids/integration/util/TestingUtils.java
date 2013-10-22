@@ -1,10 +1,10 @@
 package org.icatproject.ids.integration.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -18,18 +18,33 @@ import org.junit.Assert;
 
 public class TestingUtils {
 
+	public static void printStatus(File dirOnFastStorage, File zipOnFastStorage) {
+		if (dirOnFastStorage.exists()) {
+			System.out.println("Fast storage " + dirOnFastStorage.getAbsolutePath() + " has "
+					+ dirOnFastStorage.listFiles().length + " files");
+		} else {
+			System.out.println("Fast storage " + dirOnFastStorage.getAbsolutePath()
+					+ " does not exist");
+		}
+		if (zipOnFastStorage.exists()) {
+			System.out.println("Zip " + zipOnFastStorage.getAbsolutePath() + " is present");
+		} else {
+			System.out.println("Zip " + zipOnFastStorage.getAbsolutePath() + " does not exist");
+		}
+	}
+
 	/*
 	 * Takes in a outputstream of a zip file. Creates a mapping between the filenames and their MD5
 	 * sums.
 	 */
-	public static Map<String, String> filenameMD5Map(ByteArrayOutputStream contents)
-			throws IOException, NoSuchAlgorithmException {
+	public static Map<String, String> filenameMD5Map(InputStream contents) throws IOException,
+			NoSuchAlgorithmException {
 		Map<String, String> filenameMD5map = new HashMap<String, String>();
 		ZipInputStream zis = null;
 		ByteArrayOutputStream os = null;
 		ZipEntry entry = null;
 		try {
-			zis = new ZipInputStream(new ByteArrayInputStream(contents.toByteArray()));
+			zis = new ZipInputStream(contents);
 			while ((entry = zis.getNextEntry()) != null) {
 				os = new ByteArrayOutputStream();
 				int len;
@@ -88,6 +103,23 @@ public class TestingUtils {
 			}
 		}
 		return res;
+	}
+	
+	public static byte[] getOutput(InputStream stream) throws IOException {
+		ByteArrayOutputStream os = null;
+		try {
+			os = new ByteArrayOutputStream();
+			int len;
+			byte[] buffer = new byte[1024];
+			while ((len = stream.read(buffer)) != -1) {
+				os.write(buffer, 0, len);
+			}
+			return os.toByteArray();
+		} finally {
+			if (stream != null) {
+				stream.close();
+			}
+		}
 	}
 
 }
