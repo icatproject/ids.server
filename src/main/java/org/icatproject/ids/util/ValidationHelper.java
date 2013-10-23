@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.icatproject.ids.webservice.exceptions.BadRequestException;
+
 /*
  * This class provides validation function for the parameters of the RESTful methods.
  */
@@ -13,23 +15,11 @@ public class ValidationHelper {
 	private static final Pattern uuidRegExp = Pattern
 			.compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
-	// checks to see if filename contains any of the following invalid characters: / ? * : ; { } \
-	// http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx#file_and_directory_names
-	private static final Pattern filenameRegExp = Pattern.compile(".*[/\\\\:*?\"<>|]+.*");
-
-	/*
-	 * Checks to see if the preparedId or sessionId conform to the correct UUID format. Does not
-	 * accept a null value.
-	 */
-	public static boolean isValidId(String id) {
-		return id != null && uuidRegExp.matcher(id).matches();
-	}
-
 	/*
 	 * Checks to see if the investigation, dataset or datafile id list is a valid comma separated
 	 * list of longs. No spaces or leading 0's. Also accepts null.
 	 */
-	public static boolean isValidIdList(String idList) {
+	public static void validateIdList(String thing, String idList) throws BadRequestException {
 		boolean valid = true;
 		if (idList != null && idList.isEmpty()) {
 			valid = false;
@@ -48,30 +38,16 @@ public class ValidationHelper {
 				}
 			}
 		}
-
-		return valid;
+		if (!valid) {
+			throw new BadRequestException("The " + thing + " parameter '" + idList
+					+ "' is not a valid "
+					+ "string representation of a comma separated list of longs");
+		}
 	}
 
-	/*
-	 * Check to see if string is either true or false or null
-	 */
-	public static boolean isValidBoolean(String bool) {
-		boolean valid = false;
-		if (bool == null || "true".equalsIgnoreCase(bool) || "false".equalsIgnoreCase(bool)) {
-			valid = true;
-		}
-		return valid;
-	}
-
-	/*
-	 * Check to see if string is valid for a filename ie. dose not contain: / ? * : ; { } \ | Also
-	 * accepts null.
-	 */
-	public static boolean isValidName(String name) {
-		boolean valid = true;
-		if (name != null && (name.isEmpty() || filenameRegExp.matcher(name).matches())) {
-			valid = false;
-		}
-		return valid;
+	public static void validateUUID(String thing, String id) throws BadRequestException {
+		if (id == null || !uuidRegExp.matcher(id).matches())
+			throw new BadRequestException("The " + thing + " parameter '" + id
+					+ "' is not a valid UUID");
 	}
 }

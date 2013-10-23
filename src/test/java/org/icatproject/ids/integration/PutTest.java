@@ -1,25 +1,27 @@
 package org.icatproject.ids.integration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.net.HttpURLConnection;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.namespace.QName;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.TreeDeleteVisitor;
 import org.icatproject.ids.integration.util.client.DataNotOnlineException;
+import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.TestingClient;
-import org.icatproject.ids.integration.util.client.TestingClient.Method;
-import org.icatproject.ids.integration.util.client.TestingClient.ParmPos;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,7 +33,7 @@ public class PutTest {
 	TestingClient testingClient;
 
 	private static long timestamp;
-	private Map<String, String> parameters;
+	private String sessionId;
 
 	@BeforeClass
 	public static void setup() throws Exception {
@@ -51,17 +53,14 @@ public class PutTest {
 		Files.createDirectories(storageDir);
 		Files.createDirectories(storageZipDir);
 		testingClient = new TestingClient(setup.getIdsUrl());
-		parameters = new HashMap<>();
+		sessionId = setup.getGoodSessionId();
 	}
 
 	@Test(expected = DataNotOnlineException.class)
 	public void putToUnrestoredDataset() throws Exception {
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("name", "uploaded_file1_" + timestamp);
-		parameters.put("datafileFormatId", setup.getSupportedDatafileFormat().getId().toString());
-		parameters.put("datasetId", Long.toString(setup.getDatasetIds().get(0)));
-		testingClient.process("put", parameters, Method.PUT, ParmPos.URL,
-				new FileInputStream(setup.getNewFileLocation()), 404);
+		testingClient.put(sessionId, new File(setup.getNewFileLocation()), "uploaded_file1_"
+				+ timestamp, setup.getDatasetIds().get(0), setup.getSupportedDatafileFormat()
+				.getId(), null, null, null, null, 404);
 	}
 
 	@Test
@@ -80,11 +79,8 @@ public class PutTest {
 		File zipOnSlowStorage = new File(new File(setup.getStorageArchiveDir(),
 				icatDs.getLocation()), "files.zip");
 
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("datasetIds", Long.toString(setup.getDatasetIds().get(0)));
-		HttpURLConnection response = testingClient.process("restore", parameters, Method.POST,
-				ParmPos.BODY, null, 200);
-		TestingClient.print(response);
+		testingClient.restore(sessionId,
+				new DataSelection().addDataset(setup.getDatasetIds().get(0)), 200);
 
 		do {
 			Thread.sleep(1000);
@@ -92,26 +88,43 @@ public class PutTest {
 
 		zipOnSlowStorage.delete(); // to check, if the dataset really is going to be written
 
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("name", "uploaded_file2_" + timestamp);
-		parameters.put("datafileFormatId", setup.getSupportedDatafileFormat().getId().toString());
-		parameters.put("datasetId", Long.toString(setup.getDatasetIds().get(0)));
-		response = testingClient.process("put", parameters, Method.PUT, ParmPos.URL,
-				new FileInputStream(setup.getNewFileLocation()), 201);
-		TestingClient.print(response);
+		Long dfid = testingClient.put(sessionId, new File(setup.getNewFileLocation()),
+				"uploaded_file2_" + timestamp, setup.getDatasetIds().get(0), setup
+						.getSupportedDatafileFormat().getId(), "A rather splendid datafile", 201);
+
+		Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
+		assertEquals("A rather splendid datafile", df.getDescription());
+		assertNull(df.getDoi());
+		assertNull(df.getDatafileCreateTime());
+		assertNull(df.getDatafileModTime());
+
+		dfid = testingClient.put(sessionId, new File(setup.getNewFileLocation()), "uploaded_file3_"
+				+ timestamp, setup.getDatasetIds().get(0), setup.getSupportedDatafileFormat()
+				.getId(), "An even better datafile", "7.1.3", new Date(420000), new Date(42000),
+				201);
+		df = (Datafile) icat.get(sessionId, "Datafile", dfid);
+		assertEquals("An even better datafile", df.getDescription());
+		assertEquals("7.1.3", df.getDoi());
+
+		DatatypeFactory datatypeFactory = DatatypeFactory.newInstance();
+		GregorianCalendar gregorianCalendar = new GregorianCalendar();
+		gregorianCalendar.setTime(new Date(420000));
+		assertEquals(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar),
+				df.getDatafileCreateTime());
+		gregorianCalendar.setTime(new Date(42000));
+		assertEquals(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar),
+				df.getDatafileModTime());
 
 		do {
 			Thread.sleep(1000);
 		} while (!fileOnFastStorage.exists() || !zipOnSlowStorage.exists());
 
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("datasetId", Long.toString(setup.getDatasetIds().get(0)));
-		response = testingClient.process("archive", parameters, Method.POST, ParmPos.BODY, null,
-				200);
-		TestingClient.print(response);
+		testingClient.archive(sessionId,
+				new DataSelection().addDataset(setup.getDatasetIds().get(0)), 200);
 
 		while (dirOnFastStorage.listFiles().length > 0 || zipOnFastStorage.exists()) {
 			Thread.sleep(1000);
 		}
+
 	}
 }

@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import javax.xml.datatype.DatatypeFactory;
 
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
@@ -60,9 +62,6 @@ import org.icatproject.ids.webservice.exceptions.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Implementation of the IDS specification for the IDS Reference Implementation.
- */
 @Path("/")
 @Stateless
 public class IdsService {
@@ -83,11 +82,14 @@ public class IdsService {
 
 	private StorageInterface fastStorage;
 
+	private DatatypeFactory datatypeFactory;
+
 	@PostConstruct
 	public void postConstructInit() throws Exception {
 		logger.info("creating WebService");
 		PropertyHandler ph = PropertyHandler.getInstance();
 		fastStorage = ph.getMainStorage();
+		datatypeFactory = DatatypeFactory.newInstance();
 
 		timer.schedule(new ProcessQueue(timer, requestHelper),
 				ph.getProcessQueueIntervalSeconds() * 1000L);
@@ -95,29 +97,6 @@ public class IdsService {
 		logger.info("created WebService");
 	}
 
-	/**
-	 * Creates a new download request. Does not accept investigationIds or the zip parameter as all
-	 * requested files will always be returned in a zip file.
-	 * 
-	 * @param sessionId
-	 *            An ICAT session ID
-	 * @param investigationIds
-	 *            A list of investigation IDs (not implemented)
-	 * @param datasetIds
-	 *            A list of dataset IDs (optional)
-	 * @param datafileIds
-	 *            A list of datafile IDs (optional)
-	 * @param compress
-	 *            Compress ZIP archive of files (dependent on ZIP parameter below) (optional)
-	 * @param zip
-	 *            Request data to be packaged in a ZIP archive (not implemented)
-	 * @return HTTP response containing a preparedId for the download request
-	 * @throws NotImplementedException
-	 * @throws BadRequestException
-	 * @throws InsufficientPrivilegesException
-	 * @throws NotFoundException
-	 * @throws InternalException
-	 */
 	@POST
 	@Path("prepareData")
 	@Consumes("application/x-www-form-urlencoded")
@@ -129,33 +108,29 @@ public class IdsService {
 			@FormParam("zip") boolean zip) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, NotFoundException, InternalException {
 		IdsRequestEntity requestEntity = null;
-		logger.info("prepareData received");
+		
+		logger.info("New webservice request: prepareData " + "investigationIds='"
+				+ investigationIds + "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='"
+				+ datafileIds + "' " + "compress='" + compress + "' " + "zip='" + zip + "'");
 
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
 		if (zip) {
-			throw new NotImplementedException("the zip parameter is not supported");
+			throw new NotImplementedException("the zip option is not supported");
+		}
+		if (compress) {
+			throw new NotImplementedException("the compress option is not supported");
 		}
 
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
-		}
+		ValidationHelper.validateUUID("sessionId", sessionId);
+		ValidationHelper.validateIdList("datasetIds", datasetIds);
+		ValidationHelper.validateIdList("datafileIds", datafileIds);
+
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
-
-		// at this point we're sure, that all arguments are valid
-		logger.info("New webservice request: prepareData " + "investigationIds='"
-				+ investigationIds + "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='"
-				+ datafileIds + "' " + "compress='" + compress + "' " + "zip='" + zip + "'");
 
 		try {
 			requestEntity = requestHelper.createPrepareRequest(sessionId, compress, zip);
@@ -232,15 +207,9 @@ public class IdsService {
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
-		}
+		ValidationHelper.validateUUID("sessionId", sessionId);
+		ValidationHelper.validateIdList("datasetIds", datasetIds);
+		ValidationHelper.validateIdList("datafileIds", datafileIds);
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
@@ -314,11 +283,7 @@ public class IdsService {
 	private Response getStatus(String preparedId) throws BadRequestException, NotFoundException,
 			InternalException, InsufficientPrivilegesException, NotImplementedException {
 
-		String status = null;
-
-		if (ValidationHelper.isValidId(preparedId) == false) {
-			throw new BadRequestException("The preparedId parameter is invalid");
-		}
+		ValidationHelper.validateUUID("preparedId", preparedId);
 
 		List<IdsRequestEntity> requests = requestHelper.getRequestByPreparedId(preparedId);
 		if (requests.size() == 0) {
@@ -329,7 +294,7 @@ public class IdsService {
 			logger.error(msg);
 			throw new InternalException(msg);
 		}
-		status = requests.get(0).getStatus().name();
+		String status = requests.get(0).getStatus().name();
 
 		logger.info("New webservice request: getStatus " + "preparedId='" + preparedId + "'");
 
@@ -362,15 +327,9 @@ public class IdsService {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
 
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
-		}
+		ValidationHelper.validateUUID("sessionId", sessionId);
+		ValidationHelper.validateIdList("datasetIds", datasetIds);
+		ValidationHelper.validateIdList("datafileIds", datafileIds);
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
@@ -490,12 +449,7 @@ public class IdsService {
 		final IdsRequestEntity requestEntity;
 		String name = null;
 
-		if (ValidationHelper.isValidId(preparedId) == false) {
-			throw new BadRequestException("The preparedId parameter is invalid");
-		}
-		if (ValidationHelper.isValidName(outname) == false) {
-			throw new BadRequestException("The outname parameter is invalid");
-		}
+		ValidationHelper.validateUUID("preparedId", preparedId);
 
 		logger.info("New webservice request: getData " + "preparedId='" + preparedId + "' "
 				+ "outname='" + outname + "' " + "offset='" + offset + "'");
@@ -603,21 +557,12 @@ public class IdsService {
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
-		}
+		ValidationHelper.validateUUID("sessionId", sessionId);
+		ValidationHelper.validateIdList("datasetIds", datasetIds);
+		ValidationHelper.validateIdList("datafileIds", datafileIds);
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
-		}
-		if (ValidationHelper.isValidName(outname) == false) {
-			throw new BadRequestException("The outname parameter is invalid");
 		}
 
 		final long finalOffset = offset == null ? 0L : offset;
@@ -779,6 +724,13 @@ public class IdsService {
 		}
 	}
 
+	@GET
+	@Path("ping")
+	public String ping() {
+		logger.debug("ping request received");
+		return "IdsOK";
+	}
+
 	@PUT
 	@Path("put")
 	@Consumes("application/octet-stream")
@@ -786,15 +738,13 @@ public class IdsService {
 			@QueryParam("name") String name, @QueryParam("datafileFormatId") Long datafileFormatId,
 			@QueryParam("datasetId") long datasetId, @QueryParam("description") String description,
 			@QueryParam("doi") String doi,
-			@QueryParam("datafileCreateTime") String datafileCreateTime,
-			@QueryParam("datafileModTime") String datafileModTime) throws BadRequestException,
+			@QueryParam("datafileCreateTime") Long datafileCreateTime,
+			@QueryParam("datafileModTime") Long datafileModTime) throws BadRequestException,
 			NotFoundException, InternalException, InsufficientPrivilegesException,
 			NotImplementedException, DataNotOnlineException {
-		logger.info(String.format("put received, name=%s", name));
 
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
+		ValidationHelper.validateUUID("sessionId", sessionId);
+
 		if (name == null) {
 			throw new BadRequestException("The name parameter must be set");
 		}
@@ -802,9 +752,10 @@ public class IdsService {
 			throw new BadRequestException("The datafileFormatId parameter must be set");
 		}
 
-		// if (datasetId == null) {
-		// throw new BadRequestException("The datasetId parameter must be set");
-		// }
+		logger.info("New webservice request: put " + "name='" + name + "' " + "datafileFormatId='"
+				+ datafileFormatId + "' " + "datasetId='" + datasetId + "' " + "description='"
+				+ description + "' " + "doi='" + doi + "' " + "datafileCreateTime='"
+				+ datafileCreateTime + "' " + "datafileModTime='" + datafileModTime + "'");
 
 		Dataset ds;
 		try {
@@ -835,7 +786,8 @@ public class IdsService {
 			dummy.setDataset(ds);
 			long tbytes = fastStorage.putDatafile((new File(ds.getLocation(), name)).getPath(),
 					body);
-			registerDatafile(sessionId, name, datafileFormatId, tbytes, ds);
+			Long dfId = registerDatafile(sessionId, name, datafileFormatId, tbytes, ds,
+					description, doi, datafileCreateTime, datafileModTime);
 			// refresh the DS (contains the new DF)
 			try {
 				ds = icatClient.getDatasetWithDatafilesForDatasetId(sessionId, datasetId);
@@ -850,13 +802,6 @@ public class IdsService {
 				}
 				throw new InternalException(type + " " + e.getMessage());
 			}
-			// try {
-			// InputStream is = ZipHelper.zipDataset(ds, false, fastStorage);
-			// fastStorage.putDataset(ds, is);
-			// } catch (IOException e) {
-			// logger.error("Couldn't zip dataset " + ds + ", reason: " + e.getMessage());
-			// throw new InternalServerErrorException(e.getMessage());
-			// }
 
 			IdsRequestEntity requestEntity = requestHelper.createWriteRequest(sessionId);
 			requestHelper.addDataset(sessionId, requestEntity, ds);
@@ -864,7 +809,8 @@ public class IdsService {
 				queue(de, DeferredOp.WRITE);
 			}
 
-			return Response.status(HttpURLConnection.HTTP_CREATED).entity(name).build();
+			return Response.status(HttpURLConnection.HTTP_CREATED).entity(Long.toString(dfId))
+					.build();
 
 		} catch (IOException e) {
 			throw new InternalException("IOEXception " + e.getMessage());
@@ -886,15 +832,9 @@ public class IdsService {
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
-		}
+		ValidationHelper.validateUUID("sessionId", sessionId);
+		ValidationHelper.validateIdList("datasetIds", datasetIds);
+		ValidationHelper.validateIdList("datafileIds", datafileIds);
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
@@ -1014,15 +954,9 @@ public class IdsService {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
 
-		if (ValidationHelper.isValidId(sessionId) == false) {
-			throw new BadRequestException("The sessionId parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datasetIds) == false) {
-			throw new BadRequestException("The datasetIds parameter is invalid");
-		}
-		if (ValidationHelper.isValidIdList(datafileIds) == false) {
-			throw new BadRequestException("The datafileIds parameter is invalid");
-		}
+		ValidationHelper.validateUUID("sessionId", sessionId);
+		ValidationHelper.validateIdList("datasetIds", datasetIds);
+		ValidationHelper.validateIdList("datafileIds", datafileIds);
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
@@ -1148,8 +1082,9 @@ public class IdsService {
 	}
 
 	private Long registerDatafile(String sessionid, String name, long datafileFormatId,
-			long tbytes, Dataset dataset) throws InsufficientPrivilegesException,
-			NotFoundException, InternalException, BadRequestException {
+			long tbytes, Dataset dataset, String description, String doi, Long datafileCreateTime,
+			Long datafileModTime) throws InsufficientPrivilegesException, NotFoundException,
+			InternalException, BadRequestException {
 		final Datafile df = new Datafile();
 		String location = new File(dataset.getLocation(), name).getPath();
 		DatafileFormat format;
@@ -1172,6 +1107,18 @@ public class IdsService {
 		df.setFileSize(tbytes);
 		df.setName(name);
 		df.setDataset(dataset);
+		df.setDescription(description);
+		df.setDoi(doi);
+		if (datafileCreateTime != null) {
+			GregorianCalendar gregorianCalendar = new GregorianCalendar();
+			gregorianCalendar.setTimeInMillis(datafileCreateTime);
+			df.setDatafileCreateTime(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
+		}
+		if (datafileModTime != null) {
+			GregorianCalendar gregorianCalendar = new GregorianCalendar();
+			gregorianCalendar.setTimeInMillis(datafileModTime);
+			df.setDatafileModTime(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
+		}
 		try {
 			df.setId((Long) icatClient.registerDatafile(sessionid, df));
 		} catch (IcatException_Exception e) {

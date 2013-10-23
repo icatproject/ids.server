@@ -20,6 +20,7 @@ import org.icatproject.ICATService;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.TestingUtils;
 import org.icatproject.ids.integration.util.TreeDeleteVisitor;
+import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataNotOnlineException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.IdsException;
@@ -28,7 +29,6 @@ import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.icatproject.ids.integration.util.client.TestingClient.Method;
 import org.icatproject.ids.integration.util.client.TestingClient.ParmPos;
-import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -131,10 +131,9 @@ public class GetDataExplicitTest {
 				unrestoredIcatDs.getLocation());
 
 		try {
-			testingClient
-					.getData(sessionId,
+			testingClient.getData(sessionId,
 					new DataSelection().addDatafile(setup.getDatafileIds().get(2)), Flag.NONE,
-							null, 0, 404);
+					null, 0, 404);
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
@@ -150,7 +149,8 @@ public class GetDataExplicitTest {
 				+ " shouldn't have been restored, but exist", unrestoredZipOnFastStorage.exists());
 
 		testingClient.getData(sessionId,
-				new DataSelection().addDatafile(setup.getDatafileIds().get(2)), Flag.NONE, null, 0, 200);
+				new DataSelection().addDatafile(setup.getDatafileIds().get(2)), Flag.NONE, null, 0,
+				200);
 
 	}
 

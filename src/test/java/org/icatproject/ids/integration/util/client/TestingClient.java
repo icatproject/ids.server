@@ -5,17 +5,20 @@ import static org.junit.Assert.assertEquals;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,114 +41,49 @@ public class TestingClient {
 		this.idsUrl = idsUrl;
 	}
 
-	// public String prepareData(String sessionId, String investigationIds, String datasetIds,
-	// String datafileIds, String compress, String zip) throws Exception {
-	// Client client = Client.create();
-	// Form form = new Form();
-	// form.add("sessionId", sessionId);
-	// if (investigationIds != null)
-	// form.add("investigationIds", investigationIds);
-	// if (datasetIds != null)
-	// form.add("datasetIds", datasetIds);
-	// if (datafileIds != null)
-	// form.add("datafileIds", datafileIds);
-	// if (compress != null)
-	// form.add("compress", compress);
-	// if (zip != null)
-	// form.add("zip", zip);
-	// WebResource resource = client.resource(idsUrl).path("prepareData");
-	// return resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-	// .accept(MediaType.TEXT_PLAIN_TYPE).post(String.class, form).trim();
-	// }
+	public Long put(String sessionId, File file, String name, long datasetId,
+			long datafileFormatId, String description, Integer sc) throws BadRequestException,
+			NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
+		return put(sessionId, file, name, datasetId, datafileFormatId, description, null, null,
+				null, sc);
+	}
 
-	// public Response getData(String preparedId, String outname, Long offset) throws Exception {
-	// Client client = Client.create();
-	// MultivaluedMap<String, String> params = new MultivaluedMapImpl();
-	// params.add("preparedId", preparedId);
-	// if (outname != null)
-	// params.add("outname", outname);
-	// if (offset != null)
-	// params.add("offset", offset.toString());
-	// WebResource resource = client.resource(idsUrl).path("getData");
-	// ClientResponse response = resource.queryParams(params)
-	// .accept(MediaType.APPLICATION_OCTET_STREAM_TYPE).get(ClientResponse.class);
-	// // if we use ClientResponse, the UniformInterfaceException is not thrown
-	// // automatically; see:
-	// //
-	// http: //
-	// jersey.java.net/nonav/apidocs/1.8/jersey/com/sun/jersey/api/client/WebResource.Builder.html#get(java.lang.Class)
-	// if (response.getStatus() >= 300) {
-	// throw new UniformInterfaceException(response);
-	// }
-	// ByteArrayOutputStream os = new ByteArrayOutputStream();
-	// WebService.copy(response.getEntityInputStream(), os);
-	// return new Response(os, response.getHeaders());
-	// }
+	public Long put(String sessionId, File file, String name, long datasetId,
+			long datafileFormatId, String description, String doi, Date datafileCreateTime,
+			Date datafileModTime, Integer sc) throws BadRequestException, NotFoundException,
+			InternalException, InsufficientPrivilegesException, NotImplementedException,
+			DataNotOnlineException, InsufficientStorageException {
+		Map<String, String> parameters = new HashMap<>();
 
-	// public String put(String sessionId, String name, String datafileFormatId, String datasetId,
-	// String description, String doi, String datafileCreateTime, String datafileModTime,
-	// File file) throws Exception {
-	// Client client = Client.create();
-	// MultivaluedMap<String, String> params = new MultivaluedMapI// public String
-	// prepareData(String sessionId, String investigationIds, String datasetIds,
-	// String datafileIds, String compress, String zip) throws Exception {
-	// Client client = Client.create();
-	// Form form = new Form();
-	// form.add("sessionId", sessionId);
-	// if (investigationIds != null)
-	// form.add("investigationIds", investigationIds);
-	// if (datasetIds != null)
-	// form.add("datasetIds", datasetIds);
-	// if (datafileIds != null)
-	// form.add("datafileIds", datafileIds);
-	// if (compress != null)
-	// form.add("compress", compress);
-	// if (zip != null)
-	// form.add("zip", zip);
-	// WebResource resource = client.resource(idsUrl).path("prepareData");
-	// return resource.type(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-	// .accept(MediaType.TEXT_PLAIN_TYPE).post(String.class, form).trim();
-	// }
+		parameters.put("sessionId", sessionId);
+		parameters.put("name", name);
+		parameters.put("datafileFormatId", Long.toString(datafileFormatId));
+		parameters.put("datasetId", Long.toString(datasetId));
+		if (description != null) {
+			parameters.put("description", description);
+		}
+		if (doi != null) {
+			parameters.put("doi", doi);
+		}
+		if (datafileCreateTime != null) {
+			parameters.put("datafileCreateTime", Long.toString(datafileCreateTime.getTime()));
+		}
+		if (datafileModTime != null) {
+			parameters.put("datafileModTime", Long.toString(datafileModTime.getTime()));
+		}
 
-	// public String put(String sessionId, String name, String datafileFormatId, String datasetId,
-	// String description, String doi, String datafileCreateTime, String datafileModTime,
-	// File file) throws Exception {
-	// Client client = Client.create();
-	// MultivaluedMap<String, String> params = new MultivaluedMapImpl();
-	// params.add("sessionId", sessionId);
-	// params.add("name", name);
-	// params.add("datafileFormatId", datafileFormatId);
-	// params.add("datasetId", datasetId);
-	// if (description != null)
-	// params.add("description", description);
-	// if (doi != null)
-	// params.add("doi", doi);
-	// if (datafileCreateTime != null)
-	// params.add("datafileCreateTime", datafileCreateTime);
-	// if (datafileModTime != null)
-	// params.add("datafileModTime", datafileModTime);
-	// WebResource resource = client.resource(idsUrl).path("put");
-	// InputStream in = new FileInputStream(file);
-	// return resource.queryParams(params).type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-	// .accept(MediaType.TEXT_PLAIN_TYPE).put(String.class, in);
-	// }mpl();
-	// params.add("sessionId", sessionId);
-	// params.add("name", name);
-	// params.add("datafileFormatId", datafileFormatId);
-	// params.add("datasetId", datasetId);
-	// if (description != null)
-	// params.add("description", description);
-	// if (doi != null)
-	// params.add("doi", doi);
-	// if (datafileCreateTime != null)
-	// params.add("datafileCreateTime", datafileCreateTime);
-	// if (datafileModTime != null)
-	// params.add("datafileModTime", datafileModTime);
-	// WebResource resource = client.resource(idsUrl).path("put");
-	// InputStream in = new FileInputStream(file);
-	// return resource.queryParams(params).type(MediaType.APPLICATION_OCTET_STREAM_TYPE)
-	// .accept(MediaType.TEXT_PLAIN_TYPE).put(String.class, in);
-	// }
+		try {
+			HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL,
+					new FileInputStream(file), sc);
+			return Long.parseLong(getOutput(urlc));
+		} catch (FileNotFoundException e) {
+			throw new NotFoundException("File " + file.getAbsolutePath() + " does not exist");
+		} catch (NumberFormatException e) {
+			throw new InternalException("Web service call did not return a valid Long value");
+		}
+
+	}
 
 	public HttpURLConnection process(String relativeUrl, Map<String, String> parameters,
 			Method method, ParmPos parmPos, InputStream inputStream, Integer sc)
@@ -262,7 +200,6 @@ public class TestingClient {
 				JsonNode rootNode = om.readValue(error, JsonNode.class);
 				code = rootNode.get("code").asText();
 				message = rootNode.get("message").asText();
-				System.out.println("*** Error " + rc + " " + code + " " + message);
 			} catch (Exception e) {
 				throw new InternalException("TestingClient " + error);
 			}
@@ -476,14 +413,6 @@ public class TestingClient {
 		}
 	}
 
-	public static void print(HttpURLConnection response) throws IOException {
-		System.out.println(response);
-		System.out.println(response.getContentType());
-		System.out.println(response.getResponseMessage());
-		System.out.println(response.getHeaderFields());
-
-	}
-
 	public static String getOutput(HttpURLConnection urlc) throws InternalException {
 		try {
 			InputStream stream = urlc.getInputStream();
@@ -506,6 +435,19 @@ public class TestingClient {
 		}
 	}
 
-
+	public void ping(Integer sc) throws InternalException, NotFoundException {
+		Map<String, String> emptyMap = Collections.emptyMap();
+		HttpURLConnection urlc;
+		try {
+			urlc = process("ping", emptyMap, Method.GET, ParmPos.URL, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
+				| BadRequestException | InsufficientPrivilegesException | NotFoundException
+				| NotImplementedException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+		String result = getOutput(urlc);
+		if (!result.equals("IdsOK")) { throw new NotFoundException("Server gave invalid response: " + result);  
+	}}
 
 }

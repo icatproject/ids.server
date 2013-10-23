@@ -52,6 +52,11 @@ public class GetStatusExplicitTest {
 		sessionId = setup.getGoodSessionId();
 	}
 
+	@Test
+	public void ping() throws Exception {
+		testingClient.ping(200);
+	}
+
 	@Test(expected = BadRequestException.class)
 	public void badPreparedId() throws Exception {
 		parameters.put("sessionId", setup.getGoodSessionId());
