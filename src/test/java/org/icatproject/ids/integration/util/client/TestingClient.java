@@ -5,9 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,8 +42,8 @@ public class TestingClient {
 			long datafileFormatId, String description, Integer sc) throws BadRequestException,
 			NotFoundException, InternalException, InsufficientPrivilegesException,
 			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
-		return put(sessionId, inputStream, name, datasetId, datafileFormatId, description, null, null,
-				null, sc);
+		return put(sessionId, inputStream, name, datasetId, datafileFormatId, description, null,
+				null, null, sc);
 	}
 
 	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
