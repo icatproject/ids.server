@@ -96,7 +96,7 @@ public class ArchiveTest {
 	public void badDatafileIdFormatTest() throws Exception {
 		parameters.put("sessionId", sessionId);
 		parameters.put("datafileIds", "1,2,a");
-		testingClient.process("restore", parameters, Method.POST, ParmPos.BODY, null, 400);
+		testingClient.process("restore", parameters, Method.POST, ParmPos.BODY, null, null, 400);
 	}
 
 	@Test(expected = BadRequestException.class)
@@ -104,7 +104,7 @@ public class ArchiveTest {
 
 		parameters.put("sessionId", sessionId);
 		parameters.put("datafileIds", "");
-		testingClient.process("restore", parameters, Method.POST, ParmPos.BODY, null, 400);
+		testingClient.process("restore", parameters, Method.POST, ParmPos.BODY, null, null, 400);
 	}
 
 	@Test(expected = BadRequestException.class)

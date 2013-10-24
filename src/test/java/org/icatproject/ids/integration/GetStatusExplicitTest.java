@@ -61,14 +61,14 @@ public class GetStatusExplicitTest {
 	public void badPreparedId() throws Exception {
 		parameters.put("sessionId", setup.getGoodSessionId());
 		parameters.put("preparedId", "99999999");
-		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, 400);
+		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 400);
 	}
 
 	@Test(expected = NotFoundException.class)
 	public void notFoundPreparedId() throws Exception {
 		parameters.put("sessionId", setup.getGoodSessionId());
 		parameters.put("preparedId", "88888888-4444-4444-4444-cccccccccccc");
-		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, 404);
+		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 404);
 	}
 
 	@Test(expected = NotFoundException.class)
@@ -81,7 +81,7 @@ public class GetStatusExplicitTest {
 	public void forbiddenTest() throws Exception {
 		parameters.put("sessionId", setup.getForbiddenSessionId());
 		parameters.put("datafileIds", setup.getCommaSepDatafileIds());
-		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, 403);
+		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 403);
 	}
 
 	@Test
@@ -89,7 +89,7 @@ public class GetStatusExplicitTest {
 		parameters.put("sessionId", setup.getGoodSessionId());
 		parameters.put("datafileIds", setup.getCommaSepDatafileIds());
 		HttpURLConnection response = testingClient.process("prepareData", parameters, Method.POST,
-				ParmPos.BODY, null, 200);
+				ParmPos.BODY, null, null, 200);
 		String preparedId = TestingClient.getOutput(response);
 
 		parameters.put("sessionId", setup.getGoodSessionId());

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,7 +59,7 @@ public class PutTest {
 
 	@Test(expected = DataNotOnlineException.class)
 	public void putToUnrestoredDataset() throws Exception {
-		testingClient.put(sessionId, new File(setup.getNewFileLocation()), "uploaded_file1_"
+		testingClient.put(sessionId, new FileInputStream(setup.getNewFileLocation()), "uploaded_file1_"
 				+ timestamp, setup.getDatasetIds().get(0), setup.getSupportedDatafileFormat()
 				.getId(), null, null, null, null, 404);
 	}
@@ -88,7 +89,7 @@ public class PutTest {
 
 		zipOnSlowStorage.delete(); // to check, if the dataset really is going to be written
 
-		Long dfid = testingClient.put(sessionId, new File(setup.getNewFileLocation()),
+		Long dfid = testingClient.put(sessionId, new FileInputStream(setup.getNewFileLocation()),
 				"uploaded_file2_" + timestamp, setup.getDatasetIds().get(0), setup
 						.getSupportedDatafileFormat().getId(), "A rather splendid datafile", 201);
 
@@ -98,7 +99,7 @@ public class PutTest {
 		assertNull(df.getDatafileCreateTime());
 		assertNull(df.getDatafileModTime());
 
-		dfid = testingClient.put(sessionId, new File(setup.getNewFileLocation()), "uploaded_file3_"
+		dfid = testingClient.put(sessionId, new FileInputStream(setup.getNewFileLocation()), "uploaded_file3_"
 				+ timestamp, setup.getDatasetIds().get(0), setup.getSupportedDatafileFormat()
 				.getId(), "An even better datafile", "7.1.3", new Date(420000), new Date(42000),
 				201);

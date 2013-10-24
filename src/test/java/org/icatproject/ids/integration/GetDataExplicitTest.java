@@ -70,21 +70,21 @@ public class GetDataExplicitTest {
 	@Test(expected = BadRequestException.class)
 	public void badPreparedIdFormatTest() throws Exception {
 		parameters.put("preparedId", "bad preparedId format");
-		testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null, 400);
+		testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null, null, 400);
 	}
 
 	@Test(expected = BadRequestException.class)
 	public void badDatafileIdFormatTest() throws Exception {
 		parameters.put("sessionId", setup.getGoodSessionId());
 		parameters.put("datafileIds", "notADatafile");
-		testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null, 400);
+		testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null, null, 400);
 	}
 
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
 		parameters.put("sessionId", setup.getForbiddenSessionId());
 		parameters.put("datafileIds", setup.getCommaSepDatafileIds());
-		testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null, 403);
+		testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null, null, 403);
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class GetDataExplicitTest {
 		HttpURLConnection response;
 		try {
 			response = testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null,
-					404);
+					null, 404);
 			fail("Should have thrown exception");
 		} catch (IdsException e) {
 			assertEquals(DataNotOnlineException.class, e.getClass());
@@ -105,7 +105,7 @@ public class GetDataExplicitTest {
 			Thread.sleep(1000);
 			try {
 				response = testingClient.process("getData", parameters, Method.GET, ParmPos.URL,
-						null, null);
+						null, null, null);
 				break;
 			} catch (IdsException e) {
 				assertEquals(DataNotOnlineException.class, e.getClass());

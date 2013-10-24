@@ -64,20 +64,6 @@ public class GetDataForPreparedIdTest {
 	}
 
 	@Test(expected = BadRequestException.class)
-	public void badFileNameFormatTest() throws Exception {
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDatafile(setup.getDatafileIds().get(0)), Flag.NONE, 200);
-
-		Status status = null;
-		do {
-			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
-
-		testingClient.getData(preparedId, "this/is/a/bad/file/name", 0L, 400);
-	}
-
-	@Test(expected = BadRequestException.class)
 	public void badOffsetFormatTest() throws Exception {
 
 		String preparedId = testingClient.prepareData(sessionId,
@@ -90,7 +76,6 @@ public class GetDataForPreparedIdTest {
 		} while (Status.RESTORING.equals(status));
 
 		testingClient.getData(preparedId, null, -10L, 400);
-
 	}
 
 	@Test(expected = NotFoundException.class)
@@ -210,7 +195,7 @@ public class GetDataForPreparedIdTest {
 		// request the zip file twice, with and without an offset
 		byte[] zip = TestingUtils.getOutput(testingClient.getData(preparedId, null, 0, 200));
 		byte[] zipoffset = TestingUtils.getOutput(testingClient.getData(preparedId, null,
-				goodOffset, 200));
+				goodOffset, 206));
 
 		// compare the two zip files byte by byte taking into account the offset
 		System.out.println(zip.length + " " + zipoffset.length);

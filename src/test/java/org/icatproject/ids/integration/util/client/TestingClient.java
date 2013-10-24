@@ -41,15 +41,15 @@ public class TestingClient {
 		this.idsUrl = idsUrl;
 	}
 
-	public Long put(String sessionId, File file, String name, long datasetId,
+	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
 			long datafileFormatId, String description, Integer sc) throws BadRequestException,
 			NotFoundException, InternalException, InsufficientPrivilegesException,
 			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
-		return put(sessionId, file, name, datasetId, datafileFormatId, description, null, null,
+		return put(sessionId, inputStream, name, datasetId, datafileFormatId, description, null, null,
 				null, sc);
 	}
 
-	public Long put(String sessionId, File file, String name, long datasetId,
+	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
 			long datafileFormatId, String description, String doi, Date datafileCreateTime,
 			Date datafileModTime, Integer sc) throws BadRequestException, NotFoundException,
 			InternalException, InsufficientPrivilegesException, NotImplementedException,
@@ -74,11 +74,9 @@ public class TestingClient {
 		}
 
 		try {
-			HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL,
-					new FileInputStream(file), sc);
+			HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL, null,
+					inputStream, sc);
 			return Long.parseLong(getOutput(urlc));
-		} catch (FileNotFoundException e) {
-			throw new NotFoundException("File " + file.getAbsolutePath() + " does not exist");
 		} catch (NumberFormatException e) {
 			throw new InternalException("Web service call did not return a valid Long value");
 		}
@@ -86,10 +84,10 @@ public class TestingClient {
 	}
 
 	public HttpURLConnection process(String relativeUrl, Map<String, String> parameters,
-			Method method, ParmPos parmPos, InputStream inputStream, Integer sc)
-			throws InternalException, BadRequestException, InsufficientPrivilegesException,
-			InsufficientStorageException, NotFoundException, NotImplementedException,
-			DataNotOnlineException {
+			Method method, ParmPos parmPos, Map<String, String> headers, InputStream inputStream,
+			Integer sc) throws InternalException, BadRequestException,
+			InsufficientPrivilegesException, InsufficientStorageException, NotFoundException,
+			NotImplementedException, DataNotOnlineException {
 		HttpURLConnection urlc;
 		int rc;
 		try {
@@ -121,6 +119,12 @@ public class TestingClient {
 
 			urlc.setUseCaches(false);
 			urlc.setRequestMethod(method.name());
+
+			if (headers != null) {
+				for (Entry<String, String> entry : headers.entrySet()) {
+					urlc.setRequestProperty(entry.getKey(), entry.getValue());
+				}
+			}
 
 			if (parmPos == ParmPos.BODY && parms != null) {
 
@@ -249,7 +253,7 @@ public class TestingClient {
 		}
 		HttpURLConnection urlc;
 		try {
-			urlc = process("prepareData", parameters, Method.POST, ParmPos.BODY, null, sc);
+			urlc = process("prepareData", parameters, Method.POST, ParmPos.BODY, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -266,7 +270,7 @@ public class TestingClient {
 		parameters.putAll(data.getParameters());
 
 		try {
-			process("restore", parameters, Method.POST, ParmPos.BODY, null, sc);
+			process("restore", parameters, Method.POST, ParmPos.BODY, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -283,7 +287,7 @@ public class TestingClient {
 		parameters.putAll(data.getParameters());
 
 		try {
-			process("archive", parameters, Method.POST, ParmPos.BODY, null, sc);
+			process("archive", parameters, Method.POST, ParmPos.BODY, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -306,7 +310,7 @@ public class TestingClient {
 
 		HttpURLConnection urlc;
 		try {
-			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, sc);
+			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -325,7 +329,7 @@ public class TestingClient {
 		HttpURLConnection urlc;
 
 		try {
-			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, sc);
+			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -350,12 +354,14 @@ public class TestingClient {
 		if (outname != null) {
 			parameters.put("outname", outname);
 		}
-		if (offset != 0) {
-			parameters.put("offset", Long.toString(offset));
-		}
 		HttpURLConnection urlc;
+		Map<String, String> headers = null;
+		if (offset != 0) {
+			headers = new HashMap<>();
+			headers.put("Range", "bytes=" + offset + "-");
+		}
 		try {
-			urlc = process("getData", parameters, Method.GET, ParmPos.URL, null, sc);
+			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
 		} catch (InsufficientStorageException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -374,12 +380,14 @@ public class TestingClient {
 		if (outname != null) {
 			parameters.put("outname", outname);
 		}
-		if (offset != 0) {
-			parameters.put("offset", Long.toString(offset));
-		}
 		HttpURLConnection urlc;
+		Map<String, String> headers = null;
+		if (offset != 0) {
+			headers = new HashMap<>();
+			headers.put("Range", "bytes=" + offset + "-");
+		}
 		try {
-			urlc = process("getData", parameters, Method.GET, ParmPos.URL, null, sc);
+			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
 		} catch (InsufficientStorageException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -397,7 +405,7 @@ public class TestingClient {
 		parameters.putAll(data.getParameters());
 
 		try {
-			process("delete", parameters, Method.DELETE, ParmPos.URL, null, sc);
+			process("delete", parameters, Method.DELETE, ParmPos.URL, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
@@ -439,7 +447,7 @@ public class TestingClient {
 		Map<String, String> emptyMap = Collections.emptyMap();
 		HttpURLConnection urlc;
 		try {
-			urlc = process("ping", emptyMap, Method.GET, ParmPos.URL, null, sc);
+			urlc = process("ping", emptyMap, Method.GET, ParmPos.URL, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
 				| BadRequestException | InsufficientPrivilegesException | NotFoundException
 				| NotImplementedException e) {
@@ -447,7 +455,9 @@ public class TestingClient {
 					+ e.getMessage());
 		}
 		String result = getOutput(urlc);
-		if (!result.equals("IdsOK")) { throw new NotFoundException("Server gave invalid response: " + result);  
-	}}
+		if (!result.equals("IdsOK")) {
+			throw new NotFoundException("Server gave invalid response: " + result);
+		}
+	}
 
 }
