@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -48,7 +47,6 @@ public class RequestHelper {
 	private void init() {
 		icat = PropertyHandler.getInstance().getIcatService();
 	}
-
 
 	public IdsRequestEntity createPrepareRequest(String sessionId, boolean compress, boolean zip)
 			throws InsufficientPrivilegesException, InternalException {
@@ -102,13 +100,11 @@ public class RequestHelper {
 		return requestEntity;
 	}
 
-	public void addDatasets(String sessionId, IdsRequestEntity requestEntity, String datasetIds)
-			throws IcatException_Exception {
-		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
+	public void addDatasets(String sessionId, IdsRequestEntity requestEntity,
+			List<Long> datasetIdList) throws IcatException_Exception {
 
-		for (String id : datasetIdList) {
-			Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile",
-					Long.parseLong(id));
+		for (long id : datasetIdList) {
+			Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", id);
 			addDataset(sessionId, requestEntity, ds);
 		}
 	}
@@ -143,13 +139,11 @@ public class RequestHelper {
 		requestEntity.getDatasets().add(newDataset);
 	}
 
-	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity, String datafileIds)
-			throws NumberFormatException, IcatException_Exception {
-		List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
+	public void addDatafiles(String sessionId, IdsRequestEntity requestEntity,
+			List<Long> datafileIdList) throws NumberFormatException, IcatException_Exception {
 
-		for (String id : datafileIdList) {
-			Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset",
-					Long.parseLong(id));
+		for (Long id : datafileIdList) {
+			Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset", id);
 			addDatafile(sessionId, requestEntity, df);
 		}
 	}

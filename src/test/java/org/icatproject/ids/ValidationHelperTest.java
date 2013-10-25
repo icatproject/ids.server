@@ -2,8 +2,13 @@ package org.icatproject.ids;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-import org.icatproject.ids.util.ValidationHelper;
+import java.util.Arrays;
+import java.util.List;
+
+import org.icatproject.ids.webservice.IdsBean;
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
 import org.junit.Test;
 
@@ -27,7 +32,7 @@ public class ValidationHelperTest {
 
 	private void testValidUUID(boolean b, String id) {
 		try {
-			ValidationHelper.validateUUID("testValidUUID", id);
+			IdsBean.validateUUID("testValidUUID", id);
 			assertTrue(b);
 		} catch (BadRequestException e) {
 			System.out.println(e.getMessage());
@@ -36,34 +41,38 @@ public class ValidationHelperTest {
 
 	}
 
-	private void testValidIdList(boolean b, String ids) {
+	private void testInValidIdList(String ids) {
 		try {
-			ValidationHelper.validateIdList("testValidIdList", ids);
-			assertTrue(b);
+			IdsBean.getValidIds("testValidIdList", ids);
+			fail("Should have thrown exception");
 		} catch (BadRequestException e) {
 			System.out.println(e.getMessage());
-			assertFalse(b);
 		}
 
+	}
+
+	private void testValidIdList(String ids, List<Long> listIds) throws Exception {
+		assertEquals(listIds, IdsBean.getValidIds("testValidIdList", ids));
 	}
 
 	@Test
 	public void testIsValidIdList() throws Exception {
-		testValidIdList(false, "123456,123456,123456,123456,,123456");
-		testValidIdList(false, "");
-		testValidIdList(false, "abc");
-		testValidIdList(false, "abc,def");
-		testValidIdList(false, "123\u00ea");
-		testValidIdList(false, "123,456\n");
-		testValidIdList(false, "123.4,789");
-		testValidIdList(false, "99999999999999999999");
+		testInValidIdList("123456,123456,123456,123456,,123456");
+		testInValidIdList("");
+		testInValidIdList("abc");
+		testInValidIdList("abc,def");
+		testInValidIdList("123\u00ea");
+		testInValidIdList("123,456\n");
+		testInValidIdList("123.4,789");
+		testInValidIdList("99999999999999999999");
 
-		testValidIdList(true, null);
-		testValidIdList(true, "123");
-		testValidIdList(true, "123,456");
-		testValidIdList(true, "123, 456");
-		testValidIdList(true, "0,1,2,3,4,5,6,7,8,9");
-		testValidIdList(true, "99999");
+		
+		testValidIdList(null, Arrays.asList(new Long[0]));
+		testValidIdList("123",  Arrays.asList(123L));
+		testValidIdList("123,456",  Arrays.asList(123L, 456L));
+		testValidIdList("123, 456", Arrays.asList(123L, 456L));
+		testValidIdList("0,1,2,3,4,5,6,7,8,9", Arrays.asList(0L,1L,2L,3L,4L,5L,6L,7L,8L,9L));
+		testValidIdList("99999", Arrays.asList(99999L));
 
 	}
 

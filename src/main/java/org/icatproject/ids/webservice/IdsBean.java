@@ -12,13 +12,14 @@ import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -44,7 +45,6 @@ import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
 import org.icatproject.ids.util.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids.util.ValidationHelper;
 import org.icatproject.ids.util.ZipHelper;
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
 import org.icatproject.ids.webservice.exceptions.DataNotOnlineException;
@@ -61,6 +61,10 @@ public class IdsBean {
 	private static final int BUFSIZ = 2048;
 
 	private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
+
+	/** matches standard UUID format of 8-4-4-4-12 hexadecimal digits */
+	public static final Pattern uuidRegExp = Pattern
+			.compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
 	private static void copy(InputStream is, OutputStream os) throws IOException {
 		BufferedInputStream bis = null;
@@ -89,7 +93,7 @@ public class IdsBean {
 
 	private DatatypeFactory datatypeFactory;
 
-	private StorageInterface fastStorage;
+	private StorageInterface mainStorage;
 
 	@EJB
 	private RequestHelper requestHelper;
@@ -100,33 +104,39 @@ public class IdsBean {
 
 	private ICAT icat;
 
+	private boolean twoLevel;
+
 	public Response archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, InternalException, NotFoundException {
 
+		// Log and validate
+
 		logger.info("New webservice request: archive " + "investigationIds='" + investigationIds
 				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-
-		IdsRequestEntity requestEntity = null;
 
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-		ValidationHelper.validateUUID("sessionId", sessionId);
-		ValidationHelper.validateIdList("datasetIds", datasetIds);
-		ValidationHelper.validateIdList("datafileIds", datafileIds);
+		validateUUID("sessionId", sessionId);
+		List<Long> dfids = getValidIds("datafileIds", datafileIds);
+		List<Long> dsids = getValidIds("datasetIds", datasetIds);
+
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
+		// Do it
+
+		IdsRequestEntity requestEntity = null;
 		try {
 			requestEntity = requestHelper.createArchiveRequest(sessionId);
-			if (datafileIds != null) {
-				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
-			}
+
+			requestHelper.addDatafiles(sessionId, requestEntity, dfids);
+
 			if (datasetIds != null) {
-				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
+				requestHelper.addDatasets(sessionId, requestEntity, dsids);
 			}
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.ARCHIVE);
@@ -156,12 +166,15 @@ public class IdsBean {
 		logger.info("New webservice request: delete " + "investigationIds='" + investigationIds
 				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
+		List<Long> dfids = getValidIds("datafileIds", datafileIds);
+		List<Long> dsids = getValidIds("datasetIds", datasetIds);
+
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-		ValidationHelper.validateUUID("sessionId", sessionId);
-		ValidationHelper.validateIdList("datasetIds", datasetIds);
-		ValidationHelper.validateIdList("datafileIds", datafileIds);
+
+		IdsBean.validateUUID("sessionId", sessionId);
+
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
@@ -173,26 +186,21 @@ public class IdsBean {
 		IdsRequestEntity restoreRequest = null;
 		try {
 			// check, if ICAT will permit access to the requested files
-			if (datafileIds != null) {
-				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
-				for (String id : datafileIdList) {
-					Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset",
-							Long.parseLong(id));
-					datafiles.add(df);
-				}
+
+			for (Long id : dfids) {
+				Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset", id);
+				datafiles.add(df);
 			}
-			if (datasetIds != null) {
-				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
-				for (String id : datasetIdList) {
-					Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile",
-							Long.parseLong(id));
-					datasets.add(ds);
-				}
+
+			for (Long id : dsids) {
+				Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", id);
+				datasets.add(ds);
+
 			}
 
 			// check the files availability on fast storage
 			for (Datafile df : datafiles) {
-				if (!fastStorage.datafileExists(df.getLocation())) {
+				if (!mainStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -201,7 +209,7 @@ public class IdsBean {
 				}
 			}
 			for (Dataset ds : datasets) {
-				if (!fastStorage.datasetExists(ds.getLocation())) {
+				if (!mainStorage.datasetExists(ds.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -230,7 +238,7 @@ public class IdsBean {
 			}
 			for (Dataset ds : datasets) {
 				icat.delete(sessionId, ds);
-				fastStorage.deleteDataset(ds.getLocation());
+				mainStorage.deleteDataset(ds.getLocation());
 				requestHelper.addDataset(sessionId, writeRequest, ds);
 			}
 			for (IdsDataEntity de : writeRequest.getDataEntities()) {
@@ -264,7 +272,7 @@ public class IdsBean {
 		final IdsRequestEntity requestEntity;
 		String name = null;
 
-		ValidationHelper.validateUUID("preparedId", preparedId);
+		IdsBean.validateUUID("preparedId", preparedId);
 
 		List<IdsRequestEntity> requests = requestHelper.getRequestByPreparedId(preparedId);
 		if (requests.size() == 0) {
@@ -315,7 +323,7 @@ public class IdsBean {
 			@Override
 			public void write(OutputStream output) throws IOException {
 				try {
-					InputStream input = fastStorage.getPreparedZip(requestEntity.getPreparedId()
+					InputStream input = mainStorage.getPreparedZip(requestEntity.getPreparedId()
 							+ ".zip");
 					logger.debug("Requested offset " + offset);
 					long skipped = 0;
@@ -353,23 +361,27 @@ public class IdsBean {
 			String datafileIds, Boolean compress, Boolean zip, String outname, final long offset)
 			throws BadRequestException, NotImplementedException, InternalException,
 			InsufficientPrivilegesException, NotFoundException, DataNotOnlineException {
-		
+
+		// Log and validate
 		logger.info(String
 				.format("New webservice request: getData investigationIds=%s, datasetIds=%s, datafileIds=%s",
 						investigationIds, datasetIds, datafileIds));
 
+		List<Long> dfids = getValidIds("datafileIds", datafileIds);
+		List<Long> dsids = getValidIds("datasetIds", datasetIds);
+
 		if (investigationIds != null) {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
-		ValidationHelper.validateUUID("sessionId", sessionId);
-		ValidationHelper.validateIdList("datasetIds", datasetIds);
-		ValidationHelper.validateIdList("datafileIds", datafileIds);
+
+		IdsBean.validateUUID("sessionId", sessionId);
+
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
-		//TODO add investigations
+		// TODO add investigations
 		final List<Datafile> datafiles = new ArrayList<>();
 		final List<Dataset> datasets = new ArrayList<>();
 		Status status = Status.ONLINE;
@@ -377,26 +389,20 @@ public class IdsBean {
 		DataNotOnlineException exc = null;
 		try {
 			// check, if ICAT will permit access to the requested files
-			if (datafileIds != null) {
-				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
-				for (String id : datafileIdList) {
-					Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset",
-							Long.parseLong(id));
-					datafiles.add(df);
-				}
+
+			for (Long id : dfids) {
+				Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset", id);
+				datafiles.add(df);
 			}
-			if (datasetIds != null) {
-				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
-				for (String id : datasetIdList) {
-					Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile",
-							Long.parseLong(id));
-					datasets.add(ds);
-				}
+
+			for (Long id : dsids) {
+				Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", id);
+				datasets.add(ds);
 			}
 
 			// check the files availability on fast storage
 			for (Datafile df : datafiles) {
-				if (!fastStorage.datafileExists(df.getLocation())) {
+				if (!mainStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -408,7 +414,7 @@ public class IdsBean {
 				}
 			}
 			for (Dataset ds : datasets) {
-				if (!fastStorage.datasetExists(ds.getLocation())) {
+				if (!mainStorage.datasetExists(ds.getLocation())) {
 					status = Status.ARCHIVED;
 					if (restoreRequest == null) {
 						restoreRequest = requestHelper.createRestoreRequest(sessionId);
@@ -472,7 +478,7 @@ public class IdsBean {
 				try {
 					InputStream input = ZipHelper.prepareTemporaryZip(
 							String.format("%s_%s", finalName, finalSessionId), datasets, datafiles,
-							finalCompress, fastStorage);
+							finalCompress, mainStorage);
 
 					long skipped = 0;
 					try {
@@ -485,9 +491,8 @@ public class IdsBean {
 					if (skipped != offset) {
 						throw new WebApplicationException(Response
 								.status(HttpURLConnection.HTTP_BAD_REQUEST)
-								.entity("Offset (" + offset
-										+ " bytes) is larger than file size (" + skipped
-										+ " bytes)").build());
+								.entity("Offset (" + offset + " bytes) is larger than file size ("
+										+ skipped + " bytes)").build());
 					}
 					copy(input, output);
 				} catch (IOException e) {
@@ -510,7 +515,7 @@ public class IdsBean {
 
 		logger.info("New webservice request: getStatus " + "preparedId='" + preparedId + "'");
 
-		ValidationHelper.validateUUID("preparedId", preparedId);
+		IdsBean.validateUUID("preparedId", preparedId);
 
 		List<IdsRequestEntity> requests = requestHelper.getRequestByPreparedId(preparedId);
 		if (requests.size() == 0) {
@@ -543,6 +548,7 @@ public class IdsBean {
 			String datafileIds) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, NotFoundException, InternalException {
 
+		// Log and validate
 		logger.info(String
 				.format("New webservice request: getStatus investigationIds=%s, datasetIds=%s, datafileIds=%s",
 						investigationIds, datasetIds, datafileIds));
@@ -551,46 +557,41 @@ public class IdsBean {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
 
-		ValidationHelper.validateUUID("sessionId", sessionId);
-		ValidationHelper.validateIdList("datasetIds", datasetIds);
-		ValidationHelper.validateIdList("datafileIds", datafileIds);
+		validateUUID("sessionId", sessionId);
+		List<Long> dsids = getValidIds("datasetIds", datasetIds);
+		List<Long> dfids = getValidIds("datafileIds", datafileIds);
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
+		// Do it
 		Status status = Status.ONLINE;
 		List<Datafile> datafiles = new ArrayList<Datafile>();
 		List<Dataset> datasets = new ArrayList<Dataset>();
 		try {
 			// check, if ICAT will permit access to the requested files
-			if (datafileIds != null) {
-				List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
-				for (String id : datafileIdList) {
-					Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset",
-							Long.parseLong(id));
-					datafiles.add(df);
-				}
+
+			for (Long id : dfids) {
+				Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset", id);
+				datafiles.add(df);
 			}
-			if (datasetIds != null) {
-				List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
-				for (String id : datasetIdList) {
-					Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile",
-							Long.parseLong(id));
-					datasets.add(ds);
-				}
+
+			for (Long id : dsids) {
+				Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", id);
+				datasets.add(ds);
 			}
 
 			// check the files availability on fast storage
 			for (Datafile df : datafiles) {
-				if (!fastStorage.datafileExists(df.getLocation())) {
+				if (!mainStorage.datafileExists(df.getLocation())) {
 					status = Status.ARCHIVED;
 					break;
 				}
 			}
 			if (status != Status.ARCHIVED) {
 				for (Dataset ds : datasets) {
-					if (!fastStorage.datasetExists(ds.getLocation())) {
+					if (!mainStorage.datasetExists(ds.getLocation())) {
 						status = Status.ARCHIVED;
 						break;
 					}
@@ -621,7 +622,8 @@ public class IdsBean {
 	private void init() throws DatatypeConfigurationException {
 		logger.info("creating IdsBean");
 		PropertyHandler ph = PropertyHandler.getInstance();
-		fastStorage = ph.getMainStorage();
+		mainStorage = ph.getMainStorage();
+		twoLevel = ph.getArchiveStorage() != null;
 		datatypeFactory = DatatypeFactory.newInstance();
 
 		timer.schedule(new ProcessQueue(timer, requestHelper),
@@ -638,6 +640,7 @@ public class IdsBean {
 			BadRequestException, InternalException, InsufficientPrivilegesException,
 			NotFoundException {
 
+		// Log and validate
 		logger.info("New webservice request: prepareData " + "investigationIds='"
 				+ investigationIds + "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='"
 				+ datafileIds + "' " + "compress='" + compress + "' " + "zip='" + zip + "'");
@@ -646,23 +649,25 @@ public class IdsBean {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
 
-		ValidationHelper.validateUUID("sessionId", sessionId);
-		ValidationHelper.validateIdList("datasetIds", datasetIds);
-		ValidationHelper.validateIdList("datafileIds", datafileIds);
+		validateUUID("sessionId", sessionId);
+
+		List<Long> dsids = getValidIds("datasetIds", datasetIds);
+		List<Long> dfids = getValidIds("datafileIds", datafileIds);
 
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
 
+		// Do it
 		IdsRequestEntity requestEntity = null;
 		try {
 			requestEntity = requestHelper.createPrepareRequest(sessionId, compress, zip);
 			if (datafileIds != null) {
-				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
+				requestHelper.addDatafiles(sessionId, requestEntity, dfids);
 			}
 			if (datasetIds != null) {
-				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
+				requestHelper.addDatasets(sessionId, requestEntity, dsids);
 			}
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.PREPARE);
@@ -695,16 +700,16 @@ public class IdsBean {
 			long datasetId, String description, String doi, Long datafileCreateTime,
 			Long datafileModTime) throws NotFoundException, DataNotOnlineException,
 			BadRequestException, InsufficientPrivilegesException, InternalException {
-		ValidationHelper.validateUUID("sessionId", sessionId);
-
-		if (name == null) {
-			throw new BadRequestException("The name parameter must be set");
-		}
 
 		logger.info("New webservice request: put " + "name='" + name + "' " + "datafileFormatId='"
 				+ datafileFormatId + "' " + "datasetId='" + datasetId + "' " + "description='"
 				+ description + "' " + "doi='" + doi + "' " + "datafileCreateTime='"
 				+ datafileCreateTime + "' " + "datafileModTime='" + datafileModTime + "'");
+
+		IdsBean.validateUUID("sessionId", sessionId);
+		if (name == null) {
+			throw new BadRequestException("The name parameter must be set");
+		}
 
 		Dataset ds;
 		try {
@@ -722,7 +727,7 @@ public class IdsBean {
 		}
 
 		try {
-			if (!fastStorage.datasetExists(ds.getLocation())) {
+			if (!mainStorage.datasetExists(ds.getLocation())) {
 				IdsRequestEntity requestEntity = requestHelper.createRestoreRequest(sessionId);
 				requestHelper.addDataset(sessionId, requestEntity, datasetId);
 				this.queue(requestEntity.getDataEntities().get(0), DeferredOp.RESTORE);
@@ -733,7 +738,7 @@ public class IdsBean {
 			Datafile dummy = new Datafile();
 			dummy.setName(name);
 			dummy.setDataset(ds);
-			long tbytes = fastStorage.putDatafile((new File(ds.getLocation(), name)).getPath(),
+			long tbytes = mainStorage.putDatafile((new File(ds.getLocation(), name)).getPath(),
 					body);
 			Long dfId = registerDatafile(sessionId, name, datafileFormatId, tbytes, ds,
 					description, doi, datafileCreateTime, datafileModTime);
@@ -919,6 +924,7 @@ public class IdsBean {
 			String datafileIds) throws BadRequestException, NotImplementedException,
 			InsufficientPrivilegesException, InternalException, NotFoundException {
 
+		// Log and validate
 		logger.info("New webservice request: restore " + "investigationIds='" + investigationIds
 				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
@@ -926,25 +932,23 @@ public class IdsBean {
 			throw new NotImplementedException("investigationIds are not supported");
 		}
 
-		ValidationHelper.validateUUID("sessionId", sessionId);
-		ValidationHelper.validateIdList("datasetIds", datasetIds);
-		ValidationHelper.validateIdList("datafileIds", datafileIds);
+		validateUUID("sessionId", sessionId);
+
+		List<Long> dsids = getValidIds("datasetIds", datasetIds);
+		List<Long> dfids = getValidIds("datafileIds", datafileIds);
+
 		if (datasetIds == null && datafileIds == null) {
 			throw new BadRequestException(
 					"At least one of datasetIds or datafileIds parameters must be set");
 		}
-		// at this point we're sure, that all arguments are valid
-		;
 
+		// Do it
 		IdsRequestEntity requestEntity = null;
 		try {
 			requestEntity = requestHelper.createRestoreRequest(sessionId);
-			if (datafileIds != null) {
-				requestHelper.addDatafiles(sessionId, requestEntity, datafileIds);
-			}
-			if (datasetIds != null) {
-				requestHelper.addDatasets(sessionId, requestEntity, datasetIds);
-			}
+			requestHelper.addDatafiles(sessionId, requestEntity, dfids);
+			requestHelper.addDatasets(sessionId, requestEntity, dsids);
+
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.RESTORE);
 			}
@@ -969,6 +973,37 @@ public class IdsBean {
 		Map<Dataset, Long> writeTimes = requestQueues.getWriteTimes();
 		writeTimes.put(ds, newWriteTime);
 		logger.info("Requesting delay of writing of " + ds.getId() + " till " + newWriteTime);
+	}
+
+	public static void validateUUID(String thing, String id) throws BadRequestException {
+		if (id == null || !uuidRegExp.matcher(id).matches())
+			throw new BadRequestException("The " + thing + " parameter '" + id
+					+ "' is not a valid UUID");
+	}
+
+	/**
+	 * Checks to see if the investigation, dataset or datafile id list is a valid comma separated
+	 * list of longs. No spaces or leading 0's. Also accepts null.
+	 */
+	public static List<Long> getValidIds(String thing, String idList) throws BadRequestException {
+
+		List<Long> result;
+		if (idList == null) {
+			result = Collections.emptyList();
+		} else {
+			String[] ids = idList.split("\\s*,\\s*");
+			result = new ArrayList<>(ids.length);
+			for (String id : ids) {
+				try {
+					result.add(Long.parseLong(id));
+				} catch (NumberFormatException e) {
+					throw new BadRequestException("The " + thing + " parameter '" + idList
+							+ "' is not a valid "
+							+ "string representation of a comma separated list of longs");
+				}
+			}
+		}
+		return result;
 	}
 
 }
