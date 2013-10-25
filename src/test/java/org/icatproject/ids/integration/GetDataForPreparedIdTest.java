@@ -83,25 +83,6 @@ public class GetDataForPreparedIdTest {
 		testingClient.getData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, 0L, 404);
 	}
 
-	@Ignore
-	@Test
-	public void offsetTooBigTest() throws Exception {
-
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDatafile(setup.getDatafileIds().get(0)), Flag.NONE, 200);
-
-		Status status = null;
-		do {
-			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
-
-		InputStream stream = testingClient.getData(preparedId, null, 99999999, 400);
-		Map<String, String> map = TestingUtils.filenameMD5Map(stream);
-		assertEquals(0, map.size());
-		TestingUtils.checkMD5Values(map, setup);
-	}
-
 	@Test
 	public void correctBehaviourNoOffsetTest() throws Exception {
 		String preparedId = testingClient.prepareData(sessionId,

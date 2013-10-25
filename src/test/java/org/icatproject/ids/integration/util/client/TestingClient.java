@@ -1,6 +1,6 @@
 package org.icatproject.ids.integration.util.client;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -170,33 +170,21 @@ public class TestingClient {
 			}
 
 			rc = urlc.getResponseCode();
-			if (sc != null) {
-				assertEquals(sc.intValue(), urlc.getResponseCode());
+			if (sc != null && sc.intValue() != urlc.getResponseCode()) {
+				if (rc / 100 != 2) {
+					fail(getError(urlc));
+				} else
+					fail("Expected " + sc.intValue() + " but was " + urlc.getResponseCode());
 			}
 		} catch (Exception e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
 		if (rc / 100 != 2) {
-			String error = null;
+			String error = getError(urlc);
 			String code;
 			String message;
 			try {
-				InputStream stream = urlc.getErrorStream();
-				ByteArrayOutputStream os = null;
-				try {
-					os = new ByteArrayOutputStream();
-					int len;
-					byte[] buffer = new byte[1024];
-					while ((len = stream.read(buffer)) != -1) {
-						os.write(buffer, 0, len);
-					}
-					error = os.toString();
-				} finally {
-					if (stream != null) {
-						stream.close();
-					}
-				}
 				ObjectMapper om = new ObjectMapper();
 				JsonNode rootNode = om.readValue(error, JsonNode.class);
 				code = rootNode.get("code").asText();
@@ -234,6 +222,22 @@ public class TestingClient {
 			}
 		}
 		return urlc;
+	}
+
+	private String getError(HttpURLConnection urlc) {
+		InputStream stream = urlc.getErrorStream();
+		ByteArrayOutputStream os = null;
+		try {
+			os = new ByteArrayOutputStream();
+			int len;
+			byte[] buffer = new byte[1024];
+			while ((len = stream.read(buffer)) != -1) {
+				os.write(buffer, 0, len);
+			}
+			return os.toString();
+		} catch (IOException e) {
+			return "IOException handling errorStream";
+		}
 	}
 
 	public String prepareData(String sessionId, DataSelection data, Flag flags, Integer sc)

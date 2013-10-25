@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
@@ -17,6 +18,7 @@ import javax.persistence.Query;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
+import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.entity.IdsDataEntity;
@@ -40,8 +42,13 @@ public class RequestHelper {
 	@PersistenceContext(unitName = "IDS-PU")
 	private EntityManager em;
 
-	@EJB
-	private Icat icatServiceFacade;
+	private ICAT icat;
+
+	@PostConstruct
+	private void init() {
+		icat = PropertyHandler.getInstance().getIcatService();
+	}
+
 
 	public IdsRequestEntity createPrepareRequest(String sessionId, boolean compress, boolean zip)
 			throws InsufficientPrivilegesException, InternalException {
@@ -70,7 +77,7 @@ public class RequestHelper {
 
 		String username;
 		try {
-			username = icatServiceFacade.getUserName(sessionId);
+			username = icat.getUserName(sessionId);
 		} catch (IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
@@ -100,7 +107,7 @@ public class RequestHelper {
 		List<String> datasetIdList = Arrays.asList(datasetIds.split("\\s*,\\s*"));
 
 		for (String id : datasetIdList) {
-			Dataset ds = icatServiceFacade.getDatasetWithDatafilesForDatasetId(sessionId,
+			Dataset ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile",
 					Long.parseLong(id));
 			addDataset(sessionId, requestEntity, ds);
 		}
@@ -110,7 +117,7 @@ public class RequestHelper {
 			throws InsufficientPrivilegesException, InternalException, NotFoundException {
 		Dataset ds;
 		try {
-			ds = icatServiceFacade.getDatasetWithDatafilesForDatasetId(sessionId, id);
+			ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", id);
 		} catch (IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
 			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
@@ -141,7 +148,7 @@ public class RequestHelper {
 		List<String> datafileIdList = Arrays.asList(datafileIds.split("\\s*,\\s*"));
 
 		for (String id : datafileIdList) {
-			Datafile df = icatServiceFacade.getDatafileWithDatasetForDatafileId(sessionId,
+			Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset",
 					Long.parseLong(id));
 			addDatafile(sessionId, requestEntity, df);
 		}
@@ -211,12 +218,12 @@ public class RequestHelper {
 			IdsRequestEntity request = it.next();
 			try {
 				for (IdsDatafileEntity df : request.getDatafiles()) {
-					df.setIcatDatafile(icatServiceFacade.getDatafileWithDatasetForDatafileId(
-							request.getSessionId(), df.getIcatDatafileId()));
+					df.setIcatDatafile((Datafile) icat.get(request.getSessionId(),
+							"Datafile INCLUDE Dataset", df.getIcatDatafileId()));
 				}
 				for (IdsDatasetEntity ds : request.getDatasets()) {
-					ds.setIcatDataset(icatServiceFacade.getDatasetWithDatafilesForDatasetId(
-							request.getSessionId(), ds.getIcatDatasetId()));
+					ds.setIcatDataset((Dataset) icat.get(request.getSessionId(),
+							"Dataset INCLUDE Datafile", ds.getIcatDatasetId()));
 				}
 			} catch (IcatException_Exception e) {
 				logger.warn("Couldn't resume processing " + request);
@@ -227,5 +234,4 @@ public class RequestHelper {
 		logger.info(requests.size() + " unfinished requests ready to be resumed");
 		return requests;
 	}
-
 }

@@ -35,17 +35,8 @@ public class ZipHelper {
 		ZipOutputStream zos = null;
 		try {
 			zos = new ZipOutputStream(new FileOutputStream(tmpZipFile));
-
-			// set whether to compress the zip file or not
-			if (compress == true) {
-				zos.setMethod(ZipOutputStream.DEFLATED);
-			} else {
-				// using compress with level 0 instead of archive (STORED)
-				// because
-				// STORED requires you to set CRC, size and compressed size
-				// TODO: find efficient way of calculating CRC
-				zos.setMethod(ZipOutputStream.DEFLATED);
-				zos.setLevel(0);
+			if (!compress) {
+				zos.setLevel(0); // Otherwise use default compression
 			}
 			for (Datafile df : dataset.getDatafiles()) {
 				logger.info("Adding file " + df.getName() + " to zip");
@@ -77,16 +68,8 @@ public class ZipHelper {
 		try {
 			zos = new ZipOutputStream(new FileOutputStream(tmpZipFile));
 
-			// set whether to compress the zip file or not
-			if (compress) {
-				zos.setMethod(ZipOutputStream.DEFLATED);
-			} else {
-				// using compress with level 0 instead of archive (STORED)
-				// because
-				// STORED requires you to set CRC, size and compressed size
-				// TODO: find efficient way of calculating CRC
-				zos.setMethod(ZipOutputStream.DEFLATED);
-				zos.setLevel(0);
+			if (!compress) {
+				zos.setLevel(0); // Otherwise use default compression
 			}
 			for (Datafile df : datafiles) {
 				addToZip("Datafile-" + df.getId(), zos,
