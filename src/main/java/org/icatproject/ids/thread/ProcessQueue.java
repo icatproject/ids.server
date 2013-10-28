@@ -12,7 +12,7 @@ import org.icatproject.ids.entity.IdsDataEntity;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
-import org.icatproject.ids.util.RequestedState;
+import org.icatproject.ids.util.RequestQueues.RequestedState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

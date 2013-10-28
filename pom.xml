@@ -260,6 +260,10 @@
                     <includes>
                         <include>**/integration/*Test.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <!-- <serverUrl>${serverUrl}</serverUrl> -->
+                        <javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
+                    </systemPropertyVariables>
                 </configuration>
                 <executions>
                     <execution>

@@ -12,11 +12,7 @@ import org.icatproject.ids.webservice.IdsBean;
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
 import org.junit.Test;
 
-/*
- * Test each of the methods associated with validating the inputs to the 
- * IDS RESTful web interface.
- */
-public class ValidationHelperTest {
+public class ValidaterTest {
 
 	@Test
 	public void testIsValidId() throws Exception {
@@ -27,7 +23,6 @@ public class ValidationHelperTest {
 		testValidUUID(false, "some random string");
 		testValidUUID(false, "cbb082c8-130743-3c-9d7b-856b6c0878e9");
 		testValidUUID(true, "cbb082c8-1307-433c-9d7b-856b6c0878e9");
-
 	}
 
 	private void testValidUUID(boolean b, String id) {

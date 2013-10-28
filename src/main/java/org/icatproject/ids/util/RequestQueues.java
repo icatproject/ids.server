@@ -9,6 +9,11 @@ import org.icatproject.Dataset;
 import org.icatproject.ids.entity.IdsDataEntity;
 
 public class RequestQueues {
+
+	public enum RequestedState {
+		PREPARE_REQUESTED, WRITE_REQUESTED, ARCHIVE_REQUESTED, RESTORE_REQUESTED, WRITE_THEN_ARCHIVE_REQUESTED
+	}
+
 	private final Map<IdsDataEntity, RequestedState> deferredOpsQueue;
 	private final Set<Dataset> changing;
 	private final Map<Dataset, Long> writeTimes;

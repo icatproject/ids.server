@@ -1,6 +1,5 @@
 package org.icatproject.ids.util;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
@@ -78,8 +77,7 @@ public class RequestHelper {
 			username = icat.getUserName(sessionId);
 		} catch (IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-					|| type == IcatExceptionType.SESSION) {
+			if (type == IcatExceptionType.SESSION) {
 				throw new InsufficientPrivilegesException(e.getMessage());
 			}
 			throw new InternalException(type + " " + e.getMessage());

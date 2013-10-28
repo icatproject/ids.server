@@ -11,7 +11,7 @@ import org.icatproject.ids.plugin.StorageInterface;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
-import org.icatproject.ids.util.RequestedState;
+import org.icatproject.ids.util.RequestQueues.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids.util.ZipHelper;
 import org.slf4j.Logger;

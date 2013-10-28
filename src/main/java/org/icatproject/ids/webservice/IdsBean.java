@@ -43,7 +43,7 @@ import org.icatproject.ids.thread.ProcessQueue;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
-import org.icatproject.ids.util.RequestedState;
+import org.icatproject.ids.util.RequestQueues.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids.util.ZipHelper;
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
@@ -134,10 +134,8 @@ public class IdsBean {
 			requestEntity = requestHelper.createArchiveRequest(sessionId);
 
 			requestHelper.addDatafiles(sessionId, requestEntity, dfids);
+			requestHelper.addDatasets(sessionId, requestEntity, dsids);
 
-			if (datasetIds != null) {
-				requestHelper.addDatasets(sessionId, requestEntity, dsids);
-			}
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.ARCHIVE);
 			}
@@ -464,7 +462,7 @@ public class IdsBean {
 			}
 		}
 
-		final boolean finalCompress = "true".equals(compress) ? true : false;
+		final boolean finalCompress = "true".equals(compress);
 		final String finalName = name;
 		final String finalSessionId = sessionId;
 
@@ -663,12 +661,8 @@ public class IdsBean {
 		IdsRequestEntity requestEntity = null;
 		try {
 			requestEntity = requestHelper.createPrepareRequest(sessionId, compress, zip);
-			if (datafileIds != null) {
-				requestHelper.addDatafiles(sessionId, requestEntity, dfids);
-			}
-			if (datasetIds != null) {
-				requestHelper.addDatasets(sessionId, requestEntity, dsids);
-			}
+			requestHelper.addDatafiles(sessionId, requestEntity, dfids);
+			requestHelper.addDatasets(sessionId, requestEntity, dsids);
 			for (IdsDataEntity de : requestEntity.getDataEntities()) {
 				this.queue(de, DeferredOp.PREPARE);
 			}
@@ -701,6 +695,7 @@ public class IdsBean {
 			Long datafileModTime) throws NotFoundException, DataNotOnlineException,
 			BadRequestException, InsufficientPrivilegesException, InternalException {
 
+		// Log and validate
 		logger.info("New webservice request: put " + "name='" + name + "' " + "datafileFormatId='"
 				+ datafileFormatId + "' " + "datasetId='" + datasetId + "' " + "description='"
 				+ description + "' " + "doi='" + doi + "' " + "datafileCreateTime='"
@@ -711,6 +706,7 @@ public class IdsBean {
 			throw new BadRequestException("The name parameter must be set");
 		}
 
+		// Do it
 		Dataset ds;
 		try {
 			ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", datasetId);

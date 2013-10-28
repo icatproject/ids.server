@@ -15,7 +15,7 @@ import org.icatproject.ids.plugin.StorageInterface;
 import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.util.RequestHelper;
 import org.icatproject.ids.util.RequestQueues;
-import org.icatproject.ids.util.RequestedState;
+import org.icatproject.ids.util.RequestQueues.RequestedState;
 import org.icatproject.ids.util.StatusInfo;
 import org.icatproject.ids.util.ZipHelper;
 import org.slf4j.Logger;
@@ -43,20 +43,9 @@ public class Preparer implements Runnable {
 		logger.info("starting preparer");
 		Map<IdsDataEntity, RequestedState> deferredOpsQueue = requestQueues.getDeferredOpsQueue();
 		Set<Dataset> changing = requestQueues.getChanging();
-		StorageInterface fastStorageInterface = PropertyHandler.getInstance()
-				.getMainStorage();
-		StorageInterface slowStorageInterface = PropertyHandler.getInstance()
-				.getArchiveStorage();
+		StorageInterface fastStorageInterface = PropertyHandler.getInstance().getMainStorage();
+		StorageInterface slowStorageInterface = PropertyHandler.getInstance().getArchiveStorage();
 
-		// if one of the previous DataEntities of the Request failed, there's no point continuing
-		// with this one
-		// if (de.getRequest().getStatus() == StatusInfo.INCOMPLETE) {
-		// synchronized (deferredOpsQueue) {
-		// requestHelper.setDataEntityStatus(de, StatusInfo.INCOMPLETE);
-		// }
-		// }
-		// if this is the first DE of the Request being processed, set the Request status to
-		// RETRIEVING
 		if (de.getRequest().getStatus() == StatusInfo.SUBMITTED) {
 			synchronized (deferredOpsQueue) {
 				requestHelper.setRequestStatus(de.getRequest(), StatusInfo.RETRIEVING);
