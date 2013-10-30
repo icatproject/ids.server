@@ -1,4 +1,4 @@
-package org.icatproject.ids.integration;
+package org.icatproject.ids.integration.one;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -33,7 +33,7 @@ public class DeleteTest {
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		setup = new Setup();
+		setup = new Setup("one.properties");
 		final ICATService icatService = new ICATService(setup.getIcatUrl(), new QName(
 				"http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
@@ -41,7 +41,7 @@ public class DeleteTest {
 
 	@Before
 	public void clearFastStorage() throws Exception {
-		setup = new Setup();
+		setup = new Setup("one.properties");
 		Path storageDir = FileSystems.getDefault().getPath(setup.getStorageDir());
 		Path storageZipDir = FileSystems.getDefault().getPath(setup.getStorageZipDir());
 		TreeDeleteVisitor treeDeleteVisitor = new TreeDeleteVisitor();

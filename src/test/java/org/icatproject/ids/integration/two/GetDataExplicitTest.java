@@ -1,4 +1,4 @@
-package org.icatproject.ids.integration;
+package org.icatproject.ids.integration.two;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -47,7 +47,7 @@ public class GetDataExplicitTest {
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		setup = new Setup();
+		setup = new Setup("two.properties");
 		final ICATService icatService = new ICATService(setup.getIcatUrl(), new QName(
 				"http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
@@ -83,14 +83,18 @@ public class GetDataExplicitTest {
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
 		parameters.put("sessionId", setup.getForbiddenSessionId());
-		parameters.put("datafileIds", setup.getCommaSepDatafileIds());
+		parameters.put("datafileIds",
+				setup.getDatafileIds().toString().replace("[", "").replace("]", "")
+						.replace(" ", ""));
 		testingClient.process("getData", parameters, Method.GET, ParmPos.URL, null, null, 403);
 	}
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
 		parameters.put("sessionId", sessionId);
-		parameters.put("datafileIds", setup.getCommaSepDatafileIds());
+		parameters.put("datafileIds",
+				setup.getDatafileIds().toString().replace("[", "").replace("]", "")
+						.replace(" ", ""));
 
 		HttpURLConnection response;
 		try {

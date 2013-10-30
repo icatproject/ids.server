@@ -1,4 +1,4 @@
-package org.icatproject.ids.integration;
+package org.icatproject.ids.integration.one;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,7 +28,7 @@ public class GetStatusForPreparedIdTest {
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		setup = new Setup();
+		setup = new Setup("one.properties");
 
 	}
 

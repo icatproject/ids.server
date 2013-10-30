@@ -1,10 +1,13 @@
 package org.icatproject.ids.webservice;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ws.rs.Consumes;
@@ -18,7 +21,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
-import javax.xml.datatype.DatatypeConfigurationException;
 
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
 import org.icatproject.ids.webservice.exceptions.DataNotOnlineException;
@@ -80,24 +82,30 @@ public class IdsService {
 			InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
 		Response response = null;
 
-		long offset = 0;
-		if (range != null) {
+		try {
+			long offset = 0;
+			if (range != null) {
 
-			Matcher m = rangeRe.matcher(range);
-			if (!m.matches()) {
-				throw new BadRequestException("The range must match " + rangeRe.pattern());
+				Matcher m = rangeRe.matcher(range);
+				if (!m.matches()) {
+					throw new BadRequestException("The range must match " + rangeRe.pattern());
+				}
+				offset = Long.parseLong(m.group(1));
+				logger.debug("Range " + range + " -> offset " + offset);
 			}
-			offset = Long.parseLong(m.group(1));
-			logger.debug("Range " + range + " -> offset " + offset);
-		}
 
-		if (preparedId != null) {
-			response = idsBean.getData(preparedId, outname, offset);
-		} else {
-			response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds,
-					compress, zip, outname, offset);
+			if (preparedId != null) {
+				response = idsBean.getData(preparedId, outname, offset);
+			} else {
+				response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds,
+						compress, zip, outname, offset);
+			}
+			return response;
+			
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
 		}
-		return response;
 	}
 
 	@GET
@@ -111,19 +119,28 @@ public class IdsService {
 			NotFoundException, InternalException, InsufficientPrivilegesException,
 			NotImplementedException {
 
-		if (preparedId != null) {
-			return idsBean.getStatus(preparedId);
-		} else {
-			return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafilesIds);
+		try {
+			if (preparedId != null) {
+				return idsBean.getStatus(preparedId);
+			} else {
+				return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafilesIds);
+			}
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
 		}
-
 	}
 
 	@PostConstruct
-	private void init() throws DatatypeConfigurationException {
+	private void init() {
 		logger.info("creating IdsService");
 		rangeRe = Pattern.compile("bytes=(\\d+)-");
 		logger.info("created IdsService");
+	}
+
+	@PreDestroy
+	private void exit() {
+		logger.info("destroyed IdsService");
 	}
 
 	@GET
@@ -162,9 +179,21 @@ public class IdsService {
 			NotFoundException, InternalException, InsufficientPrivilegesException,
 			NotImplementedException, DataNotOnlineException {
 
-		return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description, doi,
-				datafileCreateTime, datafileModTime);
+		try {
+			return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description,
+					doi, datafileCreateTime, datafileModTime);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
 
+	}
+
+	private void processRuntimeException(RuntimeException e) throws InternalException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		e.printStackTrace(new PrintStream(baos));
+		logger.debug(baos.toString());
+		throw new InternalException(e.getClass() + " " + e.getMessage());
 	}
 
 	@POST

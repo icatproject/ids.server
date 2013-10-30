@@ -4,14 +4,16 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import javax.xml.namespace.QName;
 
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.plugin.StorageInterface;
-import org.icatproject.ids.plugin.StorageType;
+import org.icatproject.ids.plugin.ArchiveStorageInterface;
+import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 import org.slf4j.Logger;
@@ -25,13 +27,12 @@ public class PropertyHandler {
 	private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
 	private static PropertyHandler instance = null;
 
-	private int requestExpireTimeDays;
 	private String icatUrl;
 	private long writeDelaySeconds;
 	private long processQueueIntervalSeconds;
-	private StorageInterface mainStorage;
-	private StorageInterface archiveStorage;
-	private File tmpDir;
+	private MainStorageInterface mainStorage;
+	private ArchiveStorageInterface archiveStorage;
+	private Path cacheDir;
 	private ICAT icatService;
 
 	@SuppressWarnings("unchecked")
@@ -71,15 +72,13 @@ public class PropertyHandler {
 				throw new IllegalStateException(msg);
 			}
 
-			requestExpireTimeDays = props.getPositiveInt("requestExpireTimeDays");
 			writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
-			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
 
 			try {
-				Class<StorageInterface> klass = (Class<StorageInterface>) Class.forName(props
-						.getString("plugin.main.class"));
-				mainStorage = klass.getConstructor(File.class, StorageType.class).newInstance(
-						props.getFile("plugin.main.properties"), StorageType.MAIN);
+				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
+						.forName(props.getString("plugin.main.class"));
+				mainStorage = klass.getConstructor(File.class).newInstance(
+						props.getFile("plugin.main.properties"));
 				logger.debug("mainStorage initialised");
 			} catch (InvocationTargetException e) {
 				Throwable cause = e.getCause();
@@ -91,12 +90,12 @@ public class PropertyHandler {
 			if (props.getProperty("plugin.archive.class") == null) {
 				logger.info("Property plugin.archive.class not set, single storage enabled.");
 			} else {
+				processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
 				try {
-					Class<StorageInterface> klass = (Class<StorageInterface>) Class.forName(props
-							.getString("plugin.archive.class"));
-					archiveStorage = klass.getConstructor(File.class, StorageType.class)
-							.newInstance(props.getFile("plugin.archive.properties"),
-									StorageType.ARCHIVE);
+					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
+							.forName(props.getString("plugin.archive.class"));
+					archiveStorage = klass.getConstructor(File.class).newInstance(
+							props.getFile("plugin.archive.properties"));
 					logger.debug("archiveStorage initialised");
 				} catch (InvocationTargetException e) {
 					Throwable cause = e.getCause();
@@ -106,9 +105,9 @@ public class PropertyHandler {
 				}
 			}
 
-			tmpDir = props.getFile("tmpDir");
-			if (!tmpDir.isDirectory()) {
-				abort(tmpDir + " must be an existing directory");
+			cacheDir = props.getFile("cache.dir").toPath();
+			if (!Files.isDirectory(cacheDir)) {
+				abort(cacheDir + " must be an existing directory");
 			}
 
 		} catch (CheckedPropertyException e) {
@@ -137,20 +136,16 @@ public class PropertyHandler {
 		return processQueueIntervalSeconds;
 	}
 
-	public int getRequestExpireTimeDays() {
-		return requestExpireTimeDays;
-	}
-
-	public StorageInterface getMainStorage() {
+	public MainStorageInterface getMainStorage() {
 		return mainStorage;
 	}
 
-	public StorageInterface getArchiveStorage() {
+	public ArchiveStorageInterface getArchiveStorage() {
 		return archiveStorage;
 	}
 
-	public File getTmpDir() {
-		return tmpDir;
+	public Path getCacheDir() {
+		return cacheDir;
 	}
 
 	public ICAT getIcatService() {

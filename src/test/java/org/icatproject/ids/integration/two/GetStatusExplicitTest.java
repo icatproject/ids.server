@@ -1,8 +1,7 @@
-package org.icatproject.ids.integration;
+package org.icatproject.ids.integration.two;
 
 import static org.junit.Assert.assertEquals;
 
-import java.net.HttpURLConnection;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +34,7 @@ public class GetStatusExplicitTest {
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		setup = new Setup();
+		setup = new Setup("two.properties");
 	}
 
 	@Before
@@ -80,21 +79,16 @@ public class GetStatusExplicitTest {
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
 		parameters.put("sessionId", setup.getForbiddenSessionId());
-		parameters.put("datafileIds", setup.getCommaSepDatafileIds());
+		parameters.put("datafileIds",
+				setup.getDatafileIds().toString().replace("[", "").replace("]", "")
+						.replace(" ", ""));
 		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 403);
 	}
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("datafileIds", setup.getCommaSepDatafileIds());
-		HttpURLConnection response = testingClient.process("prepareData", parameters, Method.POST,
-				ParmPos.BODY, null, null, 200);
-		String preparedId = TestingClient.getOutput(response);
-
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("preparedId", preparedId);
 		Status status;
+
 		do {
 			Thread.sleep(1000);
 			status = testingClient.getStatus(sessionId,
@@ -102,9 +96,6 @@ public class GetStatusExplicitTest {
 			System.out.println("*" + status + "*");
 		} while (status != Status.ONLINE);
 
-		status = testingClient.getStatus(sessionId,
-				new DataSelection().addDatafiles(setup.getDatafileIds()), 200);
-		assertEquals(Status.ONLINE, status);
 	}
 
 	@Test

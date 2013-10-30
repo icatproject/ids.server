@@ -88,8 +88,7 @@ public class TestingClient {
 		HttpURLConnection urlc;
 		int rc;
 		try {
-			URL url;
-			url = new URL(idsUrl, relativeUrl);
+			URL url = new URL(idsUrl + "/" + relativeUrl);
 
 			String parms = null;
 
@@ -172,6 +171,7 @@ public class TestingClient {
 			rc = urlc.getResponseCode();
 			if (sc != null && sc.intValue() != urlc.getResponseCode()) {
 				if (rc / 100 != 2) {
+					System.out.println(urlc.getURL());
 					fail(getError(urlc));
 				} else
 					fail("Expected " + sc.intValue() + " but was " + urlc.getResponseCode());

@@ -11,6 +11,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,7 @@ import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
 import org.icatproject.DatasetType;
+import org.icatproject.EntityBaseBean;
 import org.icatproject.Facility;
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
@@ -42,8 +45,6 @@ import org.icatproject.Login.Credentials.Entry;
  * running the tests.
  */
 public class Setup {
-
-	private Properties props = new Properties();
 
 	private URL icatUrl = null;
 	private URL idsUrl = null;
@@ -67,15 +68,54 @@ public class Setup {
 	private DatasetType dsType;
 	private DatafileFormat supportedDatafileFormat;
 
-	public Setup() throws Exception {
+	public Setup(String idsPropertyFile) throws Exception {
+
+		// Start by reading the test properties
+		Properties testProps = new Properties();
+
 		InputStream is = getClass().getResourceAsStream("/test.properties");
 		try {
-			props.load(is);
+			testProps.load(is);
 		} catch (Exception e) {
 			System.out.println("Problem loading test.properties\n" + e.getMessage());
 		}
 
-		String icatUrlString = props.getProperty("icat.url");
+		idsUrl = new URL(testProps.getProperty("ids.url") + "/ids");
+
+		String glassfish = testProps.getProperty("glassfish");
+
+		ShellCommand sc = new ShellCommand("asadmin", "get", "property.administrative.domain.name");
+		String domain = sc.getStdout().split("[\r\n]+")[0].split("=")[1];
+		Path config = new File(glassfish).toPath().resolve("glassfish").resolve("domains")
+				.resolve(domain).resolve("config");
+
+		sc = new ShellCommand("cmp", config.resolve("ids.properties").toString(),
+				"src/test/resources/" + idsPropertyFile);
+		if (sc.getExitValue() == 1) {
+			System.out.println("Moving " + idsPropertyFile + " to " + config);
+			sc = new ShellCommand("asadmin", "disable", "ids.server-1.0.0-SNAPSHOT");
+			if (sc.getExitValue() != 0) {
+				System.out.println(sc.getMessage());
+			}
+			Files.copy(new File("src/test/resources/" + idsPropertyFile).toPath(),
+					config.resolve("ids.properties"), StandardCopyOption.REPLACE_EXISTING);
+			sc = new ShellCommand("asadmin", "enable", "ids.server-1.0.0-SNAPSHOT");
+			if (sc.getExitValue() != 0) {
+				System.out.println(sc.getMessage());
+			} else {
+				System.out.println(sc.getStdout());
+			}
+		} else if (sc.getExitValue() == 2) {
+			System.out.println(sc.getMessage());
+		}
+
+		// Having set up the ids.properties file read it find other things
+		Properties idsProperties = new Properties();
+		idsProperties.load(Files.newInputStream(config.resolve("ids.properties")));
+
+		userLocalDir = testProps.getProperty("userLocalDir");
+
+		String icatUrlString = idsProperties.getProperty("icat.url");
 		if (!icatUrlString.endsWith("ICATService/ICAT?wsdl")) {
 			if (icatUrlString.charAt(icatUrlString.length() - 1) == '/') {
 				icatUrlString = icatUrlString + "ICATService/ICAT?wsdl";
@@ -84,19 +124,26 @@ public class Setup {
 			}
 		}
 		icatUrl = new URL(icatUrlString);
+		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
+				testProps.getProperty("authorizedIcatPassword"));
+		forbiddenSessionId = login(testProps.getProperty("unauthorizedIcatUsername"),
+				testProps.getProperty("unauthorizedIcatPassword"));
 
-		idsUrl = new URL(props.getProperty("ids.url"));
+		// Lookup up the plugin config files and read those to find where they will store data
+		String mainProps = idsProperties.getProperty("plugin.main.properties");
+		Properties storageProps = new Properties();
+		storageProps.load(Files.newInputStream(config.resolve(mainProps)));
+		storageDir = storageProps.getProperty("dir");
 
-		goodSessionId = login(props.getProperty("authorizedIcatUsername"),
-				props.getProperty("authorizedIcatPassword"));
-		forbiddenSessionId = login(props.getProperty("unauthorizedIcatUsername"),
-				props.getProperty("unauthorizedIcatPassword"));
+		String archiveProps = idsProperties.getProperty("plugin.archive.properties");
+		if (archiveProps != null) {
+			storageProps.load(Files.newInputStream(config.resolve(archiveProps)));
+			storageArchiveDir = storageProps.getProperty("dir");
+		}
 
-		storageArchiveDir = props.getProperty("storageArchiveDir");
-		storageZipDir = props.getProperty("storageZipDir");
-		storageDir = props.getProperty("storageDir");
-		storagePreparedDir = props.getProperty("storagePreparedDir");
-		userLocalDir = props.getProperty("userLocalDir");
+		Path cacheDir = new File(idsProperties.getProperty("cache.dir")).toPath();
+		storagePreparedDir = cacheDir.resolve("prepared").toString();
+		storageZipDir = cacheDir.resolve("dataset").toString();
 
 		long timestamp = System.currentTimeMillis();
 
@@ -104,6 +151,14 @@ public class Setup {
 			final ICATService icatService = new ICATService(icatUrl, new QName(
 					"http://icatproject.org", "ICATService"));
 			icat = icatService.getICATPort();
+
+			List<Object> objects = icat.search(goodSessionId, "Facility");
+			List<EntityBaseBean> facilities = new ArrayList<>();
+			for (Object o : objects) {
+				facilities.add((Facility) o);
+			}
+
+			icat.deleteMany(goodSessionId, facilities);
 
 			fac = new Facility();
 			fac.setName("Facility_" + timestamp);
@@ -133,16 +188,18 @@ public class Setup {
 			inv.setVisitId("A visit");
 			inv.setId(icat.create(goodSessionId, inv));
 
+			String invLoc = fac.getName() + "/" + inv.getName() + "/" + inv.getVisitId();
+
 			Dataset ds1 = new Dataset();
 			ds1.setName("ds1_" + timestamp);
-			ds1.setLocation("test_dss/ds1_" + timestamp);
+			ds1.setLocation(invLoc + "/" + ds1.getName());
 			ds1.setType(dsType);
 			ds1.setInvestigation(inv);
 			ds1.setId(icat.create(goodSessionId, ds1));
 
 			Dataset ds2 = new Dataset();
 			ds2.setName("ds2_" + timestamp);
-			ds2.setLocation("test_dss/ds2_" + timestamp);
+			ds1.setLocation(invLoc + "/" + ds2.getName());
 			ds2.setType(dsType);
 			ds2.setInvestigation(inv);
 			ds2.setId(icat.create(goodSessionId, ds2));
@@ -199,8 +256,10 @@ public class Setup {
 			addMD5s(df3, computeMd5(df3));
 			addMD5s(df4, computeMd5(df4));
 
-			zipDatasetToArchive(ds1);
-			zipDatasetToArchive(ds2);
+			if (storageArchiveDir != null) {
+				zipDatasetToArchive(ds1);
+				zipDatasetToArchive(ds2);
+			}
 
 			newFileLocation = new File(userLocalDir, "new_file_" + timestamp).getAbsolutePath();
 			writeToFile(new File(newFileLocation), "new_file test content");
@@ -255,11 +314,6 @@ public class Setup {
 		Files.walkFileTree(FileSystems.getDefault().getPath(storageArchiveDir, "test_dss"),
 				treeDeleteVisitor);
 
-	}
-
-	@Deprecated
-	public String getCommaSepDatafileIds() {
-		return datafileIds.toString().replace("[", "").replace("]", "").replace(" ", "");
 	}
 
 	public String getForbiddenSessionId() {

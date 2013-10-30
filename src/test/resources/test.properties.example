@@ -1,8 +1,4 @@
-removeFile# The URL pointing to a running ICAT eg. http://example.com:8080/ICATService/ICAT?wsdl
-# The /ICATService/ICAT?wsdl suffix is optional
-icat.url=https://smfisher.esc.rl.ac.uk:8181/ICATService/ICAT?wsdl
-
-ids.url=https://smfisher.esc.rl.ac.uk:8181/IDS/
+ids.url=https://smfisher.esc.rl.ac.uk:8181
 
 #
 # These credentials must have permission to read and download
@@ -18,10 +14,6 @@ authorizedIcatPassword=password
 unauthorizedIcatUsername=guest
 unauthorizedIcatPassword=guess
 
-
-# Folders which simulate different storages
-# Make sure, that you use the same folders in ids-storage.properties
-
 # simulates slow storage, contains zipped datasets
 storageArchiveDir = /home/fisher/icat/icatarchive/
 
@@ -31,7 +23,7 @@ storageArchiveDir = /home/fisher/icat/icatarchive/
 # storagePreparedDir - contains zips prepared for a particular user to download
 storageZipDir = /home/fisher/icat/icatzipdata/
 storageDir = /home/fisher/icat/icatdata/
-storagePreparedDir = /home/fisher/icat/icatprepareddata
+
 
 # folder, where files should be downloaded to and uploaded from
 userLocalDir = /home/fisher/icat/icatuserlocal

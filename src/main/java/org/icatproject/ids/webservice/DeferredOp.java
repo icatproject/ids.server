@@ -6,5 +6,5 @@ package org.icatproject.ids.webservice;
  * decides what real action should be performed on data entities.
  */
 public enum DeferredOp {
-	ARCHIVE, RESTORE, PREPARE, WRITE
+	ARCHIVE, RESTORE, WRITE
 }

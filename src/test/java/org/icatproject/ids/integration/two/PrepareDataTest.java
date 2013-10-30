@@ -1,4 +1,4 @@
-package org.icatproject.ids.integration;
+package org.icatproject.ids.integration.two;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -35,7 +35,7 @@ public class PrepareDataTest {
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		setup = new Setup();
+		setup = new Setup("two.properties");
 		ICATService icatService = new ICATService(setup.getIcatUrl(), new QName(
 				"http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
