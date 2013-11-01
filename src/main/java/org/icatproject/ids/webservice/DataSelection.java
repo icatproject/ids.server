@@ -1,11 +1,15 @@
 package org.icatproject.ids.webservice;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
@@ -17,6 +21,54 @@ import org.icatproject.ids.webservice.exceptions.InternalException;
 import org.icatproject.ids.webservice.exceptions.NotFoundException;
 
 public class DataSelection {
+
+	public class DatafileInfo {
+
+		public long getDfId() {
+			return dfId;
+		}
+
+		public String getDfName() {
+			return dfName;
+		}
+
+		public String getDfLocation() {
+			return dfLocation;
+		}
+
+		public long getDsId() {
+			return dsId;
+		}
+
+		private long dfId;
+		private String dfName;
+		private String dfLocation;
+		private long dsId;
+
+		public DatafileInfo(long dfId, String dfName, String dfLocation, long dsId) {
+			this.dfId = dfId;
+			this.dfName = dfName;
+			this.dfLocation = dfLocation;
+			this.dsId = dsId;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj == this) {
+				return true;
+			}
+			if (obj == null || obj.getClass() != this.getClass()) {
+				return false;
+			}
+			return dfId == ((DatafileInfo) obj).getDfId();
+		}
+
+		@Override
+		public int hashCode() {
+			return (int) (dfId ^ (dfId >>> 32));
+		}
+
+	}
 
 	/**
 	 * Checks to see if the investigation, dataset or datafile id list is a valid comma separated
@@ -43,65 +95,104 @@ public class DataSelection {
 		return result;
 	}
 
-	private Set<DsInfo> dsInfo;
+	private Map<Long, DsInfo> dsInfos;
 	private ICAT icat;
-
 	private String sessionId;
+	private boolean dfWanted;
+	private List<Long> dfids;
+	private List<Long> dsids;
+	private List<Long> invids;
+	private Set<DatafileInfo> dfInfos;
+
+	public enum Returns {
+		DATASETS, DATASETS_AND_DATAFILES
+	}
 
 	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds,
-			String datafileIds) throws BadRequestException, NotFoundException,
+			String datafileIds, Returns returns) throws BadRequestException, NotFoundException,
 			InsufficientPrivilegesException, InternalException {
 
 		this.icat = icat;
 		this.sessionId = sessionId;
-		List<Long> dfids = getValidIds("datafileIds", datafileIds);
-		List<Long> dsids = getValidIds("datasetIds", datasetIds);
-		List<Long> invids = getValidIds("investigationIds", investigationIds);
+		dfids = getValidIds("datafileIds", datafileIds);
+		dsids = getValidIds("datasetIds", datasetIds);
+		invids = getValidIds("investigationIds", investigationIds);
+		dfWanted = returns == Returns.DATASETS_AND_DATAFILES;
 
-		dsInfo = resolveDatasetIds(dfids, dsids, invids);
+		resolveDatasetIds();
 
 	}
 
-	public Set<DsInfo> getDsInfo() {
-		return dsInfo;
+	public Collection<DsInfo> getDsInfo() {
+		return dsInfos.values();
 	}
 
-	private Set<DsInfo> resolveDatasetIds(List<Long> dfids, List<Long> dsids, List<Long> invids)
-			throws NotFoundException, InsufficientPrivilegesException, InternalException {
-		Set<DsInfo> rids = new HashSet<>();
+	private void resolveDatasetIds() throws NotFoundException, InsufficientPrivilegesException,
+			InternalException {
+		dsInfos = new HashMap<>();
+		if (dfWanted) {
+			dfInfos = new HashSet<>();
+		}
 
 		try {
 			for (Long dfid : dfids) {
 				List<Object> dss = icat.search(sessionId,
 						"SELECT ds FROM Dataset ds JOIN ds.datafiles df WHERE df.id = " + dfid
-								+ " INCLUDE ds.datafiles, ds.investigation.facility");
+								+ " INCLUDE ds.investigation.facility");
 				if (dss.size() == 1) {
 					Dataset ds = (Dataset) dss.get(0);
-					rids.add(new DsInfoImpl(ds, icat, sessionId));
+					long dsid = ds.getId();
+					dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
+					if (dfWanted) {
+						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
+						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), dsid));
+					}
 				} else {
 					icat.get(sessionId, "Datafile", dfid); // May reveal a permissions problem
 					throw new NotFoundException("Datafile " + dfid);
 				}
 			}
 			for (Long dsid : dsids) {
-				Dataset ds = (Dataset) icat.get(sessionId,
-						"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
-				rids.add(new DsInfoImpl(ds, icat, sessionId));
+				Dataset ds;
+				if (dfWanted) {
+					ds = (Dataset) icat.get(sessionId,
+							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
+					for (Datafile df : ds.getDatafiles()) {
+						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), dsid));
+					}
+				} else {
+					ds = (Dataset) icat.get(sessionId,
+							"Dataset ds INCLUDE ds.investigation.facility", dsid);
+				}
+				dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
 			}
 
 			for (Long invid : invids) {
-				List<Object> dss = icat.search(sessionId,
-						"SELECT ds FROM Dataset ds WHERE ds.investigation.id = " + invid
-								+ " INCLUDE ds.datafiles, ds.investigation.facility");
+				List<Object> dss;
+
+				if (dfWanted) {
+					dss = icat.search(sessionId,
+							"SELECT ds FROM Dataset ds WHERE ds.investigation.id = " + invid
+									+ " INCLUDE ds.datafiles, ds.investigation.facility");
+				} else {
+					dss = icat.search(sessionId,
+							"SELECT ds FROM Dataset ds WHERE ds.investigation.id = " + invid
+									+ " INCLUDE ds.investigation.facility");
+				}
 				if (dss.size() >= 1) {
 					Dataset ds = (Dataset) dss.get(0);
-					rids.add(new DsInfoImpl(ds, icat, sessionId));
+					long dsid = ds.getId();
+					if (dfWanted) {
+						for (Datafile df : ds.getDatafiles()) {
+							dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), dsid));
+						}
+					}
+					dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
 				} else {
 					icat.get(sessionId, "Investigation", invid); // May reveal a permissions problem
 					throw new NotFoundException("Investigation " + invid);
 				}
 			}
-			return rids;
 
 		} catch (IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
@@ -112,10 +203,13 @@ public class DataSelection {
 				throw new NotFoundException(e.getMessage());
 			} else {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
-
 			}
 
 		}
+	}
+
+	public Set<DatafileInfo> getDfInfo() {
+		return dfInfos;
 	}
 
 }

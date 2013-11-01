@@ -1,11 +1,14 @@
 package org.icatproject.ids.integration.one;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.TestingUtils;
 import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
@@ -14,6 +17,8 @@ import org.icatproject.ids.integration.util.client.TestingClient.Method;
 import org.icatproject.ids.integration.util.client.TestingClient.ParmPos;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class GetDataExplicitTest extends BaseTest {
 
@@ -41,16 +46,20 @@ public class GetDataExplicitTest extends BaseTest {
 
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
+		populateStorage();
 		testingClient.getData(setup.getForbiddenSessionId(),
-				new DataSelection().addDatafiles(setup.getDatafileIds()), Flag.NONE, null, 0, 403);
+				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 403);
 	}
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
+		populateStorage();
 		InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafiles(setup.getDatafileIds()), Flag.NONE, null, 0, 200);
-		Map<String, String> map = TestingUtils.filenameMD5Map(stream);
-		TestingUtils.checkMD5Values(map, setup);
+				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 200);
+		checkZipStream(stream, datafileIds);
+
 	}
+
+
 
 }

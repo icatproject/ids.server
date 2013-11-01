@@ -137,13 +137,6 @@
             <version>1.6.4</version>
         </dependency>
 
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>1.8</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
     <build>
         <plugins>

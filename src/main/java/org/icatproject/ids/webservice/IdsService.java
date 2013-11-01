@@ -52,7 +52,12 @@ public class IdsService {
 			throws BadRequestException, InsufficientPrivilegesException, NotImplementedException,
 			InternalException, NotFoundException {
 
-		return idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds);
+		try {
+			return idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
 	}
 
 	@DELETE
@@ -63,9 +68,14 @@ public class IdsService {
 			@QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds) throws NotImplementedException,
 			BadRequestException, InsufficientPrivilegesException, NotFoundException,
-			InternalException {
+			InternalException, DataNotOnlineException {
 
-		return idsBean.delete(sessionId, investigationIds, datasetIds, datafileIds);
+		try {
+			return idsBean.delete(sessionId, investigationIds, datasetIds, datafileIds);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
 	}
 
 	@GET
@@ -101,7 +111,7 @@ public class IdsService {
 						compress, zip, outname, offset);
 			}
 			return response;
-			
+
 		} catch (RuntimeException e) {
 			processRuntimeException(e);
 			return null; // Will never get here but the compiler doesn't know
@@ -162,8 +172,13 @@ public class IdsService {
 			@FormParam("zip") boolean zip) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, NotFoundException, InternalException {
 
-		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress,
-				zip);
+		try {
+			return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds,
+					compress, zip);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
 
 	}
 
@@ -206,8 +221,12 @@ public class IdsService {
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
 			InternalException, NotFoundException {
 
-		return idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds);
-
+		try {
+			return idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
 	}
 
 }

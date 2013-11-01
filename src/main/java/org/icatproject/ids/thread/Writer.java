@@ -1,6 +1,5 @@
 package org.icatproject.ids.thread;
 
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -47,9 +46,10 @@ public class Writer implements Runnable {
 				Files.deleteIfExists(localDatasetDir.resolve(dsInfo.getDsName() + ".zip"));
 			} else {
 				Files.createDirectories(localDatasetDir);
-				InputStream zipIs = fastStorageInterface.get(dsInfo);
-				slowStorageInterface.put(dsInfo, zipIs);
-				zipIs.close();
+				// TODO fix this
+				// InputStream zipIs = fastStorageInterface.get(dsInfo);
+				// slowStorageInterface.put(dsInfo, zipIs);
+				// zipIs.close();
 			}
 
 			// logger.info("Write of  " + ds.getLocation() + " succesful");
