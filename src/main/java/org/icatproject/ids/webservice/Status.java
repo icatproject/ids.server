@@ -5,5 +5,5 @@ package org.icatproject.ids.webservice;
  *  They are only used when returning status to the client, nowhere else.
  */
 public enum Status {
-        ONLINE, INCOMPLETE, RESTORING, ARCHIVED
+	ONLINE, RESTORING, ARCHIVED
 }

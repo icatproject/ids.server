@@ -2,14 +2,12 @@ package org.icatproject.ids.thread;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.Set;
 
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids.webservice.IdsBean.RequestedState;
+import org.icatproject.ids.webservice.FiniteStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,17 +18,15 @@ public class Writer implements Runnable {
 
 	private final static Logger logger = LoggerFactory.getLogger(Writer.class);
 	private DsInfo dsInfo;
-	private Map<DsInfo, RequestedState> deferredOpsQueue;
-	private Set<DsInfo> changing;
+
 	private MainStorageInterface fastStorageInterface;
 	private ArchiveStorageInterface slowStorageInterface;
 	private Path archDir;
+	private FiniteStateMachine fsm;
 
-	public Writer(DsInfo dsInfo, PropertyHandler ph, Map<DsInfo, RequestedState> deferredOpsQueue,
-			Set<DsInfo> changing) {
+	public Writer(DsInfo dsInfo, PropertyHandler ph, FiniteStateMachine fsm) {
 		this.dsInfo = dsInfo;
-		this.deferredOpsQueue = deferredOpsQueue;
-		this.changing = changing;
+		this.fsm = fsm;
 		fastStorageInterface = ph.getMainStorage();
 		slowStorageInterface = ph.getArchiveStorage();
 		archDir = ph.getCacheDir().resolve("dataset");
@@ -56,9 +52,8 @@ public class Writer implements Runnable {
 		} catch (Exception e) {
 			logger.error("Write of " + dsInfo + " failed due to " + e.getMessage());
 		} finally {
-			synchronized (deferredOpsQueue) {
-				changing.remove(dsInfo);
-			}
+			fsm.removeFromChanging(dsInfo);
+			
 		}
 	}
 

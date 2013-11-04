@@ -34,6 +34,7 @@ public class PropertyHandler {
 	private ArchiveStorageInterface archiveStorage;
 	private Path cacheDir;
 	private ICAT icatService;
+	private int preparedCount;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -73,6 +74,7 @@ public class PropertyHandler {
 			}
 
 			writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
+			preparedCount = props.getPositiveInt("preparedCount");
 
 			try {
 				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
@@ -150,5 +152,9 @@ public class PropertyHandler {
 
 	public ICAT getIcatService() {
 		return icatService;
+	}
+
+	public int getPreparedCount() {
+		return preparedCount;
 	}
 }

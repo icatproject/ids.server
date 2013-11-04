@@ -128,7 +128,7 @@ public class DataSelection {
 	}
 
 	private void resolveDatasetIds() throws NotFoundException, InsufficientPrivilegesException,
-			InternalException {
+			InternalException, BadRequestException {
 		dsInfos = new HashMap<>();
 		if (dfWanted) {
 			dfInfos = new HashSet<>();
@@ -145,7 +145,8 @@ public class DataSelection {
 					dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
 					if (dfWanted) {
 						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
-						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), dsid));
+						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(),
+								dsid));
 					}
 				} else {
 					icat.get(sessionId, "Datafile", dfid); // May reveal a permissions problem
@@ -158,7 +159,8 @@ public class DataSelection {
 					ds = (Dataset) icat.get(sessionId,
 							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 					for (Datafile df : ds.getDatafiles()) {
-						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), dsid));
+						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(),
+								dsid));
 					}
 				} else {
 					ds = (Dataset) icat.get(sessionId,
@@ -184,7 +186,8 @@ public class DataSelection {
 					long dsid = ds.getId();
 					if (dfWanted) {
 						for (Datafile df : ds.getDatafiles()) {
-							dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), dsid));
+							dfInfos.add(new DatafileInfo(df.getId(), df.getName(),
+									df.getLocation(), dsid));
 						}
 					}
 					dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
@@ -206,10 +209,18 @@ public class DataSelection {
 			}
 
 		}
+
+		if (dsInfos.isEmpty()) {
+			throw new BadRequestException("No investigation, dataset nor datafile specified");
+		}
 	}
 
 	public Set<DatafileInfo> getDfInfo() {
 		return dfInfos;
+	}
+
+	public boolean mustZip() {
+		return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty();
 	}
 
 }

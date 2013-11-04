@@ -1,14 +1,10 @@
 package org.icatproject.ids.thread;
 
-import java.util.Map;
-import java.util.Set;
-
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids.util.StatusInfo;
-import org.icatproject.ids.webservice.IdsBean.RequestedState;
+import org.icatproject.ids.webservice.FiniteStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,16 +14,13 @@ import org.slf4j.LoggerFactory;
 public class Archiver implements Runnable {
 	private final static Logger logger = LoggerFactory.getLogger(Archiver.class);
 	private DsInfo dsInfo;
-	private Map<DsInfo, RequestedState> deferredOpsQueue;
-	private Set<DsInfo> changing;
+
 	private MainStorageInterface fastStorageInterface;
 	private ArchiveStorageInterface slowStorageInterface;
+	private FiniteStateMachine fsm;
 
-	public Archiver(DsInfo dsInfo, PropertyHandler propertyHandler,
-			Map<DsInfo, RequestedState> deferredOpsQueue, Set<DsInfo> changing) {
-		this.dsInfo = dsInfo;
-		this.deferredOpsQueue = deferredOpsQueue;
-		this.changing = changing;
+	public Archiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+		this.fsm = fsm;
 		fastStorageInterface = propertyHandler.getMainStorage();
 		slowStorageInterface = propertyHandler.getArchiveStorage();
 	}
@@ -36,7 +29,7 @@ public class Archiver implements Runnable {
 	public void run() {
 		logger.info("starting Archiver");
 
-		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
+//		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
 
 		// try {
 		// fastStorageInterface.deleteDataset(dsInfo);
