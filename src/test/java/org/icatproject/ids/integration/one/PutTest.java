@@ -6,7 +6,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -36,9 +37,9 @@ public class PutTest extends BaseTest {
 
 		String uploadedLocation = new File(icatDs.getLocation(), "uploaded_file2_" + timestamp)
 				.getPath();
-		File fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
-		assertFalse(fileOnFastStorage.exists());
-		Long dfid = testingClient.put(sessionId, new FileInputStream(newFileLocation),
+		Path fileOnFastStorage = setup.getStorageDir().resolve(uploadedLocation);
+		assertFalse(Files.exists(fileOnFastStorage));
+		Long dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
 				"uploaded_file2_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
 				"A rather splendid datafile", 201);
 
@@ -47,13 +48,13 @@ public class PutTest extends BaseTest {
 		assertNull(df.getDoi());
 		assertNull(df.getDatafileCreateTime());
 		assertNull(df.getDatafileModTime());
-		assertTrue(fileOnFastStorage.exists());
+		assertTrue(Files.exists(fileOnFastStorage));
 
 		uploadedLocation = new File(icatDs.getLocation(), "uploaded_file3_" + timestamp).getPath();
-		fileOnFastStorage = new File(setup.getStorageDir(), uploadedLocation);
-		assertFalse(fileOnFastStorage.exists());
-		dfid = testingClient.put(sessionId, new FileInputStream(newFileLocation), "uploaded_file3_"
-				+ timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
+		fileOnFastStorage = setup.getStorageDir().resolve(uploadedLocation);
+		assertFalse(Files.exists(fileOnFastStorage));
+		dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
+				"uploaded_file3_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
 				"An even better datafile", "7.1.3", new Date(420000), new Date(42000), 201);
 		df = (Datafile) icat.get(sessionId, "Datafile", dfid);
 		assertEquals("An even better datafile", df.getDescription());
@@ -68,7 +69,7 @@ public class PutTest extends BaseTest {
 		assertEquals(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar),
 				df.getDatafileModTime());
 
-		assertTrue(fileOnFastStorage.exists());
+		assertTrue(Files.exists(fileOnFastStorage));
 
 	}
 }

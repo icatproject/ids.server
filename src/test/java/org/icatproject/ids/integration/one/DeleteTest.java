@@ -1,10 +1,12 @@
 package org.icatproject.ids.integration.one;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
@@ -40,16 +42,16 @@ public class DeleteTest extends BaseTest {
 	public void deleteDatasetTest() throws Exception {
 		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset", datasetIds.get(1));
 
-		File dirOnFastStorage = new File(setup.getStorageDir(), icatDs.getLocation());
+		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDs.getLocation());
 		DataSelection dsel = new DataSelection().addDataset(datasetIds.get(1));
 		assertEquals(Status.ONLINE, testingClient.getStatus(sessionId, dsel, 200));
-		assertTrue(dirOnFastStorage.exists());
+		assertTrue(Files.exists(dirOnFastStorage));
 
 		System.out.println(dirOnFastStorage);
 
 		testingClient.delete(sessionId, dsel, 200);
 		assertEquals(Status.ONLINE, testingClient.getStatus(sessionId, dsel, 200));
-		assertTrue(!dirOnFastStorage.exists());
+		assertFalse(Files.exists(dirOnFastStorage));
 
 	}
 }

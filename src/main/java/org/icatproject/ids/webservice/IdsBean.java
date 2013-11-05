@@ -79,11 +79,11 @@ public class IdsBean {
 
 	private Path preparedDir;
 
-	private long processQueueIntervalMillis;
-
 	private PropertyHandler propertyHandler;
 
 	private boolean twoLevel;
+
+	private Path datasetDir;
 
 	public Response archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
@@ -215,9 +215,8 @@ public class IdsBean {
 				}
 			}
 		} else {
-			Path filePathDir = preparedDir.resolve(preparedId).resolve("nozip");
-			if (Files.isDirectory(filePathDir)) {
-				path = filePathDir.toFile().listFiles()[0].toPath();
+			if (Files.isDirectory(path)) {
+				path = path.toFile().listFiles()[0].toPath();
 				if (outname == null) {
 					name = path.getFileName().toString();
 				} else {
@@ -442,6 +441,8 @@ public class IdsBean {
 		datatypeFactory = DatatypeFactory.newInstance();
 		preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 		Files.createDirectories(preparedDir);
+		datasetDir = propertyHandler.getCacheDir().resolve("dataset");
+		Files.createDirectories(datasetDir);
 
 		icat = propertyHandler.getIcatService();
 
@@ -518,6 +519,11 @@ public class IdsBean {
 							"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 				}
 			}
+
+			// Remove the local data set cache
+			Files.deleteIfExists(datasetDir.resolve(dsInfo.getFacilityName())
+					.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
+					.resolve(dsInfo.getDsName()));
 
 			DfInfo dfInfo = mainStorage.put(dsInfo, name, body);
 			Long dfId = registerDatafile(sessionId, name, datafileFormatId, dfInfo, ds,
@@ -628,6 +634,14 @@ public class IdsBean {
 		}
 
 		return Response.ok().build();
+	}
+
+	public Response getServiceStatus(String sessionId) throws InternalException {
+
+		// Log and validate
+		logger.info("New webservice request: getServiceStatus");
+
+		return Response.ok(fsm.getServiceStatus()).build();
 	}
 
 }

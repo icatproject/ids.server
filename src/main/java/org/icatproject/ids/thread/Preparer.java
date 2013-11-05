@@ -129,7 +129,7 @@ public class Preparer implements Runnable {
 			} else {
 				tpath = Files.createTempDirectory(preparedDir, null);
 				DatafileInfo dfInfo = dataSelection.getDfInfo().iterator().next();
-				Path filePath = tpath.resolve("nozip").resolve(dfInfo.getDfName());
+				Path filePath = tpath.resolve(dfInfo.getDfName());
 				Files.createDirectories(filePath.getParent());
 				OutputStream output = new BufferedOutputStream(Files.newOutputStream(filePath));
 				InputStream stream = mainStorage.get(dfInfo.getDfLocation());

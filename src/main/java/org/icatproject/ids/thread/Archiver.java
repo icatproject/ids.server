@@ -1,6 +1,8 @@
 package org.icatproject.ids.thread;
 
-import org.icatproject.ids.plugin.ArchiveStorageInterface;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.util.PropertyHandler;
@@ -15,37 +17,35 @@ public class Archiver implements Runnable {
 	private final static Logger logger = LoggerFactory.getLogger(Archiver.class);
 	private DsInfo dsInfo;
 
-	private MainStorageInterface fastStorageInterface;
-	private ArchiveStorageInterface slowStorageInterface;
+	private MainStorageInterface mainStorageInterface;
 	private FiniteStateMachine fsm;
+	private Path datasetCache;
 
 	public Archiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
 		this.fsm = fsm;
-		fastStorageInterface = propertyHandler.getMainStorage();
-		slowStorageInterface = propertyHandler.getArchiveStorage();
+		mainStorageInterface = propertyHandler.getMainStorage();
+		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
 	}
 
 	@Override
 	public void run() {
-		logger.info("starting Archiver");
 
-//		StatusInfo resultingStatus = StatusInfo.COMPLETED; // assuming that everything will go OK
+		// TODO do nothing if preparation in progress
 
-		// try {
-		// fastStorageInterface.deleteDataset(dsInfo);
-		// for (Datafile df : ds.getDatafiles()) {
-		// fastStorageInterface.deleteDatafile(df.getLocation());
-		// }
-		// logger.info("Archive of  " + dsInfo + " succesful");
-		// } catch (Exception e) {
-		// logger.error("Archive of " + dsInfo + " failed due to " + e.getMessage());
-		// resultingStatus = StatusInfo.INCOMPLETE;
-		// } finally {
-		// synchronized (deferredOpsQueue) {
-		// logger.info(String.format("Changing status of %s to %s", de, resultingStatus));
-		// requestHelper.setDataEntityStatus(de, resultingStatus);
-		// changing.remove(dsInfo);
-		// }
-		// }
+		try {
+			// remove any files from the dataset cache
+			Path datasetCachePath = datasetCache.resolve(dsInfo.getFacilityName())
+					.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
+					.resolve(dsInfo.getDsName());
+
+			Files.deleteIfExists(datasetCachePath);
+
+			mainStorageInterface.delete(dsInfo);
+			logger.debug("Archive of " + dsInfo + " completed");
+		} catch (Exception e) {
+			logger.error("Archive of " + dsInfo + " failed due to " + e.getMessage());
+		} finally {
+			fsm.removeFromChanging(dsInfo);
+		}
 	}
 }

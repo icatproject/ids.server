@@ -1,7 +1,12 @@
 package org.icatproject.ids.thread;
 
+import java.io.InputStream;
+import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
@@ -17,43 +22,62 @@ import org.slf4j.LoggerFactory;
 public class Writer implements Runnable {
 
 	private final static Logger logger = LoggerFactory.getLogger(Writer.class);
+	private static final int BUFSIZ = 1024;
 	private DsInfo dsInfo;
 
-	private MainStorageInterface fastStorageInterface;
-	private ArchiveStorageInterface slowStorageInterface;
-	private Path archDir;
 	private FiniteStateMachine fsm;
+	private MainStorageInterface mainStorageInterface;
+	private ArchiveStorageInterface archiveStorageInterface;
+	private Path datasetCache;
 
-	public Writer(DsInfo dsInfo, PropertyHandler ph, FiniteStateMachine fsm) {
+	public Writer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
-		fastStorageInterface = ph.getMainStorage();
-		slowStorageInterface = ph.getArchiveStorage();
-		archDir = ph.getCacheDir().resolve("dataset");
+		mainStorageInterface = propertyHandler.getMainStorage();
+		archiveStorageInterface = propertyHandler.getArchiveStorage();
+		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
 	}
 
 	@Override
 	public void run() {
 		try {
-			Path localDatasetDir = archDir.resolve(Long.toString(dsInfo.getInvId()));
-			if (!fastStorageInterface.exists(dsInfo)) {
+			Path datasetCachePath = datasetCache.resolve(dsInfo.getFacilityName())
+					.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
+					.resolve(dsInfo.getDsName());
+
+			if (!mainStorageInterface.exists(dsInfo)) {
 				logger.info("No files present for " + dsInfo + " - archive deleted");
-				slowStorageInterface.delete(dsInfo);
-				Files.deleteIfExists(localDatasetDir.resolve(dsInfo.getDsName() + ".zip"));
+				Files.deleteIfExists(datasetCachePath);
+				mainStorageInterface.delete(dsInfo);
+				archiveStorageInterface.delete(dsInfo);
 			} else {
-				Files.createDirectories(localDatasetDir);
-				// TODO fix this
-				// InputStream zipIs = fastStorageInterface.get(dsInfo);
-				// slowStorageInterface.put(dsInfo, zipIs);
-				// zipIs.close();
+				if (!Files.exists(datasetCachePath)) {
+					logger.debug("Creating " + datasetCachePath);
+					Files.createDirectories(datasetCachePath.getParent());
+					List<String> locations = mainStorageInterface.getLocations(dsInfo);
+					ZipOutputStream zos = new ZipOutputStream(
+							Files.newOutputStream(datasetCachePath));
+					zos.setLevel(0);
+					for (String location : locations) {
+						zos.putNextEntry(new ZipEntry("ids/" + location));
+						InputStream is = mainStorageInterface.get(location);
+						int bytesRead = 0;
+						byte[] buffer = new byte[BUFSIZ];
+						while ((bytesRead = is.read(buffer)) > 0) {
+							zos.write(buffer, 0, bytesRead);
+						}
+						zos.closeEntry();
+					}
+					zos.close();
+				}
+				archiveStorageInterface.put(dsInfo, Files.newInputStream(datasetCachePath));
 			}
 
-			// logger.info("Write of  " + ds.getLocation() + " succesful");
+			logger.debug("Write of " + dsInfo + " completed");
 		} catch (Exception e) {
 			logger.error("Write of " + dsInfo + " failed due to " + e.getMessage());
 		} finally {
 			fsm.removeFromChanging(dsInfo);
-			
 		}
 	}
 

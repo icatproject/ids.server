@@ -73,8 +73,8 @@ public class PropertyHandler {
 				throw new IllegalStateException(msg);
 			}
 
-			writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
 			preparedCount = props.getPositiveInt("preparedCount");
+			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
 
 			try {
 				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
@@ -92,7 +92,7 @@ public class PropertyHandler {
 			if (props.getProperty("plugin.archive.class") == null) {
 				logger.info("Property plugin.archive.class not set, single storage enabled.");
 			} else {
-				processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
+				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
 				try {
 					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
 							.forName(props.getString("plugin.archive.class"));

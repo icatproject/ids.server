@@ -31,11 +31,11 @@ public class Setup {
 	private String goodSessionId = null;
 	private String forbiddenSessionId = null;
 
-	private String storageArchiveDir;
-	private String storageZipDir;
-	private String storageDir;
-	private String storagePreparedDir;
-	private String updownDir;
+	private Path storageArchiveDir;
+	private Path storageZipDir;
+	private Path storageDir;
+	private Path storagePreparedDir;
+	private Path updownDir;
 
 	public Setup(String idsPropertyFile) throws Exception {
 
@@ -82,7 +82,7 @@ public class Setup {
 		Properties idsProperties = new Properties();
 		idsProperties.load(Files.newInputStream(config.resolve("ids.properties")));
 
-		updownDir = testProps.getProperty("updownDir");
+		updownDir = new File(testProps.getProperty("updownDir")).toPath();
 
 		String icatUrlString = idsProperties.getProperty("icat.url");
 		if (!icatUrlString.endsWith("ICATService/ICAT?wsdl")) {
@@ -102,17 +102,17 @@ public class Setup {
 		String mainProps = idsProperties.getProperty("plugin.main.properties");
 		Properties storageProps = new Properties();
 		storageProps.load(Files.newInputStream(config.resolve(mainProps)));
-		storageDir = storageProps.getProperty("dir");
+		storageDir = new File(storageProps.getProperty("dir")).toPath();
 
 		String archiveProps = idsProperties.getProperty("plugin.archive.properties");
 		if (archiveProps != null) {
 			storageProps.load(Files.newInputStream(config.resolve(archiveProps)));
-			storageArchiveDir = storageProps.getProperty("dir");
+			storageArchiveDir = new File(storageProps.getProperty("dir")).toPath();
 		}
 
 		Path cacheDir = new File(idsProperties.getProperty("cache.dir")).toPath();
-		storagePreparedDir = cacheDir.resolve("prepared").toString();
-		storageZipDir = cacheDir.resolve("dataset").toString();
+		storagePreparedDir = cacheDir.resolve("prepared");
+		storageZipDir = cacheDir.resolve("dataset");
 
 	}
 
@@ -149,23 +149,23 @@ public class Setup {
 		return idsUrl;
 	}
 
-	public String getStorageArchiveDir() {
+	public Path getStorageArchiveDir() {
 		return storageArchiveDir;
 	}
 
-	public String getStorageZipDir() {
+	public Path getStorageZipDir() {
 		return storageZipDir;
 	}
 
-	public String getStorageDir() {
+	public Path getStorageDir() {
 		return storageDir;
 	}
 
-	public String getStoragePreparedDir() {
+	public Path getStoragePreparedDir() {
 		return storagePreparedDir;
 	}
 
-	public String getUpdownDir() {
+	public Path getUpdownDir() {
 		return updownDir;
 	}
 

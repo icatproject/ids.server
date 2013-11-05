@@ -5,12 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -41,6 +38,7 @@ import org.icatproject.InvestigationType;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.TreeDeleteVisitor;
 import org.icatproject.ids.integration.util.client.TestingClient;
+import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
 import org.junit.Before;
 
 public class BaseTest {
@@ -60,21 +58,34 @@ public class BaseTest {
 	protected String sessionId;
 
 	protected TestingClient testingClient;
-	protected String newFileLocation;
+	protected Path newFileLocation;
 	protected DatafileFormat supportedDatafileFormat;
 
 	@Before
 	public void before() throws Exception {
 		testingClient = new TestingClient(setup.getIdsUrl());
+		while (true) {
+			ServiceStatus stat = testingClient.getServiceStatus(sessionId, 200);
+			if (stat.getOpItems().isEmpty() && stat.getPrepItems().isEmpty()) {
+				break;
+			}
+			if (!stat.getOpItems().isEmpty()) {
+				System.out.println("Ops " + stat.getOpItems());
+			}
+			if (!stat.getPrepItems().isEmpty())
+				System.out.println("Preps " + stat.getPrepItems());
+			Thread.sleep(1000);
+		}
 		parameters = new HashMap<>();
 		sessionId = setup.getGoodSessionId();
 		populateStorage();
 	}
 
 	private void clearStorage() throws IOException {
-		Path storageDir = FileSystems.getDefault().getPath(setup.getStorageDir());
-		Path storageZipDir = FileSystems.getDefault().getPath(setup.getStorageZipDir());
-		Path upDownDir = FileSystems.getDefault().getPath(setup.getUpdownDir());
+		Path storageDir = setup.getStorageDir();
+		Path storageZipDir = setup.getStorageZipDir();
+		Path upDownDir = setup.getUpdownDir();
+		Path storagePreparedDir = setup.getStoragePreparedDir();
 		TreeDeleteVisitor treeDeleteVisitor = new TreeDeleteVisitor();
 		if (Files.exists(storageDir)) {
 			Files.walkFileTree(storageDir, treeDeleteVisitor);
@@ -89,6 +100,10 @@ public class BaseTest {
 		if (Files.exists(upDownDir)) {
 			Files.walkFileTree(upDownDir, treeDeleteVisitor);
 		}
+		if (Files.exists(storagePreparedDir)) {
+			Files.walkFileTree(storagePreparedDir, treeDeleteVisitor);
+		}
+		Files.createDirectories(storagePreparedDir);
 	}
 
 	protected byte[] getOutput(InputStream stream) throws IOException {
@@ -209,12 +224,10 @@ public class BaseTest {
 				zipDatasetToArchive(ds2);
 			}
 
-			newFileLocation = new File(setup.getUpdownDir(), "new_file_" + timestamp)
-					.getAbsolutePath();
-			Path path = new File(newFileLocation).toPath();
-			Files.createDirectories(path.getParent());
+			newFileLocation = setup.getUpdownDir().resolve("new_file_" + timestamp);
+			Files.createDirectories(newFileLocation.getParent());
 			byte[] bytes = "new_file test content".getBytes();
-			OutputStream out = Files.newOutputStream(path);
+			OutputStream out = Files.newOutputStream(newFileLocation);
 			out.write(bytes);
 			out.close();
 
@@ -288,7 +301,7 @@ public class BaseTest {
 
 	private void writeToFile(Datafile df, String content) throws IOException,
 			IcatException_Exception {
-		Path path = new File(setup.getStorageDir(), df.getLocation()).toPath();
+		Path path = setup.getStorageDir().resolve(df.getLocation());
 		Files.createDirectories(path.getParent());
 		byte[] bytes = content.getBytes();
 		CRC32 crc = new CRC32();
@@ -305,33 +318,20 @@ public class BaseTest {
 		ids.put(df.getLocation(), df.getId());
 	}
 
-	private void zipDatasetToArchive(Dataset ds) throws IOException {
-		// TODO needs revisiting
-		File zipFile = new File(new File(setup.getStorageArchiveDir(), ds.getLocation()),
-				"files.zip");
-		zipFile.getParentFile().mkdirs();
+	private void zipDatasetToArchive(Dataset ds) throws IOException, IcatException_Exception {
+		ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", ds.getId());
 
-		FileOutputStream fos = new FileOutputStream(zipFile);
-		ZipOutputStream zos = new ZipOutputStream(fos);
+		Path zipFile = setup.getStorageArchiveDir().resolve(ds.getLocation());
+		Files.createDirectories(zipFile.getParent());
 
+		ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile));
 		zos.setLevel(0);
 
 		for (Datafile df : ds.getDatafiles()) {
-			String relativePath = new File(setup.getStorageDir(), ds.getLocation())
-					.getAbsolutePath();
-			String fileName = df.getName();
-			File file = new File(relativePath, fileName);
-			FileInputStream fis = new FileInputStream(file);
-
-			String zipFilePath = file.getCanonicalPath().substring(relativePath.length(),
-					file.getCanonicalPath().length());
-			if (zipFilePath.startsWith(File.separator)) {
-				zipFilePath = zipFilePath.substring(1);
-			}
-			System.out.println("Writing '" + zipFilePath + "' to zip file");
-			ZipEntry zipEntry = new ZipEntry(zipFilePath);
-
-			zos.putNextEntry(zipEntry);
+			Path top = setup.getStorageDir();
+			Path file = top.resolve(df.getLocation());
+			InputStream fis = Files.newInputStream(file);
+			zos.putNextEntry(new ZipEntry("ids/" + df.getLocation()));
 			byte[] bytes = new byte[1024];
 			int length;
 			while ((length = fis.read(bytes)) >= 0) {
@@ -339,10 +339,19 @@ public class BaseTest {
 			}
 			zos.closeEntry();
 			fis.close();
+			Files.delete(file);
+			Path parent = file.getParent();
+			while (!parent.equals(top)) {
+				try {
+					Files.delete(parent);
+					parent = parent.getParent();
+				} catch (IOException e) {
+					break;
+				}
+			}
 		}
 
 		zos.close();
-		fos.close();
 
 	}
 

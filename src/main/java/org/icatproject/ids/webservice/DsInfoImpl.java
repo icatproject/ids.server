@@ -86,4 +86,9 @@ public class DsInfoImpl implements DsInfo {
 		return (int) (dsId ^ (dsId >>> 32));
 	}
 
+	@Override
+	public String toString() {
+		return facilityName + "/" + invName + "/" + visitId + "/" + dsName;
+	}
+
 }

@@ -17,10 +17,37 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class TestingClient {
+
+	public class ServiceStatus {
+
+		private Map<String, String> opItems = new HashMap<>();
+		private Map<String, String> prepItems = new HashMap<>();
+
+		public void storeOpItems(String dsInfo, String request) {
+			opItems.put(dsInfo, request);
+		}
+
+		public void storePrepItems(String id, String state) {
+			prepItems.put(id, state);
+		}
+
+		public Map<String, String> getOpItems() {
+			return opItems;
+		}
+
+		public Map<String, String> getPrepItems() {
+			return prepItems;
+		}
+
+	}
 
 	private URL idsUrl;
 
@@ -136,15 +163,6 @@ public class TestingClient {
 			}
 
 			if (inputStream != null) {
-				OutputStream os = null;
-				try {
-					os = urlc.getOutputStream();
-					os.write(parms.getBytes());
-				} finally {
-					if (os != null) {
-						os.close();
-					}
-				}
 
 				BufferedOutputStream bos = null;
 				BufferedInputStream bis = null;
@@ -459,6 +477,39 @@ public class TestingClient {
 		if (!result.equals("IdsOK")) {
 			throw new NotFoundException("Server gave invalid response: " + result);
 		}
+	}
+
+	public ServiceStatus getServiceStatus(String sessionId, Integer sc) throws InternalException {
+		Map<String, String> emptyMap = Collections.emptyMap();
+		HttpURLConnection urlc;
+		try {
+			urlc = process("getServiceStatus", emptyMap, Method.GET, ParmPos.URL, null, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
+				| BadRequestException | InsufficientPrivilegesException | NotFoundException
+				| NotImplementedException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			JsonNode rootNode = mapper.readValue(urlc.getInputStream(), JsonNode.class);
+			ServiceStatus serviceStatus = new ServiceStatus();
+			for (JsonNode on : (ArrayNode) rootNode.get("opsQueue")) {
+				String dsInfo = ((ObjectNode) on).get("dsInfo").asText();
+				String request = ((ObjectNode) on).get("request").asText();
+				serviceStatus.storeOpItems(dsInfo, request);
+			}
+			for (JsonNode on : (ArrayNode) rootNode.get("prepQueue")) {
+				String id = ((ObjectNode) on).get("id").asText();
+				String state = ((ObjectNode) on).get("state").asText();
+				serviceStatus.storePrepItems(id, state);
+			}
+			return serviceStatus;
+		} catch (IOException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+
 	}
 
 }

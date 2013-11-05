@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
+import java.nio.file.Files;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
@@ -63,7 +63,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals(Status.ONLINE, status);
-		assertTrue(new File(setup.getStoragePreparedDir(), preparedId).exists());
+		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
 	}
 
 	@Test
@@ -80,9 +80,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals(Status.ONLINE, status);
-		File preparedFile = new File(setup.getStoragePreparedDir(), preparedId);
-		System.out.println(preparedFile);
-		assertTrue(preparedFile.exists());
+		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
 	}
 
 	@Test
@@ -98,7 +96,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals(Status.ONLINE, status);
-		assertTrue(new File(setup.getStoragePreparedDir(), preparedId).exists());
+		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
 	}
 
 	@Test
@@ -115,7 +113,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (Status.RESTORING.equals(status));
 
 		assertEquals(Status.ONLINE, status);
-		assertTrue(new File(setup.getStoragePreparedDir(), preparedId).exists());
+		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
 	}
 
 }

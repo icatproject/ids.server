@@ -141,6 +141,21 @@ public class IdsService {
 		}
 	}
 
+	@GET
+	@Path("getServiceStatus")
+	@Produces("text/json")
+	public Response getServiceStatus(@QueryParam("sessionId") String sessionId)
+			throws BadRequestException, NotFoundException, InternalException,
+			InsufficientPrivilegesException, NotImplementedException {
+
+		try {
+			return idsBean.getServiceStatus(sessionId);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
+	}
+
 	@PostConstruct
 	private void init() {
 		logger.info("creating IdsService");
