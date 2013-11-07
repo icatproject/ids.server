@@ -1,4 +1,4 @@
-//package org.icatproject.ids.service;
+package org.icatproject.ids.webservice;
 //
 //import javax.ejb.EJB;
 //import javax.ejb.Schedule;

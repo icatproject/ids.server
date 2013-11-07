@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -38,8 +39,6 @@ import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface.DfInfo;
 import org.icatproject.ids.thread.Preparer;
 import org.icatproject.ids.thread.Preparer.PreparerStatus;
-import org.icatproject.ids.util.PropertyHandler;
-import org.icatproject.ids.util.RangeOutputStream;
 import org.icatproject.ids.webservice.DataSelection.DatafileInfo;
 import org.icatproject.ids.webservice.DataSelection.Returns;
 import org.icatproject.ids.webservice.exceptions.BadRequestException;
@@ -100,7 +99,6 @@ public class IdsBean {
 
 		// Do it
 		if (twoLevel) {
-			// TODO don't archive data if the ds is contributing to being prepared
 			Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 			for (DsInfo dsInfo : dsInfos) {
 				fsm.queue(dsInfo, DeferredOp.ARCHIVE);
@@ -414,11 +412,25 @@ public class IdsBean {
 
 			try {
 				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
+				/*
+				 * Restoring shows also data sets which are currently being changed so it may
+				 * indicate that something is restoring when it should have been marked as archived.
+				 */
+				Set<DsInfo> restoring = fsm.getRestoring();
 				for (DsInfo dsInfo : dsInfos) {
 					if (!mainStorage.exists(dsInfo)) {
-						// TODO include Status.Restoring (which does not break;)
-						status = Status.ARCHIVED;
-						break;
+						if (status == Status.ONLINE) {
+							if (restoring.contains(dsInfo)) {
+								status = Status.RESTORING;
+							} else {
+								status = Status.ARCHIVED;
+							}
+						} else if (status == Status.RESTORING) {
+							if (!restoring.contains(dsInfo)) {
+								status = Status.ARCHIVED;
+								break;
+							}
+						}
 					}
 				}
 			} catch (IOException e) {

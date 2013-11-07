@@ -1,4 +1,4 @@
-package org.icatproject.ids.util;
+package org.icatproject.ids.webservice;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;

@@ -14,11 +14,11 @@ import java.util.zip.ZipOutputStream;
 
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.webservice.DataSelection;
 import org.icatproject.ids.webservice.DataSelection.DatafileInfo;
 import org.icatproject.ids.webservice.DeferredOp;
 import org.icatproject.ids.webservice.FiniteStateMachine;
+import org.icatproject.ids.webservice.PropertyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,6 +159,10 @@ public class Preparer implements Runnable {
 			status = PreparerStatus.INCOMPLETE;
 		}
 
+	}
+
+	public boolean using(DsInfo dsInfo) {
+		return dataSelection.getDsInfo().contains(dsInfo);
 	}
 
 }

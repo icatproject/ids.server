@@ -21,7 +21,6 @@ import org.icatproject.ids.thread.Preparer.PreparerStatus;
 import org.icatproject.ids.thread.Restorer;
 import org.icatproject.ids.thread.WriteThenArchiver;
 import org.icatproject.ids.thread.Writer;
-import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.webservice.exceptions.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,5 +278,21 @@ public class FiniteStateMachine {
 			}
 		}
 		return result;
+	}
+
+	public String preparing(DsInfo dsInfo) {
+
+		Map<String, Preparer> preparersClone = new LinkedHashMap<String, Preparer>();
+
+		synchronized (deferredOpsQueue) {
+			preparersClone.putAll(preparers);
+		}
+		for (Entry<String, Preparer> entry : preparersClone.entrySet()) {
+			if (entry.getValue().using(dsInfo)) {
+				return entry.getKey();
+			}
+			
+		}
+		return null;
 	}
 }

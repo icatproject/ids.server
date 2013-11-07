@@ -10,8 +10,8 @@ import java.util.zip.ZipOutputStream;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.webservice.FiniteStateMachine;
+import org.icatproject.ids.webservice.PropertyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
