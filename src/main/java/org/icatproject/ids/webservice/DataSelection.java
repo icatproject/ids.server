@@ -68,6 +68,11 @@ public class DataSelection {
 			return (int) (dfId ^ (dfId >>> 32));
 		}
 
+		@Override
+		public String toString() {
+			return dfLocation;
+		}
+
 	}
 
 	/**
@@ -182,15 +187,17 @@ public class DataSelection {
 									+ " INCLUDE ds.investigation.facility");
 				}
 				if (dss.size() >= 1) {
-					Dataset ds = (Dataset) dss.get(0);
-					long dsid = ds.getId();
-					if (dfWanted) {
-						for (Datafile df : ds.getDatafiles()) {
-							dfInfos.add(new DatafileInfo(df.getId(), df.getName(),
-									df.getLocation(), dsid));
+					for (Object o : dss) {
+						Dataset ds = (Dataset) o;
+						long dsid = ds.getId();
+						if (dfWanted) {
+							for (Datafile df : ds.getDatafiles()) {
+								dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df
+										.getLocation(), dsid));
+							}
 						}
+						dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
 					}
-					dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
 				} else {
 					icat.get(sessionId, "Investigation", invid); // May reveal a permissions problem
 					throw new NotFoundException("Investigation " + invid);

@@ -1,6 +1,7 @@
 package org.icatproject.ids.integration.one;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
@@ -86,6 +87,29 @@ public class GetDataExplicitTest extends BaseTest {
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.ZIP_AND_COMPRESS, null,
 				0, 200);
 		checkZipStream(stream, datafileIds.subList(0, 1), 36L);
+	}
+
+	@Test
+	public void correctBehaviourInvestigation() throws Exception {
+		InputStream stream = testingClient.getData(sessionId,
+				new DataSelection().addInvestigation(investigationId), Flag.NONE, null, 0, 200);
+		checkZipStream(stream, datafileIds, 57L);
+
+		stream = testingClient.getData(sessionId,
+				new DataSelection().addDatafile(datafileIds.get(0)), Flag.ZIP, null, 0, 200);
+		checkZipStream(stream, datafileIds.subList(0, 1), 57L);
+	}
+
+	@Test
+	public void correctBehaviourInvestigations() throws Exception {
+		InputStream stream = testingClient.getData(sessionId,
+				new DataSelection().addInvestigations(Arrays.asList(investigationId)), Flag.NONE,
+				null, 0, 200);
+		checkZipStream(stream, datafileIds, 57L);
+
+		stream = testingClient.getData(sessionId,
+				new DataSelection().addDatafile(datafileIds.get(0)), Flag.ZIP, null, 0, 200);
+		checkZipStream(stream, datafileIds.subList(0, 1), 57L);
 	}
 
 }

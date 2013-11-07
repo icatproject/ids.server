@@ -24,18 +24,24 @@ public class DataSelection {
 		return this;
 	}
 
+	public DataSelection addDataset(long id) {
+		datasetIds.add(id);
+		return this;
+	}
+
 	public DataSelection addDatasets(List<Long> ids) {
 		datasetIds.addAll(ids);
 		return this;
 	}
 
-	public DataSelection addDataset(Long id) {
-		datasetIds.add(id);
+	public DataSelection addInvestigation(long invId) {
+		investigationIds.add(invId);
 		return this;
 	}
 
-	public void addInvestigation(long invId) {
-		investigationIds.add(invId);
+	public DataSelection addInvestigations(List<Long> ids) {
+		investigationIds.addAll(ids);
+		return this;
 	}
 
 	public Map<String, String> getParameters() {

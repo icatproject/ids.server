@@ -320,6 +320,7 @@ public class IdsBean {
 					}
 
 					for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
+						logger.debug("Adding " + dfInfo + " to zip");
 						zos.putNextEntry(new ZipEntry("ids/" + dfInfo.getDfLocation()));
 						InputStream stream = mainStorage.get(dfInfo.getDfLocation());
 
@@ -473,8 +474,8 @@ public class IdsBean {
 
 		// Do it
 		String preparedId = UUID.randomUUID().toString();
-		Preparer preparer = new Preparer(preparedId, dataSelection, propertyHandler, fsm,
-				compress, zip ? true : dataSelection.mustZip());
+		Preparer preparer = new Preparer(preparedId, dataSelection, propertyHandler, fsm, compress,
+				zip ? true : dataSelection.mustZip());
 		new Thread(preparer).start();
 		fsm.registerPreparer(preparedId, preparer);
 

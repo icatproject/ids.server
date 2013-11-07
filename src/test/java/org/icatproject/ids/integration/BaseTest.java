@@ -61,6 +61,7 @@ public class BaseTest {
 	protected TestingClient testingClient;
 	protected Path newFileLocation;
 	protected DatafileFormat supportedDatafileFormat;
+	protected long investigationId;
 
 	@Before
 	public void before() throws Exception {
@@ -183,6 +184,7 @@ public class BaseTest {
 			inv.setFacility(fac);
 			inv.setVisitId("A_visit");
 			inv.setId(icat.create(sessionId, inv));
+			investigationId = inv.getId();
 
 			String invLoc = fac.getName() + "/" + inv.getName() + "/" + inv.getVisitId();
 
