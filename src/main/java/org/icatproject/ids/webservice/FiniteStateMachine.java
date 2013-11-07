@@ -15,6 +15,7 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 
 import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.thread.Archiver;
 import org.icatproject.ids.thread.Preparer;
 import org.icatproject.ids.thread.Preparer.PreparerStatus;
 import org.icatproject.ids.thread.Restorer;
@@ -148,9 +149,8 @@ public class FiniteStateMachine {
 								logger.debug("Will process " + dsInfo + " with " + state);
 								changing.add(dsInfo);
 								it.remove();
-								final Thread w = new Thread(
-										new org.icatproject.ids.thread.Archiver(dsInfo,
-												propertyHandler, FiniteStateMachine.this));
+								final Thread w = new Thread(new Archiver(dsInfo, propertyHandler,
+										FiniteStateMachine.this));
 								w.start();
 							} else if (state == RequestedState.RESTORE_REQUESTED) {
 								logger.debug("Will process " + dsInfo + " with " + state);
@@ -220,9 +220,11 @@ public class FiniteStateMachine {
 	public String getServiceStatus() throws InternalException {
 		Map<DsInfo, RequestedState> deferredOpsQueueClone = new HashMap<>();
 		Map<String, Preparer> preparersClone = new LinkedHashMap<String, Preparer>();
+		Set<DsInfo> changingClone = null;
 		synchronized (deferredOpsQueue) {
 			deferredOpsQueueClone.putAll(deferredOpsQueue);
 			preparersClone.putAll(preparers);
+			changingClone = new HashSet<>(changing);
 		}
 		ObjectMapper om = new ObjectMapper();
 		ObjectNode serviceStatus = om.createObjectNode();
@@ -230,10 +232,19 @@ public class FiniteStateMachine {
 		ArrayNode opsQueue = om.createArrayNode();
 		serviceStatus.put("opsQueue", opsQueue);
 		for (Entry<DsInfo, RequestedState> entry : deferredOpsQueueClone.entrySet()) {
+			DsInfo item = entry.getKey();
+			if (!changingClone.contains(item)) {
+				ObjectNode queueItem = om.createObjectNode();
+				opsQueue.add(queueItem);
+				queueItem.put("dsInfo", item.toString());
+				queueItem.put("request", entry.getValue().name());
+			}
+		}
+		for (DsInfo item : changingClone) {
 			ObjectNode queueItem = om.createObjectNode();
 			opsQueue.add(queueItem);
-			queueItem.put("dsInfo", entry.getKey().toString());
-			queueItem.put("request", entry.getValue().name());
+			queueItem.put("dsInfo", item.toString());
+			queueItem.put("request", "CHANGING");
 		}
 
 		ArrayNode prepQueue = om.createArrayNode();
@@ -250,5 +261,23 @@ public class FiniteStateMachine {
 		} catch (JsonProcessingException e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
+	}
+
+	/**
+	 * Find any DsInfo which are changing or are queued for restoration
+	 */
+	public Set<DsInfo> getRestoring() {
+		Map<DsInfo, RequestedState> deferredOpsQueueClone = new HashMap<>();
+		Set<DsInfo> result = null;
+		synchronized (deferredOpsQueue) {
+			deferredOpsQueueClone.putAll(deferredOpsQueue);
+			result = new HashSet<>(changing);
+		}
+		for (Entry<DsInfo, RequestedState> entry : deferredOpsQueueClone.entrySet()) {
+			if (entry.getValue() == RequestedState.RESTORE_REQUESTED) {
+				result.add(entry.getKey());
+			}
+		}
+		return result;
 	}
 }

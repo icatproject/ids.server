@@ -1,7 +1,6 @@
 package org.icatproject.ids.thread;
 
 import java.io.InputStream;
-import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -77,7 +76,7 @@ public class Writer implements Runnable {
 		} catch (Exception e) {
 			logger.error("Write of " + dsInfo + " failed due to " + e.getMessage());
 		} finally {
-			fsm.removeFromChanging(dsInfo);
+			fsm.removeFromChanging(dsInfo); // TODO should this be done after failures?
 		}
 	}
 

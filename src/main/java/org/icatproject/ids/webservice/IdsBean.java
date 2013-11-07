@@ -128,9 +128,9 @@ public class IdsBean {
 		Status status = Status.ONLINE;
 		DataNotOnlineException exc = null;
 
+		Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 		if (twoLevel) {
 			try {
-				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 				for (DsInfo dsInfo : dsInfos) {
 					if (!mainStorage.exists(dsInfo)) {
 						// TODO include Status.Restoring
@@ -171,16 +171,21 @@ public class IdsBean {
 			throw new InternalException(type + " " + e.getMessage());
 		}
 
-		for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
-			try {
-				mainStorage.delete(dfInfo.getDfLocation());
-			} catch (IOException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
+		// Remove the local data set cache
+		try {
+			for (DsInfo dsInfo : dsInfos) {
+				Files.deleteIfExists(datasetDir.resolve(dsInfo.getFacilityName())
+						.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
+						.resolve(dsInfo.getDsName()));
 			}
+			for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
+				mainStorage.delete(dfInfo.getDfLocation());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
 		if (twoLevel) {
-			Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 			for (DsInfo dsInfo : dsInfos) {
 				fsm.queue(dsInfo, DeferredOp.WRITE);
 			}
@@ -468,8 +473,8 @@ public class IdsBean {
 
 		// Do it
 		String preparedId = UUID.randomUUID().toString();
-		Preparer preparer = new Preparer(preparedId, dataSelection, twoLevel, mainStorage,
-				compress, preparedDir, zip ? true : dataSelection.mustZip());
+		Preparer preparer = new Preparer(preparedId, dataSelection, propertyHandler, fsm,
+				compress, zip ? true : dataSelection.mustZip());
 		new Thread(preparer).start();
 		fsm.registerPreparer(preparedId, preparer);
 

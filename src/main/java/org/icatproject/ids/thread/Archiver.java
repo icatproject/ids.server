@@ -22,6 +22,7 @@ public class Archiver implements Runnable {
 	private Path datasetCache;
 
 	public Archiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+		this.dsInfo = dsInfo;
 		this.fsm = fsm;
 		mainStorageInterface = propertyHandler.getMainStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");

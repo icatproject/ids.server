@@ -8,13 +8,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.ejb.EJB;
-
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.util.PropertyHandler;
 import org.icatproject.ids.webservice.DataSelection;
 import org.icatproject.ids.webservice.DataSelection.DatafileInfo;
 import org.icatproject.ids.webservice.DeferredOp;
@@ -36,30 +36,24 @@ public class Preparer implements Runnable {
 	private final static Logger logger = LoggerFactory.getLogger(Preparer.class);
 	private boolean compress;
 	private DataSelection dataSelection;
-	@EJB
 	private FiniteStateMachine fsm;
 	private MainStorageInterface mainStorage;
-
 	private String message;
-
 	private Path preparedDir;;
-
 	private String preparedId;
-
 	private PreparerStatus status = PreparerStatus.STARTED;
-
 	private boolean twoLevel;
-
 	private boolean zip;
 
-	public Preparer(String preparedId, DataSelection dataSelection, boolean twoLevel,
-			MainStorageInterface mainStorage, boolean compress, Path preparedDir, boolean zip) {
+	public Preparer(String preparedId, DataSelection dataSelection,
+			PropertyHandler propertyHandler, FiniteStateMachine fsm, boolean compress, boolean zip) {
 		this.preparedId = preparedId;
 		this.dataSelection = dataSelection;
-		this.twoLevel = twoLevel;
-		this.mainStorage = mainStorage;
+		mainStorage = propertyHandler.getMainStorage();
+		twoLevel = propertyHandler.getArchiveStorage() != null;
+		preparedDir = propertyHandler.getCacheDir().resolve("prepared");
+		this.fsm = fsm;
 		this.compress = compress;
-		this.preparedDir = preparedDir;
 		this.zip = zip;
 	}
 
@@ -73,14 +67,15 @@ public class Preparer implements Runnable {
 
 	@Override
 	public void run() {
-		logger.info("starting preparer");
+		logger.info("Starting preparer");
 
 		if (twoLevel) {
-			status = PreparerStatus.RESTORING;
-			while (true) {
+
+			try {
+				status = PreparerStatus.RESTORING;
+				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 				boolean online = true;
 				try {
-					Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 					for (DsInfo dsInfo : dsInfos) {
 						if (!mainStorage.exists(dsInfo)) {
 							online = false;
@@ -93,14 +88,30 @@ public class Preparer implements Runnable {
 					return;
 				}
 
-				if (online) {
-					break;
+				if (!online) {
+					while (true) {
+						online = true;
+						Set<DsInfo> restoring = fsm.getRestoring();
+						for (DsInfo dsInfo : dsInfos) {
+							if (restoring.contains(dsInfo)) {
+								logger.debug("Waiting for " + dsInfo + " to be restored");
+								online = false;
+								break;
+							}
+						}
+						if (online) {
+							break;
+						}
+						try {
+							Thread.sleep(2000);
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+					}
 				}
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
+			} catch (Exception e) {
+				message = e.getClass() + " " + e.getMessage();
+				status = PreparerStatus.INCOMPLETE;
 			}
 		}
 		status = PreparerStatus.WRITING;
