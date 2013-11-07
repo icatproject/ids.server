@@ -8,9 +8,9 @@ import static org.junit.Assert.fail;
 import java.util.Arrays;
 import java.util.List;
 
-import org.icatproject.ids.webservice.DataSelection;
-import org.icatproject.ids.webservice.IdsBean;
-import org.icatproject.ids.webservice.exceptions.BadRequestException;
+import org.icatproject.ids.DataSelection;
+import org.icatproject.ids.IdsBean;
+import org.icatproject.ids.exceptions.BadRequestException;
 import org.junit.Test;
 
 public class ValidaterTest {
