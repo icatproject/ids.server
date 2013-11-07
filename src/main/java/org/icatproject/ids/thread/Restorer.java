@@ -7,11 +7,11 @@ import java.nio.file.StandardCopyOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.webservice.FiniteStateMachine;
-import org.icatproject.ids.webservice.PropertyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

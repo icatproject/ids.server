@@ -3,10 +3,10 @@ package org.icatproject.ids.thread;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.webservice.FiniteStateMachine;
-import org.icatproject.ids.webservice.PropertyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

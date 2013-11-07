@@ -12,13 +12,13 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.icatproject.ids.DataSelection;
+import org.icatproject.ids.DeferredOp;
+import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.DataSelection.DatafileInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.webservice.DataSelection;
-import org.icatproject.ids.webservice.DataSelection.DatafileInfo;
-import org.icatproject.ids.webservice.DeferredOp;
-import org.icatproject.ids.webservice.FiniteStateMachine;
-import org.icatproject.ids.webservice.PropertyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
