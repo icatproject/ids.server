@@ -10,7 +10,6 @@ import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,11 +34,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
 		testingClient.getData(preparedId, null, -10L, 400);
 	}
@@ -54,11 +51,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
 		checkStream(stream, datafileIds.get(0));
@@ -69,11 +64,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafiles(datafileIds), Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
 		checkZipStream(stream, datafileIds, 57);
@@ -86,11 +79,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
 		checkZipStream(stream, datafileIds.subList(0, 2), 57);
@@ -103,11 +94,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)).addDatafiles(datafileIds),
 				Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
 		checkZipStream(stream, datafileIds, 57);
@@ -119,11 +108,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
 		// request the zip file twice, with and without an offset
 		byte[] zip = getOutput(testingClient.getData(preparedId, null, 0, 200));

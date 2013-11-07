@@ -1,6 +1,5 @@
 package org.icatproject.ids.integration.one;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -12,7 +11,6 @@ import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -56,13 +54,10 @@ public class PrepareDataTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 200);
 
-		Status status = null;
-		do {
-			Thread.sleep(500);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (status.equals(Status.RESTORING));
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			Thread.sleep(1000);
+		}
 
-		assertEquals(Status.ONLINE, status);
 		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 
@@ -73,13 +68,10 @@ public class PrepareDataTest extends BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)),
 				Flag.NONE, 200);
 
-		Status status;
-		do {
-			Thread.sleep(500);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (status.equals(Status.RESTORING));
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			Thread.sleep(1000);
+		}
 
-		assertEquals(Status.ONLINE, status);
 		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 
@@ -89,13 +81,10 @@ public class PrepareDataTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
-		Status status;
-		do {
-			Thread.sleep(500);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (status.equals(Status.RESTORING));
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			Thread.sleep(1000);
+		}
 
-		assertEquals(Status.ONLINE, status);
 		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 
@@ -106,13 +95,10 @@ public class PrepareDataTest extends BaseTest {
 				new DataSelection().addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)),
 				Flag.NONE, 200);
 
-		Status status = null;
-		do {
-			Thread.sleep(500);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			Thread.sleep(1000);
+		}
 
-		assertEquals(Status.ONLINE, status);
 		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 

@@ -312,33 +312,32 @@ public class TestingClient {
 	}
 
 	public enum Status {
-		ONLINE, INCOMPLETE, RESTORING, ARCHIVED
+		ONLINE, RESTORING, ARCHIVED
 	}
 
 	public enum Flag {
 		NONE, ZIP, COMPRESS, ZIP_AND_COMPRESS
 	}
 
-	public Status getStatus(String preparedId, Integer sc) throws NotImplementedException,
-			BadRequestException, InsufficientPrivilegesException, NotFoundException,
-			InternalException {
+	public boolean isPrepared(String preparedId, Integer sc) throws BadRequestException,
+			NotFoundException, InternalException, NotImplementedException {
 		Map<String, String> parameters = new HashMap<>();
 		parameters.put("preparedId", preparedId);
 
 		HttpURLConnection urlc;
 		try {
 			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
+		} catch (InsufficientStorageException | DataNotOnlineException
+				| InsufficientPrivilegesException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
 		}
-
-		return Status.valueOf(getOutput(urlc));
+		return Boolean.parseBoolean(getOutput(urlc));
 	}
 
 	public Status getStatus(String sessonId, DataSelection data, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			NotFoundException, InternalException {
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException,
+			InternalException, NotImplementedException {
 		Map<String, String> parameters = new HashMap<>();
 		parameters.put("sessionId", sessonId);
 		parameters.putAll(data.getParameters());

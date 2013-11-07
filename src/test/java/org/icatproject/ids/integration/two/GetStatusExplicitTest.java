@@ -71,13 +71,12 @@ public class GetStatusExplicitTest extends BaseTest {
 	public void restoringDatafileRestoresItsDatasetTest() throws Exception {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
-		Status status = null;
-		do {
+
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
-		assertEquals(Status.ONLINE, status);
-		status = testingClient.getStatus(sessionId,
+		}
+
+		Status status = testingClient.getStatus(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)), 200);
 		assertEquals(Status.ONLINE, status);
 		status = testingClient.getStatus(sessionId,

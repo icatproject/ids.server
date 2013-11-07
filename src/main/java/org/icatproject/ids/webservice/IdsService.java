@@ -121,20 +121,28 @@ public class IdsService {
 	@GET
 	@Path("getStatus")
 	@Produces("text/plain")
-	public Response getStatus(@QueryParam("preparedId") String preparedId,
-			@QueryParam("sessionId") String sessionId,
+	public Response getStatus(@QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException,
-			NotImplementedException {
+			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException, NotFoundException,
+			InsufficientPrivilegesException, InternalException {
 
 		try {
-			if (preparedId != null) {
-				return idsBean.getStatus(preparedId);
-			} else {
-				return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafilesIds);
-			}
+			return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafilesIds);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
+	}
+
+	@GET
+	@Path("isPrepared")
+	@Produces("text/plain")
+	public Response isPrepared(@QueryParam("preparedId") String preparedId)
+			throws BadRequestException, NotFoundException, InternalException {
+
+		try {
+			return idsBean.isPrepared(preparedId);
 		} catch (RuntimeException e) {
 			processRuntimeException(e);
 			return null; // Will never get here but the compiler doesn't know
@@ -145,8 +153,7 @@ public class IdsService {
 	@Path("getServiceStatus")
 	@Produces("text/json")
 	public Response getServiceStatus(@QueryParam("sessionId") String sessionId)
-			throws BadRequestException, NotFoundException, InternalException,
-			InsufficientPrivilegesException, NotImplementedException {
+			throws InternalException {
 
 		try {
 			return idsBean.getServiceStatus(sessionId);

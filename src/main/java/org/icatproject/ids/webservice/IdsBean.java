@@ -125,7 +125,6 @@ public class IdsBean {
 				datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
-		Status status = Status.ONLINE;
 		DataNotOnlineException exc = null;
 
 		Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
@@ -133,11 +132,9 @@ public class IdsBean {
 			try {
 				for (DsInfo dsInfo : dsInfos) {
 					if (!mainStorage.exists(dsInfo)) {
-						// TODO include Status.Restoring
-						status = Status.ARCHIVED;
 						fsm.queue(dsInfo, DeferredOp.RESTORE);
-						exc = new DataNotOnlineException("Current status of Dataset "
-								+ dsInfo.getDsId() + " is ARCHIVED. It is now being restored.");
+						exc = new DataNotOnlineException("Dataset " + dsInfo
+								+ " is not online. It is now being restored.");
 					}
 				}
 			} catch (IOException e) {
@@ -278,7 +275,6 @@ public class IdsBean {
 				datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
-		Status status = Status.ONLINE;
 		DataNotOnlineException exc = null;
 
 		if (twoLevel) {
@@ -286,11 +282,9 @@ public class IdsBean {
 				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 				for (DsInfo dsInfo : dsInfos) {
 					if (!mainStorage.exists(dsInfo)) {
-						// TODO include Status.Restoring
-						status = Status.ARCHIVED;
 						fsm.queue(dsInfo, DeferredOp.RESTORE);
-						exc = new DataNotOnlineException("Current status of Dataset "
-								+ dsInfo.getDsId() + " is ARCHIVED. It is now being restored.");
+						exc = new DataNotOnlineException("Dataset " + dsInfo
+								+ " is not online. It is now being restored.");
 					}
 				}
 			} catch (IOException e) {
@@ -371,16 +365,15 @@ public class IdsBean {
 
 	}
 
-	public Response getStatus(String preparedId) throws BadRequestException, NotFoundException,
-			InternalException, InsufficientPrivilegesException, NotImplementedException {
+	public Response isPrepared(String preparedId) throws BadRequestException, NotFoundException {
 
 		// Log and validate
-		logger.info("New webservice request: getStatus " + "preparedId='" + preparedId + "'");
+		logger.info("New webservice request: isPrepared " + "preparedId='" + preparedId + "'");
 
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Status status = Status.ONLINE;
+		boolean prepared = true;
 		final Path path = preparedDir.resolve(preparedId);
 		if (!Files.exists(path)) {
 			Preparer preparer = fsm.getPreparer(preparedId);
@@ -393,17 +386,17 @@ public class IdsBean {
 			} else if (preparerStatus == PreparerStatus.INCOMPLETE) {
 				throw new NotFoundException(preparer.getMessage());
 			} else {
-				status = Status.RESTORING;
+				prepared = false;
+				;
 			}
 		}
-
-		return Response.ok(status.name()).build();
+		return Response.ok(prepared).build();
 
 	}
 
 	public Response getStatus(String sessionId, String investigationIds, String datasetIds,
-			String datafileIds) throws NotImplementedException, BadRequestException,
-			InsufficientPrivilegesException, NotFoundException, InternalException {
+			String datafileIds) throws BadRequestException, NotFoundException,
+			InsufficientPrivilegesException, InternalException {
 
 		// Log and validate
 		logger.info(String

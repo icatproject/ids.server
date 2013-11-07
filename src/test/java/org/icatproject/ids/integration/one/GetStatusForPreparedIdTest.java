@@ -1,7 +1,5 @@
 package org.icatproject.ids.integration.one;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Arrays;
 
 import org.icatproject.ids.integration.BaseTest;
@@ -11,7 +9,6 @@ import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,12 +22,12 @@ public class GetStatusForPreparedIdTest extends BaseTest {
 
 	@Test(expected = BadRequestException.class)
 	public void badPreparedIdFormatTest() throws Exception {
-		testingClient.getStatus("bad preparedId format", 400);
+		testingClient.isPrepared("bad preparedId format", 400);
 	}
 
 	@Test(expected = NotFoundException.class)
 	public void nonExistingPreparedIdTest() throws Exception {
-		testingClient.getStatus("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 404);
+		testingClient.isPrepared("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 404);
 	}
 
 	@Test(expected = NotFoundException.class)
@@ -63,12 +60,10 @@ public class GetStatusForPreparedIdTest extends BaseTest {
 	public void correctBehaviourTest() throws Exception {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafiles(datafileIds), Flag.NONE, 200);
-		Status status = null;
-		do {
+
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
-		assertEquals(Status.ONLINE, status);
+		}
 	}
 
 }

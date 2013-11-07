@@ -1,6 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.nio.file.Path;
@@ -12,7 +11,6 @@ import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -32,13 +30,10 @@ public class PrepareDataTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
-		assertEquals(Status.ONLINE, status);
 		checkPresent(dirOnFastStorage);
 		checkPresent(datasetCacheFile);
 	}
@@ -58,13 +53,10 @@ public class PrepareDataTest extends BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)),
 				Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
-		assertEquals(Status.ONLINE, status);
 		checkPresent(dirOnFastStorage1);
 		checkPresent(datasetCacheFile1);
 		checkPresent(dirOnFastStorage2);
@@ -82,13 +74,10 @@ public class PrepareDataTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
-		Status status;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
-		assertEquals(Status.ONLINE, status);
 		checkPresent(dirOnFastStorage);
 		checkPresent(datasetCacheFile);
 	}
@@ -106,13 +95,10 @@ public class PrepareDataTest extends BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(datafileIds.get(0)),
 				Flag.NONE, 200);
 
-		Status status;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
-		assertEquals(Status.ONLINE, status);
 		checkPresent(dirOnFastStorage);
 		checkPresent(datasetCacheFile);
 	}
@@ -159,13 +145,10 @@ public class PrepareDataTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (status.equals(Status.RESTORING));
+		}
 
-		assertEquals(Status.ONLINE, status);
 		checkPresent(dirOnFastStorage);
 		checkPresent(datasetCacheFile);
 		checkPresent(setup.getPreparedCacheDir().resolve(preparedId));
@@ -195,13 +178,10 @@ public class PrepareDataTest extends BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)),
 				Flag.NONE, 200);
 
-		Status status;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (status.equals(Status.RESTORING));
+		}
 
-		assertEquals(Status.ONLINE, status);
 		Path preparedFile = setup.getPreparedCacheDir().resolve(preparedId);
 		checkPresent(preparedFile);
 	}
@@ -225,13 +205,10 @@ public class PrepareDataTest extends BaseTest {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
-		Status status;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (status.equals(Status.RESTORING));
+		}
 
-		assertEquals(Status.ONLINE, status);
 		Path preparedFile = setup.getPreparedCacheDir().resolve(preparedId);
 		checkPresent(preparedFile);
 	}
@@ -255,16 +232,12 @@ public class PrepareDataTest extends BaseTest {
 				new DataSelection().addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)),
 				Flag.NONE, 200);
 
-		Status status = null;
-		do {
+		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
-			status = testingClient.getStatus(preparedId, 200);
-		} while (Status.RESTORING.equals(status));
+		}
 
-		waitForIds();
-		Path preparedFile = setup.getPreparedCacheDir().resolve(preparedId);
-		checkPresent(preparedFile);
-		assertEquals(Status.ONLINE, status);
+		checkPresent(setup.getPreparedCacheDir().resolve(preparedId));
+
 	}
 
 }
