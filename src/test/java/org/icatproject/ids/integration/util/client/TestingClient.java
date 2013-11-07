@@ -17,8 +17,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -417,7 +415,7 @@ public class TestingClient {
 
 	public void delete(String sessionId, DataSelection data, Integer sc)
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			InternalException, NotFoundException {
+			InternalException, NotFoundException, DataNotOnlineException {
 
 		Map<String, String> parameters = new HashMap<>();
 		parameters.put("sessionId", sessionId);
@@ -425,7 +423,7 @@ public class TestingClient {
 
 		try {
 			process("delete", parameters, Method.DELETE, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
+		} catch (InsufficientStorageException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
 		}

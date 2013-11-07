@@ -32,9 +32,9 @@ public class Setup {
 	private String forbiddenSessionId = null;
 
 	private Path storageArchiveDir;
-	private Path storageZipDir;
+	private Path datasetCacheDir;
 	private Path storageDir;
-	private Path storagePreparedDir;
+	private Path preparedCacheDir;
 	private Path updownDir;
 
 	public Setup(String idsPropertyFile) throws Exception {
@@ -111,8 +111,8 @@ public class Setup {
 		}
 
 		Path cacheDir = new File(idsProperties.getProperty("cache.dir")).toPath();
-		storagePreparedDir = cacheDir.resolve("prepared");
-		storageZipDir = cacheDir.resolve("dataset");
+		preparedCacheDir = cacheDir.resolve("prepared");
+		datasetCacheDir = cacheDir.resolve("dataset");
 
 	}
 
@@ -153,16 +153,16 @@ public class Setup {
 		return storageArchiveDir;
 	}
 
-	public Path getStorageZipDir() {
-		return storageZipDir;
+	public Path getDatasetCacheDir() {
+		return datasetCacheDir;
 	}
 
 	public Path getStorageDir() {
 		return storageDir;
 	}
 
-	public Path getStoragePreparedDir() {
-		return storagePreparedDir;
+	public Path getPreparedCacheDir() {
+		return preparedCacheDir;
 	}
 
 	public Path getUpdownDir() {

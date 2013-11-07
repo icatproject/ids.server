@@ -63,7 +63,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals(Status.ONLINE, status);
-		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
+		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 
 	@Test
@@ -80,7 +80,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals(Status.ONLINE, status);
-		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
+		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 
 	@Test
@@ -96,7 +96,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (status.equals(Status.RESTORING));
 
 		assertEquals(Status.ONLINE, status);
-		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
+		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 
 	@Test
@@ -113,7 +113,7 @@ public class PrepareDataTest extends BaseTest {
 		} while (Status.RESTORING.equals(status));
 
 		assertEquals(Status.ONLINE, status);
-		assertTrue(Files.exists(setup.getStoragePreparedDir().resolve(preparedId)));
+		assertTrue(Files.exists(setup.getPreparedCacheDir().resolve(preparedId)));
 	}
 
 }

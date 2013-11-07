@@ -60,15 +60,11 @@ public class GetStatusExplicitTest extends BaseTest {
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
-		Status status;
-
-		do {
-			Thread.sleep(1000);
-			status = testingClient.getStatus(sessionId,
-					new DataSelection().addDatafiles(datafileIds), 200);
-			System.out.println("*" + status + "*");
-		} while (status != Status.ONLINE);
-
+		Status status = testingClient.getStatus(sessionId,
+				new DataSelection().addDatafiles(datafileIds), 200);
+		assertEquals(status, Status.ARCHIVED);
+		waitForIds();
+		assertEquals(status, Status.ARCHIVED);
 	}
 
 	@Test

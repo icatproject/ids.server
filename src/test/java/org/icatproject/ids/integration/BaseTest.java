@@ -1,6 +1,7 @@
 package org.icatproject.ids.integration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -64,46 +65,64 @@ public class BaseTest {
 	@Before
 	public void before() throws Exception {
 		testingClient = new TestingClient(setup.getIdsUrl());
-		while (true) {
-			ServiceStatus stat = testingClient.getServiceStatus(sessionId, 200);
-			if (stat.getOpItems().isEmpty() && stat.getPrepItems().isEmpty()) {
-				break;
-			}
-			if (!stat.getOpItems().isEmpty()) {
-				System.out.println("Ops " + stat.getOpItems());
-			}
-			if (!stat.getPrepItems().isEmpty())
-				System.out.println("Preps " + stat.getPrepItems());
-			Thread.sleep(1000);
-		}
+		waitForIds();
 		parameters = new HashMap<>();
 		sessionId = setup.getGoodSessionId();
 		populateStorage();
 	}
 
-	private void clearStorage() throws IOException {
-		Path storageDir = setup.getStorageDir();
-		Path storageZipDir = setup.getStorageZipDir();
-		Path upDownDir = setup.getUpdownDir();
-		Path storagePreparedDir = setup.getStoragePreparedDir();
-		TreeDeleteVisitor treeDeleteVisitor = new TreeDeleteVisitor();
-		if (Files.exists(storageDir)) {
-			Files.walkFileTree(storageDir, treeDeleteVisitor);
-		}
-		Files.createDirectories(storageDir);
-		if (storageZipDir != null) {
-			if (Files.exists(storageZipDir)) {
-				Files.walkFileTree(storageZipDir, treeDeleteVisitor);
+	protected void checkAbsent(Path file) {
+		assertFalse(file.toString(), Files.exists(file));
+	}
+
+	protected void checkPresent(Path file) {
+		assertTrue(file.toString(), Files.exists(file));
+	}
+
+	protected void waitForIds() throws Exception {
+		int n = 0;
+		while (true) {
+			n++;
+			if (n > 20) {
+				throw new Exception("Got bored waiting");
 			}
-			Files.createDirectories(storageZipDir);
+			ServiceStatus stat = testingClient.getServiceStatus(sessionId, 200);
+			if (stat.getOpItems().isEmpty() && stat.getPrepItems().isEmpty()) {
+				break;
+			}
+			if (n % 10 == 0) {
+				if (!stat.getOpItems().isEmpty()) {
+					System.out.println("Ops " + stat.getOpItems());
+				}
+				if (!stat.getPrepItems().isEmpty()) {
+					System.out.println("Preps " + stat.getPrepItems());
+				}
+			}
+			Thread.sleep(1000);
 		}
-		if (Files.exists(upDownDir)) {
-			Files.walkFileTree(upDownDir, treeDeleteVisitor);
+	}
+
+	protected void checkZipFile(Path file, List<Long> ids, int compressedSize) throws IOException {
+		checkZipStream(Files.newInputStream(file), ids, compressedSize);
+	}
+
+	private void clearStorage() throws IOException {
+		cleanDir(setup.getStorageDir());
+		cleanDir(setup.getStorageArchiveDir());
+		cleanDir(setup.getDatasetCacheDir());
+		cleanDir(setup.getUpdownDir());
+		cleanDir(setup.getPreparedCacheDir());
+		cleanDir(setup.getStorageDir());
+	}
+
+	private void cleanDir(Path dir) throws IOException {
+		if (dir != null) {
+			TreeDeleteVisitor treeDeleteVisitor = new TreeDeleteVisitor();
+			if (Files.exists(dir)) {
+				Files.walkFileTree(dir, treeDeleteVisitor);
+			}
+			Files.createDirectories(dir);
 		}
-		if (Files.exists(storagePreparedDir)) {
-			Files.walkFileTree(storagePreparedDir, treeDeleteVisitor);
-		}
-		Files.createDirectories(storagePreparedDir);
 	}
 
 	protected byte[] getOutput(InputStream stream) throws IOException {
@@ -279,7 +298,6 @@ public class BaseTest {
 			assertEquals(contents.get(key), baos.toString());
 			assertEquals(fsizes.get(key), (Long) n);
 			assertTrue(idsNeeded.remove(ids.get(key)));
-
 			ze = zis.getNextEntry();
 		}
 		zis.close();

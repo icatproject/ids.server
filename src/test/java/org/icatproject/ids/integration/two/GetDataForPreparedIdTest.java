@@ -1,6 +1,6 @@
 package org.icatproject.ids.integration.two;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
@@ -61,11 +61,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		} while (Status.RESTORING.equals(status));
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-
-		// TODO Map<String, String> map = TestingUtils.filenameMD5Map(stream);
-		// assertEquals(1, map.size());
-		// TestingUtils.checkMD5Values(map, setup);
-		fail();
+		checkStream(stream, datafileIds.get(0));
 	}
 
 	@Test
@@ -80,11 +76,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		} while (Status.RESTORING.equals(status));
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-
-		// TODO Map<String, String> map = TestingUtils.filenameMD5Map(stream);
-		// assertEquals(1, map.size());
-		// TestingUtils.checkMD5Values(map, setup);
-		fail();
+		checkZipStream(stream, datafileIds, 57);
 
 	}
 
@@ -101,12 +93,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		} while (Status.RESTORING.equals(status));
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-
-		// TODO Map<String, String> map = TestingUtils.filenameMD5Map(stream);
-		// assertEquals(1, map.size());
-		// TestingUtils.checkMD5Values(map, setup);
-		fail();
-
+		checkZipStream(stream, datafileIds.subList(0, 2), 57);
 	}
 
 	@Test
@@ -123,11 +110,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		} while (Status.RESTORING.equals(status));
 
 		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-
-		// TODO Map<String, String> map = TestingUtils.filenameMD5Map(stream);
-		// assertEquals(1, map.size());
-		// TestingUtils.checkMD5Values(map, setup);
-		fail();
+		checkZipStream(stream, datafileIds, 57);
 	}
 
 	@Test
@@ -142,18 +125,15 @@ public class GetDataForPreparedIdTest extends BaseTest {
 			status = testingClient.getStatus(preparedId, 200);
 		} while (Status.RESTORING.equals(status));
 
-		// // request the zip file twice, with and without an offset
-		// TODO byte[] zip = TestingUtils.getOutput(testingClient.getData(preparedId, null, 0,
-		// 200));
-		// byte[] zipoffset = TestingUtils.getOutput(testingClient.getData(preparedId, null,
-		// goodOffset, 206));
-		//
-		// // compare the two zip files byte by byte taking into account the offset
-		// System.out.println(zip.length + " " + zipoffset.length);
-		// for (int i = 0; i < zipoffset.length; i++) {
-		// assertEquals("Byte offset: " + i, (byte) zipoffset[i], (byte) zip[i + goodOffset]);
-		// }
-		fail();
+		// request the zip file twice, with and without an offset
+		byte[] zip = getOutput(testingClient.getData(preparedId, null, 0, 200));
+		byte[] zipoffset = getOutput(testingClient.getData(preparedId, null, goodOffset, 206));
+
+		// compare the two zip files byte by byte taking into account the offset
+		System.out.println(zip.length + " " + zipoffset.length);
+		for (int i = 0; i < zipoffset.length; i++) {
+			assertEquals("Byte offset: " + i, (byte) zipoffset[i], (byte) zip[i + goodOffset]);
+		}
 	}
 
 }
