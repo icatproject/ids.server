@@ -2,7 +2,6 @@ package org.icatproject.ids;
 
 import org.icatproject.Dataset;
 import org.icatproject.Facility;
-import org.icatproject.ICAT;
 import org.icatproject.Investigation;
 import org.icatproject.ids.plugin.DsInfo;
 
@@ -22,7 +21,7 @@ public class DsInfoImpl implements DsInfo {
 
 	private String visitId;
 
-	public DsInfoImpl(Dataset ds, ICAT icat, String sessionId) {
+	public DsInfoImpl(Dataset ds) {
 		Investigation investigation = ds.getInvestigation();
 		Facility facility = investigation.getFacility();
 		dsId = ds.getId();
@@ -32,7 +31,6 @@ public class DsInfoImpl implements DsInfo {
 		visitId = investigation.getVisitId();
 		facilityId = facility.getId();
 		facilityName = facility.getName();
-
 	}
 
 	@Override

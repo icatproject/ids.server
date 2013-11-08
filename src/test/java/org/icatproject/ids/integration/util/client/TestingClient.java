@@ -24,18 +24,22 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class TestingClient {
 
+	public enum Flag {
+		COMPRESS, NONE, ZIP, ZIP_AND_COMPRESS
+	}
+
+	public enum Method {
+		DELETE, GET, POST, PUT
+	}
+
+	public enum ParmPos {
+		BODY, URL
+	}
+
 	public class ServiceStatus {
 
 		private Map<String, String> opItems = new HashMap<>();
 		private Map<String, String> prepItems = new HashMap<>();
-
-		public void storeOpItems(String dsInfo, String request) {
-			opItems.put(dsInfo, request);
-		}
-
-		public void storePrepItems(String id, String state) {
-			prepItems.put(id, state);
-		}
 
 		public Map<String, String> getOpItems() {
 			return opItems;
@@ -45,64 +49,270 @@ public class TestingClient {
 			return prepItems;
 		}
 
-	}
+		void storeOpItems(String dsInfo, String request) {
+			opItems.put(dsInfo, request);
+		}
 
-	private URL idsUrl;
+		void storePrepItems(String id, String state) {
+			prepItems.put(id, state);
+		}
+
+	};
+
+	public enum Status {
+		ARCHIVED, ONLINE, RESTORING
+	};
+
+	private static String getOutput(HttpURLConnection urlc) throws InternalException {
+		try {
+			InputStream stream = urlc.getInputStream();
+			ByteArrayOutputStream os = null;
+			try {
+				os = new ByteArrayOutputStream();
+				int len;
+				byte[] buffer = new byte[1024];
+				while ((len = stream.read(buffer)) != -1) {
+					os.write(buffer, 0, len);
+				}
+				return os.toString().trim();
+			} finally {
+				if (stream != null) {
+					stream.close();
+				}
+			}
+		} catch (IOException e) {
+			throw new InternalException("IOException " + e.getMessage());
+		}
+	}
 
 	private final int BUFSIZ = 2048;
 
-	public enum Method {
-		POST, PUT, DELETE, GET
-	};
-
-	public enum ParmPos {
-		BODY, URL
-	};
+	private URL idsUrl;
 
 	public TestingClient(URL idsUrl) {
 		this.idsUrl = idsUrl;
 	}
 
-	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
-			long datafileFormatId, String description, Integer sc) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException,
-			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
-		return put(sessionId, inputStream, name, datasetId, datafileFormatId, description, null,
-				null, null, sc);
-	}
+	public void archive(String sessionId, DataSelection data, Integer sc)
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
+			InternalException, NotFoundException {
 
-	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
-			long datafileFormatId, String description, String doi, Date datafileCreateTime,
-			Date datafileModTime, Integer sc) throws BadRequestException, NotFoundException,
-			InternalException, InsufficientPrivilegesException, NotImplementedException,
-			DataNotOnlineException, InsufficientStorageException {
 		Map<String, String> parameters = new HashMap<>();
-
 		parameters.put("sessionId", sessionId);
-		parameters.put("name", name);
-		parameters.put("datafileFormatId", Long.toString(datafileFormatId));
-		parameters.put("datasetId", Long.toString(datasetId));
-		if (description != null) {
-			parameters.put("description", description);
-		}
-		if (doi != null) {
-			parameters.put("doi", doi);
-		}
-		if (datafileCreateTime != null) {
-			parameters.put("datafileCreateTime", Long.toString(datafileCreateTime.getTime()));
-		}
-		if (datafileModTime != null) {
-			parameters.put("datafileModTime", Long.toString(datafileModTime.getTime()));
-		}
+		parameters.putAll(data.getParameters());
 
 		try {
-			HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL, null,
-					inputStream, sc);
-			return Long.parseLong(getOutput(urlc));
-		} catch (NumberFormatException e) {
-			throw new InternalException("Web service call did not return a valid Long value");
+			process("archive", parameters, Method.POST, ParmPos.BODY, null, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+	}
+
+	public void delete(String sessionId, DataSelection data, Integer sc)
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
+			InternalException, NotFoundException, DataNotOnlineException {
+
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("sessionId", sessionId);
+		parameters.putAll(data.getParameters());
+
+		try {
+			process("delete", parameters, Method.DELETE, ParmPos.URL, null, null, sc);
+		} catch (InsufficientStorageException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
 		}
 
+	}
+
+	public InputStream getData(String sessionId, DataSelection data, Flag flags, String outname,
+			long offset, Integer sc) throws NotImplementedException, BadRequestException,
+			InsufficientPrivilegesException, NotFoundException, InternalException,
+			DataNotOnlineException {
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("sessionId", sessionId);
+		parameters.putAll(data.getParameters());
+		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
+			parameters.put("zip", "true");
+		}
+		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
+			parameters.put("compress", "true");
+		}
+		if (outname != null) {
+			parameters.put("outname", outname);
+		}
+		HttpURLConnection urlc;
+		Map<String, String> headers = null;
+		if (offset != 0) {
+			headers = new HashMap<>();
+			headers.put("Range", "bytes=" + offset + "-");
+		}
+		try {
+			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
+		} catch (InsufficientStorageException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+
+		return getStream(urlc);
+
+	}
+
+	public InputStream getData(String preparedId, String outname, long offset, Integer sc)
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
+			NotFoundException, InternalException, DataNotOnlineException {
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("preparedId", preparedId);
+		if (outname != null) {
+			parameters.put("outname", outname);
+		}
+		HttpURLConnection urlc;
+		Map<String, String> headers = null;
+		if (offset != 0) {
+			headers = new HashMap<>();
+			headers.put("Range", "bytes=" + offset + "-");
+		}
+		try {
+			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
+		} catch (InsufficientStorageException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+
+		return getStream(urlc);
+	}
+
+	private String getError(HttpURLConnection urlc) {
+		InputStream stream = urlc.getErrorStream();
+		ByteArrayOutputStream os = null;
+		try {
+			os = new ByteArrayOutputStream();
+			int len;
+			byte[] buffer = new byte[1024];
+			while ((len = stream.read(buffer)) != -1) {
+				os.write(buffer, 0, len);
+			}
+			return os.toString();
+		} catch (IOException e) {
+			return "IOException handling errorStream";
+		}
+	}
+
+	public ServiceStatus getServiceStatus(String sessionId, Integer sc) throws InternalException,
+			InsufficientPrivilegesException {
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("sessionId", sessionId);
+		HttpURLConnection urlc;
+		try {
+			urlc = process("getServiceStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
+				| BadRequestException | NotFoundException | NotImplementedException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			JsonNode rootNode = mapper.readValue(urlc.getInputStream(), JsonNode.class);
+			ServiceStatus serviceStatus = new ServiceStatus();
+			for (JsonNode on : (ArrayNode) rootNode.get("opsQueue")) {
+				String dsInfo = ((ObjectNode) on).get("dsInfo").asText();
+				String request = ((ObjectNode) on).get("request").asText();
+				serviceStatus.storeOpItems(dsInfo, request);
+			}
+			for (JsonNode on : (ArrayNode) rootNode.get("prepQueue")) {
+				String id = ((ObjectNode) on).get("id").asText();
+				String state = ((ObjectNode) on).get("state").asText();
+				serviceStatus.storePrepItems(id, state);
+			}
+			return serviceStatus;
+		} catch (IOException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+
+	}
+
+	public Status getStatus(String sessonId, DataSelection data, Integer sc)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException,
+			InternalException, NotImplementedException {
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("sessionId", sessonId);
+		parameters.putAll(data.getParameters());
+
+		HttpURLConnection urlc;
+
+		try {
+			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+
+		return Status.valueOf(getOutput(urlc));
+	}
+
+	private InputStream getStream(HttpURLConnection urlc) throws InternalException {
+		try {
+			return urlc.getInputStream();
+		} catch (IOException e) {
+			throw new InternalException("IOException " + e.getMessage());
+		}
+	}
+
+	public boolean isPrepared(String preparedId, Integer sc) throws BadRequestException,
+			NotFoundException, InternalException, NotImplementedException {
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("preparedId", preparedId);
+
+		HttpURLConnection urlc;
+		try {
+			urlc = process("isPrepared", parameters, Method.GET, ParmPos.URL, null, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException
+				| InsufficientPrivilegesException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+		return Boolean.parseBoolean(getOutput(urlc));
+	}
+
+	public void ping(Integer sc) throws InternalException, NotFoundException {
+		Map<String, String> emptyMap = Collections.emptyMap();
+		HttpURLConnection urlc;
+		try {
+			urlc = process("ping", emptyMap, Method.GET, ParmPos.URL, null, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
+				| BadRequestException | InsufficientPrivilegesException | NotFoundException
+				| NotImplementedException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+		String result = getOutput(urlc);
+		if (!result.equals("IdsOK")) {
+			throw new NotFoundException("Server gave invalid response: " + result);
+		}
+	}
+
+	public String prepareData(String sessionId, DataSelection data, Flag flags, Integer sc)
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
+			NotFoundException, InternalException {
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("sessionId", sessionId);
+		parameters.putAll(data.getParameters());
+		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
+			parameters.put("zip", "true");
+		}
+		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
+			parameters.put("compress", "true");
+		}
+		HttpURLConnection urlc;
+		try {
+			urlc = process("prepareData", parameters, Method.POST, ParmPos.BODY, null, null, sc);
+		} catch (InsufficientStorageException | DataNotOnlineException e) {
+			throw new InternalException("Unexpected exception " + e.getClass() + " "
+					+ e.getMessage());
+		}
+		return getOutput(urlc);
 	}
 
 	public HttpURLConnection process(String relativeUrl, Map<String, String> parameters,
@@ -240,42 +450,46 @@ public class TestingClient {
 		return urlc;
 	}
 
-	private String getError(HttpURLConnection urlc) {
-		InputStream stream = urlc.getErrorStream();
-		ByteArrayOutputStream os = null;
-		try {
-			os = new ByteArrayOutputStream();
-			int len;
-			byte[] buffer = new byte[1024];
-			while ((len = stream.read(buffer)) != -1) {
-				os.write(buffer, 0, len);
-			}
-			return os.toString();
-		} catch (IOException e) {
-			return "IOException handling errorStream";
-		}
+	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
+			long datafileFormatId, String description, Integer sc) throws BadRequestException,
+			NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
+		return put(sessionId, inputStream, name, datasetId, datafileFormatId, description, null,
+				null, null, sc);
 	}
 
-	public String prepareData(String sessionId, DataSelection data, Flag flags, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			NotFoundException, InternalException {
+	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
+			long datafileFormatId, String description, String doi, Date datafileCreateTime,
+			Date datafileModTime, Integer sc) throws BadRequestException, NotFoundException,
+			InternalException, InsufficientPrivilegesException, NotImplementedException,
+			DataNotOnlineException, InsufficientStorageException {
 		Map<String, String> parameters = new HashMap<>();
+
 		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("zip", "true");
+		parameters.put("name", name);
+		parameters.put("datafileFormatId", Long.toString(datafileFormatId));
+		parameters.put("datasetId", Long.toString(datasetId));
+		if (description != null) {
+			parameters.put("description", description);
 		}
-		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("compress", "true");
+		if (doi != null) {
+			parameters.put("doi", doi);
 		}
-		HttpURLConnection urlc;
+		if (datafileCreateTime != null) {
+			parameters.put("datafileCreateTime", Long.toString(datafileCreateTime.getTime()));
+		}
+		if (datafileModTime != null) {
+			parameters.put("datafileModTime", Long.toString(datafileModTime.getTime()));
+		}
+
 		try {
-			urlc = process("prepareData", parameters, Method.POST, ParmPos.BODY, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
+			HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL, null,
+					inputStream, sc);
+			return Long.parseLong(getOutput(urlc));
+		} catch (NumberFormatException e) {
+			throw new InternalException("Web service call did not return a valid Long value");
 		}
-		return getOutput(urlc);
+
 	}
 
 	public void restore(String sessionId, DataSelection data, Integer sc)
@@ -289,220 +503,6 @@ public class TestingClient {
 		try {
 			process("restore", parameters, Method.POST, ParmPos.BODY, null, null, sc);
 		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-	}
-
-	public void archive(String sessionId, DataSelection data, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			InternalException, NotFoundException {
-
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-
-		try {
-			process("archive", parameters, Method.POST, ParmPos.BODY, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-	}
-
-	public enum Status {
-		ONLINE, RESTORING, ARCHIVED
-	}
-
-	public enum Flag {
-		NONE, ZIP, COMPRESS, ZIP_AND_COMPRESS
-	}
-
-	public boolean isPrepared(String preparedId, Integer sc) throws BadRequestException,
-			NotFoundException, InternalException, NotImplementedException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("preparedId", preparedId);
-
-		HttpURLConnection urlc;
-		try {
-			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException
-				| InsufficientPrivilegesException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-		return Boolean.parseBoolean(getOutput(urlc));
-	}
-
-	public Status getStatus(String sessonId, DataSelection data, Integer sc)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException,
-			InternalException, NotImplementedException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessonId);
-		parameters.putAll(data.getParameters());
-
-		HttpURLConnection urlc;
-
-		try {
-			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-		return Status.valueOf(getOutput(urlc));
-	}
-
-	public InputStream getData(String sessionId, DataSelection data, Flag flags, String outname,
-			long offset, Integer sc) throws NotImplementedException, BadRequestException,
-			InsufficientPrivilegesException, NotFoundException, InternalException,
-			DataNotOnlineException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("zip", "true");
-		}
-		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("compress", "true");
-		}
-		if (outname != null) {
-			parameters.put("outname", outname);
-		}
-		HttpURLConnection urlc;
-		Map<String, String> headers = null;
-		if (offset != 0) {
-			headers = new HashMap<>();
-			headers.put("Range", "bytes=" + offset + "-");
-		}
-		try {
-			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
-		} catch (InsufficientStorageException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-		return getStream(urlc);
-
-	}
-
-	public InputStream getData(String preparedId, String outname, long offset, Integer sc)
-
-	throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			NotFoundException, InternalException, DataNotOnlineException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("preparedId", preparedId);
-		if (outname != null) {
-			parameters.put("outname", outname);
-		}
-		HttpURLConnection urlc;
-		Map<String, String> headers = null;
-		if (offset != 0) {
-			headers = new HashMap<>();
-			headers.put("Range", "bytes=" + offset + "-");
-		}
-		try {
-			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
-		} catch (InsufficientStorageException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-		return getStream(urlc);
-	}
-
-	public void delete(String sessionId, DataSelection data, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			InternalException, NotFoundException, DataNotOnlineException {
-
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-
-		try {
-			process("delete", parameters, Method.DELETE, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-	}
-
-	private InputStream getStream(HttpURLConnection urlc) throws InternalException {
-		try {
-			return urlc.getInputStream();
-		} catch (IOException e) {
-			throw new InternalException("IOException " + e.getMessage());
-		}
-	}
-
-	public static String getOutput(HttpURLConnection urlc) throws InternalException {
-		try {
-			InputStream stream = urlc.getInputStream();
-			ByteArrayOutputStream os = null;
-			try {
-				os = new ByteArrayOutputStream();
-				int len;
-				byte[] buffer = new byte[1024];
-				while ((len = stream.read(buffer)) != -1) {
-					os.write(buffer, 0, len);
-				}
-				return os.toString().trim();
-			} finally {
-				if (stream != null) {
-					stream.close();
-				}
-			}
-		} catch (IOException e) {
-			throw new InternalException("IOException " + e.getMessage());
-		}
-	}
-
-	public void ping(Integer sc) throws InternalException, NotFoundException {
-		Map<String, String> emptyMap = Collections.emptyMap();
-		HttpURLConnection urlc;
-		try {
-			urlc = process("ping", emptyMap, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
-				| BadRequestException | InsufficientPrivilegesException | NotFoundException
-				| NotImplementedException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-		String result = getOutput(urlc);
-		if (!result.equals("IdsOK")) {
-			throw new NotFoundException("Server gave invalid response: " + result);
-		}
-	}
-
-	public ServiceStatus getServiceStatus(String sessionId, Integer sc) throws InternalException {
-		Map<String, String> emptyMap = Collections.emptyMap();
-		HttpURLConnection urlc;
-		try {
-			urlc = process("getServiceStatus", emptyMap, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
-				| BadRequestException | InsufficientPrivilegesException | NotFoundException
-				| NotImplementedException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			JsonNode rootNode = mapper.readValue(urlc.getInputStream(), JsonNode.class);
-			ServiceStatus serviceStatus = new ServiceStatus();
-			for (JsonNode on : (ArrayNode) rootNode.get("opsQueue")) {
-				String dsInfo = ((ObjectNode) on).get("dsInfo").asText();
-				String request = ((ObjectNode) on).get("request").asText();
-				serviceStatus.storeOpItems(dsInfo, request);
-			}
-			for (JsonNode on : (ArrayNode) rootNode.get("prepQueue")) {
-				String id = ((ObjectNode) on).get("id").asText();
-				String state = ((ObjectNode) on).get("state").asText();
-				serviceStatus.storePrepItems(id, state);
-			}
-			return serviceStatus;
-		} catch (IOException e) {
 			throw new InternalException("Unexpected exception " + e.getClass() + " "
 					+ e.getMessage());
 		}

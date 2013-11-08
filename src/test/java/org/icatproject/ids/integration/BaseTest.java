@@ -36,8 +36,8 @@ import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
+import org.icatproject.ids.TreeDeleteVisitor;
 import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.TreeDeleteVisitor;
 import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
 import org.junit.Before;
@@ -66,9 +66,9 @@ public class BaseTest {
 	@Before
 	public void before() throws Exception {
 		testingClient = new TestingClient(setup.getIdsUrl());
-		waitForIds();
 		parameters = new HashMap<>();
 		sessionId = setup.getGoodSessionId();
+		waitForIds();
 		populateStorage();
 	}
 

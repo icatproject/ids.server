@@ -1,6 +1,7 @@
 package org.icatproject.ids;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,7 +25,6 @@ import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
-import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
 import org.icatproject.Datafile;
@@ -34,6 +34,8 @@ import org.icatproject.EntityBaseBean;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
+import org.icatproject.Login.Credentials;
+import org.icatproject.Login.Credentials.Entry;
 import org.icatproject.ids.DataSelection.DatafileInfo;
 import org.icatproject.ids.DataSelection.Returns;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -84,6 +86,16 @@ public class IdsBean {
 
 	private Path datasetDir;
 
+	private Path markerDir;
+
+	private Set<String> rootUserNames;
+
+	private boolean readOnly;
+
+	private boolean tolerateWrongCompression;
+
+	private boolean compressDatasetCache;
+
 	public Response archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, InternalException, NotFoundException {
@@ -116,6 +128,11 @@ public class IdsBean {
 
 		logger.info("New webservice request: delete " + "investigationIds='" + investigationIds
 				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+
+		if (readOnly) {
+			throw new NotImplementedException(
+					"This operation has been configured to be unavailable");
+		}
 
 		IdsBean.validateUUID("sessionId", sessionId);
 
@@ -277,6 +294,10 @@ public class IdsBean {
 
 		if (twoLevel) {
 			try {
+				if ((tolerateWrongCompression || compress == compressDatasetCache ) &&
+				dataSelection.isSingleDataset()) {
+					
+				}
 				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
 				for (DsInfo dsInfo : dsInfos) {
 					if (!mainStorage.exists(dsInfo)) {
@@ -385,10 +406,9 @@ public class IdsBean {
 				throw new NotFoundException(preparer.getMessage());
 			} else {
 				prepared = false;
-				;
 			}
 		}
-		return Response.ok(prepared).build();
+		return Response.ok(Boolean.toString(prepared)).build();
 
 	}
 
@@ -444,22 +464,32 @@ public class IdsBean {
 	}
 
 	@PostConstruct
-	private void init() throws DatatypeConfigurationException, IOException {
-		logger.info("creating IdsBean");
-		propertyHandler = PropertyHandler.getInstance();
-		mainStorage = propertyHandler.getMainStorage();
-		twoLevel = propertyHandler.getArchiveStorage() != null;
-		datatypeFactory = DatatypeFactory.newInstance();
-		preparedDir = propertyHandler.getCacheDir().resolve("prepared");
-		Files.createDirectories(preparedDir);
-		datasetDir = propertyHandler.getCacheDir().resolve("dataset");
-		Files.createDirectories(datasetDir);
+	private void init() {
+		try {
+			logger.info("creating IdsBean");
+			propertyHandler = PropertyHandler.getInstance();
+			mainStorage = propertyHandler.getMainStorage();
+			twoLevel = propertyHandler.getArchiveStorage() != null;
+			datatypeFactory = DatatypeFactory.newInstance();
+			preparedDir = propertyHandler.getCacheDir().resolve("prepared");
+			Files.createDirectories(preparedDir);
+			datasetDir = propertyHandler.getCacheDir().resolve("dataset");
+			Files.createDirectories(datasetDir);
+			markerDir = propertyHandler.getCacheDir().resolve("marker");
+			Files.createDirectories(markerDir);
+			rootUserNames = propertyHandler.getRootUserNames();
+			readOnly = propertyHandler.getReadOnly();
+			tolerateWrongCompression = propertyHandler.isTolerateWrongCompression();
+			compressDatasetCache = propertyHandler.isCompressDatasetCache();
 
-		icat = propertyHandler.getIcatService();
+			icat = propertyHandler.getIcatService();
 
-		restartUnfinishedWork();
+			restartUnfinishedWork();
 
-		logger.info("created IdsBean");
+			logger.info("created IdsBean");
+		} catch (Exception e) {
+			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
+		}
 	}
 
 	public Response prepareData(String sessionId, String investigationIds, String datasetIds,
@@ -490,13 +520,19 @@ public class IdsBean {
 	public Response put(InputStream body, String sessionId, String name, long datafileFormatId,
 			long datasetId, String description, String doi, Long datafileCreateTime,
 			Long datafileModTime) throws NotFoundException, DataNotOnlineException,
-			BadRequestException, InsufficientPrivilegesException, InternalException {
+			BadRequestException, InsufficientPrivilegesException, InternalException,
+			NotImplementedException {
 
 		// Log and validate
 		logger.info("New webservice request: put " + "name='" + name + "' " + "datafileFormatId='"
 				+ datafileFormatId + "' " + "datasetId='" + datasetId + "' " + "description='"
 				+ description + "' " + "doi='" + doi + "' " + "datafileCreateTime='"
 				+ datafileCreateTime + "' " + "datafileModTime='" + datafileModTime + "'");
+
+		if (readOnly) {
+			throw new NotImplementedException(
+					"This operation has been configured to be unavailable");
+		}
 
 		IdsBean.validateUUID("sessionId", sessionId);
 		if (name == null) {
@@ -520,7 +556,7 @@ public class IdsBean {
 			throw new InternalException(type + " " + e.getMessage());
 		}
 
-		DsInfo dsInfo = new DsInfoImpl(ds, icat, sessionId);
+		DsInfo dsInfo = new DsInfoImpl(ds);
 		try {
 
 			if (twoLevel) {
@@ -609,13 +645,43 @@ public class IdsBean {
 		return df.getId();
 	}
 
-	private void restartUnfinishedWork() {
-		// List<IdsRequestEntity> requests = requestHelper.getUnfinishedRequests();
-		// for (IdsRequestEntity request : requests) {
-		// for (IdsDataEntity de : request.getDataEntities()) {
-		// queue(de, request.getDeferredOp());
-		// }
-		// }
+	private void restartUnfinishedWork() throws InternalException {
+		List<String> creds = propertyHandler.getReader();
+
+		Credentials credentials = new Credentials();
+		List<Entry> entries = credentials.getEntry();
+		for (int i = 1; i < creds.size(); i += 2) {
+			Entry entry = new Entry();
+			entry.setKey(creds.get(i));
+			entry.setValue(creds.get(i + 1));
+			entries.add(entry);
+		}
+
+		try {
+			String sessionId = icat.login(creds.get(0), credentials);
+			for (File file : markerDir.toFile().listFiles()) {
+				long dsid = Long.parseLong(file.toPath().getFileName().toString());
+				Dataset ds = null;
+				try {
+					ds = (Dataset) icat.get(sessionId,
+							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
+					DsInfo dsInfo = new DsInfoImpl(ds);
+					fsm.queue(dsInfo, DeferredOp.WRITE);
+					logger.info("Queued dataset with id " + dsid + " " + dsInfo
+							+ " to be written as it was not written out previously by IDS");
+				} catch (IcatException_Exception e) {
+					if (e.getFaultInfo().getType() == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+						logger.warn("Dataset with id " + dsid
+								+ " was not written out by IDS and now no longer known to ICAT");
+						Files.delete(file.toPath());
+					} else {
+						throw e;
+					}
+				}
+			}
+		} catch (Exception e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
 	}
 
 	public Response restore(String sessionId, String investigationIds, String datasetIds,
@@ -647,11 +713,25 @@ public class IdsBean {
 		return Response.ok().build();
 	}
 
-	public Response getServiceStatus(String sessionId) throws InternalException {
+	public Response getServiceStatus(String sessionId) throws InternalException,
+			InsufficientPrivilegesException {
 
 		// Log and validate
 		logger.info("New webservice request: getServiceStatus");
 
+		try {
+			String uname = icat.getUserName(sessionId);
+			if (!rootUserNames.contains(uname)) {
+				throw new InsufficientPrivilegesException(uname
+						+ " is not included in the ids rootUserNames set.");
+			}
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			if (type == IcatExceptionType.SESSION) {
+				throw new InsufficientPrivilegesException(e.getClass() + " " + e.getMessage());
+			}
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
 		return Response.ok(fsm.getServiceStatus()).build();
 	}
 

@@ -39,9 +39,7 @@ public class GetStatusExplicitTest extends BaseTest {
 
 	@Test(expected = NotFoundException.class)
 	public void notFoundPreparedId() throws Exception {
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("preparedId", "88888888-4444-4444-4444-cccccccccccc");
-		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 404);
+		testingClient.isPrepared("88888888-4444-4444-4444-cccccccccccc", 404);
 	}
 
 	@Test(expected = NotFoundException.class)

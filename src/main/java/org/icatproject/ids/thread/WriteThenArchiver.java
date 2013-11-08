@@ -30,8 +30,8 @@ public class WriteThenArchiver implements Runnable {
 	private MainStorageInterface mainStorageInterface;
 	private ArchiveStorageInterface archiveStorageInterface;
 	private FiniteStateMachine fsm;
-
 	private Path datasetCache;
+	private Path markerDir;
 
 	public WriteThenArchiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
 		this.dsInfo = dsInfo;
@@ -39,6 +39,7 @@ public class WriteThenArchiver implements Runnable {
 		mainStorageInterface = propertyHandler.getMainStorage();
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
+		markerDir = propertyHandler.getCacheDir().resolve("marker");
 	}
 
 	@Override
@@ -73,6 +74,9 @@ public class WriteThenArchiver implements Runnable {
 				}
 				archiveStorageInterface.put(dsInfo, Files.newInputStream(datasetCachePath));
 			}
+			Path marker = markerDir.resolve(Long.toString(dsInfo.getDsId()));
+			Files.deleteIfExists(marker);
+			logger.debug("Removed marker " + marker);
 			Files.deleteIfExists(datasetCachePath);
 			mainStorageInterface.delete(dsInfo);
 			logger.debug("Write then archive of " + dsInfo + " completed");

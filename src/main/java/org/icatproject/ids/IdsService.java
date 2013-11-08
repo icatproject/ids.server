@@ -153,7 +153,7 @@ public class IdsService {
 	@Path("getServiceStatus")
 	@Produces("text/json")
 	public Response getServiceStatus(@QueryParam("sessionId") String sessionId)
-			throws InternalException {
+			throws InternalException, InsufficientPrivilegesException {
 
 		try {
 			return idsBean.getServiceStatus(sessionId);

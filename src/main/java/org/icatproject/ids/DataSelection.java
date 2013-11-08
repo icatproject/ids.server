@@ -147,7 +147,7 @@ public class DataSelection {
 				if (dss.size() == 1) {
 					Dataset ds = (Dataset) dss.get(0);
 					long dsid = ds.getId();
-					dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
+					dsInfos.put(dsid, new DsInfoImpl(ds));
 					if (dfWanted) {
 						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
 						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(),
@@ -171,7 +171,7 @@ public class DataSelection {
 					ds = (Dataset) icat.get(sessionId,
 							"Dataset ds INCLUDE ds.investigation.facility", dsid);
 				}
-				dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
+				dsInfos.put(dsid, new DsInfoImpl(ds));
 			}
 
 			for (Long invid : invids) {
@@ -196,7 +196,7 @@ public class DataSelection {
 										.getLocation(), dsid));
 							}
 						}
-						dsInfos.put(dsid, new DsInfoImpl(ds, icat, sessionId));
+						dsInfos.put(dsid, new DsInfoImpl(ds));
 					}
 				} else {
 					icat.get(sessionId, "Investigation", invid); // May reveal a permissions problem
@@ -228,6 +228,10 @@ public class DataSelection {
 
 	public boolean mustZip() {
 		return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty();
+	}
+
+	public boolean isSingleDataset() {
+		return dfids.isEmpty() && dsids.size() == 1 && invids.isEmpty();
 	}
 
 }

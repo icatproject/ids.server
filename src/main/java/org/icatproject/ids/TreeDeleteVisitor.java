@@ -1,4 +1,4 @@
-package org.icatproject.ids.integration.util;
+package org.icatproject.ids;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;

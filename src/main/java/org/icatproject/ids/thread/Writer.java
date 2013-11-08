@@ -28,6 +28,8 @@ public class Writer implements Runnable {
 	private MainStorageInterface mainStorageInterface;
 	private ArchiveStorageInterface archiveStorageInterface;
 	private Path datasetCache;
+	private Path markerDir;
+	private boolean compress;
 
 	public Writer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
 		this.dsInfo = dsInfo;
@@ -35,6 +37,8 @@ public class Writer implements Runnable {
 		mainStorageInterface = propertyHandler.getMainStorage();
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
+		markerDir = propertyHandler.getCacheDir().resolve("marker");
+		compress = propertyHandler.isCompressDatasetCache();
 	}
 
 	@Override
@@ -56,7 +60,9 @@ public class Writer implements Runnable {
 					List<String> locations = mainStorageInterface.getLocations(dsInfo);
 					ZipOutputStream zos = new ZipOutputStream(
 							Files.newOutputStream(datasetCachePath));
-					zos.setLevel(0);
+					if (!compress) {
+						zos.setLevel(0);
+					}
 					for (String location : locations) {
 						zos.putNextEntry(new ZipEntry("ids/" + location));
 						InputStream is = mainStorageInterface.get(location);
@@ -71,13 +77,14 @@ public class Writer implements Runnable {
 				}
 				archiveStorageInterface.put(dsInfo, Files.newInputStream(datasetCachePath));
 			}
-
+			Path marker = markerDir.resolve(Long.toString(dsInfo.getDsId()));
+			Files.deleteIfExists(marker);
+			logger.debug("Removed marker " + marker);
 			logger.debug("Write of " + dsInfo + " completed");
 		} catch (Exception e) {
 			logger.error("Write of " + dsInfo + " failed due to " + e.getMessage());
 		} finally {
 			fsm.removeFromChanging(dsInfo);
-			// TODO add non-volatile write guarantee
 		}
 	}
 

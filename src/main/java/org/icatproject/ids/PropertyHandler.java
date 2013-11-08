@@ -6,6 +6,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.xml.namespace.QName;
 
@@ -35,6 +39,50 @@ public class PropertyHandler {
 	private Path cacheDir;
 	private ICAT icatService;
 	private int preparedCount;
+	private Set<String> rootUserNames;
+	private List<String> reader;
+	private boolean readOnly;
+	private long preparedCacheSizeBytes;
+	public static Logger getLogger() {
+		return logger;
+	}
+
+	public String getIcatUrl() {
+		return icatUrl;
+	}
+
+	public long getPreparedCacheSizeBytes() {
+		return preparedCacheSizeBytes;
+	}
+
+	public long getSizeCheckIntervalMillis() {
+		return sizeCheckIntervalMillis;
+	}
+
+	public boolean isCompressDatasetCache() {
+		return compressDatasetCache;
+	}
+
+	public boolean isTolerateWrongCompression() {
+		return tolerateWrongCompression;
+	}
+
+	public long getDatasetCacheSizeBytes() {
+		return datasetCacheSizeBytes;
+	}
+
+	private long sizeCheckIntervalMillis;
+	private boolean compressDatasetCache;
+	private boolean tolerateWrongCompression;
+	private long datasetCacheSizeBytes;
+
+	public Set<String> getRootUserNames() {
+		return rootUserNames;
+	}
+
+	public List<String> getReader() {
+		return reader;
+	}
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -75,6 +123,15 @@ public class PropertyHandler {
 
 			preparedCount = props.getPositiveInt("preparedCount");
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
+			rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim()
+					.split("\\s+")));
+			reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
+			if (reader.size() % 2 != 1) {
+				throw new IllegalStateException("reader must have an odd number of words");
+			}
+			readOnly = props.containsKey("readOnly");
+			preparedCacheSizeBytes = props.getPositiveLong("preparedCacheSize1024bytes") * 1024;
+			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
 
 			try {
 				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
@@ -93,6 +150,10 @@ public class PropertyHandler {
 				logger.info("Property plugin.archive.class not set, single storage enabled.");
 			} else {
 				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
+				compressDatasetCache = props.contains("compressDatasetCache");
+				tolerateWrongCompression = props.contains("tolerateWrongCompression");
+				datasetCacheSizeBytes = props.getPositiveLong("datasetCacheSize1024bytes") * 1024;
+
 				try {
 					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
 							.forName(props.getString("plugin.archive.class"));
@@ -156,5 +217,9 @@ public class PropertyHandler {
 
 	public int getPreparedCount() {
 		return preparedCount;
+	}
+
+	public boolean getReadOnly() {
+		return readOnly;
 	}
 }

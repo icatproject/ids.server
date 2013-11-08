@@ -1,5 +1,9 @@
 package org.icatproject.ids;
 
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,13 +43,21 @@ public class FiniteStateMachine {
 
 	private int preparedCount;
 
+	private Path markerDir;
+
 	@PostConstruct
 	private void init() {
-		propertyHandler = PropertyHandler.getInstance();
-		preparedCount = propertyHandler.getPreparedCount();
-		archiveWriteDelayMillis = propertyHandler.getWriteDelaySeconds() * 1000L;
-		processQueueIntervalMillis = propertyHandler.getProcessQueueIntervalSeconds() * 1000L;
-		timer.schedule(new ProcessQueue(), processQueueIntervalMillis);
+		try {
+			propertyHandler = PropertyHandler.getInstance();
+			preparedCount = propertyHandler.getPreparedCount();
+			archiveWriteDelayMillis = propertyHandler.getWriteDelaySeconds() * 1000L;
+			processQueueIntervalMillis = propertyHandler.getProcessQueueIntervalSeconds() * 1000L;
+			timer.schedule(new ProcessQueue(), processQueueIntervalMillis);
+			markerDir = propertyHandler.getCacheDir().resolve("marker");
+			Files.createDirectories(markerDir);
+		} catch (IOException e) {
+			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
+		}
 	}
 
 	private long archiveWriteDelayMillis;
@@ -57,7 +69,7 @@ public class FiniteStateMachine {
 
 	private final Map<DsInfo, RequestedState> deferredOpsQueue = new HashMap<>();
 
-	public void queue(DsInfo dsInfo, DeferredOp deferredOp) {
+	public void queue(DsInfo dsInfo, DeferredOp deferredOp) throws InternalException {
 		logger.info("Requesting " + deferredOp + " of " + dsInfo);
 
 		synchronized (deferredOpsQueue) {
@@ -65,41 +77,54 @@ public class FiniteStateMachine {
 			final RequestedState state = this.deferredOpsQueue.get(dsInfo);
 			if (state == null) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.WRITE_REQUESTED);
-					this.setDelay(dsInfo);
+					requestWrite(dsInfo);
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
+					deferredOpsQueue.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
 				} else if (deferredOp == DeferredOp.RESTORE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.RESTORE_REQUESTED);
+					deferredOpsQueue.put(dsInfo, RequestedState.RESTORE_REQUESTED);
 				}
 			} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.WRITE_REQUESTED);
-					this.setDelay(dsInfo);
+					requestWrite(dsInfo);
+					deferredOpsQueue.put(dsInfo, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
 				} else if (deferredOp == DeferredOp.RESTORE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.RESTORE_REQUESTED);
+					deferredOpsQueue.put(dsInfo, RequestedState.RESTORE_REQUESTED);
 				}
 			} else if (state == RequestedState.RESTORE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.WRITE_REQUESTED);
-					this.setDelay(dsInfo);
+					requestWrite(dsInfo);
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
+					deferredOpsQueue.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
 				}
 			} else if (state == RequestedState.WRITE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.setDelay(dsInfo);
+					setDelay(dsInfo);
 				} else if (deferredOp == DeferredOp.ARCHIVE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+					deferredOpsQueue.put(dsInfo, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
 				}
 			} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 				if (deferredOp == DeferredOp.WRITE) {
-					this.setDelay(dsInfo);
+					setDelay(dsInfo);
 				} else if (deferredOp == DeferredOp.RESTORE) {
-					this.deferredOpsQueue.put(dsInfo, RequestedState.WRITE_REQUESTED);
+					deferredOpsQueue.put(dsInfo, RequestedState.WRITE_REQUESTED);
 				}
 			}
 		}
+
+	}
+
+	private void requestWrite(DsInfo dsInfo) throws InternalException {
+		try {
+			Path marker = markerDir.resolve(Long.toString(dsInfo.getDsId()));
+			Files.createFile(marker);
+			logger.debug("Created marker " + marker);
+		} catch (FileAlreadyExistsException e) {
+			// Pass will ignore this
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+		deferredOpsQueue.put(dsInfo, RequestedState.WRITE_REQUESTED);
+		setDelay(dsInfo);
 	}
 
 	private void setDelay(DsInfo dsInfo) {
@@ -291,7 +316,7 @@ public class FiniteStateMachine {
 			if (entry.getValue().using(dsInfo)) {
 				return entry.getKey();
 			}
-			
+
 		}
 		return null;
 	}
