@@ -5,11 +5,11 @@ import os
 # ids.server
 
 actions, options, arg = getActions()
-props = actions.getGlassfish("ids-setup.properties", ["connectionProperties", "glassfish", "driver", "port", "libraries"])
+props = actions.getGlassfish("ids-setup.properties", ["glassfish", "libraries"])
 
 prop_name = "ids.properties"
-prop_list = ["icat.url", "writeDelaySeconds", "processQueueIntervalSeconds", "requestExpireTimeDays",
-             "tmpDir", "plugin.main.class", "plugin.main.properties"]
+prop_list = ["icat.url", "plugin.main.class", "plugin.main.properties", "cache.dir", "preparedCacheSize1024bytes",
+"preparedCount", "processQueueIntervalSeconds", "rootUserNames", "reader", "sizeCheckIntervalSeconds"]
 
 if arg == "CONFIGURE":
     actions.configure(prop_name, prop_list)
@@ -24,28 +24,23 @@ elif arg == "INSTALL":
     sprops = idsProperties.get("plugin.main.properties")
     if not actions.configFileExists(sprops):
         abort ("ids.properties defined plugin.main.properties to be " + sprops + " but the file has not been deployed. Have you installed the necessary ids plugins?")
+    if not actions.configFileExists(idsProperties.get("cache.dir")):
+        abort("Please create directory " + idsProperties.get("cache.dir") + " relative to the config directory as specified in ids.properties")
     
     if idsProperties.get("plugin.archive.class"):
         sprops = idsProperties.get("plugin.archive.properties")
         if not sprops: abort ("plugin.archive.class defined but not plugin.archive.properties")
         if not actions.configFileExists(sprops):
             abort ("ids.properties defined plugin.archive.properties to be " + sprops + " but the file has not been deployed. Have you installed the necessary ids plugins?")   
-    
+        if not idsProperties.get("writeDelaySeconds"): abort("writeDelaySeconds is not set")
+        if not idsProperties.get("datasetCacheSize1024bytes"): abort("datasetCacheSize1024bytes is not set")
+
     actions.installFile("ids.properties")
    
     try:          
         app = actions.getAppName("ids.server")
         if app: actions.asadmin("undeploy " + app)
-        
-        actions.asadmin("delete-jdbc-resource jdbc/ids", tolerant=True)
-        actions.asadmin("delete-jdbc-connection-pool ids", tolerant=True)
-        
-        actions.asadmin('create-jdbc-connection-pool --datasourceclassname ' + props["driver"] + 
-                ' --restype javax.sql.DataSource --failconnection=true --steadypoolsize 2' + 
-                ' --maxpoolsize 8 --ping --property ' + props["connectionProperties"] + ' ids', printOutput=True)
-        
-        actions.asadmin("create-jdbc-resource --connectionpoolid ids jdbc/ids")
-                 
+                        
         actions.deploy("ids.server-*.war", libraries=props["libraries"].split())
                       
     except Exception, e:
@@ -60,8 +55,6 @@ else:  # UNINSTALL
     try:
         app = actions.getAppName("ids.server")
         if app: actions.asadmin("undeploy " + app)
-        actions.asadmin("delete-jdbc-resource jdbc/ids", tolerant=True)
-        actions.asadmin("delete-jdbc-connection-pool ids", tolerant=True)
                   
     except Exception, e:
         abort(str(e))       

@@ -117,7 +117,8 @@
                     <dd>How frequently to check the cache sizes and clean up if necessary.</dd>
 
                     <dt>readOnly</dt>
-                    <dd>If present disables write operations (put and delete)</dd>
+                    <dd>If present disables write operations (put and delete). Note that the value must be followed by an "=" due to a bug in ICAT
+                        4.3.0.</dd>
 
 
 
@@ -147,12 +148,13 @@
                     <dt>compressDatasetCache</dt>
                     <dd>If present the dataset cache and the archive storage of datasets will all be compressed. This takes longer to write and is
                         only
-                        useful if you know that the data will compress well.
+                        useful if you know that the data will compress well. Note that the value must be followed by an "=" due to a bug in ICAT
+                        4.3.0.
                     </dd>
 
                     <dt>tolerateWrongCompression</dt>
                     <dd>If present then a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not
-                        match the requested compression.
+                        match the requested compression. Note that the value must be followed by an "=" due to a bug in ICAT 4.3.0.
                     </dd>
 
                 </dl>
