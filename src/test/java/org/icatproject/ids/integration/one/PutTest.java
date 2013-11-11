@@ -17,6 +17,7 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,6 +31,13 @@ public class PutTest extends BaseTest {
 		icatsetup();
 	}
 
+	@Test(expected = BadRequestException.class)
+	public void putDirectoryTest() throws Exception {
+		testingClient.put(sessionId, null, "junk",
+				datasetIds.get(0), supportedDatafileFormat.getId(), "", 201);
+	}
+
+	
 	@Test
 	public void putOneFileTest() throws Exception {
 

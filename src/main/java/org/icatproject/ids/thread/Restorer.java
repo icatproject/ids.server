@@ -57,7 +57,7 @@ public class Restorer implements Runnable {
 			ZipEntry ze = zis.getNextEntry();
 			while (ze != null) {
 				String dfName = new File(ze.getName()).toPath().getFileName().toString();
-				mainStorageInterface.putUnchecked(dsInfo, dfName, zis);
+				mainStorageInterface.put(dsInfo, dfName, zis);
 				ze = zis.getNextEntry();
 			}
 			zis.close();

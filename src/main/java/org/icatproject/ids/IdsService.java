@@ -124,8 +124,8 @@ public class IdsService {
 	public Response getStatus(@QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException, NotFoundException,
-			InsufficientPrivilegesException, InternalException {
+			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException,
+			NotFoundException, InsufficientPrivilegesException, InternalException {
 
 		try {
 			return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafilesIds);
@@ -207,6 +207,7 @@ public class IdsService {
 	@PUT
 	@Path("put")
 	@Consumes("application/octet-stream")
+	@Produces("text/json")
 	public Response put(InputStream body, @QueryParam("sessionId") String sessionId,
 			@QueryParam("name") String name, @QueryParam("datafileFormatId") long datafileFormatId,
 			@QueryParam("datasetId") long datasetId, @QueryParam("description") String description,

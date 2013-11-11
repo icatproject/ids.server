@@ -9,8 +9,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,13 +39,33 @@ import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
-import org.icatproject.ids.TreeDeleteVisitor;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
 import org.junit.Before;
 
 public class BaseTest {
+
+	public class DeleteVisitor extends SimpleFileVisitor<Path> {
+
+		@Override
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+			Files.delete(file);
+			return FileVisitResult.CONTINUE;
+		}
+
+		@Override
+		public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
+			if (e == null) {
+				Files.delete(dir);
+				return FileVisitResult.CONTINUE;
+			} else {
+				// directory iteration failed
+				throw e;
+			}
+		}
+
+	}
 
 	protected static ICAT icat;
 	protected static Setup setup = null;
@@ -118,7 +141,7 @@ public class BaseTest {
 
 	private void cleanDir(Path dir) throws IOException {
 		if (dir != null) {
-			TreeDeleteVisitor treeDeleteVisitor = new TreeDeleteVisitor();
+			DeleteVisitor treeDeleteVisitor = new DeleteVisitor();
 			if (Files.exists(dir)) {
 				Files.walkFileTree(dir, treeDeleteVisitor);
 			}

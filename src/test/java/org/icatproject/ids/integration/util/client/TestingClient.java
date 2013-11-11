@@ -16,6 +16,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -482,10 +484,24 @@ public class TestingClient {
 			parameters.put("datafileModTime", Long.toString(datafileModTime.getTime()));
 		}
 
+		if (inputStream == null) {
+			throw new BadRequestException("Input stream is null");
+		}
+		CRC32 crc = new CRC32();
+		inputStream = new CheckedInputStream(inputStream, crc);
+		HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL, null,
+				inputStream, sc);
+		ObjectMapper mapper = new ObjectMapper();
+
 		try {
-			HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL, null,
-					inputStream, sc);
-			return Long.parseLong(getOutput(urlc));
+			ObjectNode rootNode = (ObjectNode) mapper.readValue(urlc.getInputStream(),
+					JsonNode.class);
+			if (!rootNode.get("checksum").asText().equals(Long.toString(crc.getValue()))) {
+				throw new InternalException("Error uploading - the checksum was not as expected");
+			}
+			return Long.parseLong(rootNode.get("id").asText());
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		} catch (NumberFormatException e) {
 			throw new InternalException("Web service call did not return a valid Long value");
 		}

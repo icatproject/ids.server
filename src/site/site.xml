@@ -3,8 +3,8 @@
     xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
   <body>
     <menu name="Contents">
-    
-    <item name="Server Installation" href="installation.html"/>
+      <item name="IDS Server Installation" href="installation.html"/>
+      <item name="Release notes" href="release-notes.html"/>
     </menu>
    
     <menu ref="reports"/>

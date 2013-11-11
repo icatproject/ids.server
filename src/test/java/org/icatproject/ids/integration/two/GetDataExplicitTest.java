@@ -94,6 +94,26 @@ public class GetDataExplicitTest extends BaseTest {
 		checkStream(stream, datafileIds.get(3));
 
 	}
+	
+	@Test
+	public void gettingDatasetUsesCacheTest() throws Exception {
+
+		try {
+			testingClient.getData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
+					Flag.NONE, null, 0, null);
+			fail("Should have thrown an exception");
+		} catch (DataNotOnlineException e) {
+			// All is well
+		}
+
+		waitForIds();
+		
+		InputStream stream = testingClient.getData(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, null, 0, 200);
+		checkZipStream(stream, datafileIds.subList(0,2), 57);
+
+	}
+
 
 	@Test
 	public void gettingDatafileAndDatasetShouldRestoreBothDatasetsTest() throws Exception {

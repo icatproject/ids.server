@@ -9,15 +9,16 @@
 
         <section name="Installation">
 
-            <subsection name="Compatibility">This will work with an ICAT version of 4.2.5 or greater.</subsection>
+            <subsection name="Compatibility">This will work with an ICAT version of 4.3.0 or greater.</subsection>
 
             <subsection name="Prerequisites">
 
                 <ul>
                     <li>
                         The ids distribution:
-                        <a href="${repoUrl}/org/icatproject/ids/${project.version}/ids-${project.version}-distro.zip">ids-${project.version}-distro.zip</a>
+                        <a href="${repoUrl}/org/icatproject/ids.server/${project.version}/ids.server-${project.version}-distro.zip">ids.server-${project.version}-distro.zip</a>
                     </li>
+
                     <li>
                         A suitable deployed container (here assumed to be glassfish though tomcat should be sufficient) to support a web
                         application.
@@ -25,10 +26,14 @@
                         <a href="https://code.google.com/p/icatproject/wiki/Glassfish">Glassfish installation instructions</a>
                         are available.
                     </li>
+
                     <li>
-                        A database as described in
-                        <a href="https://code.google.com/p/icatproject/wiki/Databases">Database installation instructions</a>
-                        installed on the server
+                        A plugin or plugins for the storage mechanism you wish to use. Please see
+                        <a href="/mvn/site/ids/plugin">plugin</a>
+                        to see the interface you must
+                        implement. You might also like to look at the
+                        <a href="/mvn/site/ids/storage_file">file storage plugin</a>
+                        as an example.
                     </li>
 
                     <li>
@@ -48,13 +53,10 @@
                 </ol>
             </subsection>
 
-            <subsection name="The authn_db.setup.properties file">
+            <subsection name="The ids.setup.properties file">
 
                 <dl>
-                    <dt>driver</dt>
-                    <dd>is the name of the jdbc driver and must match the jar file for your database</dd>
-                    <dt>connectionProperties</dt>
-                    <dd>identifies the ids database and how to connect to it.</dd>
+
                     <dt>glassfish</dt>
                     <dd>is the top level of the glassfish installation. It must contain "glassfish/domains", and will be referred to here as
                         GLASSFISH_HOME as if an environment variable had been set.
@@ -63,63 +65,109 @@
                     <dd>is the administration port of the chosen glassfish domain which is typically 4848.</dd>
                 </dl>
 
-                <p>For a local oracle-xe installation the following values of driver, connectionProperties should be good except for
-                    the user and
-                    password values:
-                </p>
-                <code>
-                    driver=oracle.jdbc.pool.OracleDataSource
-                    <br />
-                    connectionProperties=url="'"jdbc:oracle:thin:@//localhost:1521/XE"'":ImplicitCachingEnabled=true:MaxStatements=200:user=authn_db:password=secret
-                    <br />
-                </code>
-                <p>
-                    Note the
-                    <tt>"'"</tt>
-                    which is needed because the url contains colons which also separate individual properties.
-                </p>
-                <p>For MySQL:</p>
-                <code>
-                    driver=com.mysql.jdbc.jdbc2.optional.MysqlDataSource
-                    <br />
-                    connectionProperties=user=icat:password=secret:databaseName=authn_db
-                    <br />
-                </code>
+
             </subsection>
 
 
             <subsection name="The ids.properties file">
 
+                <h4>General Properties</h4>
 
-                <!-- <dl> -->
-                <!-- <dt>ip</dt> -->
-                <!-- <dd>If access to the DB authentication should only be allowed from certain -->
-                <!-- IP addresses then provide a space separated list of -->
-                <!-- allowed values. These -->
-                <!-- take the form of an IPV4 or IPV6 address followed by the number of bits -->
-                <!-- (starting from the most -->
-                <!-- significant) to consider. -->
-                <!-- </dd> -->
+                <dl>
+                    <dt> icat.url</dt>
+                    <dd>
+                        The url of the machine hosting the ids service. It should normally just
+                        have the scheme, the hostname and the port. For
+                        example:
+                        <code>https://example.com:443</code>
+                    </dd>
 
-                <!-- <dt>mechanism</dt> -->
-                <!-- <dd>if specified is a label to appear before the user name as it is made available to ICAT for authorization. For example if this -->
-                <!-- is set to 'db' then the user 'root' will be provided to ICAT as 'db/root', but of no mechanism is specified it will be -->
-                <!-- provided simply as 'root'. -->
-                <!-- </dd> -->
-                <!-- </dl> -->
+                    <dt>plugin.main.class</dt>
+                    <dd>The class name of the main storage plugin. The class must be deployed in the lib/applibs directory of your domain and must be
+                        packaged with all it dependencies.
+                    </dd>
+
+                    <dt>plugin.main.properties</dt>
+                    <dd>Property file for the main storage plugin.</dd>
+
+                    <dt>cache.dir</dt>
+                    <dd>The location (absolute or relative to the config directory of the domain) of a directory to hold mostly zip files.</dd>
+
+                    <dt>preparedCacheSize1024bytes</dt>
+                    <dd>The maximum size to allow for prepared zip files in the cache.</dd>
+
+                    <dt>preparedCount</dt>
+                    <dd>The maximum number of failed prepareData attempts to hold in memory.</dd>
+
+                    <dt>processQueueIntervalSeconds</dt>
+                    <dd>The frequency of checking the process queue. This is used both for cleaning old information from memory and for triggering
+                        movements between main and archive storage (if selected).
+                    </dd>
+
+                    <dt>rootUserNames</dt>
+                    <dd>A space separated list of users allowed to make the getServiceStatus call.</dd>
+
+                    <dt>reader</dt>
+                    <dd>
+                        space separated icat plugin name and credentials for a user permitted to read all data. For example:
+                        <code>db username root password password.</code>
+                    </dd>
+
+                    <dt>sizeCheckIntervalSeconds</dt>
+                    <dd>How frequently to check the cache sizes and clean up if necessary.</dd>
+
+                    <dt>readOnly</dt>
+                    <dd>If present disables write operations (put and delete)</dd>
+
+
+
+                </dl>
+
+                <h4>Properties for archive storage</h4>
+
+                <dl>
+
+                    <dt>plugin.archive.class</dt>
+                    <dd> The class name of the archive storage plugin. The class must be deployed in the lib/applibs directory of your domain and must
+                        be
+                        packaged with all it dependencies.
+                    </dd>
+
+                    <dt>plugin.archive.properties</dt>
+                    <dd>Property file for the archive storage plugin.</dd>
+
+                    <dt>datasetCacheSize1024bytes</dt>
+                    <dd>The maximum size to allow for dataset zip files in the cache.</dd>
+
+                    <dt>writeDelaySeconds</dt>
+                    <dd>The amount of time to wait before writing to archive storage. This exists to allow enough time for all the datafiles to be
+                        added to a dataset before it is zipped and written.
+                    </dd>
+
+                    <dt>compressDatasetCache</dt>
+                    <dd>If present the dataset cache and the archive storage of datasets will all be compressed. This takes longer to write and is
+                        only
+                        useful if you know that the data will compress well.
+                    </dd>
+
+                    <dt>tolerateWrongCompression</dt>
+                    <dd>If present then a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not
+                        match the requested compression.
+                    </dd>
+
+                </dl>
 
             </subsection>
 
+            <subsection name="Check that the ids server works">
+                <p>
+                    Enter a url of the form
+                    <code>https://example.com:443/ids/ping</code>
+                    into a web browse and it should respond:
+                    <code>IdsOK</code>
+                    . Note the url is that of the machine hosting the IDS followed by "/ids/ping"
+                </p>
 
-
-
-            <subsection name="Check that ids works">
-                <!-- <p>Use testicat (which is installed with ICAT) with one of the entries in the database PASSWD table. It should report that it logs 
-                    in -->
-                <!-- but may or may not have the permission to run the rest of the test. If it does not report that it has logged in then please check -->
-                <!-- the server.log and the -->
-                <!-- authn_db.log files which can both be found in the logs directory below your domain. -->
-                <!-- </p> -->
             </subsection>
 
         </section>

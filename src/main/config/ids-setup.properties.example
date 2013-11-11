@@ -1,14 +1,4 @@
-Database Properties
-#driver=org.apache.derby.jdbc.ClientDataSource
-#connectionProperties=Password=APP:User=APP:serverName=localhost:DatabaseName=ids:connectionAttributes=";"create"'"="'"true
-
-driver=com.mysql.jdbc.jdbc2.optional.MysqlDataSource
-connectionProperties=user=ids:password=secret:databaseName=ids
-
-#driver=oracle.jdbc.pool.OracleDataSource
-#connectionProperties=url="'"jdbc:oracle:thin:@//localhost:1521/XE"'":ImplicitCachingEnabled=true:MaxStatements=200:user=ids:password=password 
-
-# Glasfish home, must contain "glassfish/domains"
+# Glassfish home, must contain "glassfish/domains"
 #
 glassfish=/home/fisher/pf/glassfish3
 

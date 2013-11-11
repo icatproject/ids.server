@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -46,11 +47,13 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.plugin.MainStorageInterface.DfInfo;
 import org.icatproject.ids.thread.Preparer;
 import org.icatproject.ids.thread.Preparer.PreparerStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @Stateless
 public class IdsBean {
@@ -291,19 +294,30 @@ public class IdsBean {
 
 		// Do it
 		DataNotOnlineException exc = null;
-
+		InputStream stream = null;
 		if (twoLevel) {
 			try {
-				if ((tolerateWrongCompression || compress == compressDatasetCache ) &&
-				dataSelection.isSingleDataset()) {
-					
+				if ((tolerateWrongCompression || compress == compressDatasetCache)
+						&& dataSelection.isSingleDataset()) {
+					DsInfo dsInfo = dataSelection.getDsInfo().iterator().next();
+					Path datasetCachePath = datasetDir.resolve(dsInfo.getFacilityName())
+							.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
+							.resolve(dsInfo.getDsName());
+					try {
+						stream = Files.newInputStream(datasetCachePath);
+						logger.debug("Using cached zipped dataset");
+					} catch (IOException e) {
+						// Ignore - file probably not in cache
+					}
 				}
-				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
-				for (DsInfo dsInfo : dsInfos) {
-					if (!mainStorage.exists(dsInfo)) {
-						fsm.queue(dsInfo, DeferredOp.RESTORE);
-						exc = new DataNotOnlineException("Dataset " + dsInfo
-								+ " is not online. It is now being restored.");
+				if (stream == null) {
+					Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
+					for (DsInfo dsInfo : dsInfos) {
+						if (!mainStorage.exists(dsInfo)) {
+							fsm.queue(dsInfo, DeferredOp.RESTORE);
+							exc = new DataNotOnlineException("Dataset " + dsInfo
+									+ " is not online. It is now being restored.");
+						}
 					}
 				}
 			} catch (IOException e) {
@@ -316,6 +330,7 @@ public class IdsBean {
 		}
 
 		final boolean finalZip = zip ? true : dataSelection.mustZip();
+		final InputStream finalStream = stream;
 
 		StreamingOutput strOut = new StreamingOutput() {
 			@Override
@@ -326,7 +341,13 @@ public class IdsBean {
 				}
 
 				byte[] bytes = new byte[BUFSIZ];
-				if (finalZip) {
+				if (finalStream != null) {
+					int length;
+					while ((length = finalStream.read(bytes)) >= 0) {
+						output.write(bytes, 0, length);
+					}
+					output.close();
+				} else if (finalZip) {
 					ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
 					if (!compress) {
 						zos.setLevel(0); // Otherwise use default compression
@@ -572,16 +593,26 @@ public class IdsBean {
 					.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
 					.resolve(dsInfo.getDsName()));
 
-			DfInfo dfInfo = mainStorage.put(dsInfo, name, body);
-			Long dfId = registerDatafile(sessionId, name, datafileFormatId, dfInfo, ds,
-					description, doi, datafileCreateTime, datafileModTime);
+			CRC32 crc = new CRC32();
+			CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
+			String location = mainStorage.put(dsInfo, name, is);
+			long checksum = crc.getValue();
+			long size = is.getSize();
+			Long dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum,
+					size, ds, description, doi, datafileCreateTime, datafileModTime);
 
 			if (twoLevel) {
 				fsm.queue(dsInfo, DeferredOp.WRITE);
 			}
 
-			return Response.status(HttpURLConnection.HTTP_CREATED).entity(Long.toString(dfId))
-					.build();
+			ObjectMapper om = new ObjectMapper();
+			ObjectNode putResult = om.createObjectNode();
+			putResult.put("id", dfId);
+			putResult.put("checksum", checksum);
+			putResult.put("location", location);
+			putResult.put("size", size);
+			return Response.status(HttpURLConnection.HTTP_CREATED)
+					.entity(om.writeValueAsString(putResult)).build();
 
 		} catch (IOException e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -590,9 +621,10 @@ public class IdsBean {
 	}
 
 	private Long registerDatafile(String sessionId, String name, long datafileFormatId,
-			DfInfo dfInfo, Dataset dataset, String description, String doi,
-			Long datafileCreateTime, Long datafileModTime) throws InsufficientPrivilegesException,
-			NotFoundException, InternalException, BadRequestException {
+			String location, long checksum, long size, Dataset dataset, String description,
+			String doi, Long datafileCreateTime, Long datafileModTime)
+			throws InsufficientPrivilegesException, NotFoundException, InternalException,
+			BadRequestException {
 		final Datafile df = new Datafile();
 		DatafileFormat format;
 		try {
@@ -610,9 +642,9 @@ public class IdsBean {
 		}
 
 		df.setDatafileFormat(format);
-		df.setLocation(dfInfo.getLocation());
-		df.setFileSize(dfInfo.getSize());
-		df.setChecksum(Long.toHexString(dfInfo.getChecksum()));
+		df.setLocation(location);
+		df.setFileSize(size);
+		df.setChecksum(Long.toHexString(checksum));
 		df.setName(name);
 		df.setDataset(dataset);
 		df.setDescription(description);
@@ -641,7 +673,7 @@ public class IdsBean {
 			throw new InternalException(type + " " + e.getMessage());
 		}
 		logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at "
-				+ dfInfo.getLocation());
+				+ location);
 		return df.getId();
 	}
 

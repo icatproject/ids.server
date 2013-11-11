@@ -1,29 +1,16 @@
 ids.url=https://smfisher.esc.rl.ac.uk:8181
 
-#
+glassfish=/home/fisher/pf/glassfish3
+
 # These credentials must have permission to read and download
-# the dataset and datafiles specificed below.
-#
+# the dataset and datafiles specified below.
 authorizedIcatUsername=root
 authorizedIcatPassword=password
 
-#
 # These credentials must NOT have permission to read and download
 # the dataset and datafiles below (but they have to be a valid username/password pair)
-#
 unauthorizedIcatUsername=guest
 unauthorizedIcatPassword=guess
 
-# simulates slow storage, contains zipped datasets
-storageArchiveDir = /home/fisher/icat/icatarchive/
-
-# simulates fast storage
-# storageZipDir - contains zipped datasets
-# storageDir - contains exploaded datafiles from datasets
-# storagePreparedDir - contains zips prepared for a particular user to download
-storageZipDir = /home/fisher/icat/icatzipdata/
-storageDir = /home/fisher/icat/icatdata/
-
-
 # folder, where files should be downloaded to and uploaded from
-userLocalDir = /home/fisher/icat/icatuserlocal
+updownDir = /home/fisher/icat/updown
