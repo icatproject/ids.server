@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
@@ -28,21 +27,25 @@ public class ArchiveTest extends BaseTest {
 
 	@Test
 	public void restoreThenArchiveDataset() throws Exception {
-		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset", datasetIds.get(0));
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDs.getLocation());
-		Path zipOnFastStorage = setup.getDatasetCacheDir().resolve(icatDs.getLocation());
+
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		assertFalse(Files.exists(dirOnFastStorage));
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
-		while (!Files.exists(dirOnFastStorage)) {
-			Thread.sleep(1000);
-		}
+		assertFalse(Files.exists(datasetCacheFile));
 
-		assertTrue(Files.exists(zipOnFastStorage));
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+
+		waitForIds();
+
+		assertTrue(Files.exists(dirOnFastStorage));
+		assertTrue(Files.exists(datasetCacheFile));
+
 		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
-		while (Files.exists(zipOnFastStorage) || Files.exists(dirOnFastStorage)) {
-			Thread.sleep(1000);
-		}
+
+		waitForIds();
+		assertFalse(Files.exists(dirOnFastStorage));
+		assertFalse(Files.exists(datasetCacheFile));
 
 	}
 

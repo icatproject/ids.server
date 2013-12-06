@@ -86,7 +86,8 @@ public class DsInfoImpl implements DsInfo {
 
 	@Override
 	public String toString() {
-		return facilityName + "/" + invName + "/" + visitId + "/" + dsName;
+		return invId + "/" + dsId + " (" + facilityName + "/" + invName + "/" + visitId + "/"
+				+ dsName + ")";
 	}
 
 }

@@ -36,6 +36,11 @@ public class Setup {
 	private Path storageDir;
 	private Path preparedCacheDir;
 	private Path updownDir;
+	public boolean isTwoLevel() {
+		return twoLevel;
+	}
+
+	private boolean twoLevel;
 
 	public Setup(String idsPropertyFile) throws Exception {
 
@@ -113,6 +118,7 @@ public class Setup {
 		Path cacheDir = new File(idsProperties.getProperty("cache.dir")).toPath();
 		preparedCacheDir = cacheDir.resolve("prepared");
 		datasetCacheDir = cacheDir.resolve("dataset");
+		twoLevel = idsProperties.getProperty("plugin.archive.class") != null;
 
 	}
 

@@ -3,8 +3,9 @@ package org.icatproject.ids.integration.two;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
@@ -13,7 +14,6 @@ import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeFactory;
 
 import org.icatproject.Datafile;
-import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataNotOnlineException;
@@ -40,28 +40,20 @@ public class PutTest extends BaseTest {
 
 	@Test
 	public void putOneFileTest() throws Exception {
-
-		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset", datasetIds.get(0));
-		String uploadedLocation = new File(icatDs.getLocation(), "uploaded_file2_" + timestamp)
-				.getPath();
-		Path fileOnFastStorage = setup.getStorageDir().resolve(uploadedLocation);
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDs.getLocation());
-		assertFalse(Files.exists(fileOnFastStorage));
-
-		Path zipOnSlowStorage = setup.getStorageArchiveDir().resolve(icatDs.getLocation());
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
 		assertFalse(Files.exists(dirOnFastStorage));
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
 
-		while (!Files.exists(dirOnFastStorage)) {
-			Thread.sleep(1000);
-		}
-
-		Files.delete(zipOnSlowStorage); // to check, if the dataset really is going to be written
+		waitForIds();
+		
+		assertTrue(Files.exists(dirOnFastStorage));
 
 		Long dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
 				"uploaded_file2_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
 				"A rather splendid datafile", 201);
+
+		waitForIds();
 
 		Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
 		assertEquals("A rather splendid datafile", df.getDescription());
@@ -85,15 +77,16 @@ public class PutTest extends BaseTest {
 		assertEquals(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar),
 				df.getDatafileModTime());
 
-		do {
-			Thread.sleep(1000);
-		} while (!Files.exists(fileOnFastStorage));
+		waitForIds();
+
+		assertTrue(Files.exists(dirOnFastStorage));
 
 		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
 
-		while (Files.exists(fileOnFastStorage)) {
-			Thread.sleep(1000);
-		}
+		waitForIds();
+
+		assertFalse(Files.exists(dirOnFastStorage));
 
 	}
+
 }

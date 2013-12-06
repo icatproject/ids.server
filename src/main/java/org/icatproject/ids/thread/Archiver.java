@@ -38,9 +38,8 @@ public class Archiver implements Runnable {
 				logger.debug("Archive of " + dsInfo + " skipped as needed by prepare " + preparedId);
 			} else {
 				// remove any files from the dataset cache
-				Path datasetCachePath = datasetCache.resolve(dsInfo.getFacilityName())
-						.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
-						.resolve(dsInfo.getDsName());
+				Path datasetCachePath = datasetCache.resolve(Long.toString(dsInfo.getInvId()))
+						.resolve(Long.toString(dsInfo.getDsId()));
 
 				Files.deleteIfExists(datasetCachePath);
 

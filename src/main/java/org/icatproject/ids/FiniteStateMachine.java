@@ -16,6 +16,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
 import javax.ejb.Singleton;
 
 import org.icatproject.ids.exceptions.InternalException;
@@ -44,6 +45,9 @@ public class FiniteStateMachine {
 	private int preparedCount;
 
 	private Path markerDir;
+	
+	@EJB
+	IcatReader reader;
 
 	@PostConstruct
 	private void init() {
@@ -156,7 +160,7 @@ public class FiniteStateMachine {
 									changing.add(dsInfo);
 									it.remove();
 									final Thread w = new Thread(new Writer(dsInfo, propertyHandler,
-											FiniteStateMachine.this));
+											FiniteStateMachine.this, reader));
 									w.start();
 								}
 							} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
@@ -166,7 +170,7 @@ public class FiniteStateMachine {
 									changing.add(dsInfo);
 									it.remove();
 									final Thread w = new Thread(new WriteThenArchiver(dsInfo,
-											propertyHandler, FiniteStateMachine.this));
+											propertyHandler, FiniteStateMachine.this, reader));
 									w.start();
 								}
 							} else if (state == RequestedState.ARCHIVE_REQUESTED) {
@@ -181,7 +185,7 @@ public class FiniteStateMachine {
 								changing.add(dsInfo);
 								it.remove();
 								final Thread w = new Thread(new Restorer(dsInfo, propertyHandler,
-										FiniteStateMachine.this));
+										FiniteStateMachine.this, reader));
 								w.start();
 							}
 						}

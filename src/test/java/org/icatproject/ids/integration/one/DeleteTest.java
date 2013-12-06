@@ -8,7 +8,6 @@ import static org.junit.Assert.fail;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
@@ -40,9 +39,7 @@ public class DeleteTest extends BaseTest {
 
 	@Test
 	public void deleteDatasetTest() throws Exception {
-		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset", datasetIds.get(1));
-
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDs.getLocation());
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(1));
 		DataSelection dsel = new DataSelection().addDataset(datasetIds.get(1));
 		assertEquals(Status.ONLINE, testingClient.getStatus(sessionId, dsel, 200));
 		assertTrue(Files.exists(dirOnFastStorage));

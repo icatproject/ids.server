@@ -33,20 +33,15 @@ public class PutTest extends BaseTest {
 
 	@Test(expected = BadRequestException.class)
 	public void putDirectoryTest() throws Exception {
-		testingClient.put(sessionId, null, "junk",
-				datasetIds.get(0), supportedDatafileFormat.getId(), "", 201);
+		testingClient.put(sessionId, null, "junk", datasetIds.get(0),
+				supportedDatafileFormat.getId(), "", 201);
 	}
 
-	
 	@Test
 	public void putOneFileTest() throws Exception {
 
-		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset", datasetIds.get(0));
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-		String uploadedLocation = new File(icatDs.getLocation(), "uploaded_file2_" + timestamp)
-				.getPath();
-		Path fileOnFastStorage = setup.getStorageDir().resolve(uploadedLocation);
-		assertFalse(Files.exists(fileOnFastStorage));
 		Long dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
 				"uploaded_file2_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
 				"A rather splendid datafile", 201);
@@ -56,11 +51,8 @@ public class PutTest extends BaseTest {
 		assertNull(df.getDoi());
 		assertNull(df.getDatafileCreateTime());
 		assertNull(df.getDatafileModTime());
-		assertTrue(Files.exists(fileOnFastStorage));
+		assertTrue(Files.exists(dirOnFastStorage));
 
-		uploadedLocation = new File(icatDs.getLocation(), "uploaded_file3_" + timestamp).getPath();
-		fileOnFastStorage = setup.getStorageDir().resolve(uploadedLocation);
-		assertFalse(Files.exists(fileOnFastStorage));
 		dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
 				"uploaded_file3_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
 				"An even better datafile", "7.1.3", new Date(420000), new Date(42000), 201);
@@ -76,8 +68,6 @@ public class PutTest extends BaseTest {
 		gregorianCalendar.setTime(new Date(42000));
 		assertEquals(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar),
 				df.getDatafileModTime());
-
-		assertTrue(Files.exists(fileOnFastStorage));
 
 	}
 }

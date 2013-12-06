@@ -7,8 +7,11 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.icatproject.Datafile;
+import org.icatproject.Dataset;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
@@ -33,22 +36,25 @@ public class WriteThenArchiver implements Runnable {
 	private Path datasetCache;
 	private Path markerDir;
 
-	public WriteThenArchiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+	private IcatReader reader;
+
+	public WriteThenArchiver(DsInfo dsInfo, PropertyHandler propertyHandler,
+			FiniteStateMachine fsm, IcatReader reader) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
 		mainStorageInterface = propertyHandler.getMainStorage();
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
 		markerDir = propertyHandler.getCacheDir().resolve("marker");
+		this.reader = reader;
 	}
 
 	@Override
 	public void run() {
 
 		try {
-			Path datasetCachePath = datasetCache.resolve(dsInfo.getFacilityName())
-					.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
-					.resolve(dsInfo.getDsName());
+			Path datasetCachePath = datasetCache.resolve(Long.toString(dsInfo.getInvId())).resolve(
+					Long.toString(dsInfo.getDsId()));
 
 			if (!mainStorageInterface.exists(dsInfo)) {
 				logger.info("No files present for " + dsInfo + " - archive deleted");
@@ -56,12 +62,16 @@ public class WriteThenArchiver implements Runnable {
 			} else {
 				if (!Files.exists(datasetCachePath)) {
 					Files.createDirectories(datasetCachePath.getParent());
-					List<String> locations = mainStorageInterface.getLocations(dsInfo);
+					List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile",
+							dsInfo.getDsId())).getDatafiles();
 					ZipOutputStream zos = new ZipOutputStream(
 							Files.newOutputStream(datasetCachePath));
 					zos.setLevel(0);
-					for (String location : locations) {
-						zos.putNextEntry(new ZipEntry("ids/" + location));
+					for (Datafile datafile : datafiles) {
+						String location = datafile.getLocation();
+						zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
+								+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
+								+ dsInfo.getDsName() + "/" + datafile.getName()));
 						InputStream is = mainStorageInterface.get(location);
 						int bytesRead = 0;
 						byte[] buffer = new byte[BUFSIZ];

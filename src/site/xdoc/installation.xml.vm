@@ -28,7 +28,7 @@
                     </li>
 
                     <li>
-                        A plugin or plugins for the storage mechanism you wish to use. Please see
+                        A deployed plugin or plugins for the storage mechanism you wish to use. Please see
                         <a href="/mvn/site/ids/plugin">plugin</a>
                         to see the interface you must
                         implement. You might also like to look at the
@@ -88,7 +88,7 @@
                     </dd>
 
                     <dt>plugin.main.properties</dt>
-                    <dd>Property file for the main storage plugin.</dd>
+                    <dd>Optional property file for the main storage plugin.</dd>
 
                     <dt>cache.dir</dt>
                     <dd>The location (absolute or relative to the config directory of the domain) of a directory to hold mostly zip files.</dd>
@@ -107,18 +107,13 @@
                     <dt>rootUserNames</dt>
                     <dd>A space separated list of users allowed to make the getServiceStatus call.</dd>
 
-                    <dt>reader</dt>
-                    <dd>
-                        space separated icat plugin name and credentials for a user permitted to read all data. For example:
-                        <code>db username root password password.</code>
-                    </dd>
-
                     <dt>sizeCheckIntervalSeconds</dt>
                     <dd>How frequently to check the cache sizes and clean up if necessary.</dd>
 
                     <dt>readOnly</dt>
                     <dd>If present disables write operations (put and delete). Note that the value must be followed by an "=" due to a bug in ICAT
-                        4.3.0.</dd>
+                        4.3.0.
+                    </dd>
 
 
 
@@ -155,6 +150,14 @@
                     <dt>tolerateWrongCompression</dt>
                     <dd>If present then a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not
                         match the requested compression. Note that the value must be followed by an "=" due to a bug in ICAT 4.3.0.
+                    </dd>
+
+                    <dt>reader</dt>
+                    <dd>
+                        space separated icat plugin name and credentials for a user permitted to read all datasets, datafiles,
+                        investigations and
+                        facilities. For example:
+                        <code>db username root password password.</code>
                     </dd>
 
                 </dl>

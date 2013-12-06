@@ -43,6 +43,7 @@ public class PropertyHandler {
 	private List<String> reader;
 	private boolean readOnly;
 	private long preparedCacheSizeBytes;
+
 	public static Logger getLogger() {
 		return logger;
 	}
@@ -125,10 +126,13 @@ public class PropertyHandler {
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
 			rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim()
 					.split("\\s+")));
-			reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
-			if (reader.size() % 2 != 1) {
-				throw new IllegalStateException("reader must have an odd number of words");
+			if (props.has("reader")) {
+				reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
+				if (reader.size() % 2 != 1) {
+					throw new IllegalStateException("reader must have an odd number of words");
+				}
 			}
+
 			readOnly = props.containsKey("readOnly");
 			preparedCacheSizeBytes = props.getPositiveLong("preparedCacheSize1024bytes") * 1024;
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;

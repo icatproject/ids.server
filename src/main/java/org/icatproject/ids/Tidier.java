@@ -29,9 +29,9 @@ import org.slf4j.LoggerFactory;
 @Startup
 public class Tidier {
 
-	public long size;
-
 	public class TreeSizeVisitor extends SimpleFileVisitor<Path> {
+
+		private long size;
 
 		@Override
 		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {

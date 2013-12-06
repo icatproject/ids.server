@@ -1,7 +1,6 @@
 package org.icatproject.ids;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -128,8 +127,8 @@ public class DataSelection {
 
 	}
 
-	public Collection<DsInfo> getDsInfo() {
-		return dsInfos.values();
+	public Map<Long, DsInfo> getDsInfo() {
+		return dsInfos;
 	}
 
 	private void resolveDatasetIds() throws NotFoundException, InsufficientPrivilegesException,

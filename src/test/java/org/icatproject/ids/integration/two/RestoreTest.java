@@ -21,9 +21,8 @@ public class RestoreTest extends BaseTest {
 	@Test
 	public void restoreArchivedDataset() throws Exception {
 
-		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset", datasetIds.get(0));
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDs.getLocation());
-		Path datasetCacheFile = setup.getDatasetCacheDir().resolve(icatDs.getLocation());
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
 
@@ -35,15 +34,10 @@ public class RestoreTest extends BaseTest {
 
 	@Test
 	public void restoreTwoArchivedDatasets() throws Exception {
-
-		Dataset icatDs1 = (Dataset) icat.get(sessionId, "Dataset", datasetIds.get(0));
-		Path dirOnFastStorage1 = setup.getStorageDir().resolve(icatDs1.getLocation());
-		Path datasetCacheFile1 = setup.getDatasetCacheDir().resolve(icatDs1.getLocation());
-		Dataset icatDs2 = (Dataset) icat
-				.get(setup.getGoodSessionId(), "Dataset", datasetIds.get(1));
-		Path dirOnFastStorage2 = setup.getStorageDir().resolve(icatDs2.getLocation());
-		Path datasetCacheFile2 = setup.getDatasetCacheDir().resolve(icatDs2.getLocation());
-
+		Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
+		Path datasetCacheFile1 = getDatasetCacheFile(datasetIds.get(0));
+		Path dirOnFastStorage2 =  getDirOnFastStorage(datasetIds.get(1));
+		Path datasetCacheFile2 = getDatasetCacheFile(datasetIds.get(1));
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0))
 				.addDataset(datasetIds.get(1)), 200);
 
@@ -57,11 +51,8 @@ public class RestoreTest extends BaseTest {
 	@Test
 	public void restoreArchivedDatafile() throws Exception {
 
-		Datafile icatDf = (Datafile) icat.get(setup.getGoodSessionId(), "Datafile INCLUDE Dataset",
-				datafileIds.get(0));
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDf.getDataset().getLocation());
-		Path datasetCacheFile = setup.getDatasetCacheDir().resolve(
-				icatDf.getDataset().getLocation());
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 200);
 		waitForIds();
@@ -73,11 +64,8 @@ public class RestoreTest extends BaseTest {
 	@Test
 	public void restoreArchivedDatafileAndItsDataset() throws Exception {
 
-		Datafile icatDf = (Datafile) icat.get(setup.getGoodSessionId(), "Datafile INCLUDE Dataset",
-				datafileIds.get(0));
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDf.getDataset().getLocation());
-		Path datasetCacheFile = setup.getDatasetCacheDir().resolve(
-				icatDf.getDataset().getLocation());
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0))
 				.addDataset(datasetIds.get(0)), 200);
 

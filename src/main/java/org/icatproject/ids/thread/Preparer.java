@@ -8,15 +8,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.icatproject.ids.DataSelection;
+import org.icatproject.ids.DataSelection.DatafileInfo;
 import org.icatproject.ids.DeferredOp;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.PropertyHandler;
-import org.icatproject.ids.DataSelection.DatafileInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.slf4j.Logger;
@@ -73,7 +74,7 @@ public class Preparer implements Runnable {
 
 			try {
 				status = PreparerStatus.RESTORING;
-				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
+				Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
 				boolean online = true;
 				try {
 					for (DsInfo dsInfo : dsInfos) {
@@ -127,8 +128,12 @@ public class Preparer implements Runnable {
 				if (!compress) {
 					zos.setLevel(0); // Otherwise use default compression
 				}
+				Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 				for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
-					zos.putNextEntry(new ZipEntry("ids/" + dfInfo.getDfLocation()));
+					DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
+					zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
+							+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
+							+ dsInfo.getDsName() + "/" + dfInfo.getDfName()));
 					InputStream stream = mainStorage.get(dfInfo.getDfLocation());
 					int length;
 					while ((length = stream.read(bytes)) >= 0) {
@@ -162,7 +167,7 @@ public class Preparer implements Runnable {
 	}
 
 	public boolean using(DsInfo dsInfo) {
-		return dataSelection.getDsInfo().contains(dsInfo);
+		return dataSelection.getDsInfo().containsKey(dsInfo.getDsId());
 	}
 
 }

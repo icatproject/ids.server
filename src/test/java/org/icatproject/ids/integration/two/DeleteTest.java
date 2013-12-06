@@ -2,7 +2,6 @@ package org.icatproject.ids.integration.two;
 
 import java.nio.file.Path;
 
-import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataNotOnlineException;
@@ -25,11 +24,10 @@ public class DeleteTest extends BaseTest {
 
 	@Test
 	public void deleteDatafileFromRestoredDatasetTest() throws Exception {
-		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset", datasetIds.get(1));
 
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDs.getLocation());
-		Path datasetCacheFile = setup.getDatasetCacheDir().resolve(icatDs.getLocation());
-		Path fileOnArchiveStorage = setup.getStorageArchiveDir().resolve(icatDs.getLocation());
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(1));
+		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(1));
+		Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(1));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 200);
 		waitForIds();
@@ -44,11 +42,9 @@ public class DeleteTest extends BaseTest {
 
 	@Test
 	public void deleteRestoredDatasetTest() throws Exception {
-		Dataset icatDs = (Dataset) icat.get(setup.getGoodSessionId(), "Dataset", datasetIds.get(1));
-
-		Path dirOnFastStorage = setup.getStorageDir().resolve(icatDs.getLocation());
-		Path datasetCacheFile = setup.getDatasetCacheDir().resolve(icatDs.getLocation());
-		Path fileOnArchiveStorage = setup.getStorageArchiveDir().resolve(icatDs.getLocation());
+		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(1));
+		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(1));
+		Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(1));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 200);
 		waitForIds();

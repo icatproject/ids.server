@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -114,8 +115,8 @@ public class IdsBean {
 
 		// Do it
 		if (twoLevel) {
-			Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
-			for (DsInfo dsInfo : dsInfos) {
+			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+			for (DsInfo dsInfo : dsInfos.values()) {
 				fsm.queue(dsInfo, DeferredOp.ARCHIVE);
 			}
 		}
@@ -145,7 +146,7 @@ public class IdsBean {
 		// Do it
 		DataNotOnlineException exc = null;
 
-		Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
+		Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
 		if (twoLevel) {
 			try {
 				for (DsInfo dsInfo : dsInfos) {
@@ -188,10 +189,11 @@ public class IdsBean {
 
 		// Remove the local data set cache
 		try {
-			for (DsInfo dsInfo : dsInfos) {
-				Files.deleteIfExists(datasetDir.resolve(dsInfo.getFacilityName())
-						.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
-						.resolve(dsInfo.getDsName()));
+			if (twoLevel) {
+				for (DsInfo dsInfo : dsInfos) {
+					Files.deleteIfExists(datasetDir.resolve(Long.toString(dsInfo.getInvId()))
+							.resolve(Long.toString(dsInfo.getDsId())));
+				}
 			}
 			for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
 				mainStorage.delete(dfInfo.getDfLocation());
@@ -299,10 +301,9 @@ public class IdsBean {
 			try {
 				if ((tolerateWrongCompression || compress == compressDatasetCache)
 						&& dataSelection.isSingleDataset()) {
-					DsInfo dsInfo = dataSelection.getDsInfo().iterator().next();
-					Path datasetCachePath = datasetDir.resolve(dsInfo.getFacilityName())
-							.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
-							.resolve(dsInfo.getDsName());
+					DsInfo dsInfo = dataSelection.getDsInfo().values().iterator().next();
+					Path datasetCachePath = datasetDir.resolve(Long.toString(dsInfo.getInvId()))
+							.resolve(Long.toString(dsInfo.getDsId()));
 					try {
 						stream = Files.newInputStream(datasetCachePath);
 						logger.debug("Using cached zipped dataset");
@@ -311,8 +312,8 @@ public class IdsBean {
 					}
 				}
 				if (stream == null) {
-					Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
-					for (DsInfo dsInfo : dsInfos) {
+					Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+					for (DsInfo dsInfo : dsInfos.values()) {
 						if (!mainStorage.exists(dsInfo)) {
 							fsm.queue(dsInfo, DeferredOp.RESTORE);
 							exc = new DataNotOnlineException("Dataset " + dsInfo
@@ -353,9 +354,13 @@ public class IdsBean {
 						zos.setLevel(0); // Otherwise use default compression
 					}
 
+					Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 					for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
 						logger.debug("Adding " + dfInfo + " to zip");
-						zos.putNextEntry(new ZipEntry("ids/" + dfInfo.getDfLocation()));
+						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
+						zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
+								+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
+								+ dsInfo.getDsName() + "/" + dfInfo.getDfName()));
 						InputStream stream = mainStorage.get(dfInfo.getDfLocation());
 
 						int length;
@@ -452,13 +457,13 @@ public class IdsBean {
 		if (twoLevel) {
 
 			try {
-				Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
+				Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 				/*
 				 * Restoring shows also data sets which are currently being changed so it may
 				 * indicate that something is restoring when it should have been marked as archived.
 				 */
 				Set<DsInfo> restoring = fsm.getRestoring();
-				for (DsInfo dsInfo : dsInfos) {
+				for (DsInfo dsInfo : dsInfos.values()) {
 					if (!mainStorage.exists(dsInfo)) {
 						if (status == Status.ONLINE) {
 							if (restoring.contains(dsInfo)) {
@@ -494,10 +499,7 @@ public class IdsBean {
 			datatypeFactory = DatatypeFactory.newInstance();
 			preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 			Files.createDirectories(preparedDir);
-			datasetDir = propertyHandler.getCacheDir().resolve("dataset");
-			Files.createDirectories(datasetDir);
-			markerDir = propertyHandler.getCacheDir().resolve("marker");
-			Files.createDirectories(markerDir);
+
 			rootUserNames = propertyHandler.getRootUserNames();
 			readOnly = propertyHandler.getReadOnly();
 			tolerateWrongCompression = propertyHandler.isTolerateWrongCompression();
@@ -505,7 +507,13 @@ public class IdsBean {
 
 			icat = propertyHandler.getIcatService();
 
-			restartUnfinishedWork();
+			if (twoLevel) {
+				datasetDir = propertyHandler.getCacheDir().resolve("dataset");
+				Files.createDirectories(datasetDir);
+				markerDir = propertyHandler.getCacheDir().resolve("marker");
+				Files.createDirectories(markerDir);
+				restartUnfinishedWork();
+			}
 
 			logger.info("created IdsBean");
 		} catch (Exception e) {
@@ -586,12 +594,11 @@ public class IdsBean {
 					throw new DataNotOnlineException(
 							"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 				}
-			}
+				// Remove the local data set cache
+				Files.deleteIfExists(datasetDir.resolve(Long.toString(dsInfo.getInvId())).resolve(
+						Long.toString(dsInfo.getDsId())));
 
-			// Remove the local data set cache
-			Files.deleteIfExists(datasetDir.resolve(dsInfo.getFacilityName())
-					.resolve(dsInfo.getInvName()).resolve(dsInfo.getVisitId())
-					.resolve(dsInfo.getDsName()));
+			}
 
 			CRC32 crc = new CRC32();
 			CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
@@ -724,10 +731,6 @@ public class IdsBean {
 		logger.info("New webservice request: restore " + "investigationIds='" + investigationIds
 				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
-		if (investigationIds != null) {
-			throw new NotImplementedException("investigationIds are not supported");
-		}
-
 		validateUUID("sessionId", sessionId);
 
 		DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
@@ -736,8 +739,8 @@ public class IdsBean {
 		// Do it
 
 		if (twoLevel) {
-			Collection<DsInfo> dsInfos = dataSelection.getDsInfo();
-			for (DsInfo dsInfo : dsInfos) {
+			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+			for (DsInfo dsInfo : dsInfos.values()) {
 				fsm.queue(dsInfo, DeferredOp.RESTORE);
 			}
 		}
