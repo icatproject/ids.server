@@ -80,7 +80,7 @@ public class Restorer implements Runnable {
 							+ " as no location found");
 				} else {
 					logger.debug("Storing " + dfName + " into " + dsInfo + " at " + location);
-					mainStorageInterface.put(dsInfo, dfName, zis, location);
+					mainStorageInterface.put(zis, location);
 				}
 				ze = zis.getNextEntry();
 			}

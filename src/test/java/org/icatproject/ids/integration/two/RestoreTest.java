@@ -2,8 +2,6 @@ package org.icatproject.ids.integration.two;
 
 import java.nio.file.Path;
 
-import org.icatproject.Datafile;
-import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
@@ -36,7 +34,7 @@ public class RestoreTest extends BaseTest {
 	public void restoreTwoArchivedDatasets() throws Exception {
 		Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
 		Path datasetCacheFile1 = getDatasetCacheFile(datasetIds.get(0));
-		Path dirOnFastStorage2 =  getDirOnFastStorage(datasetIds.get(1));
+		Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
 		Path datasetCacheFile2 = getDatasetCacheFile(datasetIds.get(1));
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0))
 				.addDataset(datasetIds.get(1)), 200);

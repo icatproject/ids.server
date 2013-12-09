@@ -43,11 +43,13 @@ public class DataSelection {
 		private String dfName;
 		private String dfLocation;
 		private long dsId;
+		private String creator;
 
-		public DatafileInfo(long dfId, String dfName, String dfLocation, long dsId) {
+		public DatafileInfo(long dfId, String dfName, String dfLocation, String creator, long dsId) {
 			this.dfId = dfId;
 			this.dfName = dfName;
 			this.dfLocation = dfLocation;
+			this.creator = creator;
 			this.dsId = dsId;
 		}
 
@@ -70,6 +72,11 @@ public class DataSelection {
 		@Override
 		public String toString() {
 			return dfLocation;
+		}
+
+		public String getCreator() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 	}
@@ -149,8 +156,8 @@ public class DataSelection {
 					dsInfos.put(dsid, new DsInfoImpl(ds));
 					if (dfWanted) {
 						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
-						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(),
-								dsid));
+						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), df
+								.getCreateId(), dsid));
 					}
 				} else {
 					icat.get(sessionId, "Datafile", dfid); // May reveal a permissions problem
@@ -163,8 +170,8 @@ public class DataSelection {
 					ds = (Dataset) icat.get(sessionId,
 							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 					for (Datafile df : ds.getDatafiles()) {
-						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(),
-								dsid));
+						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), df
+								.getCreateId(), dsid));
 					}
 				} else {
 					ds = (Dataset) icat.get(sessionId,
@@ -192,7 +199,7 @@ public class DataSelection {
 						if (dfWanted) {
 							for (Datafile df : ds.getDatafiles()) {
 								dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df
-										.getLocation(), dsid));
+										.getLocation(), df.getCreateId(), dsid));
 							}
 						}
 						dsInfos.put(dsid, new DsInfoImpl(ds));

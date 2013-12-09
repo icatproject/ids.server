@@ -134,7 +134,8 @@ public class Preparer implements Runnable {
 					zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
 							+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
 							+ dsInfo.getDsName() + "/" + dfInfo.getDfName()));
-					InputStream stream = mainStorage.get(dfInfo.getDfLocation());
+					InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
+							dfInfo.getCreator());
 					int length;
 					while ((length = stream.read(bytes)) >= 0) {
 						zos.write(bytes, 0, length);
@@ -148,7 +149,7 @@ public class Preparer implements Runnable {
 				Path filePath = tpath.resolve(dfInfo.getDfName());
 				Files.createDirectories(filePath.getParent());
 				OutputStream output = new BufferedOutputStream(Files.newOutputStream(filePath));
-				InputStream stream = mainStorage.get(dfInfo.getDfLocation());
+				InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreator());
 				int length;
 				while ((length = stream.read(bytes)) >= 0) {
 					output.write(bytes, 0, length);

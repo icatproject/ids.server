@@ -351,7 +351,6 @@ public class BaseTest {
 	private void writeToFile(Datafile df, String content) throws IOException,
 			IcatException_Exception {
 		Path path = setup.getStorageDir().resolve(df.getLocation());
-		System.out.println(path);
 		Files.createDirectories(path.getParent());
 		byte[] bytes = content.getBytes();
 		CRC32 crc = new CRC32();

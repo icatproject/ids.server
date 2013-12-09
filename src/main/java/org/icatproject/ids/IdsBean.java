@@ -361,7 +361,8 @@ public class IdsBean {
 						zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
 								+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
 								+ dsInfo.getDsName() + "/" + dfInfo.getDfName()));
-						InputStream stream = mainStorage.get(dfInfo.getDfLocation());
+						InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
+								dfInfo.getCreator());
 
 						int length;
 						while ((length = stream.read(bytes)) >= 0) {
@@ -371,8 +372,9 @@ public class IdsBean {
 					}
 					zos.close();
 				} else {
-					InputStream stream = mainStorage.get(dataSelection.getDfInfo().iterator()
-							.next().getDfLocation());
+					DatafileInfo dfInfo = dataSelection.getDfInfo().iterator().next();
+					InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
+							dfInfo.getCreator());
 					int length;
 					while ((length = stream.read(bytes)) >= 0) {
 						output.write(bytes, 0, length);
@@ -567,6 +569,12 @@ public class IdsBean {
 		if (name == null) {
 			throw new BadRequestException("The name parameter must be set");
 		}
+		if (datafileFormatId == 0) {
+			throw new BadRequestException("The datafileFormatId parameter must be set");
+		}
+		if (datasetId == 0) {
+			throw new BadRequestException("The datasetId parameter must be set");
+		}
 
 		// Do it
 		Dataset ds;
@@ -605,8 +613,17 @@ public class IdsBean {
 			String location = mainStorage.put(dsInfo, name, is);
 			long checksum = crc.getValue();
 			long size = is.getSize();
-			Long dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum,
-					size, ds, description, doi, datafileCreateTime, datafileModTime);
+			Long dfId;
+			try {
+				dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum,
+						size, ds, description, doi, datafileCreateTime, datafileModTime);
+			} catch (InsufficientPrivilegesException | NotFoundException | InternalException
+					| BadRequestException e) {
+				logger.debug("Problem with registration " + e.getClass() + " " + e.getMessage()
+						+ " datafile will now be deleted");
+				mainStorage.delete(location);
+				throw e;
+			}
 
 			if (twoLevel) {
 				fsm.queue(dsInfo, DeferredOp.WRITE);
