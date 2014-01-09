@@ -148,12 +148,13 @@ public class IdsBean {
 
 		Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
 		if (twoLevel) {
+			Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
 			try {
 				for (DsInfo dsInfo : dsInfos) {
-					if (!mainStorage.exists(dsInfo)) {
+					if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
 						fsm.queue(dsInfo, DeferredOp.RESTORE);
-						exc = new DataNotOnlineException("Dataset " + dsInfo
-								+ " is not online. It is now being restored.");
+						exc = new DataNotOnlineException(
+								"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 					}
 				}
 			} catch (IOException e) {
@@ -313,11 +314,13 @@ public class IdsBean {
 				}
 				if (stream == null) {
 					Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+					Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
 					for (DsInfo dsInfo : dsInfos.values()) {
-						if (!mainStorage.exists(dsInfo)) {
+						if (!emptyDatasets.contains(dsInfo.getDsId())
+								&& !mainStorage.exists(dsInfo)) {
 							fsm.queue(dsInfo, DeferredOp.RESTORE);
-							exc = new DataNotOnlineException("Dataset " + dsInfo
-									+ " is not online. It is now being restored.");
+							exc = new DataNotOnlineException(
+									"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
 						}
 					}
 				}
@@ -598,14 +601,30 @@ public class IdsBean {
 
 			if (twoLevel) {
 				if (!mainStorage.exists(dsInfo)) {
-					fsm.queue(dsInfo, DeferredOp.RESTORE);
-					throw new DataNotOnlineException(
-							"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
+					try {
+						List<Object> counts = icat.search(sessionId,
+								"COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
+						if ((Long) counts.get(0) != 0) {
+							fsm.queue(dsInfo, DeferredOp.RESTORE);
+							throw new DataNotOnlineException(
+									"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
+						}
+					} catch (IcatException_Exception e) {
+						IcatExceptionType type = e.getFaultInfo().getType();
+						if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
+								|| type == IcatExceptionType.SESSION) {
+							throw new InsufficientPrivilegesException(e.getMessage());
+						}
+						if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+							throw new NotFoundException(e.getMessage());
+						}
+						throw new InternalException(type + " " + e.getMessage());
+					}
+
 				}
 				// Remove the local data set cache
 				Files.deleteIfExists(datasetDir.resolve(Long.toString(dsInfo.getInvId())).resolve(
 						Long.toString(dsInfo.getDsId())));
-
 			}
 
 			CRC32 crc = new CRC32();

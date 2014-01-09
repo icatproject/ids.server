@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,7 +45,7 @@ public class PutTest extends BaseTest {
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
 
 		waitForIds();
-		
+
 		assertTrue(Files.exists(dirOnFastStorage));
 
 		Long dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),

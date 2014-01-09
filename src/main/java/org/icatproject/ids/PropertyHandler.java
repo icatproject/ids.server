@@ -133,7 +133,7 @@ public class PropertyHandler {
 				}
 			}
 
-			readOnly = props.containsKey("readOnly");
+			readOnly = props.getBoolean("readOnly", false);
 			preparedCacheSizeBytes = props.getPositiveLong("preparedCacheSize1024bytes") * 1024;
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
 
@@ -154,8 +154,8 @@ public class PropertyHandler {
 				logger.info("Property plugin.archive.class not set, single storage enabled.");
 			} else {
 				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
-				compressDatasetCache = props.contains("compressDatasetCache");
-				tolerateWrongCompression = props.contains("tolerateWrongCompression");
+				compressDatasetCache = props.getBoolean("compressDatasetCache", false);
+				tolerateWrongCompression = props.getBoolean("tolerateWrongCompression", false);
 				datasetCacheSizeBytes = props.getPositiveLong("datasetCacheSize1024bytes") * 1024;
 
 				try {

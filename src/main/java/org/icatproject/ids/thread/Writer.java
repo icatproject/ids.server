@@ -91,7 +91,8 @@ public class Writer implements Runnable {
 			logger.debug("Removed marker " + marker);
 			logger.debug("Write of " + dsInfo + " completed");
 		} catch (Exception e) {
-			logger.error("Write of " + dsInfo + " failed due to " + e.getMessage());
+			logger.error("Write of " + dsInfo + " failed due to " + e.getClass() + " "
+					+ e.getMessage());
 		} finally {
 			fsm.removeFromChanging(dsInfo);
 		}

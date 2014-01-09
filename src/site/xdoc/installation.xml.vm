@@ -111,8 +111,7 @@
                     <dd>How frequently to check the cache sizes and clean up if necessary.</dd>
 
                     <dt>readOnly</dt>
-                    <dd>If present disables write operations (put and delete). Note that the value must be followed by an "=" due to a bug in ICAT
-                        4.3.0.
+                    <dd>If true disables write operations (put and delete).
                     </dd>
 
 
@@ -130,7 +129,7 @@
                     </dd>
 
                     <dt>plugin.archive.properties</dt>
-                    <dd>Property file for the archive storage plugin.</dd>
+                    <dd>Optional property file for the archive storage plugin.</dd>
 
                     <dt>datasetCacheSize1024bytes</dt>
                     <dd>The maximum size to allow for dataset zip files in the cache.</dd>
@@ -141,15 +140,16 @@
                     </dd>
 
                     <dt>compressDatasetCache</dt>
-                    <dd>If present the dataset cache and the archive storage of datasets will all be compressed. This takes longer to write and is
+                    <dd>If true the dataset cache and the archive storage of datasets will all be compressed. This takes longer to write and is
                         only
-                        useful if you know that the data will compress well. Note that the value must be followed by an "=" due to a bug in ICAT
-                        4.3.0.
+                        useful if you know that the data will compress well.
                     </dd>
 
                     <dt>tolerateWrongCompression</dt>
-                    <dd>If present then a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not
-                        match the requested compression. Note that the value must be followed by an "=" due to a bug in ICAT 4.3.0.
+                    <dd>If true a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not
+                        match
+                        the
+                        requested compression.
                     </dd>
 
                     <dt>reader</dt>
@@ -173,6 +173,14 @@
                     . Note the url is that of the machine hosting the IDS followed by "/ids/ping"
                 </p>
 
+            </subsection>
+
+            <subsection name="Possible glassfish problem">
+                With this component installed it can be impossible to start the glassfish domain. The conditions under which
+                this occurs are not
+                understood. A recipe
+                to get glassfish started may be found at:
+                <a href="http:/code.google.com/p/icatproject/wiki/Glassfish">http:/code.google.com/p/icatproject/wiki/Glassfish</a>
             </subsection>
 
         </section>

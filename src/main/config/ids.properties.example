@@ -10,12 +10,12 @@ processQueueIntervalSeconds = 5
 rootUserNames = root
 reader = db username root password password
 sizeCheckIntervalSeconds = 60
-!readOnly =
+!readOnly = true
 
 # Properties for archive storage
 plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage
 plugin.archive.properties = ids.storage_file.archive.properties
 datasetCacheSize1024bytes = 1000000
 writeDelaySeconds = 60
-!compressDatasetCache = 
-tolerateWrongCompression =
+!compressDatasetCache = true
+tolerateWrongCompression = true

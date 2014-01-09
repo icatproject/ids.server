@@ -37,18 +37,16 @@ public class DeleteTest extends BaseTest {
 		}
 	}
 
+	// Note that deleting the datafiles withing the dataset does not cause the getStatus on the
+	// dataset to fail - it just happens to be empty
 	@Test
 	public void deleteDatasetTest() throws Exception {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(1));
 		DataSelection dsel = new DataSelection().addDataset(datasetIds.get(1));
 		assertEquals(Status.ONLINE, testingClient.getStatus(sessionId, dsel, 200));
 		assertTrue(Files.exists(dirOnFastStorage));
-
-		System.out.println(dirOnFastStorage);
-
 		testingClient.delete(sessionId, dsel, 200);
 		assertEquals(Status.ONLINE, testingClient.getStatus(sessionId, dsel, 200));
 		assertFalse(Files.exists(dirOnFastStorage));
-
 	}
 }

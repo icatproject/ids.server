@@ -17,6 +17,7 @@ import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
+import org.icatproject.utils.ShellCommand;
 
 /*
  * Setup the test environment for the IDS. This is done by reading property
@@ -36,6 +37,7 @@ public class Setup {
 	private Path storageDir;
 	private Path preparedCacheDir;
 	private Path updownDir;
+
 	public boolean isTwoLevel() {
 		return twoLevel;
 	}

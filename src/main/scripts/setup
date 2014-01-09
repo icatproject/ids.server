@@ -47,7 +47,7 @@ elif arg == "INSTALL":
         app = actions.getAppName("ids.server")
         if app: actions.asadmin("undeploy " + app)
                         
-        actions.deploy("ids.server-*.war", libraries=props["libraries"].split())
+        actions.deploy("ids.server-*.war", deploymentorder=120, libraries=props["libraries"].split())
                       
     except Exception, e:
         raise

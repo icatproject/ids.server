@@ -75,8 +75,7 @@ public class DataSelection {
 		}
 
 		public String getCreator() {
-			// TODO Auto-generated method stub
-			return null;
+			return creator;
 		}
 
 	}
@@ -114,6 +113,7 @@ public class DataSelection {
 	private List<Long> dsids;
 	private List<Long> invids;
 	private Set<DatafileInfo> dfInfos;
+	private Set<Long> emptyDatasets;
 
 	public enum Returns {
 		DATASETS, DATASETS_AND_DATAFILES
@@ -143,6 +143,7 @@ public class DataSelection {
 		dsInfos = new HashMap<>();
 		if (dfWanted) {
 			dfInfos = new HashSet<>();
+			emptyDatasets = new HashSet<>();
 		}
 
 		try {
@@ -166,18 +167,23 @@ public class DataSelection {
 			}
 			for (Long dsid : dsids) {
 				Dataset ds;
+				boolean empty = true;
 				if (dfWanted) {
 					ds = (Dataset) icat.get(sessionId,
 							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 					for (Datafile df : ds.getDatafiles()) {
 						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), df
 								.getCreateId(), dsid));
+						empty = false;
 					}
 				} else {
 					ds = (Dataset) icat.get(sessionId,
 							"Dataset ds INCLUDE ds.investigation.facility", dsid);
 				}
 				dsInfos.put(dsid, new DsInfoImpl(ds));
+				if (dfWanted && empty) {
+					emptyDatasets.add(dsid);
+				}
 			}
 
 			for (Long invid : invids) {
@@ -195,6 +201,7 @@ public class DataSelection {
 				if (dss.size() >= 1) {
 					for (Object o : dss) {
 						Dataset ds = (Dataset) o;
+						boolean empty = true;
 						long dsid = ds.getId();
 						if (dfWanted) {
 							for (Datafile df : ds.getDatafiles()) {
@@ -203,6 +210,9 @@ public class DataSelection {
 							}
 						}
 						dsInfos.put(dsid, new DsInfoImpl(ds));
+						if (dfWanted && empty) {
+							emptyDatasets.add(dsid);
+						}
 					}
 				} else {
 					icat.get(sessionId, "Investigation", invid); // May reveal a permissions problem
@@ -238,6 +248,10 @@ public class DataSelection {
 
 	public boolean isSingleDataset() {
 		return dfids.isEmpty() && dsids.size() == 1 && invids.isEmpty();
+	}
+
+	public Set<Long> getEmptyDatasets() {
+		return emptyDatasets;
 	}
 
 }

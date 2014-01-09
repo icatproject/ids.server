@@ -75,10 +75,11 @@ public class Preparer implements Runnable {
 			try {
 				status = PreparerStatus.RESTORING;
 				Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
+				Set<Long> emptyDs = dataSelection.getEmptyDatasets();
 				boolean online = true;
 				try {
 					for (DsInfo dsInfo : dsInfos) {
-						if (!mainStorage.exists(dsInfo)) {
+						if (!emptyDs.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
 							online = false;
 							fsm.queue(dsInfo, DeferredOp.RESTORE);
 						}
