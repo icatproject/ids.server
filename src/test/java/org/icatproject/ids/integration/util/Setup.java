@@ -69,13 +69,13 @@ public class Setup {
 				"src/test/resources/" + idsPropertyFile);
 		if (sc.getExitValue() == 1) {
 			System.out.println("Moving " + idsPropertyFile + " to " + config);
-			sc = new ShellCommand("asadmin", "disable", "ids.server-1.0.0-SNAPSHOT");
+			sc = new ShellCommand("asadmin", "disable", "ids.server-1.0.0");
 			if (sc.getExitValue() != 0) {
 				System.out.println(sc.getMessage());
 			}
 			Files.copy(new File("src/test/resources/" + idsPropertyFile).toPath(),
 					config.resolve("ids.properties"), StandardCopyOption.REPLACE_EXISTING);
-			sc = new ShellCommand("asadmin", "enable", "ids.server-1.0.0-SNAPSHOT");
+			sc = new ShellCommand("asadmin", "enable", "ids.server-1.0.0");
 			if (sc.getExitValue() != 0) {
 				System.out.println(sc.getMessage());
 			} else {
