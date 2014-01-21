@@ -3,7 +3,7 @@
     <groupId>org.icatproject</groupId>
     <artifactId>ids.server</artifactId>
     <packaging>war</packaging>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <name>IDS Server</name>
 
     <properties>
@@ -31,9 +31,9 @@
     </issueManagement>
 
     <scm>
-        <connection>scm:svn:http://icat-data-service.googlecode.com/svn/ids/tags/ids.server-1.0.0</connection>
-        <developerConnection>scm:svn:https://icat-data-service.googlecode.com/svn/ids/tags/ids.server-1.0.0</developerConnection>
-        <url>http://code.google.com/p/icat-data-service/source/browse/#svn%2Fids%2Ftrunk/tags/ids.server-1.0.0</url>
+        <connection>scm:svn:http://icat-data-service.googlecode.com/svn/ids/trunk</connection>
+        <developerConnection>scm:svn:https://icat-data-service.googlecode.com/svn/ids/trunk</developerConnection>
+        <url>http://code.google.com/p/icat-data-service/source/browse/#svn%2Fids%2Ftrunk</url>
     </scm>
 
     <licenses>
