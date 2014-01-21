@@ -1,6 +1,7 @@
 package org.icatproject.ids.integration.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -9,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Properties;
+import java.net.URLClassLoader;
 
 import javax.xml.namespace.QName;
 
@@ -48,12 +50,11 @@ public class Setup {
 
 		// Start by reading the test properties
 		Properties testProps = new Properties();
-
-		InputStream is = getClass().getResourceAsStream("test.properties");
+		InputStream is = new FileInputStream("src/test/resources/test.properties");
 		try {
 			testProps.load(is);
 		} catch (Exception e) {
-			System.out.println("Problem loading test.properties\n" + e.getMessage());
+			System.out.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
 		}
 
 		idsUrl = new URL(testProps.getProperty("ids.url") + "/ids");
