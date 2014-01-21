@@ -49,7 +49,7 @@ public class Setup {
 		// Start by reading the test properties
 		Properties testProps = new Properties();
 
-		InputStream is = getClass().getResourceAsStream("/test.properties");
+		InputStream is = getClass().getResourceAsStream("test.properties");
 		try {
 			testProps.load(is);
 		} catch (Exception e) {
