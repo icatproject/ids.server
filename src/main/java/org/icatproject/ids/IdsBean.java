@@ -372,6 +372,7 @@ public class IdsBean {
 							zos.write(bytes, 0, length);
 						}
 						zos.closeEntry();
+						stream.close();
 					}
 					zos.close();
 				} else {
@@ -630,6 +631,7 @@ public class IdsBean {
 			CRC32 crc = new CRC32();
 			CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
 			String location = mainStorage.put(dsInfo, name, is);
+			is.close();
 			long checksum = crc.getValue();
 			long size = is.getSize();
 			Long dfId;

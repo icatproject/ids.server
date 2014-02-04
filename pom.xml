@@ -12,6 +12,8 @@
         <repoUrl>http://www.icatproject.org/mvn/repo</repoUrl>
     </properties>
 
+
+
     <distributionManagement>
         <downloadUrl>http://www.icatproject.org/mvn/repo</downloadUrl>
         <site>
@@ -128,6 +130,14 @@
 
     </dependencies>
     <build>
+
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

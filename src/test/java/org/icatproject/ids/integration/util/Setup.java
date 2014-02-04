@@ -10,7 +10,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Properties;
-import java.net.URLClassLoader;
 
 import javax.xml.namespace.QName;
 
@@ -50,16 +49,19 @@ public class Setup {
 
 		// Start by reading the test properties
 		Properties testProps = new Properties();
-		InputStream is = new FileInputStream("src/test/resources/test.properties");
+		InputStream is = Setup.class.getClassLoader().getResourceAsStream("test.properties");
 		try {
 			testProps.load(is);
 		} catch (Exception e) {
-			System.out.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
+			System.out.println("Problem loading test.properties: " + e.getClass() + " "
+					+ e.getMessage());
 		}
 
 		idsUrl = new URL(testProps.getProperty("ids.url") + "/ids");
 
 		String glassfish = testProps.getProperty("glassfish");
+
+		String appName = testProps.getProperty("appName");
 
 		ShellCommand sc = new ShellCommand("asadmin", "get", "property.administrative.domain.name");
 		String domain = sc.getStdout().split("[\r\n]+")[0].split("=")[1];
@@ -70,13 +72,13 @@ public class Setup {
 				"src/test/resources/" + idsPropertyFile);
 		if (sc.getExitValue() == 1) {
 			System.out.println("Moving " + idsPropertyFile + " to " + config);
-			sc = new ShellCommand("asadmin", "disable", "ids.server-1.0.0");
+			sc = new ShellCommand("asadmin", "disable", appName);
 			if (sc.getExitValue() != 0) {
 				System.out.println(sc.getMessage());
 			}
 			Files.copy(new File("src/test/resources/" + idsPropertyFile).toPath(),
 					config.resolve("ids.properties"), StandardCopyOption.REPLACE_EXISTING);
-			sc = new ShellCommand("asadmin", "enable", "ids.server-1.0.0");
+			sc = new ShellCommand("asadmin", "enable", appName);
 			if (sc.getExitValue() != 0) {
 				System.out.println(sc.getMessage());
 			} else {

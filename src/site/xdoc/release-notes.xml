@@ -6,6 +6,15 @@
     </properties>
 
     <body>
+
+        <section name="1.0.1">
+            <p>Bug fix release.
+            </p>
+            <ul>
+                <li>Files are now being closed properly to avoid running out of file handles.</li>
+            </ul>
+        </section>
+
         <section name="1.0.0">
             <p>Initial public release.
             </p>

@@ -142,6 +142,7 @@ public class Preparer implements Runnable {
 						zos.write(bytes, 0, length);
 					}
 					zos.closeEntry();
+					stream.close();
 				}
 				zos.close();
 			} else {
@@ -155,6 +156,7 @@ public class Preparer implements Runnable {
 				while ((length = stream.read(bytes)) >= 0) {
 					output.write(bytes, 0, length);
 				}
+				stream.close();
 				output.close();
 			}
 			Files.move(tpath, path, StandardCopyOption.ATOMIC_MOVE);

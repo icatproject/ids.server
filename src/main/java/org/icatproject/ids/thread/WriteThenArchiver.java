@@ -79,10 +79,13 @@ public class WriteThenArchiver implements Runnable {
 							zos.write(buffer, 0, bytesRead);
 						}
 						zos.closeEntry();
+						is.close();
 					}
 					zos.close();
 				}
-				archiveStorageInterface.put(dsInfo, Files.newInputStream(datasetCachePath));
+				InputStream is = Files.newInputStream(datasetCachePath);
+				archiveStorageInterface.put(dsInfo, is);
+				is.close();
 			}
 			Path marker = markerDir.resolve(Long.toString(dsInfo.getDsId()));
 			Files.deleteIfExists(marker);

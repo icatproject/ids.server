@@ -1,6 +1,7 @@
 package org.icatproject.ids.thread;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -55,8 +56,9 @@ public class Restorer implements Runnable {
 			Path dir = datasetCache.resolve(Long.toString(dsInfo.getInvId()));
 			Files.createDirectories(dir);
 			Path tPath = Files.createTempFile(dir, null, null);
-			Files.copy(archiveStorageInterface.get(dsInfo), tPath,
-					StandardCopyOption.REPLACE_EXISTING);
+			InputStream is = archiveStorageInterface.get(dsInfo);
+			Files.copy(is, tPath, StandardCopyOption.REPLACE_EXISTING);
+			is.close();
 			Path path = dir.resolve(Long.toString(dsInfo.getDsId()));
 			Files.move(tPath, path, StandardCopyOption.ATOMIC_MOVE,
 					StandardCopyOption.REPLACE_EXISTING);
