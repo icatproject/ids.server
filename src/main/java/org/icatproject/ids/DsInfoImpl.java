@@ -20,12 +20,15 @@ public class DsInfoImpl implements DsInfo {
 	private String invName;
 
 	private String visitId;
+	
+	private String dsLocation;
 
 	public DsInfoImpl(Dataset ds) {
 		Investigation investigation = ds.getInvestigation();
 		Facility facility = investigation.getFacility();
 		dsId = ds.getId();
 		dsName = ds.getName();
+		dsLocation = ds.getLocation();
 		invId = investigation.getId();
 		invName = investigation.getName();
 		visitId = investigation.getVisitId();
@@ -88,6 +91,11 @@ public class DsInfoImpl implements DsInfo {
 	public String toString() {
 		return invId + "/" + dsId + " (" + facilityName + "/" + invName + "/" + visitId + "/"
 				+ dsName + ")";
+	}
+
+	@Override
+	public String getDsLocation() {
+		return dsLocation;
 	}
 
 }

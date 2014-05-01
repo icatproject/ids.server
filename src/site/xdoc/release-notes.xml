@@ -7,6 +7,19 @@
 
     <body>
 
+        <section name="1.1.0">
+            <p>Provide background file checking and facility control of returned zip file structure.
+            </p>
+            <ul>
+                <li>Another file handle leak fixed.</li>
+                <li>Compatible with plugin interface 1.1.0.</li>
+                <li>Provide background file checking - which requires that the parameter checkFiles.parallelCount is set to an integer. If the integer
+                    is non zero then other entries must be set in the ids.properties file.
+                </li>
+                <li>ids.properties needs a new parameter: plugin.zipMapper.class which identifies the code to define the zip file structure.</li>
+            </ul>
+        </section>
+
         <section name="1.0.1">
             <p>Bug fix release.
             </p>

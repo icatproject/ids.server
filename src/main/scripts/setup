@@ -8,16 +8,14 @@ actions, options, arg = getActions()
 props = actions.getGlassfish("ids-setup.properties", ["glassfish", "libraries"])
 
 prop_name = "ids.properties"
-prop_list = ["icat.url", "plugin.main.class", "cache.dir", "preparedCacheSize1024bytes",
-"preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds"]
+prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir", "preparedCacheSize1024bytes",
+"preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "filesCheck.parallelCount"]
 
-if arg == "CONFIGURE":
+if arg in ["CONFIGURE", "INSTALL"]:
     actions.configure(prop_name, prop_list)
-    actions.setConfigured()
+    actions.checkNoErrors()
 
-elif arg == "INSTALL":
-    
-    actions.checkConfigured()
+if arg == "INSTALL":
     
     idsProperties = actions.getProperties(prop_name, prop_list)
     
@@ -36,9 +34,22 @@ elif arg == "INSTALL":
         elif not actions.configFileExists(sprops):
             abort ("ids.properties defined plugin.archive.properties to be " + sprops + " but the file has not been deployed. Have you installed the necessary ids plugins?")
                
-        if not idsProperties.get("writeDelaySeconds"): abort("writeDelaySeconds is not set")
+        if not idsProperties.get("writeDelaySeconds"): abort("writeDelaySeconds is not set in ids.properties")
         if not idsProperties.get("datasetCacheSize1024bytes"): abort("datasetCacheSize1024bytes is not set")
-        if not idsProperties.get("reader"): abort("reader is not set")
+        if not idsProperties.get("reader"): abort("reader is not set in ids.properties")
+        
+    if int(idsProperties["filesCheck.parallelCount"]):
+        if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in ids.properties")
+        if not idsProperties.get("filesCheck.lastIdFile"): abort("filesCheck.lastIdFile is not set in ids.properties")
+        parent = os.path.dirname(idsProperties["filesCheck.lastIdFile"])
+        if not actions.configFileExists(parent):
+            abort("Please create directory " + parent + " for filesCheck.lastIdFile specified in ids.properties")
+        if not idsProperties.get("filesCheck.errorLog"): abort("filesCheck.errorLog is not set in ids.properties")
+        parent = os.path.dirname(idsProperties["filesCheck.errorLog"])
+        if not actions.configFileExists(parent):
+            abort("Please create directory " + parent + " for filesCheck.errorLog specified in ids.properties")
+        if not idsProperties.get("reader"): abort("reader is not set in ids.properties")
+
        
 
     actions.installFile("ids.properties")
@@ -53,8 +64,7 @@ elif arg == "INSTALL":
         raise
         abort(str(e))
                 
-else:  # UNINSTALL
-    
+if arg == "UNINSTALL":
     actions.removeFile("ids.properties") 
     actions.removeFile("ids-storage.properties")
     

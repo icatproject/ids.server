@@ -1,5 +1,8 @@
 # General properties
 icat.url = https://smfisher.esc.rl.ac.uk:8181
+
+plugin.zipMapper.class = org.icatproject.ids.storage.ZipMapper
+
 plugin.main.class = org.icatproject.ids.storage.MainFileStorage
 plugin.main.properties = ids.storage_file.main.properties
 
@@ -8,7 +11,6 @@ preparedCacheSize1024bytes = 1000000
 preparedCount = 100
 processQueueIntervalSeconds = 5
 rootUserNames = root
-reader = db username root password password
 sizeCheckIntervalSeconds = 60
 !readOnly = true
 
@@ -19,3 +21,10 @@ datasetCacheSize1024bytes = 1000000
 writeDelaySeconds = 60
 !compressDatasetCache = true
 tolerateWrongCompression = true
+
+reader = db username root password password
+
+filesCheck.parallelCount = 5
+!filesCheck.gapSeconds = 1
+filesCheck.lastIdFile = ../data/icat/lastIdFile
+filesCheck.errorLog = ../data/icat/errorLog

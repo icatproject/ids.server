@@ -14,12 +14,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.icatproject.ids.DataSelection;
-import org.icatproject.ids.DataSelection.DatafileInfo;
 import org.icatproject.ids.DeferredOp;
+import org.icatproject.ids.DfInfoImpl;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +47,13 @@ public class Preparer implements Runnable {
 	private boolean twoLevel;
 	private boolean zip;
 
+	private ZipMapperInterface zipMapper;
+
 	public Preparer(String preparedId, DataSelection dataSelection,
 			PropertyHandler propertyHandler, FiniteStateMachine fsm, boolean compress, boolean zip) {
 		this.preparedId = preparedId;
 		this.dataSelection = dataSelection;
+		this.zipMapper = propertyHandler.getZipMapper();
 		mainStorage = propertyHandler.getMainStorage();
 		twoLevel = propertyHandler.getArchiveStorage() != null;
 		preparedDir = propertyHandler.getCacheDir().resolve("prepared");
@@ -130,11 +134,9 @@ public class Preparer implements Runnable {
 					zos.setLevel(0); // Otherwise use default compression
 				}
 				Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-				for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
+				for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
 					DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-					zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
-							+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
-							+ dsInfo.getDsName() + "/" + dfInfo.getDfName()));
+					zos.putNextEntry(new ZipEntry(zipMapper.getFullEntryName(dsInfo, dfInfo)));
 					InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
 							dfInfo.getCreator());
 					int length;
@@ -147,7 +149,7 @@ public class Preparer implements Runnable {
 				zos.close();
 			} else {
 				tpath = Files.createTempDirectory(preparedDir, null);
-				DatafileInfo dfInfo = dataSelection.getDfInfo().iterator().next();
+				DfInfoImpl dfInfo = dataSelection.getDfInfo().iterator().next();
 				Path filePath = tpath.resolve(dfInfo.getDfName());
 				Files.createDirectories(filePath.getParent());
 				OutputStream output = new BufferedOutputStream(Files.newOutputStream(filePath));

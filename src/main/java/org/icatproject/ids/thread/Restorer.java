@@ -1,6 +1,5 @@
 package org.icatproject.ids.thread;
 
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +18,7 @@ import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,10 +39,13 @@ public class Restorer implements Runnable {
 
 	private IcatReader reader;
 
+	private ZipMapperInterface zipMapper;
+
 	public Restorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm,
 			IcatReader reader) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
+		zipMapper = propertyHandler.getZipMapper();
 		mainStorageInterface = propertyHandler.getMainStorage();
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
@@ -69,13 +72,11 @@ public class Restorer implements Runnable {
 			for (Datafile datafile : datafiles) {
 				nameToLocaMap.put(datafile.getName(), datafile.getLocation());
 			}
-			Path dsPath = new File("ids/" + dsInfo.getFacilityName() + "/" + dsInfo.getInvName()
-					+ "/" + dsInfo.getVisitId() + "/" + dsInfo.getDsName()).toPath();
 			// Now split file and store it locally
 			ZipInputStream zis = new ZipInputStream(Files.newInputStream(path));
 			ZipEntry ze = zis.getNextEntry();
 			while (ze != null) {
-				String dfName = dsPath.relativize(new File(ze.getName()).toPath()).toString();
+				String dfName = zipMapper.getFileName(ze.getName());
 				String location = nameToLocaMap.get(dfName);
 				if (location == null) {
 					logger.error("Unable to store " + dfName + " into " + dsInfo

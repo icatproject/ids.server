@@ -64,4 +64,17 @@ public class IcatReader {
 		}
 	}
 
+	public List<Object> search(String query) throws IcatException_Exception {
+		try {
+			return icat.search(sessionId, query);
+		} catch (IcatException_Exception e) {
+			if (e.getFaultInfo().getType().equals(IcatExceptionType.SESSION)) {
+				login();
+				return icat.search(sessionId, query);
+			} else {
+				throw e;
+			}
+		}
+	}
+
 }

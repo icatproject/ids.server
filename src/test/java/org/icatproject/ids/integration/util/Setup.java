@@ -1,7 +1,6 @@
 package org.icatproject.ids.integration.util;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -43,7 +42,12 @@ public class Setup {
 		return twoLevel;
 	}
 
+	public Path getErrorLog() {
+		return errorLog;
+	}
+
 	private boolean twoLevel;
+	private Path errorLog;
 
 	public Setup(String idsPropertyFile) throws Exception {
 
@@ -124,6 +128,8 @@ public class Setup {
 		preparedCacheDir = cacheDir.resolve("prepared");
 		datasetCacheDir = cacheDir.resolve("dataset");
 		twoLevel = idsProperties.getProperty("plugin.archive.class") != null;
+
+		errorLog = config.resolve(idsProperties.getProperty("filesCheck.errorLog"));
 
 	}
 

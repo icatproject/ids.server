@@ -38,7 +38,6 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
-import org.icatproject.ids.DataSelection.DatafileInfo;
 import org.icatproject.ids.DataSelection.Returns;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -48,6 +47,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.thread.Preparer;
 import org.icatproject.ids.thread.Preparer.PreparerStatus;
 import org.slf4j.Logger;
@@ -99,6 +99,8 @@ public class IdsBean {
 	private boolean tolerateWrongCompression;
 
 	private boolean compressDatasetCache;
+
+	private ZipMapperInterface zipMapper;
 
 	public Response archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
@@ -168,7 +170,7 @@ public class IdsBean {
 
 		/* Now delete from ICAT */
 		List<EntityBaseBean> dfs = new ArrayList<>();
-		for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
+		for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
 			Datafile df = new Datafile();
 			df.setId(dfInfo.getDfId());
 			dfs.add(df);
@@ -196,7 +198,7 @@ public class IdsBean {
 							.resolve(Long.toString(dsInfo.getDsId())));
 				}
 			}
-			for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
+			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
 				mainStorage.delete(dfInfo.getDfLocation());
 			}
 		} catch (IOException e) {
@@ -351,6 +353,7 @@ public class IdsBean {
 						output.write(bytes, 0, length);
 					}
 					output.close();
+					finalStream.close();
 				} else if (finalZip) {
 					ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
 					if (!compress) {
@@ -358,12 +361,11 @@ public class IdsBean {
 					}
 
 					Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-					for (DatafileInfo dfInfo : dataSelection.getDfInfo()) {
+					for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
 						logger.debug("Adding " + dfInfo + " to zip");
 						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-						zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
-								+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
-								+ dsInfo.getDsName() + "/" + dfInfo.getDfName()));
+						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
+						zos.putNextEntry(new ZipEntry(entryName));
 						InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
 								dfInfo.getCreator());
 
@@ -376,7 +378,7 @@ public class IdsBean {
 					}
 					zos.close();
 				} else {
-					DatafileInfo dfInfo = dataSelection.getDfInfo().iterator().next();
+					DfInfoImpl dfInfo = dataSelection.getDfInfo().iterator().next();
 					InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
 							dfInfo.getCreator());
 					int length;
@@ -413,7 +415,6 @@ public class IdsBean {
 				.entity(strOut)
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"")
 				.header("Accept-Ranges", "bytes").build();
-
 	}
 
 	public Response isPrepared(String preparedId) throws BadRequestException, NotFoundException {
@@ -500,6 +501,7 @@ public class IdsBean {
 		try {
 			logger.info("creating IdsBean");
 			propertyHandler = PropertyHandler.getInstance();
+			zipMapper = propertyHandler.getZipMapper();
 			mainStorage = propertyHandler.getMainStorage();
 			twoLevel = propertyHandler.getArchiveStorage() != null;
 			datatypeFactory = DatatypeFactory.newInstance();

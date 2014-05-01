@@ -20,10 +20,9 @@
                     </li>
 
                     <li>
-                        A suitable deployed container (here assumed to be glassfish though tomcat should be sufficient) to support a web
-                        application.
-                        Testing has been carried out with Glassfish 3.1.2.
-                        <a href="https://code.google.com/p/icatproject/wiki/Glassfish">Glassfish installation instructions</a>
+                        A suitable deployed container (here assumed to be glassfish though tomcat should be sufficient) to support a web application.
+                        Testing has been carried out with Glassfish 4.0.
+                        <a href="http://icatproject.org/installation/glassfish/">Glassfish installation instructions</a>
                         are available.
                     </li>
 
@@ -46,20 +45,19 @@
                 <ol>
                     <li>
                         Please follow
-                        <a href="http://code.google.com/p/icatproject/wiki/Installation"> the generic installation instructions</a>
+                        <a href="http://icatproject.org/installation/component/"> the generic installation instructions</a>
                     </li>
 
                     <li>Check that it works.</li>
                 </ol>
             </subsection>
 
-            <subsection name="The ids.setup.properties file">
+            <subsection name="The ids-setup.properties file">
 
                 <dl>
 
                     <dt>glassfish</dt>
-                    <dd>is the top level of the glassfish installation. It must contain "glassfish/domains", and will be referred to here as
-                        GLASSFISH_HOME as if an environment variable had been set.
+                    <dd>is the top level of the glassfish installation. It must contain "glassfish/domains".
                     </dd>
                     <dt>port</dt>
                     <dd>is the administration port of the chosen glassfish domain which is typically 4848.</dd>
@@ -76,10 +74,16 @@
                 <dl>
                     <dt> icat.url</dt>
                     <dd>
-                        The url of the machine hosting the ids service. It should normally just
+                        The url of the machine hosting the icat service. It should normally just
                         have the scheme, the hostname and the port. For
                         example:
                         <code>https://example.com:443</code>
+                    </dd>
+
+                    <dt>plugin.zipMapper.class</dt>
+                    <dd>The class name of the ZipMapper which defines the Zip file structire you want. The class must be deployed in the lib/applibs
+                        directory of your domain and must be
+                        packaged with all it dependencies.
                     </dd>
 
                     <dt>plugin.main.class</dt>
@@ -114,6 +118,15 @@
                     <dd>If true disables write operations (put and delete).
                     </dd>
 
+                    <dt>reader</dt>
+                    <dd>
+                        space separated icat plugin name and credentials for a user permitted to read all datasets, datafiles, investigations and
+                        facilities.
+                        For example:
+                        <code>db username db/root password password.</code>
+                        This is only required if you are using archive storage or if you enable file checking by setting filesCheck.parallelCount to
+                        be greater than 0.
+                    </dd>
 
 
                 </dl>
@@ -152,14 +165,36 @@
                         requested compression.
                     </dd>
 
-                    <dt>reader</dt>
-                    <dd>
-                        space separated icat plugin name and credentials for a user permitted to read all datasets, datafiles,
-                        investigations and
-                        facilities. For example:
-                        <code>db username root password password.</code>
-                    </dd>
+                </dl>
 
+
+                <h4>Properties for file checking</h4>
+
+                <dl>
+                    <dt>filesCheck.parallelCount</dt>
+                    <dd>This must always be set, and if non zero then the readability of the date will be checked. In the case of single level storage
+                        this is done in groups of files where the group size is defined by this parameters. If archive storage has been requested then
+                        only the archive is checked which is stored by dataset and this filesCheck.parallelCount parameter then defines how many
+                        datasets will be checked in parallel. If the archive storage has a long latency then it is useful to have a "large" value. As
+                        a thread is started for each stored datafile or dataset the number should also not be too large. The existence of the file is
+                        checked as is the length of the datafiles and their checksum matching the value stored in ICAT. These are inserted
+                        automatically by the IDS when a datafile is stored. In the case of checking datasets in the archive storage these are unzipped
+                        on the fly to compute the checksum of each file inside the zip file as well as its length
+                    </dd>
+                    <dt>filesCheck.gapSeconds</dt>
+                    <dd>the number of seconds to wait before launching a check of the next batch of datafiles or datasets.</dd>
+                    <dt>filesCheck.lastIdFile</dt>
+                    <dd>the location of a file which is used to store the id value of the last datafile or dataset to be checked. This is so that if
+                        the IDS is restarted it will continue checking where it left off. If this file is deleted the ids will restart checking from
+                        the beginning. The parameters filesCheck.parallelCount and filesCheck.gapSeconds should be set so that the data are all
+                        checked with the desired frequency but without excessive I/O. A nagios plugin might check that this file is being written
+                        periodically and that its contents change.
+                    </dd>
+                    <dt>filesCheck.errorLog</dt>
+                    <dd>the file with a list of errors found. The file is not kept open but opened in append mode each time a problem is spotted and
+                        then closed. A nagios plugin might be set up to watch this file. Entries in the file are data stamped and new entries are
+                        simply appended without regard for the existence of an entry for the same file.
+                    </dd>
                 </dl>
 
             </subsection>
@@ -181,6 +216,7 @@
                 understood. A recipe
                 to get glassfish started may be found at:
                 <a href="http:/code.google.com/p/icatproject/wiki/Glassfish">http:/code.google.com/p/icatproject/wiki/Glassfish</a>
+                . The issue has not been seen with glassfish 4.
             </subsection>
 
         </section>

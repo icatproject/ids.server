@@ -9,12 +9,14 @@ import java.util.zip.ZipOutputStream;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
+import org.icatproject.ids.DfInfoImpl;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,10 +40,13 @@ public class WriteThenArchiver implements Runnable {
 
 	private IcatReader reader;
 
+	private ZipMapperInterface zipMapper;
+
 	public WriteThenArchiver(DsInfo dsInfo, PropertyHandler propertyHandler,
 			FiniteStateMachine fsm, IcatReader reader) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
+		this.zipMapper = propertyHandler.getZipMapper();
 		mainStorageInterface = propertyHandler.getMainStorage();
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
@@ -68,9 +73,11 @@ public class WriteThenArchiver implements Runnable {
 							Files.newOutputStream(datasetCachePath));
 					zos.setLevel(0);
 					for (Datafile datafile : datafiles) {
-						zos.putNextEntry(new ZipEntry("ids/" + dsInfo.getFacilityName() + "/"
-								+ dsInfo.getInvName() + "/" + dsInfo.getVisitId() + "/"
-								+ dsInfo.getDsName() + "/" + datafile.getName()));
+						String entryName = zipMapper.getFullEntryName(
+								dsInfo,
+								new DfInfoImpl(datafile.getId(), datafile.getName(), datafile
+										.getLocation(), datafile.getCreateId(), 0L));
+						zos.putNextEntry(new ZipEntry(entryName));
 						InputStream is = mainStorageInterface.get(datafile.getLocation(),
 								datafile.getCreateId());
 						int bytesRead = 0;

@@ -18,6 +18,7 @@ import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 import org.slf4j.Logger;
@@ -31,7 +32,6 @@ public class PropertyHandler {
 	private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
 	private static PropertyHandler instance = null;
 
-	private String icatUrl;
 	private long writeDelaySeconds;
 	private long processQueueIntervalSeconds;
 	private MainStorageInterface mainStorage;
@@ -46,10 +46,6 @@ public class PropertyHandler {
 
 	public static Logger getLogger() {
 		return logger;
-	}
-
-	public String getIcatUrl() {
-		return icatUrl;
 	}
 
 	public long getPreparedCacheSizeBytes() {
@@ -76,6 +72,11 @@ public class PropertyHandler {
 	private boolean compressDatasetCache;
 	private boolean tolerateWrongCompression;
 	private long datasetCacheSizeBytes;
+	private ZipMapperInterface zipMapper;
+	private int filesCheckParallelCount;
+	private int filesCheckGapMillis;
+	private Path filesCheckLastIdFile;
+	private Path filesCheckErrorLog;
 
 	public Set<String> getRootUserNames() {
 		return rootUserNames;
@@ -95,7 +96,7 @@ public class PropertyHandler {
 			logger.info("Property file ids.properties loaded");
 
 			// do some very basic error checking on the config options
-			icatUrl = props.getProperty("icat.url");
+			String icatUrl = props.getProperty("icat.url");
 			if (!icatUrl.endsWith("ICATService/ICAT?wsdl")) {
 				if (icatUrl.charAt(icatUrl.length() - 1) == '/') {
 					icatUrl = icatUrl + "ICATService/ICAT?wsdl";
@@ -138,6 +139,15 @@ public class PropertyHandler {
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
 
 			try {
+				Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class.forName(props
+						.getString("plugin.zipMapper.class"));
+				zipMapper = klass.newInstance();
+				logger.debug("ZipMapper initialised");
+			} catch (Exception e) {
+				abort(e.getClass() + " " + e.getMessage());
+			}
+
+			try {
 				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
 						.forName(props.getString("plugin.main.class"));
 				mainStorage = klass.getConstructor(File.class).newInstance(
@@ -157,6 +167,7 @@ public class PropertyHandler {
 				compressDatasetCache = props.getBoolean("compressDatasetCache", false);
 				tolerateWrongCompression = props.getBoolean("tolerateWrongCompression", false);
 				datasetCacheSizeBytes = props.getPositiveLong("datasetCacheSize1024bytes") * 1024;
+				props.getString("reader"); // Make sure it's present
 
 				try {
 					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
@@ -175,6 +186,20 @@ public class PropertyHandler {
 			cacheDir = props.getFile("cache.dir").toPath();
 			if (!Files.isDirectory(cacheDir)) {
 				abort(cacheDir + " must be an existing directory");
+			}
+
+			filesCheckParallelCount = props.getNonNegativeInt("filesCheck.parallelCount");
+			if (filesCheckParallelCount > 0) {
+				filesCheckGapMillis = props.getPositiveInt("filesCheck.gapSeconds") * 1000;
+				filesCheckLastIdFile = props.getFile("filesCheck.lastIdFile").toPath();
+				if (!Files.exists(filesCheckLastIdFile.getParent())) {
+					abort("Directory for " + filesCheckLastIdFile + " does not exist");
+				}
+				filesCheckErrorLog = props.getFile("filesCheck.errorLog").toPath();
+				if (!Files.exists(filesCheckErrorLog.getParent())) {
+					abort("Directory for " + filesCheckErrorLog + " does not exist");
+				}
+				props.getString("reader"); // Make sure it's present
 			}
 
 		} catch (CheckedPropertyException e) {
@@ -226,4 +251,25 @@ public class PropertyHandler {
 	public boolean getReadOnly() {
 		return readOnly;
 	}
+
+	public ZipMapperInterface getZipMapper() {
+		return zipMapper;
+	}
+
+	public int getFilesCheckParallelCount() {
+		return filesCheckParallelCount;
+	}
+
+	public long getFilesCheckGapMillis() {
+		return filesCheckGapMillis;
+	}
+
+	public Path getFilesCheckLastIdFile() {
+		return filesCheckLastIdFile;
+	}
+
+	public Path getFilesCheckErrorLog() {
+		return filesCheckErrorLog;
+	}
+
 }

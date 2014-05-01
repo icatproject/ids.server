@@ -21,65 +21,6 @@ import org.icatproject.ids.plugin.DsInfo;
 
 public class DataSelection {
 
-	public class DatafileInfo {
-
-		public long getDfId() {
-			return dfId;
-		}
-
-		public String getDfName() {
-			return dfName;
-		}
-
-		public String getDfLocation() {
-			return dfLocation;
-		}
-
-		public long getDsId() {
-			return dsId;
-		}
-
-		private long dfId;
-		private String dfName;
-		private String dfLocation;
-		private long dsId;
-		private String creator;
-
-		public DatafileInfo(long dfId, String dfName, String dfLocation, String creator, long dsId) {
-			this.dfId = dfId;
-			this.dfName = dfName;
-			this.dfLocation = dfLocation;
-			this.creator = creator;
-			this.dsId = dsId;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (obj == this) {
-				return true;
-			}
-			if (obj == null || obj.getClass() != this.getClass()) {
-				return false;
-			}
-			return dfId == ((DatafileInfo) obj).getDfId();
-		}
-
-		@Override
-		public int hashCode() {
-			return (int) (dfId ^ (dfId >>> 32));
-		}
-
-		@Override
-		public String toString() {
-			return dfLocation;
-		}
-
-		public String getCreator() {
-			return creator;
-		}
-
-	}
-
 	/**
 	 * Checks to see if the investigation, dataset or datafile id list is a valid comma separated
 	 * list of longs. No spaces or leading 0's. Also accepts null.
@@ -112,7 +53,7 @@ public class DataSelection {
 	private List<Long> dfids;
 	private List<Long> dsids;
 	private List<Long> invids;
-	private Set<DatafileInfo> dfInfos;
+	private Set<DfInfoImpl> dfInfos;
 	private Set<Long> emptyDatasets;
 
 	public enum Returns {
@@ -157,7 +98,7 @@ public class DataSelection {
 					dsInfos.put(dsid, new DsInfoImpl(ds));
 					if (dfWanted) {
 						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
-						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), df
+						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df.getLocation(), df
 								.getCreateId(), dsid));
 					}
 				} else {
@@ -172,7 +113,7 @@ public class DataSelection {
 					ds = (Dataset) icat.get(sessionId,
 							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 					for (Datafile df : ds.getDatafiles()) {
-						dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df.getLocation(), df
+						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df.getLocation(), df
 								.getCreateId(), dsid));
 						empty = false;
 					}
@@ -205,7 +146,7 @@ public class DataSelection {
 						long dsid = ds.getId();
 						if (dfWanted) {
 							for (Datafile df : ds.getDatafiles()) {
-								dfInfos.add(new DatafileInfo(df.getId(), df.getName(), df
+								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df
 										.getLocation(), df.getCreateId(), dsid));
 							}
 						}
@@ -238,7 +179,7 @@ public class DataSelection {
 		}
 	}
 
-	public Set<DatafileInfo> getDfInfo() {
+	public Set<DfInfoImpl> getDfInfo() {
 		return dfInfos;
 	}
 
