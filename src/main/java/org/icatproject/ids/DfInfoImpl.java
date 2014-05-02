@@ -4,7 +4,7 @@ import org.icatproject.ids.plugin.DfInfo;
 
 public class DfInfoImpl implements DfInfo {
 
-	private String creator;
+	private String createId;
 
 	private long dfId;
 
@@ -13,13 +13,19 @@ public class DfInfoImpl implements DfInfo {
 	private String dfName;
 
 	private long dsId;
-	public DfInfoImpl(long dfId, String dfName, String dfLocation, String creator, long dsId) {
+
+	private String modId;
+
+	public DfInfoImpl(long dfId, String dfName, String dfLocation, String createId, String modId,
+			long dsId) {
 		this.dfId = dfId;
 		this.dfName = dfName;
 		this.dfLocation = dfLocation;
-		this.creator = creator;
+		this.createId = createId;
+		this.modId = modId;
 		this.dsId = dsId;
 	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) {
@@ -30,10 +36,12 @@ public class DfInfoImpl implements DfInfo {
 		}
 		return dfId == ((DfInfoImpl) obj).getDfId();
 	}
+
 	@Override
-	public String getCreator() {
-		return creator;
+	public String getCreateId() {
+		return createId;
 	}
+
 	@Override
 	public long getDfId() {
 		return dfId;
@@ -51,6 +59,11 @@ public class DfInfoImpl implements DfInfo {
 
 	public long getDsId() {
 		return dsId;
+	}
+
+	@Override
+	public String getModId() {
+		return modId;
 	}
 
 	@Override

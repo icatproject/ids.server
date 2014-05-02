@@ -10,9 +10,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>http://www.icatproject.org/mvn/repo</repoUrl>
+        <storage.plugin>ids.storage_file-1.1.0-SNAPSHOT.jar</storage.plugin>
     </properties>
-
-
 
     <distributionManagement>
         <downloadUrl>http://www.icatproject.org/mvn/repo</downloadUrl>
@@ -236,7 +235,7 @@
                                 <argument>deploy</argument>
                                 <argument>--force</argument>
                                 <argument>--libraries</argument>
-                                <argument>ids.storage_file-1.0.0.jar</argument>
+                                <argument>${storage.plugin}</argument>
                                 <argument>target/ids.server-${project.version}.war</argument>
                             </arguments>
                         </configuration>

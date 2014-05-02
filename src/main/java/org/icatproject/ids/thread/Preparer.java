@@ -1,6 +1,7 @@
 package org.icatproject.ids.thread;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -138,7 +139,7 @@ public class Preparer implements Runnable {
 					DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
 					zos.putNextEntry(new ZipEntry(zipMapper.getFullEntryName(dsInfo, dfInfo)));
 					InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
-							dfInfo.getCreator());
+							dfInfo.getCreateId(), dfInfo.getModId());
 					int length;
 					while ((length = stream.read(bytes)) >= 0) {
 						zos.write(bytes, 0, length);
@@ -150,10 +151,11 @@ public class Preparer implements Runnable {
 			} else {
 				tpath = Files.createTempDirectory(preparedDir, null);
 				DfInfoImpl dfInfo = dataSelection.getDfInfo().iterator().next();
-				Path filePath = tpath.resolve(dfInfo.getDfName());
+				Path filePath = tpath.resolve(new File(dfInfo.getDfName()).getName());
 				Files.createDirectories(filePath.getParent());
 				OutputStream output = new BufferedOutputStream(Files.newOutputStream(filePath));
-				InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreator());
+				InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
+						dfInfo.getModId());
 				int length;
 				while ((length = stream.read(bytes)) >= 0) {
 					output.write(bytes, 0, length);

@@ -99,7 +99,7 @@ public class DataSelection {
 					if (dfWanted) {
 						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
 						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df.getLocation(), df
-								.getCreateId(), dsid));
+								.getCreateId(), df.getModId(), dsid));
 					}
 				} else {
 					icat.get(sessionId, "Datafile", dfid); // May reveal a permissions problem
@@ -114,7 +114,7 @@ public class DataSelection {
 							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 					for (Datafile df : ds.getDatafiles()) {
 						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df.getLocation(), df
-								.getCreateId(), dsid));
+								.getCreateId(), df.getModId(), dsid));
 						empty = false;
 					}
 				} else {
@@ -147,7 +147,7 @@ public class DataSelection {
 						if (dfWanted) {
 							for (Datafile df : ds.getDatafiles()) {
 								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df
-										.getLocation(), df.getCreateId(), dsid));
+										.getLocation(), df.getCreateId(), df.getModId(), dsid));
 							}
 						}
 						dsInfos.put(dsid, new DsInfoImpl(ds));

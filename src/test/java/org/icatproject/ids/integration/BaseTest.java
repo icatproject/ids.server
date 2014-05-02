@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URLEncoder;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -224,7 +225,7 @@ public class BaseTest {
 			inv.setType(invType);
 			inv.setTitle("Not null");
 			inv.setFacility(fac);
-			inv.setVisitId("A_visit");
+			inv.setVisitId("N/A");
 			inv.setId(icat.create(sessionId, inv));
 			investigationId = inv.getId();
 			String invLoc = inv.getId() + "/";
@@ -246,7 +247,7 @@ public class BaseTest {
 			String ds2Loc = invLoc + ds2.getId() + "/";
 
 			Datafile df1 = new Datafile();
-			df1.setName("df1_" + timestamp);
+			df1.setName("a/df1_" + timestamp);
 			df1.setLocation(ds1Loc + UUID.randomUUID());
 			df1.setDataset(ds1);
 			writeToFile(df1, "df1 test content very compressible very compressible");
@@ -369,8 +370,9 @@ public class BaseTest {
 		Investigation inv = ds.getInvestigation();
 		Facility fac = inv.getFacility();
 		paths.put(
-				"ids/" + fac.getName() + "/" + inv.getName() + "/" + inv.getVisitId() + "/"
-						+ ds.getName() + "/" + df.getName(), df.getLocation());
+				"ids/" + fac.getName() + "/" + inv.getName() + "/"
+						+ URLEncoder.encode(inv.getVisitId(), "UTF-8") + "/" + ds.getName() + "/"
+						+ df.getName(), df.getLocation());
 	}
 
 	private void zipDatasetToArchive(Dataset ds, String dsLoc, Facility fac, Investigation inv)
@@ -389,7 +391,8 @@ public class BaseTest {
 			InputStream fis = Files.newInputStream(file);
 
 			zos.putNextEntry(new ZipEntry("ids/" + fac.getName() + "/" + inv.getName() + "/"
-					+ inv.getVisitId() + "/" + ds.getName() + "/" + df.getName()));
+					+ URLEncoder.encode(inv.getVisitId(), "UTF-8") + "/" + ds.getName() + "/"
+					+ df.getName()));
 			byte[] bytes = new byte[1024];
 			int length;
 			while ((length = fis.read(bytes)) >= 0) {

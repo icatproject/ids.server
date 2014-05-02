@@ -74,11 +74,13 @@ public class Writer implements Runnable {
 						zos.setLevel(0);
 					}
 					for (Datafile datafile : datafiles) {
-						zos.putNextEntry(new ZipEntry(zipMapper.getFullEntryName(dsInfo,
-								new DfInfoImpl(datafile.getId(), datafile.getName(), datafile.getLocation(),
-										datafile.getCreateId(), 0L))));
+						zos.putNextEntry(new ZipEntry(zipMapper.getFullEntryName(
+								dsInfo,
+								new DfInfoImpl(datafile.getId(), datafile.getName(), datafile
+										.getLocation(), datafile.getCreateId(),
+										datafile.getModId(), 0L))));
 						InputStream is = mainStorageInterface.get(datafile.getLocation(),
-								datafile.getCreateId());
+								datafile.getCreateId(), datafile.getModId());
 						int bytesRead = 0;
 						byte[] buffer = new byte[BUFSIZ];
 						while ((bytesRead = is.read(buffer)) > 0) {

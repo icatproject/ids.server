@@ -73,13 +73,12 @@ public class WriteThenArchiver implements Runnable {
 							Files.newOutputStream(datasetCachePath));
 					zos.setLevel(0);
 					for (Datafile datafile : datafiles) {
-						String entryName = zipMapper.getFullEntryName(
-								dsInfo,
-								new DfInfoImpl(datafile.getId(), datafile.getName(), datafile
-										.getLocation(), datafile.getCreateId(), 0L));
+						String entryName = zipMapper.getFullEntryName(dsInfo, new DfInfoImpl(
+								datafile.getId(), datafile.getName(), datafile.getLocation(),
+								datafile.getCreateId(), datafile.getModId(), 0L));
 						zos.putNextEntry(new ZipEntry(entryName));
 						InputStream is = mainStorageInterface.get(datafile.getLocation(),
-								datafile.getCreateId());
+								datafile.getCreateId(), datafile.getModId());
 						int bytesRead = 0;
 						byte[] buffer = new byte[BUFSIZ];
 						while ((bytesRead = is.read(buffer)) > 0) {

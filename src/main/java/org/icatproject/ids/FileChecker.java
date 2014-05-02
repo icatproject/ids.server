@@ -128,7 +128,7 @@ public class FileChecker {
 						report(df, "location null");
 						return;
 					}
-					InputStream is = mainStorage.get(location, df.getCreateId());
+					InputStream is = mainStorage.get(location, df.getCreateId(), df.getModId());
 					CRC32 crc = new CRC32();
 					byte[] bytes = new byte[1024];
 					int length;

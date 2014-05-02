@@ -50,14 +50,12 @@ if arg == "INSTALL":
             abort("Please create directory " + parent + " for filesCheck.errorLog specified in ids.properties")
         if not idsProperties.get("reader"): abort("reader is not set in ids.properties")
 
-       
-
     actions.installFile("ids.properties")
    
     try:          
         app = actions.getAppName("ids.server")
         if app: actions.asadmin("undeploy " + app)
-                        
+          
         actions.deploy("ids.server-*.war", deploymentorder=120, libraries=props["libraries"].split())
                       
     except Exception, e:
@@ -66,11 +64,11 @@ if arg == "INSTALL":
                 
 if arg == "UNINSTALL":
     actions.removeFile("ids.properties") 
-    actions.removeFile("ids-storage.properties")
     
     try:
         app = actions.getAppName("ids.server")
-        if app: actions.asadmin("undeploy " + app)
+        if app: actions.asadmin("undeploy " + app)       
+  
                   
     except Exception, e:
         abort(str(e))       

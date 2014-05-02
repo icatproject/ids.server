@@ -24,7 +24,8 @@ tolerateWrongCompression = true
 
 reader = db username root password password
 
+# File checking properties
 filesCheck.parallelCount = 5
-!filesCheck.gapSeconds = 1
+filesCheck.gapSeconds = 5
 filesCheck.lastIdFile = ../data/icat/lastIdFile
 filesCheck.errorLog = ../data/icat/errorLog

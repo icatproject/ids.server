@@ -367,7 +367,7 @@ public class IdsBean {
 						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
 						zos.putNextEntry(new ZipEntry(entryName));
 						InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
-								dfInfo.getCreator());
+								dfInfo.getCreateId(), dfInfo.getModId());
 
 						int length;
 						while ((length = stream.read(bytes)) >= 0) {
@@ -380,7 +380,7 @@ public class IdsBean {
 				} else {
 					DfInfoImpl dfInfo = dataSelection.getDfInfo().iterator().next();
 					InputStream stream = mainStorage.get(dfInfo.getDfLocation(),
-							dfInfo.getCreator());
+							dfInfo.getCreateId(), dfInfo.getModId());
 					int length;
 					while ((length = stream.read(bytes)) >= 0) {
 						output.write(bytes, 0, length);
