@@ -81,7 +81,7 @@
                     </dd>
 
                     <dt>plugin.zipMapper.class</dt>
-                    <dd>The class name of the ZipMapper which defines the Zip file structire you want. The class must be deployed in the lib/applibs
+                    <dd>The class name of the ZipMapper which defines the Zip file structure you want. The class must be deployed in the lib/applibs
                         directory of your domain and must be
                         packaged with all it dependencies.
                     </dd>
@@ -136,9 +136,8 @@
                 <dl>
 
                     <dt>plugin.archive.class</dt>
-                    <dd> The class name of the archive storage plugin. The class must be deployed in the lib/applibs directory of your domain and must
-                        be
-                        packaged with all it dependencies.
+                    <dd>The class name of the archive storage plugin. The class must be deployed in the lib/applibs directory of your domain and must
+                        be packaged with all it dependencies.
                     </dd>
 
                     <dt>plugin.archive.properties</dt>
@@ -153,33 +152,38 @@
                     </dd>
 
                     <dt>compressDatasetCache</dt>
-                    <dd>If true the dataset cache and the archive storage of datasets will all be compressed. This takes longer to write and is
-                        only
+                    <dd>If true the dataset cache and the archive storage of datasets will all be compressed. This takes longer to write and is only
                         useful if you know that the data will compress well.
                     </dd>
 
                     <dt>tolerateWrongCompression</dt>
-                    <dd>If true a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not
-                        match
-                        the
-                        requested compression.
+                    <dd>If true a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not match
+                        the requested compression.
                     </dd>
 
                 </dl>
 
 
                 <h4>Properties for file checking</h4>
-
+                <p>
+                    When a datafile is added to the IDS its length and checksum are computed and stored in ICAT. File checking, if enabled, cycles
+                    through all the stored data making sure that they can be read and that files have the expected size and checksum.
+                </p>
                 <dl>
                     <dt>filesCheck.parallelCount</dt>
-                    <dd>This must always be set, and if non zero then the readability of the date will be checked. In the case of single level storage
-                        this is done in groups of files where the group size is defined by this parameters. If archive storage has been requested then
-                        only the archive is checked which is stored by dataset and this filesCheck.parallelCount parameter then defines how many
-                        datasets will be checked in parallel. If the archive storage has a long latency then it is useful to have a "large" value. As
-                        a thread is started for each stored datafile or dataset the number should also not be too large. The existence of the file is
-                        checked as is the length of the datafiles and their checksum matching the value stored in ICAT. These are inserted
-                        automatically by the IDS when a datafile is stored. In the case of checking datasets in the archive storage these are unzipped
-                        on the fly to compute the checksum of each file inside the zip file as well as its length
+                    <dd>
+                        This must always be set, and if non zero then the readability of the data will be checked. The behaviour is dependent upon
+                        whether or not archive storage has a been requested. In the case of single level storage this is done in groups of files where
+                        the group size is defined by this parameter. If archive storage has been requested then only the archive is checked. Each file
+                        in the archive holds a complete dataset and this filesCheck.parallelCount parameter then defines how many dataset files will
+                        be checked in parallel.
+                        <p> In the case of checking datasets in the archive storage these are unzipped on the fly to compute the checksum of each file
+                            inside the zip file as well as its length.
+                        </p>
+                        <p>
+                            If the archive storage has a long latency then it is useful to have a "large" value, however a thread is started for each
+                            stored file so the value of this parameter should not be too large.
+                        </p>
                     </dd>
                     <dt>filesCheck.gapSeconds</dt>
                     <dd>the number of seconds to wait before launching a check of the next batch of datafiles or datasets.</dd>
@@ -191,9 +195,9 @@
                         periodically and that its contents change.
                     </dd>
                     <dt>filesCheck.errorLog</dt>
-                    <dd>the file with a list of errors found. The file is not kept open but opened in append mode each time a problem is spotted and
-                        then closed. A nagios plugin might be set up to watch this file. Entries in the file are data stamped and new entries are
-                        simply appended without regard for the existence of an entry for the same file.
+                    <dd>the file with a list of errors found. The file is not kept open but instead is opened in append mode each time a problem is
+                        spotted and then closed. A nagios plugin might be set up to watch this file. Entries in the file are data stamped and new
+                        entries are simply appended without regard for the existence of an entry for the same file.
                     </dd>
                 </dl>
 
@@ -214,8 +218,8 @@
                 With this component installed it can be impossible to start the glassfish domain. The conditions under which
                 this occurs are not
                 understood. A recipe
-                to get glassfish started may be found at:
-                <a href="http:/code.google.com/p/icatproject/wiki/Glassfish">http:/code.google.com/p/icatproject/wiki/Glassfish</a>
+                to get glassfish started may be found at the bottom of:
+                <a href="http://icatproject.org/installation/glassfish/">http:/code.google.com/p/icatproject/wiki/Glassfish</a>
                 . The issue has not been seen with glassfish 4.
             </subsection>
 
