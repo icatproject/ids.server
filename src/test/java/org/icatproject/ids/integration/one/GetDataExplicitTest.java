@@ -16,10 +16,6 @@ import org.junit.Test;
 
 public class GetDataExplicitTest extends BaseTest {
 
-	// value of the offset in bytes
-	final Integer goodOffset = 20;
-	final Integer badOffset = 99999999;
-
 	@BeforeClass
 	public static void setup() throws Exception {
 		setup = new Setup("one.properties");

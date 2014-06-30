@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Capture any {@link org.icatproject.ids.exceptions.IdsException WebServiceException}
- * thrown from {@link org.icatproject.ids.IdsService WebService} and generate the
- * appropriate response code and message.
+ * Capture any {@link org.icatproject.ids.exceptions.IdsException WebServiceException} thrown from
+ * {@link org.icatproject.ids.IdsService WebService} and generate the appropriate response code and
+ * message.
  */
 @Provider
 public class IdsExceptionMapper implements ExceptionMapper<IdsException> {
@@ -28,6 +28,5 @@ public class IdsExceptionMapper implements ExceptionMapper<IdsException> {
 		} catch (JsonProcessingException e1) {
 			return Response.status(e.getHttpStatusCode()).entity(e.getMessage()).build();
 		}
-
 	}
 }

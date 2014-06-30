@@ -1,6 +1,7 @@
 package org.icatproject.ids;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
@@ -10,6 +11,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
@@ -20,8 +22,15 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.fileupload.util.Streams;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -219,12 +228,85 @@ public class IdsService {
 
 		try {
 			return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description,
-					doi, datafileCreateTime, datafileModTime);
+					doi, datafileCreateTime, datafileModTime, false, false);
 		} catch (RuntimeException e) {
 			processRuntimeException(e);
 			return null; // Will never get here but the compiler doesn't know
 		}
 
+	}
+
+	@POST
+	@Path("put")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@Produces("text/html")
+	public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException,
+			NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException {
+		if (!ServletFileUpload.isMultipartContent(request)) {
+			throw new BadRequestException("Multipart content expected");
+		}
+		try {
+			ServletFileUpload upload = new ServletFileUpload();
+			String sessionId = null;
+			String name = null;
+			long datafileFormatId = 0;
+			long datasetId = 0;
+			String description = null;
+			String doi = null;
+			Long datafileCreateTime = null;
+			Long datafileModTime = null;
+			Response result = null;
+			boolean wrap = false;
+			boolean padding = false;
+
+			// Parse the request
+			FileItemIterator iter = upload.getItemIterator(request);
+			while (iter.hasNext()) {
+				FileItemStream item = iter.next();
+				String fieldName = item.getFieldName();
+				InputStream stream = item.openStream();
+				if (item.isFormField()) {
+					String value = Streams.asString(stream);
+					if (fieldName.equals("sessionId")) {
+						sessionId = value;
+					} else if (fieldName.equals("name")) {
+						name = value;
+					} else if (fieldName.equals("datafileFormatId")) {
+						datafileFormatId = Long.parseLong(value);
+					} else if (fieldName.equals("datasetId")) {
+						datasetId = Long.parseLong(value);
+					} else if (fieldName.equals("description")) {
+						description = value;
+					} else if (fieldName.equals("doi")) {
+						doi = value;
+					} else if (fieldName.equals("datafileCreateTime")) {
+						datafileCreateTime = Long.parseLong(value);
+					} else if (fieldName.equals("datafileModTime")) {
+						datafileModTime = Long.parseLong(value);
+					} else if (fieldName.equals("wrap")) {
+						wrap = (value != null && value.toUpperCase().equals("TRUE"));
+					} else if (fieldName.equals("padding")) {
+						padding = (value != null && value.toUpperCase().equals("TRUE"));
+					} else {
+						throw new BadRequestException("Form field " + fieldName
+								+ "is not recognised");
+					}
+				} else {
+					if (name == null) {
+						name = item.getName();
+					}
+					result = idsBean.put(stream, sessionId, name, datafileFormatId, datasetId,
+							description, doi, datafileCreateTime, datafileModTime, wrap, padding);
+				}
+			}
+			return result;
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		} catch (IOException | FileUploadException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
 	}
 
 	private void processRuntimeException(RuntimeException e) throws InternalException {

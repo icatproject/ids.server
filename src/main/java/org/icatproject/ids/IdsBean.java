@@ -41,6 +41,7 @@ import org.icatproject.Login.Credentials.Entry;
 import org.icatproject.ids.DataSelection.Returns;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
+import org.icatproject.ids.exceptions.IdsException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
@@ -53,6 +54,7 @@ import org.icatproject.ids.thread.Preparer.PreparerStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -60,6 +62,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class IdsBean {
 
 	private static final int BUFSIZ = 2048;
+
+	private static final String prefix = "<html><script type=\"text/javascript\">window.name='";
+	private static final String suffix = "';</script></html>";
+	private static String paddedPrefix;
+	static {
+		paddedPrefix = "<html><script type=\"text/javascript\">/*";
+		for (int n = 1; n < 25; n++) {
+			paddedPrefix += " *        \n";
+		}
+		paddedPrefix += "*/window.name='";
+	}
 
 	private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
 
@@ -556,113 +569,145 @@ public class IdsBean {
 
 	public Response put(InputStream body, String sessionId, String name, long datafileFormatId,
 			long datasetId, String description, String doi, Long datafileCreateTime,
-			Long datafileModTime) throws NotFoundException, DataNotOnlineException,
-			BadRequestException, InsufficientPrivilegesException, InternalException,
-			NotImplementedException {
+			Long datafileModTime, boolean wrap, boolean padding) throws NotFoundException,
+			DataNotOnlineException, BadRequestException, InsufficientPrivilegesException,
+			InternalException, NotImplementedException {
 
-		// Log and validate
-		logger.info("New webservice request: put " + "name='" + name + "' " + "datafileFormatId='"
-				+ datafileFormatId + "' " + "datasetId='" + datasetId + "' " + "description='"
-				+ description + "' " + "doi='" + doi + "' " + "datafileCreateTime='"
-				+ datafileCreateTime + "' " + "datafileModTime='" + datafileModTime + "'");
-
-		if (readOnly) {
-			throw new NotImplementedException(
-					"This operation has been configured to be unavailable");
-		}
-
-		IdsBean.validateUUID("sessionId", sessionId);
-		if (name == null) {
-			throw new BadRequestException("The name parameter must be set");
-		}
-		if (datafileFormatId == 0) {
-			throw new BadRequestException("The datafileFormatId parameter must be set");
-		}
-		if (datasetId == 0) {
-			throw new BadRequestException("The datasetId parameter must be set");
-		}
-
-		// Do it
-		Dataset ds;
 		try {
-			ds = (Dataset) icat
-					.get(sessionId, "Dataset INCLUDE Investigation, Facility", datasetId);
-		} catch (IcatException_Exception e) {
-			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-					|| type == IcatExceptionType.SESSION) {
-				throw new InsufficientPrivilegesException(e.getMessage());
-			}
-			if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-				throw new NotFoundException(e.getMessage());
-			}
-			throw new InternalException(type + " " + e.getMessage());
-		}
+			// Log and validate
+			logger.info("New webservice request: put " + "name='" + name + "' "
+					+ "datafileFormatId='" + datafileFormatId + "' " + "datasetId='" + datasetId
+					+ "' " + "description='" + description + "' " + "doi='" + doi + "' "
+					+ "datafileCreateTime='" + datafileCreateTime + "' " + "datafileModTime='"
+					+ datafileModTime + "'");
 
-		DsInfo dsInfo = new DsInfoImpl(ds);
-		try {
-
-			if (twoLevel) {
-				if (!mainStorage.exists(dsInfo)) {
-					try {
-						List<Object> counts = icat.search(sessionId,
-								"COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
-						if ((Long) counts.get(0) != 0) {
-							fsm.queue(dsInfo, DeferredOp.RESTORE);
-							throw new DataNotOnlineException(
-									"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
-						}
-					} catch (IcatException_Exception e) {
-						IcatExceptionType type = e.getFaultInfo().getType();
-						if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-								|| type == IcatExceptionType.SESSION) {
-							throw new InsufficientPrivilegesException(e.getMessage());
-						}
-						if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-							throw new NotFoundException(e.getMessage());
-						}
-						throw new InternalException(type + " " + e.getMessage());
-					}
-
-				}
-				// Remove the local data set cache
-				Files.deleteIfExists(datasetDir.resolve(Long.toString(dsInfo.getInvId())).resolve(
-						Long.toString(dsInfo.getDsId())));
+			if (readOnly) {
+				throw new NotImplementedException(
+						"This operation has been configured to be unavailable");
 			}
 
-			CRC32 crc = new CRC32();
-			CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
-			String location = mainStorage.put(dsInfo, name, is);
-			is.close();
-			long checksum = crc.getValue();
-			long size = is.getSize();
-			Long dfId;
+			IdsBean.validateUUID("sessionId", sessionId);
+			if (name == null) {
+				throw new BadRequestException("The name parameter must be set");
+			}
+			if (datafileFormatId == 0) {
+				throw new BadRequestException("The datafileFormatId parameter must be set");
+			}
+			if (datasetId == 0) {
+				throw new BadRequestException("The datasetId parameter must be set");
+			}
+
+			// Do it
+			Dataset ds;
 			try {
-				dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum,
-						size, ds, description, doi, datafileCreateTime, datafileModTime);
-			} catch (InsufficientPrivilegesException | NotFoundException | InternalException
-					| BadRequestException e) {
-				logger.debug("Problem with registration " + e.getClass() + " " + e.getMessage()
-						+ " datafile will now be deleted");
-				mainStorage.delete(location);
-				throw e;
+				ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation, Facility",
+						datasetId);
+			} catch (IcatException_Exception e) {
+				IcatExceptionType type = e.getFaultInfo().getType();
+				if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
+						|| type == IcatExceptionType.SESSION) {
+					throw new InsufficientPrivilegesException(e.getMessage());
+				}
+				if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+					throw new NotFoundException(e.getMessage());
+				}
+				throw new InternalException(type + " " + e.getMessage());
 			}
 
-			if (twoLevel) {
-				fsm.queue(dsInfo, DeferredOp.WRITE);
-			}
+			DsInfo dsInfo = new DsInfoImpl(ds);
+			try {
 
+				if (twoLevel) {
+					if (!mainStorage.exists(dsInfo)) {
+						try {
+							List<Object> counts = icat.search(sessionId,
+									"COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
+							if ((Long) counts.get(0) != 0) {
+								fsm.queue(dsInfo, DeferredOp.RESTORE);
+								throw new DataNotOnlineException(
+										"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
+							}
+						} catch (IcatException_Exception e) {
+							IcatExceptionType type = e.getFaultInfo().getType();
+							if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
+									|| type == IcatExceptionType.SESSION) {
+								throw new InsufficientPrivilegesException(e.getMessage());
+							}
+							if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+								throw new NotFoundException(e.getMessage());
+							}
+							throw new InternalException(type + " " + e.getMessage());
+						}
+
+					}
+					// Remove the local data set cache
+					Files.deleteIfExists(datasetDir.resolve(Long.toString(dsInfo.getInvId()))
+							.resolve(Long.toString(dsInfo.getDsId())));
+				}
+
+				CRC32 crc = new CRC32();
+				CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
+				String location = mainStorage.put(dsInfo, name, is);
+				is.close();
+				long checksum = crc.getValue();
+				long size = is.getSize();
+				Long dfId;
+				try {
+					dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum,
+							size, ds, description, doi, datafileCreateTime, datafileModTime);
+				} catch (InsufficientPrivilegesException | NotFoundException | InternalException
+						| BadRequestException e) {
+					logger.debug("Problem with registration " + e.getClass() + " " + e.getMessage()
+							+ " datafile will now be deleted");
+					mainStorage.delete(location);
+					throw e;
+				}
+
+				if (twoLevel) {
+					fsm.queue(dsInfo, DeferredOp.WRITE);
+				}
+
+				ObjectMapper om = new ObjectMapper();
+				ObjectNode putResult = om.createObjectNode();
+				putResult.put("id", dfId);
+				putResult.put("checksum", checksum);
+				putResult.put("location", location.replace("\\", "\\\\").replace("'", "\\'"));
+				putResult.put("size", size);
+				if (wrap) {
+					return Response.status(HttpURLConnection.HTTP_CREATED)
+							.entity(prefix + om.writeValueAsString(putResult) + suffix).build();
+				} else {
+					return Response.status(HttpURLConnection.HTTP_CREATED)
+							.entity(om.writeValueAsString(putResult)).build();
+				}
+
+			} catch (IOException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IdsException e) {
 			ObjectMapper om = new ObjectMapper();
-			ObjectNode putResult = om.createObjectNode();
-			putResult.put("id", dfId);
-			putResult.put("checksum", checksum);
-			putResult.put("location", location);
-			putResult.put("size", size);
-			return Response.status(HttpURLConnection.HTTP_CREATED)
-					.entity(om.writeValueAsString(putResult)).build();
-
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
+			ObjectNode error = om.createObjectNode();
+			error.put("code", e.getClass().getSimpleName());
+			error.put("message", e.getShortMessage());
+			if (wrap) {
+				String pre = padding ? paddedPrefix : prefix;
+				try {
+					return Response
+							.status(e.getHttpStatusCode())
+							.entity(pre + om.writeValueAsString(error).replace("'", "\\'") + suffix)
+							.build();
+				} catch (JsonProcessingException e1) {
+					return Response.status(e.getHttpStatusCode())
+							.entity(pre + e.getMessage() + suffix).build();
+				}
+			} else {
+				try {
+					return Response.status(e.getHttpStatusCode())
+							.entity(om.writeValueAsString(error)).build();
+				} catch (JsonProcessingException e1) {
+					return Response.status(e.getHttpStatusCode()).entity(e.getMessage()).build();
+				}
+			}
 		}
 
 	}

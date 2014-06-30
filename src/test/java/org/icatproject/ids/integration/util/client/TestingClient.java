@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -16,6 +17,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
@@ -25,6 +27,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class TestingClient {
+
+	private static final String LINE_FEED = "\r\n";
 
 	public enum Flag {
 		COMPRESS, NONE, ZIP, ZIP_AND_COMPRESS
@@ -458,6 +462,185 @@ public class TestingClient {
 			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
 		return put(sessionId, inputStream, name, datasetId, datafileFormatId, description, null,
 				null, null, sc);
+	}
+
+	public Long putAsPost(String sessionId, InputStream inputStream, String name, long datasetId,
+			long datafileFormatId, String description, String doi, Date datafileCreateTime,
+			Date datafileModTime, boolean wrap, Integer sc) throws BadRequestException,
+			NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
+		Map<String, String> parameters = new HashMap<>();
+
+		parameters.put("sessionId", sessionId);
+		parameters.put("datafileFormatId", Long.toString(datafileFormatId));
+		parameters.put("name", name);
+		parameters.put("datasetId", Long.toString(datasetId));
+		if (description != null) {
+			parameters.put("description", description);
+		}
+		if (doi != null) {
+			parameters.put("doi", doi);
+		}
+		if (datafileCreateTime != null) {
+			parameters.put("datafileCreateTime", Long.toString(datafileCreateTime.getTime()));
+		}
+		if (datafileModTime != null) {
+			parameters.put("datafileModTime", Long.toString(datafileModTime.getTime()));
+		}
+		if (wrap) {
+			parameters.put("wrap", "true");
+		}
+
+		if (inputStream == null) {
+			throw new BadRequestException("Input stream is null");
+		}
+		CRC32 crc = new CRC32();
+		BufferedInputStream is = null;
+
+		HttpURLConnection urlc;
+		OutputStream os = null;
+		int rc;
+		UUID boundary = UUID.randomUUID();
+		try {
+
+			URL url = new URL(idsUrl + "/put");
+			urlc = (HttpURLConnection) url.openConnection();
+			urlc.setDoOutput(true);
+			urlc.setDoInput(true);
+			urlc.setUseCaches(false);
+			urlc.setRequestMethod("POST");
+			urlc.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+			os = new BufferedOutputStream(urlc.getOutputStream());
+			// os = new ByteArrayOutputStream();
+
+			for (Entry<String, String> e : parameters.entrySet()) {
+				os.write(("--" + boundary + LINE_FEED).getBytes());
+				os.write(("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + LINE_FEED)
+						.getBytes());
+				os.write(("Content-Type: text/plain" + LINE_FEED).getBytes());
+				os.write((LINE_FEED + e.getValue() + LINE_FEED).getBytes());
+			}
+
+			int bytesRead = 0;
+			byte[] buffer = new byte[BUFSIZ];
+
+			os.write(("--" + boundary + LINE_FEED).getBytes());
+			os.write(("Content-Disposition: form-data; name=\"file\"; filename=\"unreliable\"" + LINE_FEED)
+					.getBytes());
+			os.write(("Content-Type: application/octet-stream" + LINE_FEED).getBytes());
+			os.write(("Content-Transfer-Encoding: binary" + LINE_FEED).getBytes());
+			os.write((LINE_FEED).getBytes());
+
+			// write bytes to output stream
+			is = new BufferedInputStream(new CheckedInputStream(inputStream, crc));
+			while ((bytesRead = is.read(buffer)) > 0) {
+				os.write(buffer, 0, bytesRead);
+			}
+			os.write((LINE_FEED).getBytes());
+			os.write(("--" + boundary + "--" + LINE_FEED).getBytes());
+			os.close();
+
+			rc = urlc.getResponseCode();
+			if (sc != null && sc.intValue() != urlc.getResponseCode()) {
+				if (rc / 100 != 2) {
+					System.out.println(urlc.getURL() + " => " + rc);
+					fail(getError(urlc));
+				} else
+					fail("Expected " + sc.intValue() + " but was " + urlc.getResponseCode());
+			}
+		} catch (Exception e) {
+			OutputStream baos = new ByteArrayOutputStream();
+			e.printStackTrace(new PrintStream(baos));
+			System.out.println(baos.toString());
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} finally {
+			try {
+				if (os != null) {
+					os.close();
+				}
+				if (is != null) {
+					is.close();
+				}
+			} catch (IOException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+
+		}
+
+		if (rc / 100 != 2) {
+			String error = getError(urlc);
+			String code;
+			String message;
+			try {
+				ObjectMapper om = new ObjectMapper();
+				JsonNode rootNode = om.readValue(error, JsonNode.class);
+				code = rootNode.get("code").asText();
+				message = rootNode.get("message").asText();
+			} catch (Exception e) {
+				throw new InternalException("TestingClient " + error);
+			}
+
+			if (code.equals("BadRequestException")) {
+				throw new BadRequestException(message);
+			}
+
+			if (code.equals("DataNotOnlineException")) {
+				throw new DataNotOnlineException(message);
+			}
+
+			if (code.equals("InsufficientPrivilegesException")) {
+				throw new InsufficientPrivilegesException(message);
+			}
+
+			if (code.equals("InsufficientStorageException")) {
+				throw new InsufficientStorageException(message);
+			}
+
+			if (code.equals("InternalException")) {
+				throw new InternalException(message);
+			}
+
+			if (code.equals("NotFoundException")) {
+				throw new NotFoundException(message);
+			}
+
+			if (code.equals("NotImplementedException")) {
+				throw new NotImplementedException(message);
+			}
+		}
+
+		ObjectMapper mapper = new ObjectMapper();
+		String result;
+		try (InputStream uis = urlc.getInputStream()) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			byte[] bytes = new byte[1000];
+
+			int n;
+			while ((n = uis.read(bytes)) > 0) {
+				baos.write(bytes, 0, n);
+			}
+			result = baos.toString();
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+		String prefix = "<html><script type=\"text/javascript\">window.name='";
+		String suffix = "';</script></html>";
+		if (result.startsWith(prefix)) {
+			result = result.substring(prefix.length(), result.length() - suffix.length());
+		}
+
+		try {
+			ObjectNode rootNode = (ObjectNode) mapper.readValue(result, JsonNode.class);
+			if (!rootNode.get("checksum").asText().equals(Long.toString(crc.getValue()))) {
+				throw new InternalException("Error uploading - the checksum was not as expected");
+			}
+			return Long.parseLong(rootNode.get("id").asText());
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} catch (NumberFormatException e) {
+			throw new InternalException("Web service call did not return a valid Long value");
+		}
 	}
 
 	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
