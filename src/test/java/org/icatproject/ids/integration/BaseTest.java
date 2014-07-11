@@ -98,7 +98,6 @@ public class BaseTest {
 
 	protected ArrayList<Long> datafileIds = new ArrayList<>();
 	protected ArrayList<Long> datasetIds = new ArrayList<>();
-	protected Map<String, String> parameters;
 	protected String sessionId;
 
 	protected TestingClient testingClient;
@@ -109,7 +108,6 @@ public class BaseTest {
 	@Before
 	public void before() throws Exception {
 		testingClient = new TestingClient(setup.getIdsUrl());
-		parameters = new HashMap<>();
 		sessionId = setup.getGoodSessionId();
 		waitForIds();
 		populateStorage(setup.isTwoLevel());

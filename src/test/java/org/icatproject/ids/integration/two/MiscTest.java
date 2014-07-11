@@ -46,8 +46,9 @@ public class MiscTest extends BaseTest {
 		assertTrue(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
 		assertTrue(testingClient.getServiceStatus(sessionId, 200).getPrepItems().isEmpty());
 
-		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-		checkStream(stream, datafileIds.get(0));
+		try (InputStream stream = testingClient.getData(preparedId, null, 0, 200)) {
+			checkStream(stream, datafileIds.get(0));
+		}
 
 	}
 }

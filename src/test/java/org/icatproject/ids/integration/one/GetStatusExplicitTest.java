@@ -8,8 +8,6 @@ import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.NotFoundException;
-import org.icatproject.ids.integration.util.client.TestingClient.Method;
-import org.icatproject.ids.integration.util.client.TestingClient.ParmPos;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,10 +43,8 @@ public class GetStatusExplicitTest extends BaseTest {
 
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
-		parameters.put("sessionId", setup.getForbiddenSessionId());
-		parameters.put("datafileIds", datafileIds.toString().replace("[", "").replace("]", "")
-				.replace(" ", ""));
-		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 403);
+		testingClient.getStatus(setup.getForbiddenSessionId(),
+				new DataSelection().addDatafiles(datafileIds), 403);
 	}
 
 	@Test

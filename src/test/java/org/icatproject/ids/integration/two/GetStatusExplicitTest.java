@@ -6,13 +6,10 @@ import java.util.Arrays;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.Method;
-import org.icatproject.ids.integration.util.client.TestingClient.ParmPos;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,13 +27,6 @@ public class GetStatusExplicitTest extends BaseTest {
 		testingClient.ping(200);
 	}
 
-	@Test(expected = BadRequestException.class)
-	public void badPreparedId() throws Exception {
-		parameters.put("sessionId", setup.getGoodSessionId());
-		parameters.put("preparedId", "99999999");
-		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 400);
-	}
-
 	@Test(expected = NotFoundException.class)
 	public void notFoundPreparedId() throws Exception {
 		testingClient.isPrepared("88888888-4444-4444-4444-cccccccccccc", 404);
@@ -50,10 +40,8 @@ public class GetStatusExplicitTest extends BaseTest {
 
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
-		parameters.put("sessionId", setup.getForbiddenSessionId());
-		parameters.put("datafileIds", datafileIds.toString().replace("[", "").replace("]", "")
-				.replace(" ", ""));
-		testingClient.process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, 403);
+		testingClient.getStatus(setup.getForbiddenSessionId(),
+				new DataSelection().addDatafiles(datafileIds), 403);
 	}
 
 	@Test

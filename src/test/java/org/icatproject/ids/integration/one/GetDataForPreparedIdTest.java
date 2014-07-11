@@ -25,7 +25,8 @@ public class GetDataForPreparedIdTest extends BaseTest {
 
 	@Test(expected = BadRequestException.class)
 	public void badPreparedIdFormatTest() throws Exception {
-		testingClient.getData("bad preparedId format", null, 0L, 400);
+		try (InputStream z = testingClient.getData("bad preparedId format", null, 0L, 400)) {
+		}
 	}
 
 	@Test(expected = BadRequestException.class)
@@ -38,12 +39,15 @@ public class GetDataForPreparedIdTest extends BaseTest {
 			Thread.sleep(500);
 		} while (!testingClient.isPrepared(preparedId, 200));
 
-		testingClient.getData(preparedId, null, -10L, 400);
+		try (InputStream z = testingClient.getData(preparedId, null, -10L, 400)) {
+		}
 	}
 
 	@Test(expected = NotFoundException.class)
 	public void nonExistentPreparedIdTest() throws Exception {
-		testingClient.getData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null, 0L, 404);
+		try (InputStream z = testingClient.getData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", null,
+				0L, 404)) {
+		}
 	}
 
 	@Test
@@ -58,14 +62,14 @@ public class GetDataForPreparedIdTest extends BaseTest {
 				Thread.sleep(1000);
 			}
 
-			InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-
-			if (flag == Flag.NONE || flag == Flag.COMPRESS) {
-				checkStream(stream, datafileIds.get(0));
-			} else if (flag == Flag.ZIP) {
-				checkZipStream(stream, datafileIds.subList(0, 1), 57);
-			} else {
-				checkZipStream(stream, datafileIds.subList(0, 1), 36);
+			try (InputStream stream = testingClient.getData(preparedId, null, 0, 200)) {
+				if (flag == Flag.NONE || flag == Flag.COMPRESS) {
+					checkStream(stream, datafileIds.get(0));
+				} else if (flag == Flag.ZIP) {
+					checkZipStream(stream, datafileIds.subList(0, 1), 57);
+				} else {
+					checkZipStream(stream, datafileIds.subList(0, 1), 36);
+				}
 			}
 		}
 	}
@@ -79,8 +83,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 			Thread.sleep(1000);
 		}
 
-		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-		checkZipStream(stream, datafileIds, 57);
+		try (InputStream stream = testingClient.getData(preparedId, null, 0, 200)) {
+			checkZipStream(stream, datafileIds, 57);
+		}
 	}
 
 	@Test
@@ -92,8 +97,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
 		}
-		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-		checkZipStream(stream, datafileIds.subList(0, 2), 57);
+		try (InputStream stream = testingClient.getData(preparedId, null, 0, 200)) {
+			checkZipStream(stream, datafileIds.subList(0, 2), 57);
+		}
 	}
 
 	@Test
@@ -107,8 +113,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 			Thread.sleep(1000);
 		}
 
-		InputStream stream = testingClient.getData(preparedId, null, 0, 200);
-		checkZipStream(stream, datafileIds, 57);
+		try (InputStream stream = testingClient.getData(preparedId, null, 0, 200)) {
+			checkZipStream(stream, datafileIds, 57);
+		}
 	}
 
 	@Test

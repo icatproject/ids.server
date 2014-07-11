@@ -12,8 +12,6 @@ import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
-import org.icatproject.ids.integration.util.client.TestingClient.Method;
-import org.icatproject.ids.integration.util.client.TestingClient.ParmPos;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,21 +51,6 @@ public class ArchiveTest extends BaseTest {
 	public void badSessionIdFormatTest() throws Exception {
 		testingClient.archive("bad sessionId format",
 				new DataSelection().addDatafiles(Arrays.asList(1L, 2L)), 400);
-	}
-
-	@Test(expected = BadRequestException.class)
-	public void badDatafileIdFormatTest() throws Exception {
-		parameters.put("sessionId", sessionId);
-		parameters.put("datafileIds", "1,2,a");
-		testingClient.process("restore", parameters, Method.POST, ParmPos.BODY, null, null, 400);
-	}
-
-	@Test(expected = BadRequestException.class)
-	public void badDatasetIdFormatTest() throws Exception {
-
-		parameters.put("sessionId", sessionId);
-		parameters.put("datafileIds", "");
-		testingClient.process("restore", parameters, Method.POST, ParmPos.BODY, null, null, 400);
 	}
 
 	@Test(expected = BadRequestException.class)

@@ -3,23 +3,41 @@ package org.icatproject.ids.integration.util.client;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.StatusLine;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,8 +45,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class TestingClient {
-
-	private static final String LINE_FEED = "\r\n";
 
 	public enum Flag {
 		COMPRESS, NONE, ZIP, ZIP_AND_COMPRESS
@@ -69,351 +85,72 @@ public class TestingClient {
 		ARCHIVED, ONLINE, RESTORING
 	};
 
-	private static String getOutput(HttpURLConnection urlc) throws InternalException {
-		try {
-			InputStream stream = urlc.getInputStream();
-			ByteArrayOutputStream os = null;
-			try {
-				os = new ByteArrayOutputStream();
-				int len;
-				byte[] buffer = new byte[1024];
-				while ((len = stream.read(buffer)) != -1) {
-					os.write(buffer, 0, len);
-				}
-				return os.toString().trim();
-			} finally {
-				if (stream != null) {
-					stream.close();
-				}
-			}
-		} catch (IOException e) {
-			throw new InternalException("IOException " + e.getMessage());
-		}
-	}
-
-	private final int BUFSIZ = 2048;
-
-	private URL idsUrl;
+	private String basePath;
+	private URI idsUri;
 
 	public TestingClient(URL idsUrl) {
-		this.idsUrl = idsUrl;
+
+		try {
+			idsUri = new URI(idsUrl.getProtocol(), null, idsUrl.getHost(), idsUrl.getPort(), null,
+					null, null);
+			basePath = idsUrl.getPath();
+		} catch (URISyntaxException e) {
+			throw new RuntimeException(e);
+		}
+
 	}
 
 	public void archive(String sessionId, DataSelection data, Integer sc)
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
 			InternalException, NotFoundException {
 
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-
-		try {
-			process("archive", parameters, Method.POST, ParmPos.BODY, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
+		URI uri = getUri(getUriBuilder("archive"));
+		List<NameValuePair> formparams = new ArrayList<>();
+		formparams.add(new BasicNameValuePair("sessionId", sessionId));
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
 		}
-	}
-
-	public void delete(String sessionId, DataSelection data, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			InternalException, NotFoundException, DataNotOnlineException {
-
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-
-		try {
-			process("delete", parameters, Method.DELETE, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-	}
-
-	public InputStream getData(String sessionId, DataSelection data, Flag flags, String outname,
-			long offset, Integer sc) throws NotImplementedException, BadRequestException,
-			InsufficientPrivilegesException, NotFoundException, InternalException,
-			DataNotOnlineException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("zip", "true");
-		}
-		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("compress", "true");
-		}
-		if (outname != null) {
-			parameters.put("outname", outname);
-		}
-		HttpURLConnection urlc;
-		Map<String, String> headers = null;
-		if (offset != 0) {
-			headers = new HashMap<>();
-			headers.put("Range", "bytes=" + offset + "-");
-		}
-		try {
-			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
-		} catch (InsufficientStorageException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-		return getStream(urlc);
-
-	}
-
-	public InputStream getData(String preparedId, String outname, long offset, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			NotFoundException, InternalException, DataNotOnlineException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("preparedId", preparedId);
-		if (outname != null) {
-			parameters.put("outname", outname);
-		}
-		HttpURLConnection urlc;
-		Map<String, String> headers = null;
-		if (offset != 0) {
-			headers = new HashMap<>();
-			headers.put("Range", "bytes=" + offset + "-");
-		}
-		try {
-			urlc = process("getData", parameters, Method.GET, ParmPos.URL, headers, null, sc);
-		} catch (InsufficientStorageException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-		return getStream(urlc);
-	}
-
-	private String getError(HttpURLConnection urlc) {
-		InputStream stream = urlc.getErrorStream();
-		ByteArrayOutputStream os = null;
-		try {
-			os = new ByteArrayOutputStream();
-			int len;
-			byte[] buffer = new byte[1024];
-			while ((len = stream.read(buffer)) != -1) {
-				os.write(buffer, 0, len);
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpPost httpPost = new HttpPost(uri);
+			httpPost.setEntity(new UrlEncodedFormEntity(formparams));
+			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				expectNothing(response, sc);
+			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
-			return os.toString();
 		} catch (IOException e) {
-			return "IOException handling errorStream";
-		}
-	}
-
-	public ServiceStatus getServiceStatus(String sessionId, Integer sc) throws InternalException,
-			InsufficientPrivilegesException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		HttpURLConnection urlc;
-		try {
-			urlc = process("getServiceStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
-				| BadRequestException | NotFoundException | NotImplementedException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			JsonNode rootNode = mapper.readValue(urlc.getInputStream(), JsonNode.class);
-			ServiceStatus serviceStatus = new ServiceStatus();
-			for (JsonNode on : (ArrayNode) rootNode.get("opsQueue")) {
-				String dsInfo = ((ObjectNode) on).get("dsInfo").asText();
-				String request = ((ObjectNode) on).get("request").asText();
-				serviceStatus.storeOpItems(dsInfo, request);
-			}
-			for (JsonNode on : (ArrayNode) rootNode.get("prepQueue")) {
-				String id = ((ObjectNode) on).get("id").asText();
-				String state = ((ObjectNode) on).get("state").asText();
-				serviceStatus.storePrepItems(id, state);
-			}
-			return serviceStatus;
-		} catch (IOException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-	}
-
-	public Status getStatus(String sessonId, DataSelection data, Integer sc)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException,
-			InternalException, NotImplementedException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessonId);
-		parameters.putAll(data.getParameters());
-
-		HttpURLConnection urlc;
-
-		try {
-			urlc = process("getStatus", parameters, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-
-		return Status.valueOf(getOutput(urlc));
-	}
-
-	private InputStream getStream(HttpURLConnection urlc) throws InternalException {
-		try {
-			return urlc.getInputStream();
-		} catch (IOException e) {
-			throw new InternalException("IOException " + e.getMessage());
-		}
-	}
-
-	public boolean isPrepared(String preparedId, Integer sc) throws BadRequestException,
-			NotFoundException, InternalException, NotImplementedException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("preparedId", preparedId);
-
-		HttpURLConnection urlc;
-		try {
-			urlc = process("isPrepared", parameters, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException
-				| InsufficientPrivilegesException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-		return Boolean.parseBoolean(getOutput(urlc));
-	}
-
-	public void ping(Integer sc) throws InternalException, NotFoundException {
-		Map<String, String> emptyMap = Collections.emptyMap();
-		HttpURLConnection urlc;
-		try {
-			urlc = process("ping", emptyMap, Method.GET, ParmPos.URL, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException | InternalException
-				| BadRequestException | InsufficientPrivilegesException | NotFoundException
-				| NotImplementedException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-		String result = getOutput(urlc);
-		if (!result.equals("IdsOK")) {
-			throw new NotFoundException("Server gave invalid response: " + result);
-		}
-	}
-
-	public String prepareData(String sessionId, DataSelection data, Flag flags, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			NotFoundException, InternalException {
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("zip", "true");
-		}
-		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
-			parameters.put("compress", "true");
-		}
-		HttpURLConnection urlc;
-		try {
-			urlc = process("prepareData", parameters, Method.POST, ParmPos.BODY, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
-		}
-		return getOutput(urlc);
-	}
-
-	public HttpURLConnection process(String relativeUrl, Map<String, String> parameters,
-			Method method, ParmPos parmPos, Map<String, String> headers, InputStream inputStream,
-			Integer sc) throws InternalException, BadRequestException,
-			InsufficientPrivilegesException, InsufficientStorageException, NotFoundException,
-			NotImplementedException, DataNotOnlineException {
-		HttpURLConnection urlc;
-		int rc;
-		try {
-			URL url = new URL(idsUrl + "/" + relativeUrl);
-
-			String parms = null;
-
-			if (!parameters.isEmpty()) {
-
-				StringBuilder sb = new StringBuilder();
-				for (Entry<String, String> e : parameters.entrySet()) {
-					if (sb.length() != 0) {
-						sb.append("&");
-					}
-					sb.append(e.getKey() + "=" + URLEncoder.encode(e.getValue(), "UTF-8"));
-				}
-				parms = sb.toString();
-			}
-
-			if (parmPos == ParmPos.URL && parms != null) {
-				url = new URL(url + "?" + parms);
-			}
-
-			urlc = (HttpURLConnection) url.openConnection();
-			if (!parameters.isEmpty()) {
-				urlc.setDoOutput(true);
-			}
-
-			urlc.setUseCaches(false);
-			urlc.setRequestMethod(method.name());
-
-			if (headers != null) {
-				for (Entry<String, String> entry : headers.entrySet()) {
-					urlc.setRequestProperty(entry.getKey(), entry.getValue());
-				}
-			}
-
-			if (parmPos == ParmPos.BODY && parms != null) {
-
-				OutputStream os = null;
-				try {
-					os = urlc.getOutputStream();
-					os.write(parms.getBytes());
-				} finally {
-					if (os != null) {
-						os.close();
-					}
-				}
-			}
-
-			if (inputStream != null) {
-
-				BufferedOutputStream bos = null;
-				BufferedInputStream bis = null;
-				try {
-					int bytesRead = 0;
-					byte[] buffer = new byte[BUFSIZ];
-					bis = new BufferedInputStream(inputStream);
-					bos = new BufferedOutputStream(urlc.getOutputStream());
-
-					// write bytes to output stream
-					while ((bytesRead = bis.read(buffer)) > 0) {
-						bos.write(buffer, 0, bytesRead);
-					}
-				} finally {
-					if (bis != null) {
-						bis.close();
-					}
-					if (bos != null) {
-						bos.close();
-					}
-				}
-			}
-
-			rc = urlc.getResponseCode();
-			if (sc != null && sc.intValue() != urlc.getResponseCode()) {
-				if (rc / 100 != 2) {
-					System.out.println(urlc.getURL() + " => " + rc);
-					fail(getError(urlc));
-				} else
-					fail("Expected " + sc.intValue() + " but was " + urlc.getResponseCode());
-			}
-		} catch (Exception e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
+	}
 
+	private void checkStatus(HttpResponse response, Integer sc) throws InternalException,
+			BadRequestException, DataNotOnlineException, ParseException, IOException,
+			InsufficientPrivilegesException, NotImplementedException, InsufficientStorageException,
+			NotFoundException {
+		StatusLine status = response.getStatusLine();
+		if (status == null) {
+			throw new InternalException("Status line returned is empty");
+		}
+		int rc = status.getStatusCode();
+		if (sc != null && sc.intValue() != rc) {
+			if (rc / 100 != 2) {
+				HttpEntity entity = response.getEntity();
+				if (entity == null) {
+					fail("No explanation provided");
+				} else {
+					fail(EntityUtils.toString(entity));
+				}
+			} else
+				fail("Expected " + sc.intValue() + " but was " + rc);
+		}
 		if (rc / 100 != 2) {
-			String error = getError(urlc);
+			HttpEntity entity = response.getEntity();
+			String error;
+			if (entity == null) {
+				throw new InternalException("No explanation provided");
+			} else {
+				error = EntityUtils.toString(entity);
+			}
 			String code;
 			String message;
 			try {
@@ -453,7 +190,298 @@ public class TestingClient {
 				throw new NotImplementedException(message);
 			}
 		}
-		return urlc;
+
+	}
+
+	public void delete(String sessionId, DataSelection data, Integer sc)
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
+			InternalException, NotFoundException, DataNotOnlineException {
+
+		URIBuilder uriBuilder = getUriBuilder("delete");
+		uriBuilder.addParameter("sessionId", sessionId);
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			uriBuilder.addParameter(entry.getKey(), entry.getValue());
+		}
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpDelete httpDelete = new HttpDelete(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpDelete)) {
+				expectNothing(response, sc);
+			} catch (InsufficientStorageException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	private void expectNothing(CloseableHttpResponse response, Integer sc)
+			throws InternalException, BadRequestException, DataNotOnlineException, ParseException,
+			InsufficientPrivilegesException, NotImplementedException, InsufficientStorageException,
+			NotFoundException, IOException {
+		checkStatus(response, sc);
+		HttpEntity entity = response.getEntity();
+		if (entity != null) {
+			if (!EntityUtils.toString(entity).isEmpty()) {
+				throw new InternalException("No http entity expected in response");
+			}
+		}
+	}
+
+	public InputStream getData(String sessionId, DataSelection data, Flag flags, String outname,
+			long offset, Integer sc) throws NotImplementedException, BadRequestException,
+			InsufficientPrivilegesException, NotFoundException, InternalException,
+			DataNotOnlineException {
+
+		URIBuilder uriBuilder = getUriBuilder("getData");
+		uriBuilder.setParameter("sessionId", sessionId);
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			uriBuilder.setParameter(entry.getKey(), entry.getValue());
+		}
+
+		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
+			uriBuilder.setParameter("zip", "true");
+		}
+		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
+			uriBuilder.setParameter("compress", "true");
+		}
+		if (outname != null) {
+			uriBuilder.setParameter("outname", outname);
+		}
+		URI uri = getUri(uriBuilder);
+		CloseableHttpResponse response = null;
+		CloseableHttpClient httpclient = null;
+		HttpGet httpGet = new HttpGet(uri);
+		if (offset != 0) {
+			httpGet.setHeader("Range", "bytes=" + offset + "-");
+		}
+		boolean closeNeeded = true;
+		try {
+			httpclient = HttpClients.createDefault();
+			response = httpclient.execute(httpGet);
+			checkStatus(response, sc);
+			closeNeeded = false;
+			return new HttpInputStream(httpclient, response);
+		} catch (IOException | InsufficientStorageException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} finally {
+			if (closeNeeded && httpclient != null) {
+				try {
+					if (response != null) {
+						try {
+							response.close();
+						} catch (Exception e) {
+							// Ignore it
+						}
+					}
+					httpclient.close();
+				} catch (IOException e) {
+					// Ignore it
+				}
+			}
+		}
+	}
+
+	public InputStream getData(String preparedId, String outname, long offset, Integer sc)
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
+			NotFoundException, InternalException, DataNotOnlineException {
+
+		URIBuilder uriBuilder = getUriBuilder("getData");
+		uriBuilder.setParameter("preparedId", preparedId);
+		if (outname != null) {
+			uriBuilder.setParameter("outname", outname);
+		}
+		URI uri = getUri(uriBuilder);
+
+		CloseableHttpResponse response = null;
+		CloseableHttpClient httpclient = null;
+		HttpGet httpGet = new HttpGet(uri);
+		if (offset != 0) {
+			httpGet.setHeader("Range", "bytes=" + offset + "-");
+		}
+		boolean closeNeeded = true;
+		try {
+			httpclient = HttpClients.createDefault();
+			response = httpclient.execute(httpGet);
+			checkStatus(response, sc);
+			closeNeeded = false;
+			return new HttpInputStream(httpclient, response);
+		} catch (IOException | InsufficientStorageException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} finally {
+			if (closeNeeded && httpclient != null) {
+				try {
+					if (response != null) {
+						try {
+							response.close();
+						} catch (Exception e) {
+							// Ignore it
+						}
+					}
+					httpclient.close();
+				} catch (IOException e) {
+					// Ignore it
+				}
+			}
+		}
+	}
+
+	public ServiceStatus getServiceStatus(String sessionId, Integer sc) throws InternalException,
+			InsufficientPrivilegesException {
+
+		URIBuilder uriBuilder = getUriBuilder("getServiceStatus");
+		uriBuilder.setParameter("sessionId", sessionId);
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				String result = getString(response, sc);
+				ObjectMapper mapper = new ObjectMapper();
+				JsonNode rootNode = mapper.readValue(result, JsonNode.class);
+				ServiceStatus serviceStatus = new ServiceStatus();
+				for (JsonNode on : (ArrayNode) rootNode.get("opsQueue")) {
+					String dsInfo = ((ObjectNode) on).get("dsInfo").asText();
+					String request = ((ObjectNode) on).get("request").asText();
+					serviceStatus.storeOpItems(dsInfo, request);
+				}
+				for (JsonNode on : (ArrayNode) rootNode.get("prepQueue")) {
+					String id = ((ObjectNode) on).get("id").asText();
+					String state = ((ObjectNode) on).get("state").asText();
+					serviceStatus.storePrepItems(id, state);
+				}
+				return serviceStatus;
+			} catch (InsufficientStorageException | DataNotOnlineException | InternalException
+					| BadRequestException | NotFoundException | NotImplementedException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public Status getStatus(String sessionId, DataSelection data, Integer sc)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException,
+			InternalException, NotImplementedException {
+
+		URIBuilder uriBuilder = getUriBuilder("getStatus");
+		uriBuilder.setParameter("sessionId", sessionId);
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			uriBuilder.addParameter(entry.getKey(), entry.getValue());
+		}
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return Status.valueOf(getString(response, sc));
+			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+	}
+
+	private String getString(CloseableHttpResponse response, Integer sc) throws InternalException,
+			BadRequestException, DataNotOnlineException, ParseException,
+			InsufficientPrivilegesException, NotImplementedException, InsufficientStorageException,
+			NotFoundException, IOException {
+		checkStatus(response, sc);
+		HttpEntity entity = response.getEntity();
+		if (entity == null) {
+			throw new InternalException("No http entity returned in response");
+		}
+		return EntityUtils.toString(entity);
+	}
+
+	private URI getUri(URIBuilder uriBuilder) throws InternalException {
+		try {
+			return uriBuilder.build();
+		} catch (URISyntaxException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	private URIBuilder getUriBuilder(String path) {
+		return new URIBuilder(idsUri).setPath(basePath + "/" + path);
+
+	}
+
+	public boolean isPrepared(String preparedId, Integer sc) throws BadRequestException,
+			NotFoundException, InternalException, NotImplementedException {
+
+		URIBuilder uriBuilder = getUriBuilder("isPrepared");
+		uriBuilder.setParameter("preparedId", preparedId);
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return Boolean.parseBoolean(getString(response, sc));
+			} catch (InsufficientStorageException | DataNotOnlineException
+					| InsufficientPrivilegesException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public void ping(Integer sc) throws InternalException, NotFoundException {
+
+		URI uri = getUri(getUriBuilder("ping"));
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				String result = getString(response, sc);
+				if (!result.equals("IdsOK")) {
+					throw new NotFoundException("Server gave invalid response: " + result);
+				}
+			} catch (IOException | InsufficientStorageException | DataNotOnlineException
+					| BadRequestException | InsufficientPrivilegesException | NotFoundException
+					| NotImplementedException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public String prepareData(String sessionId, DataSelection data, Flag flags, Integer sc)
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
+			NotFoundException, InternalException {
+
+		URI uri = getUri(getUriBuilder("prepareData"));
+		List<NameValuePair> formparams = new ArrayList<>();
+		formparams.add(new BasicNameValuePair("sessionId", sessionId));
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+		}
+		if (flags == Flag.ZIP || flags == Flag.ZIP_AND_COMPRESS) {
+			formparams.add(new BasicNameValuePair("zip", "true"));
+		}
+		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
+			formparams.add(new BasicNameValuePair("compress", "true"));
+		}
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpEntity entity = new UrlEncodedFormEntity(formparams);
+			HttpPost httpPost = new HttpPost(uri);
+			httpPost.setEntity(entity);
+			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				return getString(response, sc);
+			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
 	}
 
 	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
@@ -464,173 +492,43 @@ public class TestingClient {
 				null, null, sc);
 	}
 
-	public Long putAsPost(String sessionId, InputStream inputStream, String name, long datasetId,
+	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
 			long datafileFormatId, String description, String doi, Date datafileCreateTime,
-			Date datafileModTime, boolean wrap, Integer sc) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException,
-			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
-		Map<String, String> parameters = new HashMap<>();
-
-		parameters.put("sessionId", sessionId);
-		parameters.put("datafileFormatId", Long.toString(datafileFormatId));
-		parameters.put("name", name);
-		parameters.put("datasetId", Long.toString(datasetId));
-		if (description != null) {
-			parameters.put("description", description);
-		}
-		if (doi != null) {
-			parameters.put("doi", doi);
-		}
-		if (datafileCreateTime != null) {
-			parameters.put("datafileCreateTime", Long.toString(datafileCreateTime.getTime()));
-		}
-		if (datafileModTime != null) {
-			parameters.put("datafileModTime", Long.toString(datafileModTime.getTime()));
-		}
-		if (wrap) {
-			parameters.put("wrap", "true");
-		}
+			Date datafileModTime, Integer sc) throws BadRequestException, NotFoundException,
+			InternalException, InsufficientPrivilegesException, NotImplementedException,
+			DataNotOnlineException, InsufficientStorageException {
 
 		if (inputStream == null) {
 			throw new BadRequestException("Input stream is null");
 		}
 		CRC32 crc = new CRC32();
-		BufferedInputStream is = null;
-
-		HttpURLConnection urlc;
-		OutputStream os = null;
-		int rc;
-		UUID boundary = UUID.randomUUID();
-		try {
-
-			URL url = new URL(idsUrl + "/put");
-			urlc = (HttpURLConnection) url.openConnection();
-			urlc.setDoOutput(true);
-			urlc.setDoInput(true);
-			urlc.setUseCaches(false);
-			urlc.setRequestMethod("POST");
-			urlc.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-
-			os = new BufferedOutputStream(urlc.getOutputStream());
-			// os = new ByteArrayOutputStream();
-
-			for (Entry<String, String> e : parameters.entrySet()) {
-				os.write(("--" + boundary + LINE_FEED).getBytes());
-				os.write(("Content-Disposition: form-data; name=\"" + e.getKey() + "\"" + LINE_FEED)
-						.getBytes());
-				os.write(("Content-Type: text/plain" + LINE_FEED).getBytes());
-				os.write((LINE_FEED + e.getValue() + LINE_FEED).getBytes());
-			}
-
-			int bytesRead = 0;
-			byte[] buffer = new byte[BUFSIZ];
-
-			os.write(("--" + boundary + LINE_FEED).getBytes());
-			os.write(("Content-Disposition: form-data; name=\"file\"; filename=\"unreliable\"" + LINE_FEED)
-					.getBytes());
-			os.write(("Content-Type: application/octet-stream" + LINE_FEED).getBytes());
-			os.write(("Content-Transfer-Encoding: binary" + LINE_FEED).getBytes());
-			os.write((LINE_FEED).getBytes());
-
-			// write bytes to output stream
-			is = new BufferedInputStream(new CheckedInputStream(inputStream, crc));
-			while ((bytesRead = is.read(buffer)) > 0) {
-				os.write(buffer, 0, bytesRead);
-			}
-			os.write((LINE_FEED).getBytes());
-			os.write(("--" + boundary + "--" + LINE_FEED).getBytes());
-			os.close();
-
-			rc = urlc.getResponseCode();
-			if (sc != null && sc.intValue() != urlc.getResponseCode()) {
-				if (rc / 100 != 2) {
-					System.out.println(urlc.getURL() + " => " + rc);
-					fail(getError(urlc));
-				} else
-					fail("Expected " + sc.intValue() + " but was " + urlc.getResponseCode());
-			}
-		} catch (Exception e) {
-			OutputStream baos = new ByteArrayOutputStream();
-			e.printStackTrace(new PrintStream(baos));
-			System.out.println(baos.toString());
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		} finally {
-			try {
-				if (os != null) {
-					os.close();
-				}
-				if (is != null) {
-					is.close();
-				}
-			} catch (IOException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
-			}
-
+		inputStream = new CheckedInputStream(inputStream, crc);
+		URIBuilder uriBuilder = getUriBuilder("put");
+		uriBuilder.setParameter("sessionId", sessionId).setParameter("name", name)
+				.setParameter("datafileFormatId", Long.toString(datafileFormatId))
+				.setParameter("datasetId", Long.toString(datasetId));
+		if (description != null) {
+			uriBuilder.setParameter("description", description);
+		}
+		if (doi != null) {
+			uriBuilder.setParameter("doi", doi);
+		}
+		if (datafileCreateTime != null) {
+			uriBuilder.setParameter("datafileCreateTime",
+					Long.toString(datafileCreateTime.getTime()));
+		}
+		if (datafileModTime != null) {
+			uriBuilder.setParameter("datafileModTime", Long.toString(datafileModTime.getTime()));
 		}
 
-		if (rc / 100 != 2) {
-			String error = getError(urlc);
-			String code;
-			String message;
-			try {
-				ObjectMapper om = new ObjectMapper();
-				JsonNode rootNode = om.readValue(error, JsonNode.class);
-				code = rootNode.get("code").asText();
-				message = rootNode.get("message").asText();
-			} catch (Exception e) {
-				throw new InternalException("TestingClient " + error);
-			}
+		URI uri = getUri(uriBuilder);
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		HttpPut httpPut = new HttpPut(uri);
+		httpPut.setEntity(new InputStreamEntity(inputStream, ContentType.APPLICATION_OCTET_STREAM));
 
-			if (code.equals("BadRequestException")) {
-				throw new BadRequestException(message);
-			}
-
-			if (code.equals("DataNotOnlineException")) {
-				throw new DataNotOnlineException(message);
-			}
-
-			if (code.equals("InsufficientPrivilegesException")) {
-				throw new InsufficientPrivilegesException(message);
-			}
-
-			if (code.equals("InsufficientStorageException")) {
-				throw new InsufficientStorageException(message);
-			}
-
-			if (code.equals("InternalException")) {
-				throw new InternalException(message);
-			}
-
-			if (code.equals("NotFoundException")) {
-				throw new NotFoundException(message);
-			}
-
-			if (code.equals("NotImplementedException")) {
-				throw new NotImplementedException(message);
-			}
-		}
-
-		ObjectMapper mapper = new ObjectMapper();
-		String result;
-		try (InputStream uis = urlc.getInputStream()) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			byte[] bytes = new byte[1000];
-
-			int n;
-			while ((n = uis.read(bytes)) > 0) {
-				baos.write(bytes, 0, n);
-			}
-			result = baos.toString();
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-		String prefix = "<html><script type=\"text/javascript\">window.name='";
-		String suffix = "';</script></html>";
-		if (result.startsWith(prefix)) {
-			result = result.substring(prefix.length(), result.length() - suffix.length());
-		}
-
-		try {
+		try (CloseableHttpResponse response = httpclient.execute(httpPut)) {
+			String result = getString(response, sc);
+			ObjectMapper mapper = new ObjectMapper();
 			ObjectNode rootNode = (ObjectNode) mapper.readValue(result, JsonNode.class);
 			if (!rootNode.get("checksum").asText().equals(Long.toString(crc.getValue()))) {
 				throw new InternalException("Error uploading - the checksum was not as expected");
@@ -641,44 +539,69 @@ public class TestingClient {
 		} catch (NumberFormatException e) {
 			throw new InternalException("Web service call did not return a valid Long value");
 		}
+
 	}
 
-	public Long put(String sessionId, InputStream inputStream, String name, long datasetId,
+	public Long putAsPost(String sessionId, InputStream inputStream, String name, long datasetId,
 			long datafileFormatId, String description, String doi, Date datafileCreateTime,
-			Date datafileModTime, Integer sc) throws BadRequestException, NotFoundException,
-			InternalException, InsufficientPrivilegesException, NotImplementedException,
-			DataNotOnlineException, InsufficientStorageException {
-		Map<String, String> parameters = new HashMap<>();
-
-		parameters.put("sessionId", sessionId);
-		parameters.put("name", name);
-		parameters.put("datafileFormatId", Long.toString(datafileFormatId));
-		parameters.put("datasetId", Long.toString(datasetId));
-		if (description != null) {
-			parameters.put("description", description);
-		}
-		if (doi != null) {
-			parameters.put("doi", doi);
-		}
-		if (datafileCreateTime != null) {
-			parameters.put("datafileCreateTime", Long.toString(datafileCreateTime.getTime()));
-		}
-		if (datafileModTime != null) {
-			parameters.put("datafileModTime", Long.toString(datafileModTime.getTime()));
-		}
+			Date datafileModTime, boolean wrap, Integer sc) throws BadRequestException,
+			NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
 
 		if (inputStream == null) {
 			throw new BadRequestException("Input stream is null");
 		}
 		CRC32 crc = new CRC32();
 		inputStream = new CheckedInputStream(inputStream, crc);
-		HttpURLConnection urlc = process("put", parameters, Method.PUT, ParmPos.URL, null,
-				inputStream, sc);
-		ObjectMapper mapper = new ObjectMapper();
+		URI uri = getUri(getUriBuilder("put"));
 
-		try {
-			ObjectNode rootNode = (ObjectNode) mapper.readValue(urlc.getInputStream(),
-					JsonNode.class);
+		MultipartEntityBuilder reqEntityBuilder = MultipartEntityBuilder
+				.create()
+				.addPart("sessionId", new StringBody(sessionId, ContentType.TEXT_PLAIN))
+				.addPart("datafileFormatId",
+						new StringBody(Long.toString(datafileFormatId), ContentType.TEXT_PLAIN))
+				.addPart("name", new StringBody(name, ContentType.TEXT_PLAIN))
+				.addPart("datasetId",
+						new StringBody(Long.toString(datasetId), ContentType.TEXT_PLAIN));
+		if (description != null) {
+			reqEntityBuilder.addPart("description", new StringBody(description,
+					ContentType.TEXT_PLAIN));
+		}
+		if (doi != null) {
+			reqEntityBuilder.addPart("doi", new StringBody(doi, ContentType.TEXT_PLAIN));
+		}
+		if (datafileCreateTime != null) {
+			reqEntityBuilder.addPart("datafileCreateTime",
+					new StringBody(Long.toString(datafileCreateTime.getTime()),
+							ContentType.TEXT_PLAIN));
+		}
+		if (datafileModTime != null) {
+			reqEntityBuilder
+					.addPart("datafileModTime",
+							new StringBody(Long.toString(datafileModTime.getTime()),
+									ContentType.TEXT_PLAIN));
+		}
+		if (wrap) {
+			reqEntityBuilder.addPart("wrap", new StringBody("true", ContentType.TEXT_PLAIN));
+		}
+		InputStreamBody body = new InputStreamBody(new BufferedInputStream(inputStream),
+				ContentType.APPLICATION_OCTET_STREAM, "unreliable");
+		HttpEntity entity = reqEntityBuilder.addPart("file", body).build();
+
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		HttpPost httpPost = new HttpPost(uri);
+		httpPost.setEntity(entity);
+
+		try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+			String result = getString(response, sc);
+			String prefix = "<html><script type=\"text/javascript\">window.name='";
+			String suffix = "';</script></html>";
+			if (result.startsWith(prefix)) {
+				result = result.substring(prefix.length(), result.length() - suffix.length());
+			}
+			ObjectMapper mapper = new ObjectMapper();
+			ObjectNode rootNode = (ObjectNode) mapper.readValue(result, JsonNode.class);
+
 			if (!rootNode.get("checksum").asText().equals(Long.toString(crc.getValue()))) {
 				throw new InternalException("Error uploading - the checksum was not as expected");
 			}
@@ -695,17 +618,24 @@ public class TestingClient {
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
 			InternalException, NotFoundException {
 
-		Map<String, String> parameters = new HashMap<>();
-		parameters.put("sessionId", sessionId);
-		parameters.putAll(data.getParameters());
-
-		try {
-			process("restore", parameters, Method.POST, ParmPos.BODY, null, null, sc);
-		} catch (InsufficientStorageException | DataNotOnlineException e) {
-			throw new InternalException("Unexpected exception " + e.getClass() + " "
-					+ e.getMessage());
+		URI uri = getUri(getUriBuilder("restore"));
+		List<NameValuePair> formparams = new ArrayList<>();
+		formparams.add(new BasicNameValuePair("sessionId", sessionId));
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
 		}
-
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpEntity entity = new UrlEncodedFormEntity(formparams);
+			HttpPost httpPost = new HttpPost(uri);
+			httpPost.setEntity(entity);
+			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				expectNothing(response, sc);
+			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
 	}
 
 }
