@@ -73,11 +73,15 @@ public class FileChecker {
 			if (twoLevel) {
 				Dataset ds = (Dataset) eb;
 				logger.debug("Checking Dataset " + ds.getId() + " (" + ds.getName() + ")");
-				DsInfo dsInfo = new DsInfoImpl(ds);
-
-				Map<String, CrcAndLength> crcAndLength = new HashMap<>();
 				String dfName = null;
 				try {
+					DsInfo dsInfo;
+					try {
+						dsInfo = new DsInfoImpl(ds);
+					} catch (NullPointerException e) {
+						return;
+					}
+					Map<String, CrcAndLength> crcAndLength = new HashMap<>();
 					InputStream is = null;
 					is = archiveStorage.get(dsInfo);
 					ZipInputStream zis = new ZipInputStream(is);
@@ -97,7 +101,9 @@ public class FileChecker {
 						}
 
 						CrcAndLength cl = crcAndLength.get(dfName);
-						if (cl.fileSize == null) {
+						if (cl == null) {
+							report(ds, dfName, "not found in map");
+						} else if (cl.fileSize == null) {
 							report(ds, dfName, "file size null");
 						} else if (cl.fileSize != n) {
 							report(ds, dfName, "file size wrong");
@@ -116,6 +122,7 @@ public class FileChecker {
 				} catch (IOException e) {
 					report(ds, dfName, e.getClass() + " " + e.getMessage());
 				} catch (Throwable e) {
+					e.printStackTrace();
 					logger.error("Throwable " + e.getClass() + " " + e.getMessage());
 				}
 
@@ -147,7 +154,6 @@ public class FileChecker {
 					} else if (!df.getChecksum().equals(Long.toHexString(crc.getValue()))) {
 						report(df, "checksum wrong");
 					}
-
 				} catch (IOException e) {
 					report(df, e.getClass() + " " + e.getMessage());
 				} catch (Throwable e) {

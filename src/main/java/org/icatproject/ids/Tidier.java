@@ -19,15 +19,26 @@ import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
+import org.icatproject.Dataset;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.plugin.MainStorageInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
 @Startup
 public class Tidier {
+
+	@EJB
+	IcatReader reader;
+
+	@EJB
+	private FiniteStateMachine fsm;
 
 	public class TreeSizeVisitor extends SimpleFileVisitor<Path> {
 
@@ -64,6 +75,34 @@ public class Tidier {
 				clean(preparedDir, preparedCacheSizeBytes);
 				if (datasetCacheSizeBytes != 0) {
 					clean(datasetDir, datasetCacheSizeBytes);
+				}
+				if (twoLevel) {
+					long free = mainStorage.getUsableSpace();
+					if (free < minFreeSpace) {
+						List<Long> investigations = mainStorage.getInvestigations();
+						outer: while (true) {
+							for (Long invId : investigations) {
+								for (Long dsId : mainStorage.getDatasets(invId)) {
+									try {
+										String query = "SELECT sum(filesize) FROM Datafile df WHERE df.dataset_id = "
+												+ dsId;
+										Dataset ds = (Dataset) reader.get(
+												"Dataset ds INCLUDE ds.investigation.facility",
+												dsId);
+										fsm.queue(new DsInfoImpl(ds), DeferredOp.ARCHIVE);
+										long size = (Long) reader.search(query).get(0);
+										free -= size;
+										if (free < maxFreeSpace) {
+											break outer;
+										}
+									} catch (InternalException | IcatException_Exception e) {
+										// Log it and carry on
+										logger.error(e.getClass() + " " + e.getMessage());
+									}
+								}
+							}
+						}
+					}
 				}
 			} catch (IOException e) {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -113,6 +152,10 @@ public class Tidier {
 
 	private Timer timer = new Timer();
 	private TreeDeleteVisitor deleter;
+	private MainStorageInterface mainStorage;
+	private boolean twoLevel;
+	private long minFreeSpace;
+	private long maxFreeSpace;
 
 	@PostConstruct
 	public void init() {
@@ -125,6 +168,13 @@ public class Tidier {
 			Files.createDirectories(datasetDir);
 			preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 			Files.createDirectories(preparedDir);
+			mainStorage = propertyHandler.getMainStorage();
+			twoLevel = propertyHandler.getArchiveStorage() != null;
+			if (twoLevel) {
+				mainStorage = propertyHandler.getMainStorage();
+				minFreeSpace = propertyHandler.getMinFreeSpace();
+				maxFreeSpace = propertyHandler.getMaxFreeSpace();
+			}
 			timer.schedule(new Action(), sizeCheckIntervalMillis);
 			deleter = new TreeDeleteVisitor();
 			logger.info("Tidier started");

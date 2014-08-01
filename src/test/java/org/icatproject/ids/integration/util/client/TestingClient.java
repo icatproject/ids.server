@@ -638,4 +638,59 @@ public class TestingClient {
 		}
 	}
 
+	public boolean isReadOnly(int sc) throws InternalException {
+		URI uri = getUri(getUriBuilder("isReadOnly"));
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return Boolean.parseBoolean(getString(response, sc));
+			} catch (IOException | InsufficientStorageException | DataNotOnlineException
+					| BadRequestException | InsufficientPrivilegesException | NotFoundException
+					| NotImplementedException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public boolean isTwoLevel(int sc) throws InternalException {
+		URI uri = getUri(getUriBuilder("isTwoLevel"));
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return Boolean.parseBoolean(getString(response, sc));
+			} catch (IOException | InsufficientStorageException | DataNotOnlineException
+					| BadRequestException | InsufficientPrivilegesException | NotFoundException
+					| NotImplementedException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public long getSize(String sessionId, DataSelection data, int sc) throws BadRequestException,
+			NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		URIBuilder uriBuilder = getUriBuilder("getSize");
+		uriBuilder.setParameter("sessionId", sessionId);
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			uriBuilder.setParameter(entry.getKey(), entry.getValue());
+		}
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return Long.parseLong(getString(response, sc));
+			} catch (IOException | InsufficientStorageException | DataNotOnlineException
+					| NotImplementedException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
 }

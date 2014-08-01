@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.zip.CRC32;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;

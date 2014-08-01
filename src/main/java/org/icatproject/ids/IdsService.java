@@ -88,6 +88,38 @@ public class IdsService {
 	}
 
 	@GET
+	@Path("isReadOnly")
+	@Produces("text/plain")
+	public Response isReadOnly() {
+		return Response.ok(idsBean.isReadOnly()).build();
+	}
+
+	@GET
+	@Path("isTwoLevel")
+	@Produces("text/plain")
+	public Response isTwoLevel() {
+		return Response.ok(idsBean.isTwoLevel()).build();
+	}
+
+	@GET
+	@Path("getSize")
+	@Produces("text/plain")
+	public Response getSize(@QueryParam("sessionId") String sessionId,
+			@QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds,
+			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException,
+			NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		try {
+			return Response.ok(
+					idsBean.getSize(sessionId, investigationIds, datasetIds, datafilesIds)).build();
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
+	}
+
+	@GET
 	@Path("getData")
 	@Produces("application/octet-stream")
 	public Response getData(@QueryParam("preparedId") String preparedId,

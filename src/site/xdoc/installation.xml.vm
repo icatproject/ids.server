@@ -161,6 +161,17 @@
                         the requested compression.
                     </dd>
 
+                    <dt>minFreeSpace1024bytes</dt>
+                    <dd>the minumum free space on the main storage area. If the free space falls below this value, datasets will be archived (oldest
+                        first) until the free space is greater than maxFreeSpace1024bytes.
+                    </dd>
+
+                    <dt>maxFreeSpace1024bytes</dt>
+                    <dd>the mamimum free space on the main storage area. If the free space falls below minFreeSpace1024bytes datasets will be archived
+                        (oldest
+                        first) until the free space is greater than this value.
+                    </dd>
+
                 </dl>
 
 

@@ -21,6 +21,8 @@ datasetCacheSize1024bytes = 1000000
 writeDelaySeconds = 60
 !compressDatasetCache = true
 tolerateWrongCompression = true
+minFreeSpace1024bytes = 10000
+maxFreeSpace1024bytes = 40000
 
 reader = db username root password password
 

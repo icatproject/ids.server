@@ -77,6 +77,8 @@ public class PropertyHandler {
 	private int filesCheckGapMillis;
 	private Path filesCheckLastIdFile;
 	private Path filesCheckErrorLog;
+	private long minFreeSpace;
+	private long maxFreeSpace;
 
 	public Set<String> getRootUserNames() {
 		return rootUserNames;
@@ -181,6 +183,11 @@ public class PropertyHandler {
 				} catch (Exception e) {
 					abort(e.getClass() + " " + e.getMessage());
 				}
+				minFreeSpace = props.getPositiveLong("minFreeSpace1024bytes") * 1024;
+				maxFreeSpace = props.getPositiveLong("maxFreeSpace1024bytes") * 1024;
+				if (maxFreeSpace <= minFreeSpace) {
+					abort("maxFreeSpace1024bytes must be greater than minFreeSpace1024bytes");
+				}
 			}
 
 			cacheDir = props.getFile("cache.dir").toPath();
@@ -270,6 +277,14 @@ public class PropertyHandler {
 
 	public Path getFilesCheckErrorLog() {
 		return filesCheckErrorLog;
+	}
+
+	public long getMinFreeSpace() {
+		return minFreeSpace;
+	}
+
+	public long getMaxFreeSpace() {
+		return maxFreeSpace;
 	}
 
 }

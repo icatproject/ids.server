@@ -1,7 +1,6 @@
 package org.icatproject.ids.integration.two;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -10,11 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.icatproject.Datafile;
-import org.icatproject.EntityBaseBean;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
@@ -41,12 +38,7 @@ public class FileCheckerTest extends BaseTest {
 
 		waitForIds();
 
-		Files.deleteIfExists(errorLog);
-
-		List<Object> os = icat.search(sessionId, "Datafile");
-		for (Object o : os) {
-			icat.delete(sessionId, (EntityBaseBean) o);
-		}
+		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
 
 		Long dfid = 0L;
 		for (int i = 0; i < 3; i++) {
@@ -59,7 +51,7 @@ public class FileCheckerTest extends BaseTest {
 
 		waitForIds();
 
-		assertFalse(Files.exists(errorLog));
+		Files.deleteIfExists(errorLog);
 
 		Long fileSize = df.getFileSize();
 		String checksum = df.getChecksum();

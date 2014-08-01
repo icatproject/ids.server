@@ -7,6 +7,15 @@
 
     <body>
 
+        <section name="1.2.0">
+            <p>For two level storage clean up main storage as needed.
+            </p>
+            <ul>
+                <li>Add parameters minFreeSpace1024bytes and maxFreeSpace1024bytes.</li>
+                <li>Cope with some obscure file checker errors.</li>
+            </ul>
+        </section>
+
         <section name="1.1.0">
             <p>Provide background file checking and facility control of returned zip file structure.
             </p>

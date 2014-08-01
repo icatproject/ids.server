@@ -855,4 +855,60 @@ public class IdsBean {
 		return Response.ok(fsm.getServiceStatus()).build();
 	}
 
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+
+	public boolean isTwoLevel() {
+		return twoLevel;
+	}
+
+	public long getSize(String sessionId, String investigationIds, String datasetIds,
+			String datafileIds) throws BadRequestException, NotFoundException,
+			InsufficientPrivilegesException, InternalException {
+
+		// Log and validate
+		logger.info(String
+				.format("New webservice request: getSize investigationIds=%s, datasetIds=%s, datafileIds=%s",
+						investigationIds, datasetIds, datafileIds));
+
+		validateUUID("sessionId", sessionId);
+
+		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
+				datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
+
+		long size = 0;
+		StringBuilder sb = new StringBuilder();
+		int n = 0;
+		for (DfInfoImpl df : dataSelection.getDfInfo()) {
+			if (sb.length() != 0) {
+				sb.append(',');
+			}
+			sb.append(df.getDfId());
+			if (n++ == 100) {
+				size += getSizeFor(sessionId, sb);
+				sb = new StringBuilder();
+				n = 0;
+			}
+		}
+		if (n > 0) {
+			size += getSizeFor(sessionId, sb);
+		}
+		return size;
+	}
+
+	private long getSizeFor(String sessionId, StringBuilder sb) throws InternalException {
+		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE df.id IN (" + sb.toString()
+				+ ")";
+		try {
+			logger.error(query);
+			logger.error("" + icat.search(sessionId, query));
+			return (Long) icat.search(sessionId, query).get(0);
+		} catch (IcatException_Exception e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} catch (IndexOutOfBoundsException e) {
+			return 0L;
+		}
+	}
+
 }

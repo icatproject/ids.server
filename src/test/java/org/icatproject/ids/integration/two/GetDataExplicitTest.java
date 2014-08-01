@@ -5,6 +5,7 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 
+import org.icatproject.Datafile;
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
@@ -38,6 +39,29 @@ public class GetDataExplicitTest extends BaseTest {
 	public void forbiddenTest() throws Exception {
 		try (InputStream z = testingClient.getData(setup.getForbiddenSessionId(),
 				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 403)) {
+		}
+	}
+
+	@Test
+	public void getSizes() throws Exception {
+		Datafile df = null;
+		Long size = 0L;
+		try {
+			df = (Datafile) icat.get(sessionId, "Datafile INCLUDE 1", datafileIds.get(0));
+			size = df.getFileSize();
+			df.setFileSize(size + 1);
+			icat.update(sessionId, df);
+			// 105 is not the correct answer is is caused by a bug in ICAT which changes the
+			// underlying query to SELECT SUM(DISTINCT df.fileSize) ... which is not what is wanted.
+			// Once ICAT is fixed get rid of this filesize fiddling and expect 4*52 i.e. 208 to be
+			// returned.
+			assertEquals(105L, testingClient.getSize(sessionId,
+					new DataSelection().addDatafiles(datafileIds), 200));
+		} finally {
+			if (df != null) {
+				df.setFileSize(size);
+				icat.update(sessionId, df);
+			}
 		}
 	}
 

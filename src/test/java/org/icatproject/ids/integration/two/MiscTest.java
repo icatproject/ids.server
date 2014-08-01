@@ -23,6 +23,16 @@ public class MiscTest extends BaseTest {
 		icatsetup();
 	}
 
+	@Test
+	public void isReadOnlyTest() throws Exception {
+		assertFalse(testingClient.isReadOnly(200));
+	}
+
+	@Test
+	public void isTwoLevelTest() throws Exception {
+		assertTrue(testingClient.isTwoLevel(200));
+	}
+
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void unprivSessionIdTest() throws Exception {
 		testingClient.getServiceStatus(setup.getForbiddenSessionId(), 403);

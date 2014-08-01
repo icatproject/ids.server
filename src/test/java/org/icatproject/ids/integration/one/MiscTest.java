@@ -1,5 +1,6 @@
 package org.icatproject.ids.integration.one;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
@@ -20,6 +21,16 @@ public class MiscTest extends BaseTest {
 	public static void setup() throws Exception {
 		setup = new Setup("one.properties");
 		icatsetup();
+	}
+
+	@Test
+	public void isReadOnlyTest() throws Exception {
+		assertFalse(testingClient.isReadOnly(200));
+	}
+
+	@Test
+	public void isTwoLevelTest() throws Exception {
+		assertFalse(testingClient.isTwoLevel(200));
 	}
 
 	@Test(expected = InsufficientPrivilegesException.class)
