@@ -3,6 +3,7 @@ package org.icatproject.ids;
 import org.icatproject.Dataset;
 import org.icatproject.Facility;
 import org.icatproject.Investigation;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.plugin.DsInfo;
 
 public class DsInfoImpl implements DsInfo {
@@ -20,12 +21,21 @@ public class DsInfoImpl implements DsInfo {
 	private String invName;
 
 	private String visitId;
-	
+
 	private String dsLocation;
 
-	public DsInfoImpl(Dataset ds) {
+	public DsInfoImpl(Dataset ds) throws InsufficientPrivilegesException {
 		Investigation investigation = ds.getInvestigation();
+		if (investigation == null) {
+			throw new InsufficientPrivilegesException(
+					"Probably not able to read Investigation for dataset id " + ds.getId());
+		}
 		Facility facility = investigation.getFacility();
+		if (facility == null) {
+			throw new InsufficientPrivilegesException(
+					"Probably not able to read Facility for investigation id "
+							+ investigation.getId());
+		}
 		dsId = ds.getId();
 		dsName = ds.getName();
 		dsLocation = ds.getLocation();

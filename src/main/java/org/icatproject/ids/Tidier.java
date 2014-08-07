@@ -1,14 +1,9 @@
 package org.icatproject.ids;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +20,7 @@ import javax.ejb.Startup;
 
 import org.icatproject.Dataset;
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.slf4j.Logger;
@@ -34,47 +30,15 @@ import org.slf4j.LoggerFactory;
 @Startup
 public class Tidier {
 
-	@EJB
-	IcatReader reader;
-
-	@EJB
-	private FiniteStateMachine fsm;
-
-	public class TreeSizeVisitor extends SimpleFileVisitor<Path> {
-
-		private long size;
-
-		@Override
-		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-			size += Files.size(file);
-			return FileVisitResult.CONTINUE;
-		}
-
-		@Override
-		public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
-			if (e == null) {
-				size += Files.size(dir);
-				return FileVisitResult.CONTINUE;
-			} else {
-				// directory iteration failed
-				throw e;
-			}
-		}
-
-		public long getSize() {
-			return size;
-		}
-
-	}
-
 	public class Action extends TimerTask {
 
 		@Override
 		public void run() {
 			try {
-				clean(preparedDir, preparedCacheSizeBytes);
+				cleanPreparedDir(preparedDir, preparedCacheSizeBytes);
+
 				if (datasetCacheSizeBytes != 0) {
-					clean(datasetDir, datasetCacheSizeBytes);
+					cleanDatasetCache(datasetDir, datasetCacheSizeBytes);
 				}
 				if (twoLevel) {
 					long free = mainStorage.getUsableSpace();
@@ -89,13 +53,17 @@ public class Tidier {
 										Dataset ds = (Dataset) reader.get(
 												"Dataset ds INCLUDE ds.investigation.facility",
 												dsId);
-										fsm.queue(new DsInfoImpl(ds), DeferredOp.ARCHIVE);
+										DsInfoImpl dsInfoImpl = new DsInfoImpl(ds);
+										logger.debug("Requesting archive of " + dsInfoImpl
+												+ " to recover space");
+										fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
 										long size = (Long) reader.search(query).get(0);
 										free -= size;
 										if (free < maxFreeSpace) {
 											break outer;
 										}
-									} catch (InternalException | IcatException_Exception e) {
+									} catch (InternalException | IcatException_Exception
+											| InsufficientPrivilegesException e) {
 										// Log it and carry on
 										logger.error(e.getClass() + " " + e.getMessage());
 									}
@@ -105,57 +73,118 @@ public class Tidier {
 					}
 				}
 			} catch (IOException e) {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				e.printStackTrace(new PrintStream(baos));
-				logger.error(e.getClass() + " " + e.getMessage() + baos);
+				logger.error(e.getClass() + " " + e.getMessage());
 			} finally {
 				timer.schedule(new Action(), sizeCheckIntervalMillis);
 			}
 		}
 
-		private void clean(Path dir, long bytes) throws IOException {
-			Map<Path, Long> size = new HashMap<>();
-			Map<Long, Path> date = new HashMap<>();
-			long totalSize = 0;
-			for (File file : dir.toFile().listFiles()) {
-				Path path = file.toPath();
-				TreeSizeVisitor sizer = new TreeSizeVisitor();
-				Files.walkFileTree(path, sizer);
-				long thisSize = sizer.getSize();
-				size.put(path, thisSize);
-				date.put(file.lastModified(), path);
-				totalSize += thisSize;
-			}
-			if (totalSize != 0) {
-				logger.debug(dir + " is " + (float) totalSize * 100 / bytes + "% full");
-				if (totalSize > bytes) {
-					List<Long> dates = new ArrayList<>(date.keySet());
-					Collections.sort(dates);
-					while (totalSize > bytes) {
-						Path path = date.get(dates.get(0));
-						Files.walkFileTree(path, deleter);
-						totalSize -= size.get(path);
+	}
+
+	private final static Logger logger = LoggerFactory.getLogger(Tidier.class);
+	private static final long DAY = 24 * 3600 * 1000;;
+
+	private static void clean(Path dir, Map<Long, Path> date, Map<Path, Long> size, long totalSize,
+			long bytes) throws IOException {
+		if (totalSize > bytes) {
+			logger.debug(dir + " is " + (float) totalSize * 100 / bytes + "% full");
+			List<Long> dates = new ArrayList<>(date.keySet());
+			Collections.sort(dates);
+			long now = System.currentTimeMillis();
+			for (Long adate : dates) {
+				Path path = date.get(adate);
+				String pf = path.getFileName().toString();
+				if (now - adate < DAY && (pf.startsWith("tmp.") || pf.endsWith(".tmp"))) {
+					logger.debug("Left recenly modified temporary file " + path + " of size "
+							+ size.get(path) + " bytes");
+				} else {
+					if (Files.isDirectory(path)) {
+						for (File f : path.toFile().listFiles()) {
+							Files.delete(f.toPath());
+						}
 					}
-					logger.debug(dir + " is now " + (float) totalSize * 100 / bytes + "% full");
+					Files.delete(path);
+					logger.debug("Deleted " + path + " to reclaim " + size.get(path) + " bytes");
+					totalSize -= size.get(path);
+					if (totalSize <= bytes) {
+						break;
+					}
 				}
 			}
+			logger.debug(dir + " is now " + (float) totalSize * 100 / bytes + "% full");
 		}
 	}
 
-	private long preparedCacheSizeBytes;
-	private long sizeCheckIntervalMillis;
+	static void cleanDatasetCache(Path datasetDir, long datasetCacheSizeBytes) throws IOException {
+		Map<Path, Long> sizeMap = new HashMap<>();
+		Map<Long, Path> dateMap = new HashMap<>();
+		long totalSize = 0;
+		for (File inv : datasetDir.toFile().listFiles()) {
+			for (File dsFile : inv.listFiles()) {
+				Path path = dsFile.toPath();
+				long thisSize = Files.size(path);
+				sizeMap.put(path, thisSize);
+				dateMap.put(dsFile.lastModified(), path);
+				totalSize += thisSize;
+			}
+		}
+		clean(datasetDir, dateMap, sizeMap, totalSize, datasetCacheSizeBytes);
+		for (File inv : datasetDir.toFile().listFiles()) {
+			Path invPath = inv.toPath();
+			try {
+				Files.delete(invPath);
+				logger.debug("Deleted complete investigation directory from dataset cache "
+						+ invPath);
+			} catch (Exception e) {
+				// Ignore - probably not empty
+			}
+		}
+
+	}
+
+	static void cleanPreparedDir(Path preparedDir, long preparedCacheSizeBytes) throws IOException {
+		Map<Path, Long> sizeMap = new HashMap<>();
+		Map<Long, Path> dateMap = new HashMap<>();
+		long totalSize = 0;
+		for (File file : preparedDir.toFile().listFiles()) {
+			Path path = file.toPath();
+			long thisSize = 0;
+			if (Files.isDirectory(path)) {
+				for (File notZipFile : file.listFiles()) {
+					thisSize += Files.size(notZipFile.toPath());
+				}
+			}
+			thisSize += Files.size(path);
+			sizeMap.put(path, thisSize);
+			dateMap.put(file.lastModified(), path);
+			totalSize += thisSize;
+		}
+		clean(preparedDir, dateMap, sizeMap, totalSize, preparedCacheSizeBytes);
+	}
+
 	private long datasetCacheSizeBytes;
-	private Path preparedDir;
 	private Path datasetDir;
-
-	private final static Logger logger = LoggerFactory.getLogger(Tidier.class);
-
-	private Timer timer = new Timer();
-	private TreeDeleteVisitor deleter;
+	@EJB
+	private FiniteStateMachine fsm;
 	private MainStorageInterface mainStorage;
-	private boolean twoLevel;
-	private long minFreeSpace;
 	private long maxFreeSpace;
+
+	private long minFreeSpace;
+
+	private long preparedCacheSizeBytes;
+
+	private Path preparedDir;
+	@EJB
+	IcatReader reader;
+	private long sizeCheckIntervalMillis;
+	private Timer timer = new Timer();
+	private boolean twoLevel;
+
+	@PreDestroy
+	public void exit() {
+		timer.cancel();
+		logger.info("Tidier stopped");
+	}
 
 	@PostConstruct
 	public void init() {
@@ -176,18 +205,12 @@ public class Tidier {
 				maxFreeSpace = propertyHandler.getMaxFreeSpace();
 			}
 			timer.schedule(new Action(), sizeCheckIntervalMillis);
-			deleter = new TreeDeleteVisitor();
+
 			logger.info("Tidier started");
 		} catch (IOException e) {
 			throw new RuntimeException("Tidier reports " + e.getClass() + " " + e.getMessage());
 		}
 
-	}
-
-	@PreDestroy
-	public void exit() {
-		timer.cancel();
-		logger.info("Tidier stopped");
 	}
 
 }

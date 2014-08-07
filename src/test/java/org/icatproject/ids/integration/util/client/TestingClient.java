@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -328,7 +329,7 @@ public class TestingClient {
 	}
 
 	public ServiceStatus getServiceStatus(String sessionId, Integer sc) throws InternalException,
-			InsufficientPrivilegesException {
+			InsufficientPrivilegesException, NotImplementedException {
 
 		URIBuilder uriBuilder = getUriBuilder("getServiceStatus");
 		uriBuilder.setParameter("sessionId", sessionId);
@@ -354,7 +355,7 @@ public class TestingClient {
 				}
 				return serviceStatus;
 			} catch (InsufficientStorageException | DataNotOnlineException | InternalException
-					| BadRequestException | NotFoundException | NotImplementedException e) {
+					| BadRequestException | NotFoundException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 		} catch (IOException e) {
@@ -433,7 +434,8 @@ public class TestingClient {
 		}
 	}
 
-	public void ping(Integer sc) throws InternalException, NotFoundException {
+	public void ping(Integer sc) throws InternalException, NotFoundException,
+			NotImplementedException {
 
 		URI uri = getUri(getUriBuilder("ping"));
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -444,8 +446,7 @@ public class TestingClient {
 					throw new NotFoundException("Server gave invalid response: " + result);
 				}
 			} catch (IOException | InsufficientStorageException | DataNotOnlineException
-					| BadRequestException | InsufficientPrivilegesException | NotFoundException
-					| NotImplementedException e) {
+					| BadRequestException | InsufficientPrivilegesException | NotFoundException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 		} catch (IOException e) {
@@ -638,15 +639,14 @@ public class TestingClient {
 		}
 	}
 
-	public boolean isReadOnly(int sc) throws InternalException {
+	public boolean isReadOnly(int sc) throws InternalException, NotImplementedException {
 		URI uri = getUri(getUriBuilder("isReadOnly"));
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
 			HttpGet httpGet = new HttpGet(uri);
 			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
 				return Boolean.parseBoolean(getString(response, sc));
 			} catch (IOException | InsufficientStorageException | DataNotOnlineException
-					| BadRequestException | InsufficientPrivilegesException | NotFoundException
-					| NotImplementedException e) {
+					| BadRequestException | InsufficientPrivilegesException | NotFoundException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 		} catch (IOException e) {
@@ -654,15 +654,14 @@ public class TestingClient {
 		}
 	}
 
-	public boolean isTwoLevel(int sc) throws InternalException {
+	public boolean isTwoLevel(int sc) throws InternalException, NotImplementedException {
 		URI uri = getUri(getUriBuilder("isTwoLevel"));
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
 			HttpGet httpGet = new HttpGet(uri);
 			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
 				return Boolean.parseBoolean(getString(response, sc));
 			} catch (IOException | InsufficientStorageException | DataNotOnlineException
-					| BadRequestException | InsufficientPrivilegesException | NotFoundException
-					| NotImplementedException e) {
+					| BadRequestException | InsufficientPrivilegesException | NotFoundException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 		} catch (IOException e) {
@@ -671,7 +670,8 @@ public class TestingClient {
 	}
 
 	public long getSize(String sessionId, DataSelection data, int sc) throws BadRequestException,
-			NotFoundException, InsufficientPrivilegesException, InternalException {
+			NotFoundException, InsufficientPrivilegesException, InternalException,
+			NotImplementedException {
 
 		URIBuilder uriBuilder = getUriBuilder("getSize");
 		uriBuilder.setParameter("sessionId", sessionId);
@@ -684,8 +684,30 @@ public class TestingClient {
 			HttpGet httpGet = new HttpGet(uri);
 			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
 				return Long.parseLong(getString(response, sc));
-			} catch (IOException | InsufficientStorageException | DataNotOnlineException
-					| NotImplementedException e) {
+			} catch (IOException | InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public void getLink(String sessionId, long datafileId, Path link, String username, int sc)
+			throws BadRequestException, InsufficientPrivilegesException, InternalException,
+			NotFoundException, DataNotOnlineException, NotImplementedException {
+		URI uri = getUri(getUriBuilder("getLink"));
+		List<NameValuePair> formparams = new ArrayList<>();
+		formparams.add(new BasicNameValuePair("sessionId", sessionId));
+		formparams.add(new BasicNameValuePair("datafileId", Long.toString(datafileId)));
+		formparams.add(new BasicNameValuePair("link", link.toString()));
+		formparams.add(new BasicNameValuePair("username", username));
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpPost httpPost = new HttpPost(uri);
+			httpPost.setEntity(new UrlEncodedFormEntity(formparams));
+			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				expectNothing(response, sc);
+			} catch (InsufficientStorageException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 		} catch (IOException e) {

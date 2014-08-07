@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +51,22 @@ public class IdsService {
 	private IdsBean idsBean;
 
 	private Pattern rangeRe;
+
+	@POST
+	@Path("getLink")
+	@Consumes("application/x-www-form-urlencoded")
+	public Response getLink(@FormParam("sessionId") String sessionId,
+			@FormParam("datafileId") long datafileId, @FormParam("link") String link,
+			@FormParam("username") String username) throws BadRequestException,
+			InsufficientPrivilegesException, NotImplementedException, InternalException,
+			NotFoundException, DataNotOnlineException {
+		try {
+			return idsBean.getLink(sessionId, datafileId, Paths.get(link), username);
+		} catch (RuntimeException e) {
+			processRuntimeException(e);
+			return null; // Will never get here but the compiler doesn't know
+		}
+	}
 
 	@POST
 	@Path("archive")

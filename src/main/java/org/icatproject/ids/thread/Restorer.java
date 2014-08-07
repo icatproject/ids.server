@@ -1,6 +1,5 @@
 package org.icatproject.ids.thread;
 
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -57,32 +56,32 @@ public class Restorer implements Runnable {
 		try {
 			// Get the file into the dataset cache
 			Path dir = datasetCache.resolve(Long.toString(dsInfo.getInvId()));
-			Files.createDirectories(dir);
+			// The hold directory is used to prevent the Tidier getting rid of the investigation
+			// directory
+			Files.createDirectories(dir.resolve("hold"));
 			Path tPath = Files.createTempFile(dir, null, null);
-			InputStream is = archiveStorageInterface.get(dsInfo);
-			Files.copy(is, tPath, StandardCopyOption.REPLACE_EXISTING);
-			is.close();
+			Files.deleteIfExists(dir.resolve("hold"));
+			archiveStorageInterface.get(dsInfo, tPath);
 			Path path = dir.resolve(Long.toString(dsInfo.getDsId()));
 			Files.move(tPath, path, StandardCopyOption.ATOMIC_MOVE,
 					StandardCopyOption.REPLACE_EXISTING);
 
 			List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile",
 					dsInfo.getDsId())).getDatafiles();
-			Map<String, String> nameToLocaMap = new HashMap<>(datafiles.size());
+			Map<String, String> nameToLocalMap = new HashMap<>(datafiles.size());
 			for (Datafile datafile : datafiles) {
-				nameToLocaMap.put(datafile.getName(), datafile.getLocation());
+				nameToLocalMap.put(datafile.getName(), datafile.getLocation());
 			}
 			// Now split file and store it locally
 			ZipInputStream zis = new ZipInputStream(Files.newInputStream(path));
 			ZipEntry ze = zis.getNextEntry();
 			while (ze != null) {
 				String dfName = zipMapper.getFileName(ze.getName());
-				String location = nameToLocaMap.get(dfName);
+				String location = nameToLocalMap.get(dfName);
 				if (location == null) {
 					logger.error("Unable to store " + dfName + " into " + dsInfo
 							+ " as no location found");
 				} else {
-					logger.debug("Storing " + dfName + " into " + dsInfo + " at " + location);
 					mainStorageInterface.put(zis, location);
 				}
 				ze = zis.getNextEntry();

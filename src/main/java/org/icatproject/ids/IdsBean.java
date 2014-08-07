@@ -51,6 +51,7 @@ import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.thread.Preparer;
 import org.icatproject.ids.thread.Preparer.PreparerStatus;
+import org.icatproject.utils.ShellCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,6 +116,8 @@ public class IdsBean {
 
 	private ZipMapperInterface zipMapper;
 
+	private String idsUserName;
+
 	public Response archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, InternalException, NotFoundException {
@@ -169,7 +172,7 @@ public class IdsBean {
 					if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
 						fsm.queue(dsInfo, DeferredOp.RESTORE);
 						exc = new DataNotOnlineException(
-								"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
+								"Before deleting a datafile, its dataset has to be restored, restoration requested automatically");
 					}
 				}
 			} catch (IOException e) {
@@ -311,41 +314,48 @@ public class IdsBean {
 				datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
-		DataNotOnlineException exc = null;
 		InputStream stream = null;
 		if (twoLevel) {
 			try {
 				if ((tolerateWrongCompression || compress == compressDatasetCache)
 						&& dataSelection.isSingleDataset()) {
 					DsInfo dsInfo = dataSelection.getDsInfo().values().iterator().next();
-					Path datasetCachePath = datasetDir.resolve(Long.toString(dsInfo.getInvId()))
-							.resolve(Long.toString(dsInfo.getDsId()));
-					try {
-						stream = Files.newInputStream(datasetCachePath);
-						logger.debug("Using cached zipped dataset");
-					} catch (IOException e) {
-						// Ignore - file probably not in cache
+					if (mainStorage.exists(dsInfo)) { // This is to account for the case where a
+														// dataset cache becomes out of date because
+														// of direct manipulation (not known to the
+														// IDS) of the archive
+														// storage.
+						Path datasetCachePath = datasetDir
+								.resolve(Long.toString(dsInfo.getInvId())).resolve(
+										Long.toString(dsInfo.getDsId()));
+						try {
+							stream = Files.newInputStream(datasetCachePath);
+							logger.debug("Using cached zipped dataset");
+						} catch (IOException e) {
+							// Ignore - file probably not in cache
+						}
 					}
 				}
 				if (stream == null) {
+					boolean restoreNeeded = false;
 					Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 					Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
 					for (DsInfo dsInfo : dsInfos.values()) {
 						if (!emptyDatasets.contains(dsInfo.getDsId())
 								&& !mainStorage.exists(dsInfo)) {
 							fsm.queue(dsInfo, DeferredOp.RESTORE);
-							exc = new DataNotOnlineException(
-									"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
+							restoreNeeded = true;
+
 						}
+					}
+					if (restoreNeeded) {
+						throw new DataNotOnlineException(
+								"Before getting a datafile, its dataset has to be restored, restoration requested automatically");
 					}
 				}
 			} catch (IOException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
-		}
-
-		if (exc != null) {
-			throw exc;
 		}
 
 		final boolean finalZip = zip ? true : dataSelection.mustZip();
@@ -432,9 +442,7 @@ public class IdsBean {
 
 	public Response isPrepared(String preparedId) throws BadRequestException, NotFoundException {
 
-		// Log and validate
-		logger.info("New webservice request: isPrepared " + "preparedId='" + preparedId + "'");
-
+		// Validate
 		validateUUID("preparedId", preparedId);
 
 		// Do it
@@ -536,6 +544,7 @@ public class IdsBean {
 				restartUnfinishedWork();
 			}
 
+			idsUserName = System.getProperty("user.name");
 			logger.info("created IdsBean");
 		} catch (Exception e) {
 			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
@@ -563,6 +572,7 @@ public class IdsBean {
 				zip ? true : dataSelection.mustZip());
 		new Thread(preparer).start();
 		fsm.registerPreparer(preparedId, preparer);
+		logger.debug("preparedId is " + preparedId);
 
 		return Response.ok().entity(preparedId).build();
 	}
@@ -909,6 +919,108 @@ public class IdsBean {
 		} catch (IndexOutOfBoundsException e) {
 			return 0L;
 		}
+	}
+
+	public Response getLink(String sessionId, long datafileId, Path link, String username)
+			throws BadRequestException, InsufficientPrivilegesException, InternalException,
+			NotFoundException, DataNotOnlineException, NotImplementedException {
+		// Log and validate
+		logger.info("New webservice request: getLink " + "datafileId=" + datafileId + " "
+				+ "link='" + link + "' " + "username='" + username + "'");
+
+		validateUUID("sessionId", sessionId);
+
+		if (!link.isAbsolute()) {
+			throw new BadRequestException("The link path must be absolute not relative");
+		}
+
+		if (username.equals(idsUserName)) {
+			throw new InsufficientPrivilegesException("Username '" + username
+					+ "' must not be the user running the ids: '" + idsUserName + "'");
+		}
+
+		Path parent = link.getParent();
+		boolean owns = false;
+		String owner = null;
+		try {
+			owner = Files.getOwner(parent).getName();
+			owns = owner.equals(username);
+		} catch (IOException e) {
+			// Treat as not owned
+		}
+		if (!owns) {
+			throw new InsufficientPrivilegesException("'" + parent + "' is owned by '" + owner
+					+ "' rather than '" + username + "'");
+		}
+
+		Datafile datafile = null;
+		try {
+			datafile = (Datafile) icat.get(sessionId,
+					"Datafile INCLUDE Dataset, Investigation, Facility", datafileId);
+		} catch (IcatException_Exception e) {
+			IcatExceptionType type = e.getFaultInfo().getType();
+			if (type == IcatExceptionType.BAD_PARAMETER) {
+				throw new BadRequestException(e.getMessage());
+			} else if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {
+				throw new InsufficientPrivilegesException(e.getMessage());
+			} else if (type == IcatExceptionType.INTERNAL) {
+				throw new InternalException(e.getMessage());
+			} else if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+				throw new NotFoundException(e.getMessage());
+			} else if (type == IcatExceptionType.OBJECT_ALREADY_EXISTS) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			} else if (type == IcatExceptionType.SESSION) {
+				throw new InsufficientPrivilegesException(e.getMessage());
+			} else if (type == IcatExceptionType.VALIDATION) {
+				throw new BadRequestException(e.getMessage());
+			}
+		}
+
+		if (twoLevel) {
+			try {
+				DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
+				if (!mainStorage.exists(dsInfo)) {
+					fsm.queue(dsInfo, DeferredOp.RESTORE);
+					throw new DataNotOnlineException(
+							"Before linking a datafile, its dataset has to be restored, restoration requested automatically");
+				}
+			} catch (IOException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		}
+
+		Path target;
+		try {
+			target = mainStorage.getPath(datafile.getLocation(), datafile.getCreateId(),
+					datafile.getModId());
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+		if (target == null) {
+			throw new NotImplementedException("This call is not supported by the plugin");
+		}
+		try {
+			Files.deleteIfExists(link);
+		} catch (IOException e) {
+			throw new BadRequestException("Unable to delete '" + link
+					+ "'. Check that it is writable by server");
+		}
+
+		ShellCommand sc = new ShellCommand("setfacl", "-m", "user:" + username + ":r",
+				target.toString());
+		if (sc.getExitValue() != 0) {
+			throw new BadRequestException(sc.getMessage() + ". check that '" + link
+					+ "' is writable by server and that user '" + username + "' exists");
+		}
+		try {
+			Files.createLink(link, target);
+		} catch (IOException e) {
+			throw new BadRequestException("Unable to create '" + link
+					+ "'. Check that it is writable by server");
+		}
+
+		return Response.ok().build();
+
 	}
 
 }

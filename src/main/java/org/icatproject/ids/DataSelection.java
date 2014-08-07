@@ -148,6 +148,7 @@ public class DataSelection {
 							for (Datafile df : ds.getDatafiles()) {
 								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df
 										.getLocation(), df.getCreateId(), df.getModId(), dsid));
+								empty = false;
 							}
 						}
 						dsInfos.put(dsid, new DsInfoImpl(ds));

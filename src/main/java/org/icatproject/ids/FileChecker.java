@@ -28,6 +28,7 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
@@ -74,68 +75,77 @@ public class FileChecker {
 				Dataset ds = (Dataset) eb;
 				logger.debug("Checking Dataset " + ds.getId() + " (" + ds.getName() + ")");
 				String dfName = null;
+
+				DsInfo dsInfo;
 				try {
-					DsInfo dsInfo;
-					try {
-						dsInfo = new DsInfoImpl(ds);
-					} catch (NullPointerException e) {
-						return;
-					}
-					Map<String, CrcAndLength> crcAndLength = new HashMap<>();
-					InputStream is = null;
-					is = archiveStorage.get(dsInfo);
-					ZipInputStream zis = new ZipInputStream(is);
-					for (Datafile df : ds.getDatafiles()) {
-						crcAndLength.put(df.getName(), new CrcAndLength(df));
-					}
-					ZipEntry ze = zis.getNextEntry();
-					while (ze != null) {
-						dfName = zipMapper.getFileName(ze.getName());
-						CRC32 crc = new CRC32();
-						byte[] bytes = new byte[1024];
-						int length;
-						long n = 0;
-						while ((length = zis.read(bytes)) >= 0) {
-							crc.update(bytes, 0, length);
-							n += length;
+					dsInfo = new DsInfoImpl(ds);
+				} catch (InsufficientPrivilegesException e) {
+					return;
+				}
+				Map<String, CrcAndLength> crcAndLength = new HashMap<>();
+				Path tPath = null;
+				try {
+					tPath = Files.createTempFile(null, null);
+					archiveStorage.get(dsInfo, tPath);
+					try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tPath))) {
+						for (Datafile df : ds.getDatafiles()) {
+							crcAndLength.put(df.getName(), new CrcAndLength(df));
 						}
+						ZipEntry ze = zis.getNextEntry();
+						while (ze != null) {
+							dfName = zipMapper.getFileName(ze.getName());
+							CRC32 crc = new CRC32();
+							byte[] bytes = new byte[1024];
+							int length;
+							long n = 0;
+							while ((length = zis.read(bytes)) >= 0) {
+								crc.update(bytes, 0, length);
+								n += length;
+							}
 
-						CrcAndLength cl = crcAndLength.get(dfName);
-						if (cl == null) {
-							report(ds, dfName, "not found in map");
-						} else if (cl.fileSize == null) {
-							report(ds, dfName, "file size null");
-						} else if (cl.fileSize != n) {
-							report(ds, dfName, "file size wrong");
-						} else if (cl.checksum == null) {
-							report(ds, dfName, "checksum null");
-						} else if (!cl.checksum.equals(Long.toHexString(crc.getValue()))) {
-							report(ds, dfName, "checksum wrong");
+							CrcAndLength cl = crcAndLength.get(dfName);
+							if (cl == null) {
+								report(ds, dfName, "not found in map");
+							} else if (cl.fileSize == null) {
+								report(ds, dfName, "file size null");
+							} else if (cl.fileSize != n) {
+								report(ds, dfName, "file size wrong");
+							} else if (cl.checksum == null) {
+								report(ds, dfName, "checksum null");
+							} else if (!cl.checksum.equals(Long.toHexString(crc.getValue()))) {
+								report(ds, dfName, "checksum wrong");
+							}
+
+							crcAndLength.remove(dfName);
+							ze = zis.getNextEntry();
 						}
-
-						crcAndLength.remove(dfName);
-						ze = zis.getNextEntry();
-					}
-					if (!crcAndLength.isEmpty()) {
-						report(ds, null, "unexpected entry in zip file");
+						if (!crcAndLength.isEmpty()) {
+							report(ds, null, "unexpected entry in zip file");
+						}
 					}
 				} catch (IOException e) {
 					report(ds, dfName, e.getClass() + " " + e.getMessage());
 				} catch (Throwable e) {
 					e.printStackTrace();
 					logger.error("Throwable " + e.getClass() + " " + e.getMessage());
+				} finally {
+					if (tPath != null) {
+						try {
+							Files.deleteIfExists(tPath);
+						} catch (IOException e) {
+							// Ignore
+						}
+					}
 				}
-
 			} else {
 				Datafile df = (Datafile) eb;
 				logger.debug("Checking Datafile " + df.getId() + " (" + df.getName() + ")");
-				try {
-					String location = df.getLocation();
-					if (location == null) {
-						report(df, "location null");
-						return;
-					}
-					InputStream is = mainStorage.get(location, df.getCreateId(), df.getModId());
+				String location = df.getLocation();
+				if (location == null) {
+					report(df, "location null");
+					return;
+				}
+				try (InputStream is = mainStorage.get(location, df.getCreateId(), df.getModId())) {
 					CRC32 crc = new CRC32();
 					byte[] bytes = new byte[1024];
 					int length;

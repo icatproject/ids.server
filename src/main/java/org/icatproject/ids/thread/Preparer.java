@@ -96,12 +96,15 @@ public class Preparer implements Runnable {
 				}
 
 				if (!online) {
+					int n = 0;
 					while (true) {
 						online = true;
 						Set<DsInfo> restoring = fsm.getRestoring();
 						for (DsInfo dsInfo : dsInfos) {
 							if (restoring.contains(dsInfo)) {
-								logger.debug("Waiting for " + dsInfo + " to be restored");
+								if (n++ % 60 == 1) { // Only log every five minutes
+									logger.debug("Waiting for " + dsInfo + " to be restored");
+								}
 								online = false;
 								break;
 							}
@@ -110,7 +113,7 @@ public class Preparer implements Runnable {
 							break;
 						}
 						try {
-							Thread.sleep(2000);
+							Thread.sleep(5000);
 						} catch (InterruptedException e) {
 							// Ignore
 						}
@@ -119,6 +122,7 @@ public class Preparer implements Runnable {
 			} catch (Exception e) {
 				message = e.getClass() + " " + e.getMessage();
 				status = PreparerStatus.INCOMPLETE;
+				return;
 			}
 		}
 		status = PreparerStatus.WRITING;
@@ -149,7 +153,7 @@ public class Preparer implements Runnable {
 				}
 				zos.close();
 			} else {
-				tpath = Files.createTempDirectory(preparedDir, null);
+				tpath = Files.createTempDirectory(preparedDir, "tmp.");
 				DfInfoImpl dfInfo = dataSelection.getDfInfo().iterator().next();
 				Path filePath = tpath.resolve(new File(dfInfo.getDfName()).getName());
 				Files.createDirectories(filePath.getParent());
