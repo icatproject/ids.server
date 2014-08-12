@@ -54,6 +54,20 @@ public class Restorer implements Runnable {
 	@Override
 	public void run() {
 		try {
+			long size = 0;
+			int n = 0;
+			List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile",
+					dsInfo.getDsId())).getDatafiles();
+			Map<String, String> nameToLocalMap = new HashMap<>(datafiles.size());
+			for (Datafile datafile : datafiles) {
+				nameToLocalMap.put(datafile.getName(), datafile.getLocation());
+				size += datafile.getFileSize();
+				n++;
+			}
+
+			logger.debug("Restoring dataset " + dsInfo.getInvId() + "/" + dsInfo.getDsId()
+					+ " with " + n + " files of total size " + size);
+
 			// Get the file into the dataset cache
 			Path dir = datasetCache.resolve(Long.toString(dsInfo.getInvId()));
 			// The hold directory is used to prevent the Tidier getting rid of the investigation
@@ -66,13 +80,9 @@ public class Restorer implements Runnable {
 			Files.move(tPath, path, StandardCopyOption.ATOMIC_MOVE,
 					StandardCopyOption.REPLACE_EXISTING);
 
-			List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile",
-					dsInfo.getDsId())).getDatafiles();
-			Map<String, String> nameToLocalMap = new HashMap<>(datafiles.size());
-			for (Datafile datafile : datafiles) {
-				nameToLocalMap.put(datafile.getName(), datafile.getLocation());
-			}
 			// Now split file and store it locally
+			logger.debug("Unpacking dataset " + dsInfo.getInvId() + "/" + dsInfo.getDsId()
+					+ " with " + n + " files of total size " + size);
 			ZipInputStream zis = new ZipInputStream(Files.newInputStream(path));
 			ZipEntry ze = zis.getNextEntry();
 			while (ze != null) {
