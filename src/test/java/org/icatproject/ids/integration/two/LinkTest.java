@@ -1,36 +1,43 @@
 package org.icatproject.ids.integration.two;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
+import org.icatproject.ids.integration.util.client.DataNotOnlineException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class LinkTest extends BaseTest {
 
-	private static Path here;
-
 	@BeforeClass
 	public static void setup() throws Exception {
 		setup = new Setup("two.properties");
 		icatsetup();
-		here = Paths.get("").toAbsolutePath();
 	}
 
 	@Test
 	public void getLink() throws Exception {
 
-		Path link = here.resolve("alink");
+		String username = System.getProperty("user.name");
 		try {
-			testingClient.getLink(sessionId, datafileIds.get(0), link, "glassfish", 403);
+			testingClient.getLink(sessionId, datafileIds.get(0), username, 404);
 			fail("Should have thrown an exception");
-		} catch (InsufficientPrivilegesException e) {
+		} catch (DataNotOnlineException e) {
 			// All is well
 		}
+
+		waitForIds();
+
+		Path link = testingClient.getLink(sessionId, datafileIds.get(0), username, 200);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		Files.copy(link, baos);
+		assertEquals("df1 test content very compressible very compressible", baos.toString());
 	}
 }

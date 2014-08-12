@@ -118,6 +118,15 @@ public class Preparer implements Runnable {
 							// Ignore
 						}
 					}
+					/* A restore could have failed */
+					for (DsInfo dsInfo : dsInfos) {
+						if (!emptyDs.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+							message = "Failed to restore dataset with id " + dsInfo.getDsId();
+							status = PreparerStatus.INCOMPLETE;
+							return;
+						}
+					}
+					logger.debug("All data appears to be on line for preparedId: " + preparedId);
 				}
 			} catch (Exception e) {
 				message = e.getClass() + " " + e.getMessage();

@@ -40,9 +40,28 @@ public class Tidier {
 				if (datasetCacheSizeBytes != 0) {
 					cleanDatasetCache(datasetDir, datasetCacheSizeBytes);
 				}
+				if (linkLifetimeMillis > 0) {
+					long deleteMillis = System.currentTimeMillis() - linkLifetimeMillis;
+					int n = 0;
+					for (File f : linkDir.toFile().listFiles()) {
+						Path p = f.toPath();
+
+						if (Files.getLastModifiedTime(p).toMillis() < deleteMillis) {
+							try {
+								Files.delete(p);
+								n++;
+							} catch (Exception e) {
+								logger.error(e.getClass() + " " + e.getMessage());
+							}
+						}
+					}
+					if (n > 0) {
+						logger.debug("Deleted " + n + " links from " + linkDir);
+					}
+				}
 				if (twoLevel) {
-					long free = mainStorage.getUsableSpace();
-					if (free < minFreeSpace) {
+					long used = mainStorage.getUsedSpace();
+					if (used > startArchivingLevel) {
 						List<Long> investigations = mainStorage.getInvestigations();
 						outer: while (true) {
 							for (Long invId : investigations) {
@@ -58,8 +77,8 @@ public class Tidier {
 												+ " to recover space");
 										fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
 										long size = (Long) reader.search(query).get(0);
-										free -= size;
-										if (free < maxFreeSpace) {
+										used -= size;
+										if (used < stopArchivingLevel) {
 											break outer;
 										}
 									} catch (InternalException | IcatException_Exception
@@ -81,8 +100,8 @@ public class Tidier {
 
 	}
 
-	private final static Logger logger = LoggerFactory.getLogger(Tidier.class);
-	private static final long DAY = 24 * 3600 * 1000;;
+	private static final long DAY = 24 * 3600 * 1000;
+	private final static Logger logger = LoggerFactory.getLogger(Tidier.class);;
 
 	private static void clean(Path dir, Map<Long, Path> date, Map<Path, Long> size, long totalSize,
 			long bytes) throws IOException {
@@ -164,19 +183,22 @@ public class Tidier {
 
 	private long datasetCacheSizeBytes;
 	private Path datasetDir;
+
 	@EJB
 	private FiniteStateMachine fsm;
+
+	private Path linkDir;
+	private long linkLifetimeMillis;
 	private MainStorageInterface mainStorage;
-	private long maxFreeSpace;
-
-	private long minFreeSpace;
-
 	private long preparedCacheSizeBytes;
-
 	private Path preparedDir;
+
 	@EJB
 	IcatReader reader;
+
 	private long sizeCheckIntervalMillis;
+	private long startArchivingLevel;
+	private long stopArchivingLevel;
 	private Timer timer = new Timer();
 	private boolean twoLevel;
 
@@ -197,12 +219,15 @@ public class Tidier {
 			Files.createDirectories(datasetDir);
 			preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 			Files.createDirectories(preparedDir);
+			linkDir = propertyHandler.getCacheDir().resolve("link");
+			Files.createDirectories(linkDir);
+			linkLifetimeMillis = propertyHandler.getlinkLifetimeMillis();
 			mainStorage = propertyHandler.getMainStorage();
 			twoLevel = propertyHandler.getArchiveStorage() != null;
 			if (twoLevel) {
 				mainStorage = propertyHandler.getMainStorage();
-				minFreeSpace = propertyHandler.getMinFreeSpace();
-				maxFreeSpace = propertyHandler.getMaxFreeSpace();
+				startArchivingLevel = propertyHandler.getStartArchivingLevel();
+				stopArchivingLevel = propertyHandler.getStopArchivingLevel();
 			}
 			timer.schedule(new Action(), sizeCheckIntervalMillis);
 

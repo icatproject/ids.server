@@ -11,8 +11,11 @@
             <p>For two level storage clean up main storage as needed.
             </p>
             <ul>
-                <li>Add parameters minFreeSpace1024bytes and maxFreeSpace1024bytes.</li>
+                <li>Add parameters: startArchivingLevel1024bytes,
+                    stopArchivingLevel1024bytes and linkLifetimeSeconds.
+                </li>
                 <li>Cope with some obscure file checker errors.</li>
+                <li>Datasets are archived when main storage becomes too full.</li>
             </ul>
         </section>
 

@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -692,21 +693,20 @@ public class TestingClient {
 		}
 	}
 
-	public void getLink(String sessionId, long datafileId, Path link, String username, int sc)
+	public Path getLink(String sessionId, long datafileId, String username, int sc)
 			throws BadRequestException, InsufficientPrivilegesException, InternalException,
 			NotFoundException, DataNotOnlineException, NotImplementedException {
 		URI uri = getUri(getUriBuilder("getLink"));
 		List<NameValuePair> formparams = new ArrayList<>();
 		formparams.add(new BasicNameValuePair("sessionId", sessionId));
 		formparams.add(new BasicNameValuePair("datafileId", Long.toString(datafileId)));
-		formparams.add(new BasicNameValuePair("link", link.toString()));
 		formparams.add(new BasicNameValuePair("username", username));
 
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
 			HttpPost httpPost = new HttpPost(uri);
 			httpPost.setEntity(new UrlEncodedFormEntity(formparams));
 			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-				expectNothing(response, sc);
+				return Paths.get(getString(response, sc));
 			} catch (InsufficientStorageException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}

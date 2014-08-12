@@ -118,6 +118,11 @@
                     <dd>If true disables write operations (put and delete).
                     </dd>
 
+                    <dt>linkLifetimeSeconds</dt>
+                    <dd>The length of time in seconds to keep the links established by the getLink call. If this is set to zero then the getLink call
+                        will return a NotImplementedException.
+                    </dd>
+
                     <dt>reader</dt>
                     <dd>
                         space separated icat plugin name and credentials for a user permitted to read all datasets, datafiles, investigations and
@@ -127,7 +132,6 @@
                         This is only required if you are using archive storage or if you enable file checking by setting filesCheck.parallelCount to
                         be greater than 0.
                     </dd>
-
 
                 </dl>
 
@@ -161,15 +165,13 @@
                         the requested compression.
                     </dd>
 
-                    <dt>minFreeSpace1024bytes</dt>
-                    <dd>the minumum free space on the main storage area. If the free space falls below this value, datasets will be archived (oldest
-                        first) until the free space is greater than maxFreeSpace1024bytes.
+                    <dt>startArchivingLevel1024bytes</dt>
+                    <dd>If the space used in main storage exceeds this then datasets will be archived (oldest first) until the space used is below
+                        stopArchivingLevel1024bytes.
                     </dd>
 
-                    <dt>maxFreeSpace1024bytes</dt>
-                    <dd>the mamimum free space on the main storage area. If the free space falls below minFreeSpace1024bytes datasets will be archived
-                        (oldest
-                        first) until the free space is greater than this value.
+                    <dt>stopArchivingLevel1024bytes</dt>
+                    <dd>See startArchivingLevel1024bytes.
                     </dd>
 
                 </dl>

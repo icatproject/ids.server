@@ -9,7 +9,7 @@ props = actions.getGlassfish("ids-setup.properties", ["glassfish", "libraries"])
 
 prop_name = "ids.properties"
 prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir", "preparedCacheSize1024bytes",
-"preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "filesCheck.parallelCount"]
+"preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "filesCheck.parallelCount", "linkLifetimeSeconds"]
 
 if arg in ["CONFIGURE", "INSTALL"]:
     actions.configure(prop_name, prop_list)
@@ -37,8 +37,8 @@ if arg == "INSTALL":
         if not idsProperties.get("writeDelaySeconds"): abort("writeDelaySeconds is not set in ids.properties")
         if not idsProperties.get("datasetCacheSize1024bytes"): abort("datasetCacheSize1024bytes is not set")
         if not idsProperties.get("reader"): abort("reader is not set in ids.properties")
-        if not idsProperties.get("minFreeSpace1024bytes"): abort("minFreeSpace1024bytes is not set in ids.properties")
-        if not idsProperties.get("maxFreeSpace1024bytes"): abort("maxFreeSpace1024bytes is not set in ids.properties")
+        if not idsProperties.get("startArchivingLevel1024bytes"): abort("startArchivingLevel1024bytes is not set in ids.properties")
+        if not idsProperties.get("stopArchivingLevel1024bytes"): abort("stopArchivingLevel1024bytes is not set in ids.properties")
         
     if int(idsProperties["filesCheck.parallelCount"]):
         if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in ids.properties")
@@ -53,7 +53,7 @@ if arg == "INSTALL":
         if not idsProperties.get("reader"): abort("reader is not set in ids.properties")
 
     actions.installFile("ids.properties")
-   
+       
     try:          
         app = actions.getAppName("ids.server")
         if app: actions.asadmin("undeploy " + app)

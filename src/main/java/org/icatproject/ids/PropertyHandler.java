@@ -1,6 +1,7 @@
 package org.icatproject.ids;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -77,8 +78,9 @@ public class PropertyHandler {
 	private int filesCheckGapMillis;
 	private Path filesCheckLastIdFile;
 	private Path filesCheckErrorLog;
-	private long minFreeSpace;
-	private long maxFreeSpace;
+	private long startArchivingLevel;
+	private long stopArchivingLevel;
+	private long linkLifetimeMillis;
 
 	public Set<String> getRootUserNames() {
 		return rootUserNames;
@@ -183,14 +185,18 @@ public class PropertyHandler {
 				} catch (Exception e) {
 					abort(e.getClass() + " " + e.getMessage());
 				}
-				minFreeSpace = props.getPositiveLong("minFreeSpace1024bytes") * 1024;
-				maxFreeSpace = props.getPositiveLong("maxFreeSpace1024bytes") * 1024;
-				if (maxFreeSpace <= minFreeSpace) {
-					abort("maxFreeSpace1024bytes must be greater than minFreeSpace1024bytes");
+				startArchivingLevel = props.getPositiveLong("startArchivingLevel1024bytes") * 1024;
+				stopArchivingLevel = props.getPositiveLong("stopArchivingLevel1024bytes") * 1024;
+				if (stopArchivingLevel >= startArchivingLevel) {
+					abort("startArchivingLevel1024bytes must be greater than stopArchivingLevel1024bytes");
 				}
 			}
 
-			cacheDir = props.getFile("cache.dir").toPath();
+			try {
+				cacheDir = props.getFile("cache.dir").getCanonicalFile().toPath();
+			} catch (IOException e) {
+				abort("IOException " + e.getMessage());
+			}
 			if (!Files.isDirectory(cacheDir)) {
 				abort(cacheDir + " must be an existing directory");
 			}
@@ -208,6 +214,8 @@ public class PropertyHandler {
 				}
 				props.getString("reader"); // Make sure it's present
 			}
+
+			linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
 
 		} catch (CheckedPropertyException e) {
 			abort(e.getMessage());
@@ -279,12 +287,16 @@ public class PropertyHandler {
 		return filesCheckErrorLog;
 	}
 
-	public long getMinFreeSpace() {
-		return minFreeSpace;
+	public long getStartArchivingLevel() {
+		return startArchivingLevel;
 	}
 
-	public long getMaxFreeSpace() {
-		return maxFreeSpace;
+	public long getStopArchivingLevel() {
+		return stopArchivingLevel;
+	}
+
+	public long getlinkLifetimeMillis() {
+		return linkLifetimeMillis;
 	}
 
 }

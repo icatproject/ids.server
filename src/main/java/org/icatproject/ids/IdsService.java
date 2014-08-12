@@ -55,13 +55,14 @@ public class IdsService {
 	@POST
 	@Path("getLink")
 	@Consumes("application/x-www-form-urlencoded")
+	@Produces("text/plain")
 	public Response getLink(@FormParam("sessionId") String sessionId,
-			@FormParam("datafileId") long datafileId, @FormParam("link") String link,
+			@FormParam("datafileId") long datafileId, 
 			@FormParam("username") String username) throws BadRequestException,
 			InsufficientPrivilegesException, NotImplementedException, InternalException,
 			NotFoundException, DataNotOnlineException {
 		try {
-			return idsBean.getLink(sessionId, datafileId, Paths.get(link), username);
+			return idsBean.getLink(sessionId, datafileId, username);
 		} catch (RuntimeException e) {
 			processRuntimeException(e);
 			return null; // Will never get here but the compiler doesn't know

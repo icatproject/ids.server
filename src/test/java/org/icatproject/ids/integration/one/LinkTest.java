@@ -1,13 +1,14 @@
 package org.icatproject.ids.integration.one;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,11 +26,10 @@ public class LinkTest extends BaseTest {
 	@Test
 	public void getLink() throws Exception {
 		Path link = here.resolve("alink");
-		try {
-			testingClient.getLink(sessionId, datafileIds.get(0), link, "glassfish", 403);
-			fail("Should have thrown an exception");
-		} catch (InsufficientPrivilegesException e) {
-			// All is well
-		}
+		link = testingClient.getLink(sessionId, datafileIds.get(0), System.getProperty("user.name"), 200);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		Files.copy(link, baos);
+		assertEquals("df1 test content very compressible very compressible", baos.toString());
+		Files.delete(link);
 	}
 }
