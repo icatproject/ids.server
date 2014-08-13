@@ -126,8 +126,8 @@ public class Preparer implements Runnable {
 							return;
 						}
 					}
-					logger.debug("All data appears to be on line for preparedId: " + preparedId);
 				}
+				logger.debug("All data appears to be on line for preparedId: " + preparedId);
 			} catch (Exception e) {
 				message = e.getClass() + " " + e.getMessage();
 				status = PreparerStatus.INCOMPLETE;

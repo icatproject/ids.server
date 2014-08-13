@@ -53,9 +53,9 @@ public class ArchiveTest extends BaseTest {
 				new DataSelection().addDatafiles(Arrays.asList(1L, 2L)), 400);
 	}
 
-	@Test(expected = BadRequestException.class)
+	@Test
 	public void noIdsTest() throws Exception {
-		testingClient.archive(sessionId, new DataSelection(), 400);
+		testingClient.archive(sessionId, new DataSelection(), 200);
 	}
 
 	@Test(expected = InsufficientPrivilegesException.class)

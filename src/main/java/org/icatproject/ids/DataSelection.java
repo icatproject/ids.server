@@ -156,9 +156,6 @@ public class DataSelection {
 							emptyDatasets.add(dsid);
 						}
 					}
-				} else {
-					icat.get(sessionId, "Investigation", invid); // May reveal a permissions problem
-					throw new NotFoundException("Investigation " + invid);
 				}
 			}
 
@@ -174,10 +171,6 @@ public class DataSelection {
 			}
 
 		}
-
-		if (dsInfos.isEmpty()) {
-			throw new BadRequestException("No investigation, dataset nor datafile specified");
-		}
 	}
 
 	public Set<DfInfoImpl> getDfInfo() {
@@ -185,7 +178,8 @@ public class DataSelection {
 	}
 
 	public boolean mustZip() {
-		return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty();
+		return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty()
+				|| (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty());
 	}
 
 	public boolean isSingleDataset() {

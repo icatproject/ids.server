@@ -8,6 +8,7 @@ import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
+import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -97,16 +98,15 @@ public class PrepareDataTest extends BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 400);
 	}
 
-	@Test(expected = BadRequestException.class)
+	@Test
 	public void noIdsTest() throws Exception {
-		testingClient.prepareData("bad sessionId format", new DataSelection(), Flag.NONE, 400);
-
+		testingClient.prepareData(sessionId, new DataSelection(), Flag.NONE, 200);
 	}
 
-	@Test(expected = BadRequestException.class)
+	@Test(expected = InsufficientPrivilegesException.class)
 	public void nonExistingSessionIdTest() throws Exception {
-		testingClient.prepareData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", new DataSelection(),
-				Flag.NONE, 400);
+		testingClient.prepareData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 403);
 
 	}
 
