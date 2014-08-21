@@ -18,7 +18,7 @@ public class IdsException extends Exception {
 		this.httpStatusCode = httpStatusCode;
 
 		this.message = message;
-		logger.debug(message);
+		logger.debug(httpStatusCode + ": " + message);
 	}
 
 	public String getShortMessage() {

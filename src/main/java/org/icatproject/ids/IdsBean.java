@@ -75,6 +75,8 @@ public class IdsBean {
 		paddedPrefix += "*/window.name='";
 	}
 
+	private static Boolean inited = false;
+
 	private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
 
 	/** matches standard UUID format of 8-4-4-4-12 hexadecimal digits */
@@ -522,37 +524,93 @@ public class IdsBean {
 	@PostConstruct
 	private void init() {
 		try {
-			logger.info("creating IdsBean");
-			propertyHandler = PropertyHandler.getInstance();
-			zipMapper = propertyHandler.getZipMapper();
-			mainStorage = propertyHandler.getMainStorage();
-			twoLevel = propertyHandler.getArchiveStorage() != null;
-			datatypeFactory = DatatypeFactory.newInstance();
-			preparedDir = propertyHandler.getCacheDir().resolve("prepared");
-			Files.createDirectories(preparedDir);
-			linkDir = propertyHandler.getCacheDir().resolve("link");
-			Files.createDirectories(linkDir);
+			synchronized (inited) {
+				logger.info("creating IdsBean");
+				propertyHandler = PropertyHandler.getInstance();
+				zipMapper = propertyHandler.getZipMapper();
+				mainStorage = propertyHandler.getMainStorage();
+				twoLevel = propertyHandler.getArchiveStorage() != null;
+				datatypeFactory = DatatypeFactory.newInstance();
+				preparedDir = propertyHandler.getCacheDir().resolve("prepared");
+				Files.createDirectories(preparedDir);
+				linkDir = propertyHandler.getCacheDir().resolve("link");
+				Files.createDirectories(linkDir);
 
-			rootUserNames = propertyHandler.getRootUserNames();
-			readOnly = propertyHandler.getReadOnly();
-			tolerateWrongCompression = propertyHandler.isTolerateWrongCompression();
-			compressDatasetCache = propertyHandler.isCompressDatasetCache();
+				rootUserNames = propertyHandler.getRootUserNames();
+				readOnly = propertyHandler.getReadOnly();
+				tolerateWrongCompression = propertyHandler.isTolerateWrongCompression();
+				compressDatasetCache = propertyHandler.isCompressDatasetCache();
 
-			icat = propertyHandler.getIcatService();
+				icat = propertyHandler.getIcatService();
 
-			if (twoLevel) {
-				datasetDir = propertyHandler.getCacheDir().resolve("dataset");
-				Files.createDirectories(datasetDir);
-				markerDir = propertyHandler.getCacheDir().resolve("marker");
-				Files.createDirectories(markerDir);
-				restartUnfinishedWork();
+				if (twoLevel) {
+					datasetDir = propertyHandler.getCacheDir().resolve("dataset");
+					markerDir = propertyHandler.getCacheDir().resolve("marker");
+					if (!inited) {
+						Files.createDirectories(datasetDir);
+						Files.createDirectories(markerDir);
+						restartUnfinishedWork();
+					}
+				}
+
+				if (!inited) {
+					long datasetCacheSizeBytes = propertyHandler.getDatasetCacheSizeBytes();
+					cleanPreparedDir(preparedDir);
+					if (datasetCacheSizeBytes != 0) {
+						cleanDatasetCache(datasetDir);
+					}
+				}
+
+				linkEnabled = propertyHandler.getlinkLifetimeMillis() > 0;
+
+				inited = true;
+
+				logger.info("created IdsBean");
 			}
-
-			linkEnabled = propertyHandler.getlinkLifetimeMillis() > 0;
-
-			logger.info("created IdsBean");
 		} catch (Exception e) {
 			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	static void cleanPreparedDir(Path preparedDir) {
+		for (File file : preparedDir.toFile().listFiles()) {
+			Path path = file.toPath();
+			String pf = path.getFileName().toString();
+			if (pf.startsWith("tmp.") || pf.endsWith(".tmp")) {
+				try {
+					long thisSize = 0;
+					if (Files.isDirectory(path)) {
+						for (File notZipFile : file.listFiles()) {
+							thisSize += Files.size(notZipFile.toPath());
+							Files.delete(notZipFile.toPath());
+						}
+					}
+					thisSize += Files.size(path);
+					Files.delete(path);
+					logger.debug("Deleted " + path + " to reclaim " + thisSize + " bytes");
+				} catch (IOException e) {
+					logger.debug("Failed to delete " + path + e.getMessage());
+				}
+			}
+		}
+	}
+
+	static void cleanDatasetCache(Path datasetDir) {
+		for (File inv : datasetDir.toFile().listFiles()) {
+			for (File dsFile : inv.listFiles()) {
+				Path path = dsFile.toPath();
+				String pf = path.getFileName().toString();
+				if (pf.endsWith(".tmp")) {
+					try {
+						long thisSize = Files.size(path);
+						Files.delete(path);
+						logger.debug("Deleted " + path + " to reclaim " + thisSize + " bytes");
+					} catch (IOException e) {
+						logger.debug("Failed to delete " + path + " " + e.getClass() + " "
+								+ e.getMessage());
+					}
+				}
+			}
 		}
 	}
 
@@ -916,8 +974,6 @@ public class IdsBean {
 		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE df.id IN (" + sb.toString()
 				+ ")";
 		try {
-			logger.error(query);
-			logger.error("" + icat.search(sessionId, query));
 			return (Long) icat.search(sessionId, query).get(0);
 		} catch (IcatException_Exception e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());

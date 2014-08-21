@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,10 +56,9 @@ public class IdsService {
 	@Consumes("application/x-www-form-urlencoded")
 	@Produces("text/plain")
 	public Response getLink(@FormParam("sessionId") String sessionId,
-			@FormParam("datafileId") long datafileId, 
-			@FormParam("username") String username) throws BadRequestException,
-			InsufficientPrivilegesException, NotImplementedException, InternalException,
-			NotFoundException, DataNotOnlineException {
+			@FormParam("datafileId") long datafileId, @FormParam("username") String username)
+			throws BadRequestException, InsufficientPrivilegesException, NotImplementedException,
+			InternalException, NotFoundException, DataNotOnlineException {
 		try {
 			return idsBean.getLink(sessionId, datafileId, username);
 		} catch (RuntimeException e) {
@@ -201,6 +199,15 @@ public class IdsService {
 			throws BadRequestException, NotFoundException, InternalException {
 
 		try {
+			if (preparedId.equals("BadRequestException")) {
+				throw new BadRequestException("BadRequestException");
+			}
+			if (preparedId.equals("NotFoundException")) {
+				throw new NotFoundException("NotFoundException");
+			}
+			if (preparedId.equals("InternalException")) {
+				throw new InternalException("InternalException");
+			}
 			return idsBean.isPrepared(preparedId);
 		} catch (RuntimeException e) {
 			processRuntimeException(e);

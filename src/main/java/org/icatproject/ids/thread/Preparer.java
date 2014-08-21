@@ -73,7 +73,7 @@ public class Preparer implements Runnable {
 
 	@Override
 	public void run() {
-		logger.info("Starting preparer");
+		logger.info("Starting preparer with preparedId: " + preparedId);
 
 		if (twoLevel) {
 
@@ -84,8 +84,15 @@ public class Preparer implements Runnable {
 				boolean online = true;
 				try {
 					for (DsInfo dsInfo : dsInfos) {
-						if (!emptyDs.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+						if (fsm.getRestoring().contains(dsInfo)) {
+							logger.debug("Restore of " + dsInfo + " for preparedId: " + preparedId
+									+ " is requested or in progress");
 							online = false;
+						} else if (!emptyDs.contains(dsInfo.getDsId())
+								&& !mainStorage.exists(dsInfo)) {
+							online = false;
+							logger.debug("Queueing restore of " + dsInfo + " for preparedId: "
+									+ preparedId);
 							fsm.queue(dsInfo, DeferredOp.RESTORE);
 						}
 					}
@@ -103,7 +110,8 @@ public class Preparer implements Runnable {
 						for (DsInfo dsInfo : dsInfos) {
 							if (restoring.contains(dsInfo)) {
 								if (n++ % 60 == 1) { // Only log every five minutes
-									logger.debug("Waiting for " + dsInfo + " to be restored");
+									logger.debug("Waiting for " + dsInfo
+											+ " to be restored for preparedId: " + preparedId);
 								}
 								online = false;
 								break;

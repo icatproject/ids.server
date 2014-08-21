@@ -62,23 +62,30 @@ public class Tidier {
 				if (twoLevel) {
 					long used = mainStorage.getUsedSpace();
 					if (used > startArchivingLevel) {
+						logger.debug("Main storage is " + (float) used * 100 / startArchivingLevel
+								+ "% full");
 						List<Long> investigations = mainStorage.getInvestigations();
 						outer: while (true) {
 							for (Long invId : investigations) {
+
 								for (Long dsId : mainStorage.getDatasets(invId)) {
+
 									try {
-										String query = "SELECT sum(filesize) FROM Datafile df WHERE df.dataset_id = "
+										String query = "SELECT sum(df.fileSize) FROM Datafile df WHERE df.dataset.id = "
 												+ dsId;
+										long size = (Long) reader.search(query).get(0);
 										Dataset ds = (Dataset) reader.get(
 												"Dataset ds INCLUDE ds.investigation.facility",
 												dsId);
 										DsInfoImpl dsInfoImpl = new DsInfoImpl(ds);
 										logger.debug("Requesting archive of " + dsInfoImpl
-												+ " to recover space");
+												+ " to recover " + size + " bytes of main storage");
 										fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
-										long size = (Long) reader.search(query).get(0);
 										used -= size;
 										if (used < stopArchivingLevel) {
+											logger.debug("After archiving main storage will be "
+													+ (float) used * 100 / startArchivingLevel
+													+ "% full");
 											break outer;
 										}
 									} catch (InternalException | IcatException_Exception
