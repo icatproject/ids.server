@@ -136,7 +136,7 @@
                 </dl>
 
                 <h4>Properties for archive storage</h4>
-
+                <p>If you are not using archive storage then all of these properties should be omitted.</p>
                 <dl>
 
                     <dt>plugin.archive.class</dt>
