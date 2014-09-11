@@ -29,12 +29,12 @@ public class DeleteTest extends BaseTest {
 		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(1));
 		Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(1));
 
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 204);
 		waitForIds();
 		checkPresent(dirOnFastStorage);
 		checkPresent(datasetCacheFile);
 
-		testingClient.delete(sessionId, new DataSelection().addDatafile(datafileIds.get(3)), 200);
+		testingClient.delete(sessionId, new DataSelection().addDatafile(datafileIds.get(3)), 204);
 		waitForIds();
 
 		checkZipFile(fileOnArchiveStorage, datafileIds.subList(2, 3), 57);
@@ -46,13 +46,13 @@ public class DeleteTest extends BaseTest {
 		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(1));
 		Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(1));
 
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 204);
 		waitForIds();
 		checkPresent(dirOnFastStorage);
 		checkPresent(datasetCacheFile);
 		checkPresent(fileOnArchiveStorage);
 
-		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 200);
+		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 204);
 		waitForIds();
 		checkAbsent(dirOnFastStorage);
 		checkAbsent(datasetCacheFile);

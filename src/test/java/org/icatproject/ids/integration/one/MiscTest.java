@@ -60,13 +60,13 @@ public class MiscTest extends BaseTest {
 
 	@Test
 	public void restoreHarmlessTest() throws Exception {
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 		waitForIds();
 	}
 
 	@Test
 	public void archiveHarmlessTest() throws Exception {
-		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 		waitForIds();
 	}
 

@@ -1,5 +1,6 @@
 package org.icatproject.ids;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -18,6 +19,8 @@ import java.util.TimerTask;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DsInfo;
@@ -30,11 +33,6 @@ import org.icatproject.ids.thread.Writer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 @Singleton
 public class FiniteStateMachine {
 
@@ -45,7 +43,7 @@ public class FiniteStateMachine {
 	private int preparedCount;
 
 	private Path markerDir;
-	
+
 	@EJB
 	IcatReader reader;
 
@@ -254,41 +252,33 @@ public class FiniteStateMachine {
 			preparersClone.putAll(preparers);
 			changingClone = new HashSet<>(changing);
 		}
-		ObjectMapper om = new ObjectMapper();
-		ObjectNode serviceStatus = om.createObjectNode();
 
-		ArrayNode opsQueue = om.createArrayNode();
-		serviceStatus.put("opsQueue", opsQueue);
-		for (Entry<DsInfo, RequestedState> entry : deferredOpsQueueClone.entrySet()) {
-			DsInfo item = entry.getKey();
-			if (!changingClone.contains(item)) {
-				ObjectNode queueItem = om.createObjectNode();
-				opsQueue.add(queueItem);
-				queueItem.put("dsInfo", item.toString());
-				queueItem.put("request", entry.getValue().name());
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			gen.writeStartArray("opsQueue");
+			for (Entry<DsInfo, RequestedState> entry : deferredOpsQueueClone.entrySet()) {
+				DsInfo item = entry.getKey();
+				if (!changingClone.contains(item)) {
+					gen.writeStartObject().write("dsInfo", item.toString())
+							.write("request", entry.getValue().name()).writeEnd();
+				}
 			}
-		}
-		for (DsInfo item : changingClone) {
-			ObjectNode queueItem = om.createObjectNode();
-			opsQueue.add(queueItem);
-			queueItem.put("dsInfo", item.toString());
-			queueItem.put("request", "CHANGING");
+			for (DsInfo item : changingClone) {
+				gen.writeStartObject().write("dsInfo", item.toString())
+						.write("request", "CHANGING").writeEnd();
+			}
+			gen.writeEnd();
+
+			gen.writeStartArray("prepQueue");
+
+			for (Entry<String, Preparer> entry : preparersClone.entrySet()) {
+				gen.writeStartObject().write("id", entry.getKey())
+						.write("state", entry.getValue().getStatus().name()).writeEnd();
+			}
+			gen.writeEnd().writeEnd().close();
+			return baos.toString();
 		}
 
-		ArrayNode prepQueue = om.createArrayNode();
-		serviceStatus.put("prepQueue", prepQueue);
-		for (Entry<String, Preparer> entry : preparersClone.entrySet()) {
-			ObjectNode queueItem = om.createObjectNode();
-			prepQueue.add(queueItem);
-			queueItem.put("id", entry.getKey());
-			queueItem.put("state", entry.getValue().getStatus().name());
-		}
-
-		try {
-			return om.writeValueAsString(serviceStatus);
-		} catch (JsonProcessingException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
 	}
 
 	/**

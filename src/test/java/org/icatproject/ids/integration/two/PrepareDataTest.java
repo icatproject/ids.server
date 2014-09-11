@@ -122,7 +122,7 @@ public class PrepareDataTest extends BaseTest {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
@@ -150,7 +150,7 @@ public class PrepareDataTest extends BaseTest {
 		Path datasetCacheFile2 = getDatasetCacheFile(datasetIds.get(1));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-				.addDataset(datasetIds.get(1)), 200);
+				.addDataset(datasetIds.get(1)), 204);
 
 		waitForIds();
 
@@ -177,7 +177,7 @@ public class PrepareDataTest extends BaseTest {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
-		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 204);
 
 		waitForIds();
 
@@ -202,7 +202,7 @@ public class PrepareDataTest extends BaseTest {
 		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0))
-				.addDataset(datasetIds.get(0)), 200);
+				.addDataset(datasetIds.get(0)), 204);
 		waitForIds();
 		checkPresent(dirOnFastStorage);
 		checkPresent(datasetCacheFile);

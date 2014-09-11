@@ -34,11 +34,11 @@ public class FileCheckerTest extends BaseTest {
 
 		Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(0));
 
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
-		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		Long dfid = 0L;
 		for (int i = 0; i < 3; i++) {

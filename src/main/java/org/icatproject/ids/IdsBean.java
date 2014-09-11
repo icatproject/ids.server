@@ -1,6 +1,7 @@
 package org.icatproject.ids;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,6 +26,8 @@ import java.util.zip.ZipOutputStream;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.xml.datatype.DatatypeFactory;
@@ -54,10 +57,6 @@ import org.icatproject.ids.thread.Preparer.PreparerStatus;
 import org.icatproject.utils.ShellCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @Stateless
 public class IdsBean {
@@ -122,7 +121,7 @@ public class IdsBean {
 
 	private boolean linkEnabled;
 
-	public Response archive(String sessionId, String investigationIds, String datasetIds,
+	public void archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, InternalException, NotFoundException {
 
@@ -142,12 +141,9 @@ public class IdsBean {
 				fsm.queue(dsInfo, DeferredOp.ARCHIVE);
 			}
 		}
-
-		return Response.ok().build();
-
 	}
 
-	public Response delete(String sessionId, String investigationIds, String datasetIds,
+	public void delete(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, InternalException, NotFoundException,
 			DataNotOnlineException {
@@ -230,7 +226,7 @@ public class IdsBean {
 				fsm.queue(dsInfo, DeferredOp.WRITE);
 			}
 		}
-		return Response.ok().build();
+
 	}
 
 	public Response getData(String preparedId, String outname, final long offset)
@@ -444,7 +440,7 @@ public class IdsBean {
 				.header("Accept-Ranges", "bytes").build();
 	}
 
-	public Response isPrepared(String preparedId) throws BadRequestException, NotFoundException {
+	public Boolean isPrepared(String preparedId) throws BadRequestException, NotFoundException {
 
 		// Validate
 		validateUUID("preparedId", preparedId);
@@ -466,11 +462,11 @@ public class IdsBean {
 				prepared = false;
 			}
 		}
-		return Response.ok(Boolean.toString(prepared)).build();
+		return prepared;
 
 	}
 
-	public Response getStatus(String sessionId, String investigationIds, String datasetIds,
+	public String getStatus(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws BadRequestException, NotFoundException,
 			InsufficientPrivilegesException, InternalException {
 
@@ -517,7 +513,7 @@ public class IdsBean {
 
 		}
 		logger.debug("Status is " + status.name());
-		return Response.ok(status.name()).build();
+		return status.name();
 
 	}
 
@@ -739,47 +735,35 @@ public class IdsBean {
 				if (twoLevel) {
 					fsm.queue(dsInfo, DeferredOp.WRITE);
 				}
-
-				ObjectMapper om = new ObjectMapper();
-				ObjectNode putResult = om.createObjectNode();
-				putResult.put("id", dfId);
-				putResult.put("checksum", checksum);
-				putResult.put("location", location.replace("\\", "\\\\").replace("'", "\\'"));
-				putResult.put("size", size);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				Json.createGenerator(baos).writeStartObject().write("id", dfId)
+						.write("checksum", checksum)
+						.write("location", location.replace("\\", "\\\\").replace("'", "\\'"))
+						.write("size", size).writeEnd().close();
 				if (wrap) {
 					return Response.status(HttpURLConnection.HTTP_CREATED)
-							.entity(prefix + om.writeValueAsString(putResult) + suffix).build();
+							.entity(prefix + baos.toString() + suffix).build();
 				} else {
-					return Response.status(HttpURLConnection.HTTP_CREATED)
-							.entity(om.writeValueAsString(putResult)).build();
+					return Response.status(HttpURLConnection.HTTP_CREATED).entity(baos.toString())
+							.build();
 				}
 
 			} catch (IOException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 		} catch (IdsException e) {
-			ObjectMapper om = new ObjectMapper();
-			ObjectNode error = om.createObjectNode();
-			error.put("code", e.getClass().getSimpleName());
-			error.put("message", e.getShortMessage());
+
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			JsonGenerator gen = Json.createGenerator(baos);
+			gen.writeStartObject().write("code", e.getClass().getSimpleName())
+					.write("message", e.getShortMessage());
+			gen.writeEnd().close();
 			if (wrap) {
 				String pre = padding ? paddedPrefix : prefix;
-				try {
-					return Response
-							.status(e.getHttpStatusCode())
-							.entity(pre + om.writeValueAsString(error).replace("'", "\\'") + suffix)
-							.build();
-				} catch (JsonProcessingException e1) {
-					return Response.status(e.getHttpStatusCode())
-							.entity(pre + e.getMessage() + suffix).build();
-				}
+				return Response.status(e.getHttpStatusCode())
+						.entity(pre + baos.toString().replace("'", "\\'") + suffix).build();
 			} else {
-				try {
-					return Response.status(e.getHttpStatusCode())
-							.entity(om.writeValueAsString(error)).build();
-				} catch (JsonProcessingException e1) {
-					return Response.status(e.getHttpStatusCode()).entity(e.getMessage()).build();
-				}
+				return Response.status(e.getHttpStatusCode()).entity(baos.toString()).build();
 			}
 		}
 
@@ -881,7 +865,7 @@ public class IdsBean {
 		}
 	}
 
-	public Response restore(String sessionId, String investigationIds, String datasetIds,
+	public void restore(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws BadRequestException, NotImplementedException,
 			InsufficientPrivilegesException, InternalException, NotFoundException {
 
@@ -902,11 +886,9 @@ public class IdsBean {
 				fsm.queue(dsInfo, DeferredOp.RESTORE);
 			}
 		}
-
-		return Response.ok().build();
 	}
 
-	public Response getServiceStatus(String sessionId) throws InternalException,
+	public String getServiceStatus(String sessionId) throws InternalException,
 			InsufficientPrivilegesException {
 
 		// Log and validate
@@ -925,7 +907,7 @@ public class IdsBean {
 			}
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
-		return Response.ok(fsm.getServiceStatus()).build();
+		return fsm.getServiceStatus();
 	}
 
 	public boolean isReadOnly() {
@@ -982,7 +964,7 @@ public class IdsBean {
 		}
 	}
 
-	public Response getLink(String sessionId, long datafileId, String username)
+	public String getLink(String sessionId, long datafileId, String username)
 			throws BadRequestException, InsufficientPrivilegesException, InternalException,
 			NotFoundException, DataNotOnlineException, NotImplementedException {
 		// Log and validate
@@ -1043,7 +1025,7 @@ public class IdsBean {
 			}
 			Path link = linkDir.resolve(UUID.randomUUID().toString());
 			Files.createLink(link, target);
-			return Response.ok().entity(link.toString()).build();
+			return link.toString();
 		} catch (IOException e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}

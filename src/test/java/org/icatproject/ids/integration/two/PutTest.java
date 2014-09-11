@@ -42,7 +42,7 @@ public class PutTest extends BaseTest {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
 		assertFalse(Files.exists(dirOnFastStorage));
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
@@ -80,7 +80,7 @@ public class PutTest extends BaseTest {
 
 		assertTrue(Files.exists(dirOnFastStorage));
 
-		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 

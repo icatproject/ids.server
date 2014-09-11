@@ -1,12 +1,12 @@
 package org.icatproject.ids.exceptions;
 
+import java.io.ByteArrayOutputStream;
+
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Capture any {@link org.icatproject.ids.exceptions.IdsException WebServiceException} thrown from
@@ -18,15 +18,11 @@ public class IdsExceptionMapper implements ExceptionMapper<IdsException> {
 
 	@Override
 	public Response toResponse(IdsException e) {
-		ObjectMapper om = new ObjectMapper();
-		ObjectNode error = om.createObjectNode();
-		error.put("code", e.getClass().getSimpleName());
-		error.put("message", e.getShortMessage());
-		try {
-			return Response.status(e.getHttpStatusCode()).entity(om.writeValueAsString(error))
-					.build();
-		} catch (JsonProcessingException e1) {
-			return Response.status(e.getHttpStatusCode()).entity(e.getMessage()).build();
-		}
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		JsonGenerator gen = Json.createGenerator(baos);
+		gen.writeStartObject().write("code", e.getClass().getSimpleName())
+				.write("message", e.getShortMessage());
+		gen.writeEnd().close();
+		return Response.status(e.getHttpStatusCode()).entity(baos.toString()).build();
 	}
 }

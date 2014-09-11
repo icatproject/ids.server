@@ -32,14 +32,14 @@ public class ArchiveTest extends BaseTest {
 		assertFalse(Files.exists(dirOnFastStorage));
 		assertFalse(Files.exists(datasetCacheFile));
 
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
 		assertTrue(Files.exists(dirOnFastStorage));
 		assertTrue(Files.exists(datasetCacheFile));
 
-		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200);
+		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 		assertFalse(Files.exists(dirOnFastStorage));
@@ -55,7 +55,7 @@ public class ArchiveTest extends BaseTest {
 
 	@Test
 	public void noIdsTest() throws Exception {
-		testingClient.archive(sessionId, new DataSelection(), 200);
+		testingClient.archive(sessionId, new DataSelection(), 204);
 	}
 
 	@Test(expected = InsufficientPrivilegesException.class)
