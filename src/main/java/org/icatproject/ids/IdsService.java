@@ -97,6 +97,13 @@ public class IdsService {
 	}
 
 	@GET
+	@Path("getApiVersion")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getApiVersion() {
+		return Constants.API_VERSION;
+	}
+
+	@GET
 	@Path("getSize")
 	@Produces(MediaType.TEXT_PLAIN)
 	public long getSize(@QueryParam("sessionId") String sessionId,

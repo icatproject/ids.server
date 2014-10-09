@@ -723,4 +723,19 @@ public class TestingClient {
 		}
 	}
 
+	public String getApiVersion(int sc) throws InternalException, ParseException, NotImplementedException {
+		URI uri = getUri(getUriBuilder("getApiVersion"));
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return getString(response, sc);
+			} catch (IOException | InsufficientStorageException | DataNotOnlineException
+					| BadRequestException | InsufficientPrivilegesException | NotFoundException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
 }

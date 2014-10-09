@@ -1,5 +1,6 @@
 package org.icatproject.ids.integration.one;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -21,6 +22,11 @@ public class MiscTest extends BaseTest {
 	public static void setup() throws Exception {
 		setup = new Setup("one.properties");
 		icatsetup();
+	}
+
+	@Test
+	public void apiVersionTest() throws Exception {
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.2."));
 	}
 
 	@Test

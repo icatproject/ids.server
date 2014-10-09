@@ -51,11 +51,7 @@ public class GetDataExplicitTest extends BaseTest {
 			size = df.getFileSize();
 			df.setFileSize(size + 1);
 			icat.update(sessionId, df);
-			// 105 is not the correct answer is is caused by a bug in ICAT which changes the
-			// underlying query to SELECT SUM(DISTINCT df.fileSize) ... which is not what is wanted.
-			// Once ICAT is fixed get rid of this filesize fiddling and expect 4*52 i.e. 208 to be
-			// returned.
-			assertEquals(105L, testingClient.getSize(sessionId,
+			assertEquals(209L, testingClient.getSize(sessionId,
 					new DataSelection().addDatafiles(datafileIds), 200));
 		} finally {
 			if (df != null) {
