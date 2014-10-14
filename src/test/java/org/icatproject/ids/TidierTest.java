@@ -23,58 +23,6 @@ public class TidierTest {
 	}
 
 	@Test
-	public void testCleanDatasetCache() throws Exception {
-		Path top = Files.createTempDirectory(null);
-
-		Path inva = top.resolve("inva");
-		Path invb = top.resolve("invb");
-		Path invc = top.resolve("invc");
-		Files.createDirectories(inva);
-		Files.createDirectories(invb);
-		Files.createDirectories(invc);
-		Files.copy(file, inva.resolve("x"));
-		Thread.sleep(1000);
-		Files.copy(file, inva.resolve("y"));
-		Thread.sleep(1000);
-		Files.copy(file, invb.resolve("y"));
-		Thread.sleep(1000);
-		Files.copy(file, invb.resolve("y.tmp"));
-		Thread.sleep(1000);
-		Files.copy(file, invb.resolve("z"));
-		Thread.sleep(1000);
-		Files.copy(file, invc.resolve("z"));
-		assertTrue(Files.exists(inva.resolve("x")));
-		assertTrue(Files.exists(inva.resolve("y")));
-		assertTrue(Files.exists(invb.resolve("y")));
-		assertTrue(Files.exists(invb.resolve("y.tmp")));
-		assertTrue(Files.exists(invb.resolve("z")));
-		assertTrue(Files.exists(invc.resolve("z")));
-		Tidier.cleanDatasetCache(top, 12000);
-		assertTrue(Files.exists(inva.resolve("x")));
-		assertTrue(Files.exists(inva.resolve("y")));
-		assertTrue(Files.exists(invb.resolve("y")));
-		assertTrue(Files.exists(invb.resolve("y.tmp")));
-		assertTrue(Files.exists(invb.resolve("z")));
-		assertTrue(Files.exists(invc.resolve("z")));
-		Tidier.cleanDatasetCache(top, 5000);
-		assertFalse(Files.exists(inva));
-		assertFalse(Files.exists(invb.resolve("y")));
-		assertTrue(Files.exists(invb.resolve("y.tmp")));
-		assertFalse(Files.exists(invb.resolve("z")));
-		assertTrue(Files.exists(invc.resolve("z")));
-		Tidier.cleanDatasetCache(top, 2000);
-		assertFalse(Files.exists(inva));
-		assertFalse(Files.exists(invb.resolve("y")));
-		assertTrue(Files.exists(invb.resolve("y.tmp")));
-		assertFalse(Files.exists(invc.resolve("z")));
-		Tidier.cleanDatasetCache(top, 1999);
-		assertFalse(Files.exists(inva));
-		assertFalse(Files.exists(invb.resolve("y")));
-		assertTrue(Files.exists(invb.resolve("y.tmp")));
-		assertFalse(Files.exists(invc.resolve("z")));
-	}
-
-	@Test
 	public void testCleanPreparedDir() throws Exception {
 		Path top = Files.createTempDirectory(null);
 

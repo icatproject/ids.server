@@ -24,7 +24,6 @@ public class PrepareDataTest extends BaseTest {
 	@Test
 	public void prepareArchivedDataset() throws Exception {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 200);
@@ -34,17 +33,14 @@ public class PrepareDataTest extends BaseTest {
 		}
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
 	}
 
 	@Test
 	public void prepareTwoArchivedDatasets() throws Exception {
 
 		Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile1 = getDatasetCacheFile(datasetIds.get(0));
-		Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
-		Path datasetCacheFile2 = getDatasetCacheFile(datasetIds.get(1));
 
+		Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)),
 				Flag.NONE, 200);
@@ -54,15 +50,12 @@ public class PrepareDataTest extends BaseTest {
 		}
 
 		checkPresent(dirOnFastStorage1);
-		checkPresent(datasetCacheFile1);
 		checkPresent(dirOnFastStorage2);
-		checkPresent(datasetCacheFile2);
 	}
 
 	@Test
 	public void prepareArchivedDatafile() throws Exception {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
@@ -72,13 +65,11 @@ public class PrepareDataTest extends BaseTest {
 		}
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
 	}
 
 	@Test
 	public void prepareArchivedDatafileAndItsDataset() throws Exception {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(datafileIds.get(0)),
@@ -89,7 +80,6 @@ public class PrepareDataTest extends BaseTest {
 		}
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
 	}
 
 	@Test(expected = BadRequestException.class)
@@ -120,14 +110,12 @@ public class PrepareDataTest extends BaseTest {
 	@Test
 	public void prepareRestoredDataset() throws Exception {
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
 
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 200);
@@ -137,7 +125,6 @@ public class PrepareDataTest extends BaseTest {
 		}
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
 		checkPresent(setup.getPreparedCacheDir().resolve(preparedId));
 	}
 
@@ -145,9 +132,7 @@ public class PrepareDataTest extends BaseTest {
 	public void prepareTwoRestoredDatasets() throws Exception {
 
 		Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile1 = getDatasetCacheFile(datasetIds.get(0));
 		Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
-		Path datasetCacheFile2 = getDatasetCacheFile(datasetIds.get(1));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0))
 				.addDataset(datasetIds.get(1)), 204);
@@ -155,9 +140,7 @@ public class PrepareDataTest extends BaseTest {
 		waitForIds();
 
 		checkPresent(dirOnFastStorage1);
-		checkPresent(datasetCacheFile1);
 		checkPresent(dirOnFastStorage2);
-		checkPresent(datasetCacheFile2);
 
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)),
@@ -175,14 +158,12 @@ public class PrepareDataTest extends BaseTest {
 	public void prepareRestoredDatafile() throws Exception {
 
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 204);
 
 		waitForIds();
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
 
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
@@ -199,13 +180,11 @@ public class PrepareDataTest extends BaseTest {
 	public void prepareRestoredDatafileAndItsDataset() throws Exception {
 
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0))
 				.addDataset(datasetIds.get(0)), 204);
 		waitForIds();
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
 
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)),

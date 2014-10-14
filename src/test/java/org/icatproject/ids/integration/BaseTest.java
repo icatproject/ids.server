@@ -68,12 +68,6 @@ public class BaseTest {
 
 	}
 
-	protected Path getDatasetCacheFile(Long dsId) throws IcatException_Exception {
-		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation", dsId);
-		return setup.getDatasetCacheDir().resolve(Long.toString(icatDs.getInvestigation().getId()))
-				.resolve(Long.toString(icatDs.getId()));
-	}
-
 	protected Path getDirOnFastStorage(Long dsId) throws IcatException_Exception {
 		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation", dsId);
 		return setup.getStorageDir().resolve(Long.toString(icatDs.getInvestigation().getId()))
@@ -129,15 +123,14 @@ public class BaseTest {
 				throw new Exception("Got bored waiting");
 			}
 			ServiceStatus stat = testingClient.getServiceStatus(sessionId, 200);
-			if (stat.getOpItems().isEmpty() && stat.getPrepItems().isEmpty()) {
+
+			if (stat.getOpItems().isEmpty()) {
 				break;
 			}
+
 			if (n % 10 == 0) {
 				if (!stat.getOpItems().isEmpty()) {
 					System.out.println("Ops " + stat.getOpItems());
-				}
-				if (!stat.getPrepItems().isEmpty()) {
-					System.out.println("Preps " + stat.getPrepItems());
 				}
 			}
 			Thread.sleep(1000);
@@ -151,7 +144,6 @@ public class BaseTest {
 	private void clearStorage() throws IOException {
 		cleanDir(setup.getStorageDir());
 		cleanDir(setup.getStorageArchiveDir());
-		cleanDir(setup.getDatasetCacheDir());
 		cleanDir(setup.getUpdownDir());
 		cleanDir(setup.getPreparedCacheDir());
 		cleanDir(setup.getStorageDir());

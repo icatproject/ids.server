@@ -199,7 +199,7 @@ public class IdsService {
 	@Path("prepareData")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.TEXT_PLAIN)
-	public Response prepareData(@FormParam("sessionId") String sessionId,
+	public String prepareData(@FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds,
 			@FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,

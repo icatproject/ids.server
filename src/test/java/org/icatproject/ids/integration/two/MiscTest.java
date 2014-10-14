@@ -1,6 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -26,7 +25,7 @@ public class MiscTest extends BaseTest {
 
 	@Test
 	public void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.2."));
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.3."));
 	}
 
 	@Test
@@ -50,7 +49,6 @@ public class MiscTest extends BaseTest {
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
 		assertFalse(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
-		assertFalse(testingClient.getServiceStatus(sessionId, 200).getPrepItems().isEmpty());
 
 		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
@@ -60,7 +58,6 @@ public class MiscTest extends BaseTest {
 
 		waitForIds();
 		assertTrue(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
-		assertTrue(testingClient.getServiceStatus(sessionId, 200).getPrepItems().isEmpty());
 
 		try (InputStream stream = testingClient.getData(preparedId, null, 0, 200)) {
 			checkStream(stream, datafileIds.get(0));

@@ -20,56 +20,50 @@ public class RestoreTest extends BaseTest {
 	public void restoreArchivedDataset() throws Exception {
 
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
+
 	}
 
 	@Test
 	public void restoreTwoArchivedDatasets() throws Exception {
 		Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile1 = getDatasetCacheFile(datasetIds.get(0));
 		Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
-		Path datasetCacheFile2 = getDatasetCacheFile(datasetIds.get(1));
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0))
 				.addDataset(datasetIds.get(1)), 204);
 
 		waitForIds();
 		checkPresent(dirOnFastStorage1);
-		checkPresent(datasetCacheFile1);
 		checkPresent(dirOnFastStorage2);
-		checkPresent(datasetCacheFile2);
 	}
 
 	@Test
 	public void restoreArchivedDatafile() throws Exception {
 
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 204);
 		waitForIds();
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
+
 	}
 
 	@Test
 	public void restoreArchivedDatafileAndItsDataset() throws Exception {
 
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
+
 		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0))
 				.addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
 		checkPresent(dirOnFastStorage);
-		checkPresent(datasetCacheFile);
+
 	}
 }

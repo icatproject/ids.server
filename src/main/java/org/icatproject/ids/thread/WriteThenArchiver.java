@@ -3,6 +3,7 @@ package org.icatproject.ids.thread;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -58,45 +59,45 @@ public class WriteThenArchiver implements Runnable {
 	public void run() {
 
 		try {
-			Path datasetCachePath = datasetCache.resolve(Long.toString(dsInfo.getInvId())).resolve(
-					Long.toString(dsInfo.getDsId()));
 
 			if (!mainStorageInterface.exists(dsInfo)) {
 				logger.info("No files present for " + dsInfo + " - archive deleted");
 				archiveStorageInterface.delete(dsInfo);
 			} else {
-				if (!Files.exists(datasetCachePath)) {
-					Files.createDirectories(datasetCachePath.getParent());
-					List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile",
-							dsInfo.getDsId())).getDatafiles();
-					ZipOutputStream zos = new ZipOutputStream(
-							Files.newOutputStream(datasetCachePath));
-					zos.setLevel(0);
-					for (Datafile datafile : datafiles) {
-						String entryName = zipMapper.getFullEntryName(dsInfo, new DfInfoImpl(
-								datafile.getId(), datafile.getName(), datafile.getLocation(),
-								datafile.getCreateId(), datafile.getModId(), 0L));
-						zos.putNextEntry(new ZipEntry(entryName));
-						InputStream is = mainStorageInterface.get(datafile.getLocation(),
-								datafile.getCreateId(), datafile.getModId());
-						int bytesRead = 0;
-						byte[] buffer = new byte[BUFSIZ];
-						while ((bytesRead = is.read(buffer)) > 0) {
-							zos.write(buffer, 0, bytesRead);
-						}
-						zos.closeEntry();
-						is.close();
+				Path datasetCachePath = Files.createTempFile(datasetCache, null, null);
+				List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile",
+						dsInfo.getDsId())).getDatafiles();
+				ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(datasetCachePath,
+						StandardOpenOption.CREATE));
+				zos.setLevel(0);
+				for (Datafile datafile : datafiles) {
+					String entryName = zipMapper
+							.getFullEntryName(
+									dsInfo,
+									new DfInfoImpl(datafile.getId(), datafile.getName(), datafile
+											.getLocation(), datafile.getCreateId(), datafile
+											.getModId(), 0L));
+					zos.putNextEntry(new ZipEntry(entryName));
+					InputStream is = mainStorageInterface.get(datafile.getLocation(),
+							datafile.getCreateId(), datafile.getModId());
+					int bytesRead = 0;
+					byte[] buffer = new byte[BUFSIZ];
+					while ((bytesRead = is.read(buffer)) > 0) {
+						zos.write(buffer, 0, bytesRead);
 					}
-					zos.close();
+					zos.closeEntry();
+					is.close();
 				}
+				zos.close();
+
 				InputStream is = Files.newInputStream(datasetCachePath);
 				archiveStorageInterface.put(dsInfo, is);
+				Files.delete(datasetCachePath);
 				is.close();
 			}
 			Path marker = markerDir.resolve(Long.toString(dsInfo.getDsId()));
 			Files.deleteIfExists(marker);
 			logger.debug("Removed marker " + marker);
-			Files.deleteIfExists(datasetCachePath);
 			mainStorageInterface.delete(dsInfo);
 			logger.debug("Write then archive of " + dsInfo + " completed");
 		} catch (Exception e) {

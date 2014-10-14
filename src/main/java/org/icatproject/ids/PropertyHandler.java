@@ -30,65 +30,43 @@ import org.slf4j.LoggerFactory;
  */
 public class PropertyHandler {
 
-	private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
 	private static PropertyHandler instance = null;
+	private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
 
-	private long writeDelaySeconds;
-	private long processQueueIntervalSeconds;
-	private MainStorageInterface mainStorage;
-	private ArchiveStorageInterface archiveStorage;
-	private Path cacheDir;
-	private ICAT icatService;
-	private int preparedCount;
-	private Set<String> rootUserNames;
-	private List<String> reader;
-	private boolean readOnly;
-	private long preparedCacheSizeBytes;
+	public synchronized static PropertyHandler getInstance() {
+		if (instance == null) {
+			instance = new PropertyHandler();
+		}
+		return instance;
+	}
 
 	public static Logger getLogger() {
 		return logger;
 	}
 
-	public long getPreparedCacheSizeBytes() {
-		return preparedCacheSizeBytes;
-	}
-
-	public long getSizeCheckIntervalMillis() {
-		return sizeCheckIntervalMillis;
-	}
-
-	public boolean isCompressDatasetCache() {
-		return compressDatasetCache;
-	}
-
-	public boolean isTolerateWrongCompression() {
-		return tolerateWrongCompression;
-	}
-
-	public long getDatasetCacheSizeBytes() {
-		return datasetCacheSizeBytes;
-	}
-
-	private long sizeCheckIntervalMillis;
+	private ArchiveStorageInterface archiveStorage;
+	private Path cacheDir;
 	private boolean compressDatasetCache;
-	private boolean tolerateWrongCompression;
-	private long datasetCacheSizeBytes;
-	private ZipMapperInterface zipMapper;
-	private int filesCheckParallelCount;
+	private Path filesCheckErrorLog;
 	private int filesCheckGapMillis;
 	private Path filesCheckLastIdFile;
-	private Path filesCheckErrorLog;
-	private long startArchivingLevel;
-	private long stopArchivingLevel;
+	private int filesCheckParallelCount;
+	private ICAT icatService;
 	private long linkLifetimeMillis;
 
-	public Set<String> getRootUserNames() {
-		return rootUserNames;
-	}
+	private MainStorageInterface mainStorage;
 
-	public List<String> getReader() {
-		return reader;
-	}
+	private int preparedCount;
+
+	private long processQueueIntervalSeconds;
+	private List<String> reader;
+	private boolean readOnly;
+	private Set<String> rootUserNames;
+	private long sizeCheckIntervalMillis;
+	private long startArchivingLevel;
+	private long stopArchivingLevel;
+	private long writeDelaySeconds;
+	private ZipMapperInterface zipMapper;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -131,15 +109,14 @@ public class PropertyHandler {
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
 			rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim()
 					.split("\\s+")));
-			if (props.has("reader")) {
-				reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
-				if (reader.size() % 2 != 1) {
-					throw new IllegalStateException("reader must have an odd number of words");
-				}
+
+			reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
+			if (reader.size() % 2 != 1) {
+				throw new IllegalStateException("reader must have an odd number of words");
 			}
 
 			readOnly = props.getBoolean("readOnly", false);
-			preparedCacheSizeBytes = props.getPositiveLong("preparedCacheSize1024bytes") * 1024;
+
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
 
 			try {
@@ -169,8 +146,6 @@ public class PropertyHandler {
 			} else {
 				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
 				compressDatasetCache = props.getBoolean("compressDatasetCache", false);
-				tolerateWrongCompression = props.getBoolean("tolerateWrongCompression", false);
-				datasetCacheSizeBytes = props.getPositiveLong("datasetCacheSize1024bytes") * 1024;
 				props.getString("reader"); // Make sure it's present
 
 				try {
@@ -228,25 +203,6 @@ public class PropertyHandler {
 		throw new IllegalStateException(msg);
 	}
 
-	public synchronized static PropertyHandler getInstance() {
-		if (instance == null) {
-			instance = new PropertyHandler();
-		}
-		return instance;
-	}
-
-	public long getWriteDelaySeconds() {
-		return writeDelaySeconds;
-	}
-
-	public long getProcessQueueIntervalSeconds() {
-		return processQueueIntervalSeconds;
-	}
-
-	public MainStorageInterface getMainStorage() {
-		return mainStorage;
-	}
-
 	public ArchiveStorageInterface getArchiveStorage() {
 		return archiveStorage;
 	}
@@ -255,24 +211,8 @@ public class PropertyHandler {
 		return cacheDir;
 	}
 
-	public ICAT getIcatService() {
-		return icatService;
-	}
-
-	public int getPreparedCount() {
-		return preparedCount;
-	}
-
-	public boolean getReadOnly() {
-		return readOnly;
-	}
-
-	public ZipMapperInterface getZipMapper() {
-		return zipMapper;
-	}
-
-	public int getFilesCheckParallelCount() {
-		return filesCheckParallelCount;
+	public Path getFilesCheckErrorLog() {
+		return filesCheckErrorLog;
 	}
 
 	public long getFilesCheckGapMillis() {
@@ -283,8 +223,44 @@ public class PropertyHandler {
 		return filesCheckLastIdFile;
 	}
 
-	public Path getFilesCheckErrorLog() {
-		return filesCheckErrorLog;
+	public int getFilesCheckParallelCount() {
+		return filesCheckParallelCount;
+	}
+
+	public ICAT getIcatService() {
+		return icatService;
+	}
+
+	public long getlinkLifetimeMillis() {
+		return linkLifetimeMillis;
+	}
+
+	public MainStorageInterface getMainStorage() {
+		return mainStorage;
+	}
+
+	public int getPreparedCount() {
+		return preparedCount;
+	}
+
+	public long getProcessQueueIntervalSeconds() {
+		return processQueueIntervalSeconds;
+	}
+
+	public List<String> getReader() {
+		return reader;
+	}
+
+	public boolean getReadOnly() {
+		return readOnly;
+	}
+
+	public Set<String> getRootUserNames() {
+		return rootUserNames;
+	}
+
+	public long getSizeCheckIntervalMillis() {
+		return sizeCheckIntervalMillis;
 	}
 
 	public long getStartArchivingLevel() {
@@ -295,8 +271,16 @@ public class PropertyHandler {
 		return stopArchivingLevel;
 	}
 
-	public long getlinkLifetimeMillis() {
-		return linkLifetimeMillis;
+	public long getWriteDelaySeconds() {
+		return writeDelaySeconds;
+	}
+
+	public ZipMapperInterface getZipMapper() {
+		return zipMapper;
+	}
+
+	public boolean isCompressDatasetCache() {
+		return compressDatasetCache;
 	}
 
 }

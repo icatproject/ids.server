@@ -46,6 +46,18 @@ public class DsInfoImpl implements DsInfo {
 		facilityName = facility.getName();
 	}
 
+	public DsInfoImpl(long dsId, String dsName, String dsLocation, long invId, String invName,
+			String visitId, long facilityId, String facilityName) {
+		this.dsId = dsId;
+		this.dsName = dsName;
+		this.dsLocation = dsLocation;
+		this.invId = invId;
+		this.invName = invName;
+		this.visitId = visitId;
+		this.facilityId = facilityId;
+		this.facilityName = facilityName;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this) {

@@ -2,7 +2,6 @@ package org.icatproject.ids.thread;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,21 +68,13 @@ public class Restorer implements Runnable {
 					+ " with " + n + " files of total size " + size);
 
 			// Get the file into the dataset cache
-			Path dir = datasetCache.resolve(Long.toString(dsInfo.getInvId()));
-			// The hold directory is used to prevent the Tidier getting rid of the investigation
-			// directory
-			Files.createDirectories(dir.resolve("hold"));
-			Path tPath = Files.createTempFile(dir, null, null);
-			Files.deleteIfExists(dir.resolve("hold"));
-			archiveStorageInterface.get(dsInfo, tPath);
-			Path path = dir.resolve(Long.toString(dsInfo.getDsId()));
-			Files.move(tPath, path, StandardCopyOption.ATOMIC_MOVE,
-					StandardCopyOption.REPLACE_EXISTING);
+			Path datasetCachePath = Files.createTempFile(datasetCache, null, null);
+			archiveStorageInterface.get(dsInfo, datasetCachePath);
 
 			// Now split file and store it locally
 			logger.debug("Unpacking dataset " + dsInfo.getInvId() + "/" + dsInfo.getDsId()
 					+ " with " + n + " files of total size " + size);
-			ZipInputStream zis = new ZipInputStream(Files.newInputStream(path));
+			ZipInputStream zis = new ZipInputStream(Files.newInputStream(datasetCachePath));
 			ZipEntry ze = zis.getNextEntry();
 			while (ze != null) {
 				String dfName = zipMapper.getFileName(ze.getName());
@@ -97,6 +88,7 @@ public class Restorer implements Runnable {
 				ze = zis.getNextEntry();
 			}
 			zis.close();
+			Files.delete(datasetCachePath);
 			logger.debug("Restore of " + dsInfo + " completed");
 		} catch (Exception e) {
 			logger.error("Restore of " + dsInfo + " failed due to " + e.getClass() + " "

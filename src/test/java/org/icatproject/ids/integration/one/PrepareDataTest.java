@@ -45,6 +45,7 @@ public class PrepareDataTest extends BaseTest {
 	public void correctBehaviourTest() throws Exception {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafiles(datafileIds), Flag.NONE, 200);
+		System.out.println(preparedId);
 		assertNotNull(preparedId);
 	}
 

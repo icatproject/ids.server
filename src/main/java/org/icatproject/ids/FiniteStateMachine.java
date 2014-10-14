@@ -5,16 +5,17 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -25,8 +26,6 @@ import javax.json.stream.JsonGenerator;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.thread.Archiver;
-import org.icatproject.ids.thread.Preparer;
-import org.icatproject.ids.thread.Preparer.PreparerStatus;
 import org.icatproject.ids.thread.Restorer;
 import org.icatproject.ids.thread.WriteThenArchiver;
 import org.icatproject.ids.thread.Writer;
@@ -40,8 +39,6 @@ public class FiniteStateMachine {
 
 	private long processQueueIntervalMillis;
 
-	private int preparedCount;
-
 	private Path markerDir;
 
 	@EJB
@@ -51,25 +48,27 @@ public class FiniteStateMachine {
 	private void init() {
 		try {
 			propertyHandler = PropertyHandler.getInstance();
-			preparedCount = propertyHandler.getPreparedCount();
 			archiveWriteDelayMillis = propertyHandler.getWriteDelaySeconds() * 1000L;
 			processQueueIntervalMillis = propertyHandler.getProcessQueueIntervalSeconds() * 1000L;
 			timer.schedule(new ProcessQueue(), processQueueIntervalMillis);
 			markerDir = propertyHandler.getCacheDir().resolve("marker");
 			Files.createDirectories(markerDir);
 		} catch (IOException e) {
-			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
+			throw new RuntimeException("FiniteStateMachine reports " + e.getClass() + " "
+					+ e.getMessage());
 		}
 	}
 
 	private long archiveWriteDelayMillis;
 
-	private final static Logger logger = LoggerFactory.getLogger(FiniteStateMachine.class);
+	private static Logger logger = LoggerFactory.getLogger(FiniteStateMachine.class);
 
-	private final Set<DsInfo> changing = new HashSet<>();
-	private final Map<DsInfo, Long> writeTimes = new HashMap<>();
+	private Set<DsInfo> changing = new HashSet<>();
+	private Map<DsInfo, Long> writeTimes = new HashMap<>();
 
-	private final Map<DsInfo, RequestedState> deferredOpsQueue = new HashMap<>();
+	private Map<DsInfo, RequestedState> deferredOpsQueue = new HashMap<>();
+
+	private Map<String, Set<Long>> locks = new HashMap<>();
 
 	public void queue(DsInfo dsInfo, DeferredOp deferredOp) throws InternalException {
 		logger.info("Requesting " + deferredOp + " of " + dsInfo);
@@ -172,9 +171,15 @@ public class FiniteStateMachine {
 									w.start();
 								}
 							} else if (state == RequestedState.ARCHIVE_REQUESTED) {
+								it.remove();
+								long dsId = dsInfo.getDsId();
+								if (isLocked(dsId)) {
+									logger.debug("Archive of " + dsInfo
+											+ " skipped because getData in progress");
+									continue;
+								}
 								logger.debug("Will process " + dsInfo + " with " + state);
 								changing.add(dsInfo);
-								it.remove();
 								final Thread w = new Thread(new Archiver(dsInfo, propertyHandler,
 										FiniteStateMachine.this));
 								w.start();
@@ -188,31 +193,24 @@ public class FiniteStateMachine {
 							}
 						}
 					}
-					/* Clean out completed ones */
-					Iterator<Entry<String, Preparer>> iter = preparers.entrySet().iterator();
-					while (iter.hasNext()) {
-						Entry<String, Preparer> e = iter.next();
-						if (e.getValue().getStatus() == PreparerStatus.COMPLETE) {
-							iter.remove();
-							logger.debug("Removed complete " + e.getKey() + " from Preparers map");
-						}
-					}
-					/* Clean out old ones if too many */
-					iter = preparers.entrySet().iterator();
-					while (iter.hasNext()) {
-						Entry<String, Preparer> e = iter.next();
-						if (preparers.size() <= preparedCount) {
-							break;
-						}
-						iter.remove();
-						logger.debug("Removed overflowing" + e.getKey() + " from Preparers map");
-					}
 				}
 
 			} finally {
 				timer.schedule(new ProcessQueue(), processQueueIntervalMillis);
 			}
 
+		}
+
+	}
+
+	public boolean isLocked(long dsId) {
+		synchronized (deferredOpsQueue) {
+			for (Set<Long> lock : locks.values()) {
+				if (lock.contains(dsId)) {
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
@@ -229,28 +227,14 @@ public class FiniteStateMachine {
 
 	private Timer timer = new Timer();
 
-	private Map<String, Preparer> preparers = new LinkedHashMap<String, Preparer>();
-
-	public void registerPreparer(String preparedId, Preparer preparer) {
-		synchronized (deferredOpsQueue) {
-			preparers.put(preparedId, preparer);
-		}
-	}
-
-	public Preparer getPreparer(String preparedId) {
-		synchronized (deferredOpsQueue) {
-			return preparers.get(preparedId);
-		}
-	}
-
 	public String getServiceStatus() throws InternalException {
-		Map<DsInfo, RequestedState> deferredOpsQueueClone = new HashMap<>();
-		Map<String, Preparer> preparersClone = new LinkedHashMap<String, Preparer>();
-		Set<DsInfo> changingClone = null;
+		Map<DsInfo, RequestedState> deferredOpsQueueClone;
+		Set<DsInfo> changingClone;
+		Collection<Set<Long>> locksContentsClone;
 		synchronized (deferredOpsQueue) {
-			deferredOpsQueueClone.putAll(deferredOpsQueue);
-			preparersClone.putAll(preparers);
+			deferredOpsQueueClone = new HashMap<>(deferredOpsQueue);
 			changingClone = new HashSet<>(changing);
+			locksContentsClone = new HashSet<>(locks.values());
 		}
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -267,17 +251,24 @@ public class FiniteStateMachine {
 				gen.writeStartObject().write("dsInfo", item.toString())
 						.write("request", "CHANGING").writeEnd();
 			}
-			gen.writeEnd();
+			gen.writeEnd(); // end Array("opsQueue")
 
-			gen.writeStartArray("prepQueue");
+			gen.write("lockCount", locksContentsClone.size());
 
-			for (Entry<String, Preparer> entry : preparersClone.entrySet()) {
-				gen.writeStartObject().write("id", entry.getKey())
-						.write("state", entry.getValue().getStatus().name()).writeEnd();
+			Set<Long> lockedDs = new HashSet<>();
+
+			for (Set<Long> entry : locksContentsClone) {
+				lockedDs.addAll(entry);
 			}
-			gen.writeEnd().writeEnd().close();
-			return baos.toString();
+			gen.writeStartArray("lockedDs");
+			for (Long dsId : lockedDs) {
+				gen.write(dsId);
+			}
+			gen.writeEnd(); // end Array("lockedDs")
+
+			gen.writeEnd(); // end Object()
 		}
+		return baos.toString();
 
 	}
 
@@ -299,19 +290,18 @@ public class FiniteStateMachine {
 		return result;
 	}
 
-	public String preparing(DsInfo dsInfo) {
-
-		Map<String, Preparer> preparersClone = new LinkedHashMap<String, Preparer>();
-
+	public String lock(Set<Long> set) {
+		String lockId = UUID.randomUUID().toString();
 		synchronized (deferredOpsQueue) {
-			preparersClone.putAll(preparers);
+			locks.put(lockId, set);
 		}
-		for (Entry<String, Preparer> entry : preparersClone.entrySet()) {
-			if (entry.getValue().using(dsInfo)) {
-				return entry.getKey();
-			}
-
-		}
-		return null;
+		return lockId;
 	}
+
+	public void unlock(String lockId) {
+		synchronized (deferredOpsQueue) {
+			locks.remove(lockId);
+		}
+	}
+
 }

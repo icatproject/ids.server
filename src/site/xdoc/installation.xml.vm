@@ -97,11 +97,8 @@
                     <dt>cache.dir</dt>
                     <dd>The location (absolute or relative to the config directory of the domain) of a directory to hold mostly zip files.</dd>
 
-                    <dt>preparedCacheSize1024bytes</dt>
-                    <dd>The maximum size to allow for prepared zip files in the cache.</dd>
-
                     <dt>preparedCount</dt>
-                    <dd>The maximum number of failed prepareData attempts to hold in memory.</dd>
+                    <dd>The number of preparedId values from prepareData calls to remember.</dd>
 
                     <dt>processQueueIntervalSeconds</dt>
                     <dd>The frequency of checking the process queue. This is used both for cleaning old information from memory and for triggering
@@ -129,8 +126,6 @@
                         facilities.
                         For example:
                         <code>db username db/root password password.</code>
-                        This is only required if you are using archive storage or if you enable file checking by setting filesCheck.parallelCount to
-                        be greater than 0.
                     </dd>
 
                 </dl>
@@ -147,22 +142,9 @@
                     <dt>plugin.archive.properties</dt>
                     <dd>Optional property file for the archive storage plugin.</dd>
 
-                    <dt>datasetCacheSize1024bytes</dt>
-                    <dd>The maximum size to allow for dataset zip files in the cache.</dd>
-
                     <dt>writeDelaySeconds</dt>
                     <dd>The amount of time to wait before writing to archive storage. This exists to allow enough time for all the datafiles to be
                         added to a dataset before it is zipped and written.
-                    </dd>
-
-                    <dt>compressDatasetCache</dt>
-                    <dd>If true the dataset cache and the archive storage of datasets will all be compressed. This takes longer to write and is only
-                        useful if you know that the data will compress well.
-                    </dd>
-
-                    <dt>tolerateWrongCompression</dt>
-                    <dd>If true a get or prepareData which is for a single dataset will make use of the dataset cache even though it does not match
-                        the requested compression.
                     </dd>
 
                     <dt>startArchivingLevel1024bytes</dt>

@@ -33,7 +33,6 @@ public class Setup {
 	private String forbiddenSessionId = null;
 
 	private Path storageArchiveDir;
-	private Path datasetCacheDir;
 	private Path storageDir;
 	private Path preparedCacheDir;
 	private Path updownDir;
@@ -126,7 +125,6 @@ public class Setup {
 
 		Path cacheDir = new File(idsProperties.getProperty("cache.dir")).toPath();
 		preparedCacheDir = cacheDir.resolve("prepared");
-		datasetCacheDir = cacheDir.resolve("dataset");
 		twoLevel = idsProperties.getProperty("plugin.archive.class") != null;
 
 		errorLog = config.resolve(idsProperties.getProperty("filesCheck.errorLog"));
@@ -168,10 +166,6 @@ public class Setup {
 
 	public Path getStorageArchiveDir() {
 		return storageArchiveDir;
-	}
-
-	public Path getDatasetCacheDir() {
-		return datasetCacheDir;
 	}
 
 	public Path getStorageDir() {

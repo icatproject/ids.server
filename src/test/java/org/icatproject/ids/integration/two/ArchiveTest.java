@@ -27,23 +27,19 @@ public class ArchiveTest extends BaseTest {
 	public void restoreThenArchiveDataset() throws Exception {
 
 		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-		Path datasetCacheFile = getDatasetCacheFile(datasetIds.get(0));
 
 		assertFalse(Files.exists(dirOnFastStorage));
-		assertFalse(Files.exists(datasetCacheFile));
 
 		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 
 		assertTrue(Files.exists(dirOnFastStorage));
-		assertTrue(Files.exists(datasetCacheFile));
 
 		testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
 		waitForIds();
 		assertFalse(Files.exists(dirOnFastStorage));
-		assertFalse(Files.exists(datasetCacheFile));
 
 	}
 

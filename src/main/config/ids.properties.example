@@ -7,24 +7,19 @@ plugin.main.class = org.icatproject.ids.storage.MainFileStorage
 plugin.main.properties = ids.storage_file.main.properties
 
 cache.dir = ../data/ids/cache
-preparedCacheSize1024bytes = 1000000
-preparedCount = 100
+preparedCount = 10000
 processQueueIntervalSeconds = 5
 rootUserNames = root
 sizeCheckIntervalSeconds = 60
+reader = db username root password password
 !readOnly = true
 
 # Properties for archive storage
 plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage
 plugin.archive.properties = ids.storage_file.archive.properties
-datasetCacheSize1024bytes = 1000000
 writeDelaySeconds = 60
-!compressDatasetCache = true
-tolerateWrongCompression = true
 startArchivingLevel1024bytes = 5000000
 stopArchivingLevel1024bytes =  4000000
-
-reader = db username root password password
 
 # File checking properties
 filesCheck.parallelCount = 5
