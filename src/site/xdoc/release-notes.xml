@@ -15,6 +15,7 @@
                 </li>
                 <li>ids.properties values: preparedCacheSize1024bytes, datasetCacheSize1024bytes, compressDatasetCache,  and tolerateWrongCompression are no longer used.</li>
                 <li>ids.properties value preparedCount has changed its meaning.</li>
+                <li>The json string returned by getServiceStatus has changed.</li>
             </ul>
         </section>
 
