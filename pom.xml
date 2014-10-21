@@ -10,7 +10,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>http://www.icatproject.org/mvn/repo</repoUrl>
-        <storage.plugin>ids.storage_file-1.2.0-SNAPSHOT.jar</storage.plugin>
+        <storage.plugin>ids.storage_file-1.3.0-SNAPSHOT.jar</storage.plugin>
     </properties>
 
     <distributionManagement>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>org.icatproject</groupId>
             <artifactId>ids.plugin</artifactId>
-            <version>1.2.0</version>
+            <version>1.3.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>

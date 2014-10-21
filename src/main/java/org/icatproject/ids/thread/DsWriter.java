@@ -24,9 +24,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Copies dataset from main to archive
  */
-public class Writer implements Runnable {
+public class DsWriter implements Runnable {
 
-	private final static Logger logger = LoggerFactory.getLogger(Writer.class);
+	private final static Logger logger = LoggerFactory.getLogger(DsWriter.class);
 	private static final int BUFSIZ = 1024;
 	private DsInfo dsInfo;
 
@@ -39,7 +39,7 @@ public class Writer implements Runnable {
 	private IcatReader reader;
 	private ZipMapperInterface zipMapper;
 
-	public Writer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm,
+	public DsWriter(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm,
 			IcatReader reader) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;

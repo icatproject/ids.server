@@ -395,12 +395,12 @@ public class TestingClient {
 					ServiceStatus serviceStatus = new ServiceStatus();
 					JsonObject rootNode = jsonReader.readObject();
 					for (JsonValue on : rootNode.getJsonArray("opsQueue")) {
-						String dsInfo = ((JsonObject) on).getString("dsInfo");
+						String dsInfo = ((JsonObject) on).getString("data");
 						String request = ((JsonObject) on).getString("request");
 						serviceStatus.storeOpItems(dsInfo, request);
 					}
 					serviceStatus.setLockedCount(rootNode.getInt("lockCount"));
-					for (JsonValue num : rootNode.getJsonArray("lockedDs")) {
+					for (JsonValue num : rootNode.getJsonArray("lockedIds")) {
 						Long dsId = ((JsonNumber) num).longValueExact();
 						serviceStatus.storeLockedDs(dsId);
 					}

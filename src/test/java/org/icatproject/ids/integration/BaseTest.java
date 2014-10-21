@@ -13,6 +13,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,7 +105,7 @@ public class BaseTest {
 		testingClient = new TestingClient(setup.getIdsUrl());
 		sessionId = setup.getGoodSessionId();
 		waitForIds();
-		populateStorage(setup.isTwoLevel());
+		populateStorage(setup.isTwoLevel(), setup.getStorageUnit());
 	}
 
 	protected void checkAbsent(Path file) {
@@ -176,7 +177,9 @@ public class BaseTest {
 		}
 	}
 
-	private void populateStorage(boolean twoLevel) throws IOException, IcatException_Exception {
+	private void populateStorage(boolean twoLevel, String storageUnit) throws IOException,
+			IcatException_Exception {
+
 		clearStorage();
 		long timestamp = System.currentTimeMillis();
 
@@ -275,8 +278,8 @@ public class BaseTest {
 			datafileIds.add(df4.getId());
 
 			if (twoLevel) {
-				zipDatasetToArchive(ds1, ds1Loc, fac, inv);
-				zipDatasetToArchive(ds2, ds2Loc, fac, inv);
+				moveDatasetToArchive(storageUnit, ds1, ds1Loc, fac, inv);
+				moveDatasetToArchive(storageUnit, ds2, ds2Loc, fac, inv);
 			}
 
 			newFileLocation = setup.getUpdownDir().resolve("new_file_" + timestamp);
@@ -285,7 +288,6 @@ public class BaseTest {
 			OutputStream out = Files.newOutputStream(newFileLocation);
 			out.write(bytes);
 			out.close();
-
 		} catch (IllegalAccessError e) {
 			System.err.println("Could not prepare ICAT db for testing: " + e.getMessage());
 			e.printStackTrace();
@@ -365,32 +367,47 @@ public class BaseTest {
 						+ df.getName(), df.getLocation());
 	}
 
-	private void zipDatasetToArchive(Dataset ds, String dsLoc, Facility fac, Investigation inv)
-			throws IOException, IcatException_Exception {
+	private void moveDatasetToArchive(String storageUnit, Dataset ds, String dsLoc, Facility fac,
+			Investigation inv) throws IOException, IcatException_Exception {
 		ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", ds.getId());
+		Path top = setup.getStorageDir();
 
-		Path zipFile = setup.getStorageArchiveDir().resolve(dsLoc);
-		Files.createDirectories(zipFile.getParent());
+		if (storageUnit.equals("DATASET")) {
+			Path zipFile = setup.getStorageArchiveDir().resolve(dsLoc);
+			Files.createDirectories(zipFile.getParent());
 
-		ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile));
-		zos.setLevel(0);
+			ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile));
+			zos.setLevel(0);
 
-		for (Datafile df : ds.getDatafiles()) {
-			Path top = setup.getStorageDir();
-			Path file = top.resolve(df.getLocation());
-			InputStream fis = Files.newInputStream(file);
+			for (Datafile df : ds.getDatafiles()) {
 
-			zos.putNextEntry(new ZipEntry("ids/" + fac.getName() + "/" + inv.getName() + "/"
-					+ URLEncoder.encode(inv.getVisitId(), "UTF-8") + "/" + ds.getName() + "/"
-					+ df.getName()));
-			byte[] bytes = new byte[1024];
-			int length;
-			while ((length = fis.read(bytes)) >= 0) {
-				zos.write(bytes, 0, length);
+				Path file = top.resolve(df.getLocation());
+				InputStream fis = Files.newInputStream(file);
+
+				zos.putNextEntry(new ZipEntry("ids/" + fac.getName() + "/" + inv.getName() + "/"
+						+ URLEncoder.encode(inv.getVisitId(), "UTF-8") + "/" + ds.getName() + "/"
+						+ df.getName()));
+				byte[] bytes = new byte[1024];
+				int length;
+				while ((length = fis.read(bytes)) >= 0) {
+					zos.write(bytes, 0, length);
+				}
+				zos.closeEntry();
+				fis.close();
+
 			}
-			zos.closeEntry();
-			fis.close();
-			Files.delete(file);
+			zos.close();
+		} else if (storageUnit.equals("DATAFILE")) {
+			Path archive = setup.getStorageArchiveDir().resolve(dsLoc);
+			Files.createDirectories(archive);
+			for (Datafile df : ds.getDatafiles()) {
+				Path p = top.resolve(df.getLocation());
+				Files.move(p, archive.resolve(p.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+			}
+		}
+		for (Datafile df : ds.getDatafiles()) {
+			Path file = top.resolve(df.getLocation());
+			Files.deleteIfExists(file);
 			Path parent = file.getParent();
 			while (!parent.equals(top)) {
 				try {
@@ -401,8 +418,6 @@ public class BaseTest {
 				}
 			}
 		}
-
-		zos.close();
 
 	}
 

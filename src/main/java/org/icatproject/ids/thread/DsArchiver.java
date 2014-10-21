@@ -10,14 +10,14 @@ import org.slf4j.LoggerFactory;
 /*
  * Removes datasets from the fast storage (doesn't write them to slow storage)
  */
-public class Archiver implements Runnable {
-	private final static Logger logger = LoggerFactory.getLogger(Archiver.class);
+public class DsArchiver implements Runnable {
+	private final static Logger logger = LoggerFactory.getLogger(DsArchiver.class);
 	private DsInfo dsInfo;
 
 	private MainStorageInterface mainStorageInterface;
 	private FiniteStateMachine fsm;
 
-	public Archiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+	public DsArchiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
 		mainStorageInterface = propertyHandler.getMainStorage();

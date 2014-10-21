@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 /*
  * Restores datafiles from the slow to the fast storage.
  */
-public class Restorer implements Runnable {
+public class DsRestorer implements Runnable {
 
-	private final static Logger logger = LoggerFactory.getLogger(Restorer.class);
+	private final static Logger logger = LoggerFactory.getLogger(DsRestorer.class);
 
 	private DsInfo dsInfo;
 
@@ -39,7 +39,7 @@ public class Restorer implements Runnable {
 
 	private ZipMapperInterface zipMapper;
 
-	public Restorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm,
+	public DsRestorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm,
 			IcatReader reader) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;

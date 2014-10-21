@@ -27,8 +27,8 @@ public class TidierTest {
 		Path top = Files.createTempDirectory(null);
 
 		Path pa = top.resolve("pa");
-		Path pb = top.resolve("pb.tmp"); // File
-		Path pc = top.resolve("tmp.pc"); // Dir
+		Path pb = top.resolve("pb");
+		Path pc = top.resolve("pc");
 		Path pd = top.resolve("pd");
 		Path pe = top.resolve("pe");
 		Path pf = top.resolve("pf");
@@ -37,11 +37,9 @@ public class TidierTest {
 		Thread.sleep(1000);
 		Files.copy(file, pb);
 		Thread.sleep(1000);
-		Files.createDirectories(pc);
-		Files.copy(file, pc.resolve("x"));
+		Files.copy(file, pc);
 		Thread.sleep(1000);
-		Files.createDirectories(pd);
-		Files.copy(file, pd.resolve("y"));
+		Files.copy(file, pd);
 		Thread.sleep(1000);
 		Files.copy(file, pe);
 		Thread.sleep(1000);
@@ -54,31 +52,31 @@ public class TidierTest {
 		assertTrue(Files.exists(pe));
 		assertTrue(Files.exists(pf));
 
-		Tidier.cleanPreparedDir(top, 30000);
+		Tidier.cleanPreparedDir(top, 8);
 		assertTrue(Files.exists(pa));
 		assertTrue(Files.exists(pb));
 		assertTrue(Files.exists(pc));
 		assertTrue(Files.exists(pd));
 		assertTrue(Files.exists(pe));
 		assertTrue(Files.exists(pf));
-		Tidier.cleanPreparedDir(top, 15000);
+		Tidier.cleanPreparedDir(top, 4);
 		assertFalse(Files.exists(pa));
-		assertTrue(Files.exists(pb));
+		assertFalse(Files.exists(pb));
 		assertTrue(Files.exists(pc));
+		assertTrue(Files.exists(pd));
+		assertTrue(Files.exists(pe));
+		assertTrue(Files.exists(pf));
+		Tidier.cleanPreparedDir(top, 2);
+		assertFalse(Files.exists(pa));
+		assertFalse(Files.exists(pb));
+		assertFalse(Files.exists(pc));
 		assertFalse(Files.exists(pd));
 		assertTrue(Files.exists(pe));
 		assertTrue(Files.exists(pf));
-		Tidier.cleanPreparedDir(top, 12000);
+		Tidier.cleanPreparedDir(top, 0);
 		assertFalse(Files.exists(pa));
-		assertTrue(Files.exists(pb));
-		assertTrue(Files.exists(pc));
-		assertFalse(Files.exists(pd));
-		assertFalse(Files.exists(pe));
-		assertTrue(Files.exists(pf));
-		Tidier.cleanPreparedDir(top, 1999);
-		assertFalse(Files.exists(pa));
-		assertTrue(Files.exists(pb));
-		assertTrue(Files.exists(pc));
+		assertFalse(Files.exists(pb));
+		assertFalse(Files.exists(pc));
 		assertFalse(Files.exists(pd));
 		assertFalse(Files.exists(pe));
 		assertFalse(Files.exists(pf));

@@ -55,9 +55,10 @@ public class DataSelection {
 	private List<Long> invids;
 	private Set<DfInfoImpl> dfInfos;
 	private Set<Long> emptyDatasets;
+	private boolean dsWanted;
 
 	public enum Returns {
-		DATASETS, DATASETS_AND_DATAFILES
+		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
 	}
 
 	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds,
@@ -69,8 +70,8 @@ public class DataSelection {
 		dfids = getValidIds("datafileIds", datafileIds);
 		dsids = getValidIds("datasetIds", datasetIds);
 		invids = getValidIds("investigationIds", investigationIds);
-		dfWanted = returns == Returns.DATASETS_AND_DATAFILES;
-
+		dfWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATAFILES;
+		dsWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATASETS;
 		resolveDatasetIds();
 
 	}
@@ -170,6 +171,13 @@ public class DataSelection {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 
+		}
+		/*
+		 * TODO don't calculate what is not needed - however this ensures that the flag is respected
+		 */
+		if (!dsWanted) {
+			dsInfos = null;
+			emptyDatasets = null;
 		}
 	}
 

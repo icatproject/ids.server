@@ -304,29 +304,34 @@ public class FileChecker {
 	public void init() {
 
 		propertyHandler = PropertyHandler.getInstance();
+		StorageUnit storageUnit = propertyHandler.getStorageUnit();
 		filesCheckParallelCount = propertyHandler.getFilesCheckParallelCount();
 		if (filesCheckParallelCount > 0) {
-			filesCheckGapMillis = propertyHandler.getFilesCheckGapMillis();
-			filesCheckLastIdFile = propertyHandler.getFilesCheckLastIdFile();
-			filesCheckErrorLog = propertyHandler.getFilesCheckErrorLog();
-			mainStorage = propertyHandler.getMainStorage();
-			archiveStorage = propertyHandler.getArchiveStorage();
-			twoLevel = archiveStorage != null;
-			zipMapper = propertyHandler.getZipMapper();
+			if (storageUnit == null || storageUnit == StorageUnit.DATASET) {
+				filesCheckGapMillis = propertyHandler.getFilesCheckGapMillis();
+				filesCheckLastIdFile = propertyHandler.getFilesCheckLastIdFile();
+				filesCheckErrorLog = propertyHandler.getFilesCheckErrorLog();
+				mainStorage = propertyHandler.getMainStorage();
+				archiveStorage = propertyHandler.getArchiveStorage();
+				twoLevel = archiveStorage != null;
+				zipMapper = propertyHandler.getZipMapper();
 
-			maxId = null;
-			if (Files.exists(filesCheckLastIdFile)) {
-				try {
-					maxId = Long.parseLong(Files.readAllLines(filesCheckLastIdFile,
-							StandardCharsets.UTF_8).get(0));
-				} catch (NumberFormatException | IOException e) {
-					throw new RuntimeException(e.getClass() + " " + e.getMessage());
+				maxId = null;
+				if (Files.exists(filesCheckLastIdFile)) {
+					try {
+						maxId = Long.parseLong(Files.readAllLines(filesCheckLastIdFile,
+								StandardCharsets.UTF_8).get(0));
+					} catch (NumberFormatException | IOException e) {
+						throw new RuntimeException(e.getClass() + " " + e.getMessage());
+					}
 				}
+
+				timer.schedule(new Action(), filesCheckGapMillis);
+
+				logger.info("FileChecker started with maxId: " + maxId);
+			} else {
+				logger.info("FileChecker not supported for storageUnit " + storageUnit);
 			}
-
-			timer.schedule(new Action(), filesCheckGapMillis);
-
-			logger.info("FileChecker started with maxId: " + maxId);
 		} else {
 			logger.info("FileChecker startup not requested");
 		}

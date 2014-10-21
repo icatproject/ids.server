@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory;
  * Copies datasets across storages (fast to slow) and subsequently
  * removes the files on the fast storage
  */
-public class WriteThenArchiver implements Runnable {
+public class DsWriteThenArchiver implements Runnable {
 
-	private final static Logger logger = LoggerFactory.getLogger(WriteThenArchiver.class);
+	private final static Logger logger = LoggerFactory.getLogger(DsWriteThenArchiver.class);
 
 	private static final int BUFSIZ = 1024;
 
@@ -43,7 +43,7 @@ public class WriteThenArchiver implements Runnable {
 
 	private ZipMapperInterface zipMapper;
 
-	public WriteThenArchiver(DsInfo dsInfo, PropertyHandler propertyHandler,
+	public DsWriteThenArchiver(DsInfo dsInfo, PropertyHandler propertyHandler,
 			FiniteStateMachine fsm, IcatReader reader) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;

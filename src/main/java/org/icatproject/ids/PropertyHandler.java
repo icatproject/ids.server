@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -65,6 +66,7 @@ public class PropertyHandler {
 	private long sizeCheckIntervalMillis;
 	private long startArchivingLevel;
 	private long stopArchivingLevel;
+	private StorageUnit storageUnit;
 	private long writeDelaySeconds;
 	private ZipMapperInterface zipMapper;
 
@@ -146,7 +148,6 @@ public class PropertyHandler {
 			} else {
 				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
 				compressDatasetCache = props.getBoolean("compressDatasetCache", false);
-				props.getString("reader"); // Make sure it's present
 
 				try {
 					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
@@ -164,6 +165,18 @@ public class PropertyHandler {
 				stopArchivingLevel = props.getPositiveLong("stopArchivingLevel1024bytes") * 1024;
 				if (stopArchivingLevel >= startArchivingLevel) {
 					abort("startArchivingLevel1024bytes must be greater than stopArchivingLevel1024bytes");
+				}
+
+				try {
+					String storageUnitName = props.getString("storageUnit");
+					storageUnit = StorageUnit.valueOf(storageUnitName.toUpperCase());
+				} catch (IllegalArgumentException e) {
+					List<String> vs = new ArrayList<>();
+					for (StorageUnit s : StorageUnit.values()) {
+						vs.add(s.name());
+					}
+					abort("storageUnit value " + props.getString("storageUnit")
+							+ " must be taken from " + vs);
 				}
 			}
 
@@ -187,7 +200,6 @@ public class PropertyHandler {
 				if (!Files.exists(filesCheckErrorLog.getParent())) {
 					abort("Directory for " + filesCheckErrorLog + " does not exist");
 				}
-				props.getString("reader"); // Make sure it's present
 			}
 
 			linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
@@ -269,6 +281,10 @@ public class PropertyHandler {
 
 	public long getStopArchivingLevel() {
 		return stopArchivingLevel;
+	}
+
+	StorageUnit getStorageUnit() {
+		return storageUnit;
 	}
 
 	public long getWriteDelaySeconds() {

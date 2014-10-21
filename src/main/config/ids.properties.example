@@ -20,6 +20,7 @@ plugin.archive.properties = ids.storage_file.archive.properties
 writeDelaySeconds = 60
 startArchivingLevel1024bytes = 5000000
 stopArchivingLevel1024bytes =  4000000
+storageUnit = dataset
 
 # File checking properties
 filesCheck.parallelCount = 5

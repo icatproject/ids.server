@@ -41,12 +41,17 @@ public class Setup {
 		return twoLevel;
 	}
 
+	public String getStorageUnit() {
+		return storageUnit;
+	}
+
 	public Path getErrorLog() {
 		return errorLog;
 	}
 
-	private boolean twoLevel;
 	private Path errorLog;
+	private String storageUnit;
+	private boolean twoLevel;
 
 	public Setup(String idsPropertyFile) throws Exception {
 
@@ -126,6 +131,13 @@ public class Setup {
 		Path cacheDir = new File(idsProperties.getProperty("cache.dir")).toPath();
 		preparedCacheDir = cacheDir.resolve("prepared");
 		twoLevel = idsProperties.getProperty("plugin.archive.class") != null;
+		if (twoLevel) {
+			String storageUnitString = idsProperties.getProperty("storageUnit");
+			if (storageUnitString == null) {
+				throw new Exception("storageUnit not set");
+			}
+			storageUnit = storageUnitString.toUpperCase();
+		}
 
 		errorLog = config.resolve(idsProperties.getProperty("filesCheck.errorLog"));
 
