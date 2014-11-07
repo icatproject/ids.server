@@ -70,7 +70,7 @@ public class DsInfoImpl implements DsInfo {
 	}
 
 	@Override
-	public long getDsId() {
+	public Long getDsId() {
 		return dsId;
 	}
 
@@ -80,7 +80,7 @@ public class DsInfoImpl implements DsInfo {
 	}
 
 	@Override
-	public long getFacilityId() {
+	public Long getFacilityId() {
 		return facilityId;
 	}
 
@@ -90,7 +90,7 @@ public class DsInfoImpl implements DsInfo {
 	}
 
 	@Override
-	public long getInvId() {
+	public Long getInvId() {
 		return invId;
 	}
 

@@ -52,6 +52,7 @@ public class Setup {
 	private Path errorLog;
 	private String storageUnit;
 	private boolean twoLevel;
+	private String key;
 
 	public Setup(String idsPropertyFile) throws Exception {
 
@@ -99,7 +100,7 @@ public class Setup {
 		// Having set up the ids.properties file read it find other things
 		Properties idsProperties = new Properties();
 		idsProperties.load(Files.newInputStream(config.resolve("ids.properties")));
-
+		key = idsProperties.getProperty("key");
 		updownDir = new File(testProps.getProperty("updownDir")).toPath();
 
 		String icatUrlString = idsProperties.getProperty("icat.url");
@@ -110,6 +111,7 @@ public class Setup {
 				icatUrlString = icatUrlString + "/ICATService/ICAT?wsdl";
 			}
 		}
+
 		icatUrl = new URL(icatUrlString);
 		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
 				testProps.getProperty("authorizedIcatPassword"));
@@ -194,6 +196,10 @@ public class Setup {
 
 	public URL getIcatUrl() {
 		return icatUrl;
+	}
+
+	public String getKey() {
+		return key;
 	}
 
 }

@@ -29,6 +29,7 @@ import org.icatproject.Dataset;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
@@ -140,11 +141,14 @@ public class FileChecker {
 			} else {
 				Datafile df = (Datafile) eb;
 				logger.debug("Checking Datafile " + df.getId() + " (" + df.getName() + ")");
-				String location = df.getLocation();
-				if (location == null) {
-					report(df, "location null");
+				String location;
+				try {
+					location = IdsBean.getLocation(df);
+				} catch (InsufficientPrivilegesException | InternalException e) {
+					report(df, e.getClass() + " " + e.getMessage());
 					return;
 				}
+
 				try (InputStream is = mainStorage.get(location, df.getCreateId(), df.getModId())) {
 					CRC32 crc = new CRC32();
 					byte[] bytes = new byte[1024];

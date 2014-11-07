@@ -66,7 +66,6 @@ public class GetDataExplicitTest extends BaseTest {
 
 		try (InputStream z = testingClient.getData(sessionId,
 				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 404)) {
-
 			fail("Should have thrown exception");
 		} catch (IdsException e) {
 			assertEquals(DataNotOnlineException.class, e.getClass());

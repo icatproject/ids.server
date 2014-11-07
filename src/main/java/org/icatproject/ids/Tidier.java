@@ -18,10 +18,13 @@ import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
+import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.plugin.DfInfo;
+import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,49 +60,154 @@ public class Tidier {
 					}
 				}
 				if (twoLevel) {
-					long used = mainStorage.getUsedSpace();
-					if (used > startArchivingLevel) {
-						logger.debug("Main storage is " + (float) used * 100 / startArchivingLevel
-								+ "% full");
-						List<Long> investigations = mainStorage.getInvestigations();
-						outer: while (true) {
-							for (Long invId : investigations) {
+					if (storageUnit == StorageUnit.DATASET) {
+						List<DsInfo> dsInfos = mainStorage.getDatasetsToArchive(stopArchivingLevel,
+								startArchivingLevel);
+						for (DsInfo dsInfo : dsInfos) {
+							StringBuilder sb = new StringBuilder(
+									"SELECT ds FROM Dataset ds, ds.investigation inv, inv.facility fac WHERE");
+							boolean andNeeded = false;
+							andNeeded = addNumericConstraint(sb, "ds.id", dsInfo.getDsId(),
+									andNeeded);
+							andNeeded = addStringConstraint(sb, "ds.location",
+									dsInfo.getDsLocation(), andNeeded);
+							andNeeded = addStringConstraint(sb, "ds.name", dsInfo.getDsName(),
+									andNeeded);
 
-								for (Long dsId : mainStorage.getDatasets(invId)) {
+							andNeeded = addNumericConstraint(sb, "inv.id", dsInfo.getInvId(),
+									andNeeded);
+							andNeeded = addStringConstraint(sb, "inv.name", dsInfo.getInvName(),
+									andNeeded);
+							andNeeded = addStringConstraint(sb, "inv.visitId", dsInfo.getVisitId(),
+									andNeeded);
 
-									try {
-										String query = "SELECT sum(df.fileSize) FROM Datafile df WHERE df.dataset.id = "
-												+ dsId;
-										long size = (Long) reader.search(query).get(0);
-										Dataset ds = (Dataset) reader.get(
-												"Dataset ds INCLUDE ds.investigation.facility",
-												dsId);
-										DsInfoImpl dsInfoImpl = new DsInfoImpl(ds);
+							andNeeded = addStringConstraint(sb, "fac.name",
+									dsInfo.getFacilityName(), andNeeded);
+							andNeeded = addNumericConstraint(sb, "fac.id", dsInfo.getFacilityId(),
+									andNeeded);
+
+							sb.append(" INCLUDE ds.investigation.facility");
+							try {
+								int low = 0;
+								while (true) {
+									String query = sb.toString() + " LIMIT " + low + ","
+											+ tidyBlockSize;
+									List<Object> os = reader.search(query);
+									logger.debug(query + " returns " + os.size() + " datasets");
+									for (Object o : os) {
+										DsInfoImpl dsInfoImpl = new DsInfoImpl((Dataset) o);
 										logger.debug("Requesting archive of " + dsInfoImpl
-												+ " to recover " + size + " bytes of main storage");
+												+ " to recover main storage");
 										fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
-										used -= size;
-										if (used < stopArchivingLevel) {
-											logger.debug("After archiving main storage will be "
-													+ (float) used * 100 / startArchivingLevel
-													+ "% full");
-											break outer;
-										}
-									} catch (InternalException | IcatException_Exception
-											| InsufficientPrivilegesException e) {
-										// Log it and carry on
-										logger.error(e.getClass() + " " + e.getMessage());
 									}
+									if (os.size() < tidyBlockSize) {
+										break;
+									}
+									low += tidyBlockSize;
 								}
+							} catch (InternalException | IcatException_Exception
+									| InsufficientPrivilegesException e) {
+								// Log it and carry on
+								logger.error(e.getClass() + " " + e.getMessage());
+							}
+						}
+
+					} else if (storageUnit == StorageUnit.DATAFILE) {
+						List<DfInfo> dfInfos = mainStorage.getDatafilesToArchive(
+								stopArchivingLevel, startArchivingLevel);
+						for (DfInfo dfInfo : dfInfos) {
+							StringBuilder sb = new StringBuilder("SELECT df FROM Datafile df WHERE");
+							boolean andNeeded = false;
+
+							andNeeded = addNumericConstraint(sb, "df.id", dfInfo.getDfId(),
+									andNeeded);
+							andNeeded = addStringConstraint(sb, "df.createId",
+									dfInfo.getCreateId(), andNeeded);
+							andNeeded = addStringConstraint(sb, "df.modId", dfInfo.getModId(),
+									andNeeded);
+							if (key != null) {
+								if (dfInfo.getDfLocation() != null) {
+									if (andNeeded) {
+										sb.append(" AND ");
+									} else {
+										sb.append(" ");
+										andNeeded = true;
+									}
+									sb.append("df.location" + " LIKE '" + dfInfo.getDfLocation()
+											+ " %'");
+								}
+							} else {
+								andNeeded = addStringConstraint(sb, "df.location",
+
+								dfInfo.getDfLocation(), andNeeded);
+							}
+							andNeeded = addStringConstraint(sb, "df.name", dfInfo.getDfName(),
+									andNeeded);
+
+							sb.append(" INCLUDE df.dataset");
+							try {
+								int low = 0;
+								while (true) {
+									String query = sb.toString() + " LIMIT " + low + ","
+											+ tidyBlockSize;
+									List<Object> os = reader.search(query);
+									logger.debug(query + " returns " + os.size() + " datafiles");
+									for (Object o : os) {
+										Datafile df = (Datafile) o;
+										DfInfoImpl dfInfoImpl = new DfInfoImpl(df.getId(),
+												df.getName(), IdsBean.getLocation(df),
+												df.getCreateId(), df.getModId(), df.getDataset()
+														.getId());
+										logger.debug("Requesting archive of " + dfInfoImpl
+												+ " to recover main storage");
+										fsm.queue(dfInfoImpl, DeferredOp.ARCHIVE);
+									}
+									if (os.size() < tidyBlockSize) {
+										break;
+									}
+									low += tidyBlockSize;
+								}
+							} catch (InternalException | IcatException_Exception
+									| InsufficientPrivilegesException e) {
+								// Log it and carry on
+								logger.error(e.getClass() + " " + e.getMessage());
 							}
 						}
 					}
 				}
-			} catch (IOException e) {
+			} catch (Throwable e) {
 				logger.error(e.getClass() + " " + e.getMessage());
 			} finally {
 				timer.schedule(new Action(), sizeCheckIntervalMillis);
 			}
+		}
+
+		private boolean addStringConstraint(StringBuilder sb, String var, String value,
+				boolean andNeeded) {
+			if (value != null) {
+				if (andNeeded) {
+					sb.append(" AND ");
+				} else {
+					sb.append(" ");
+					andNeeded = true;
+				}
+				sb.append(var + " = '" + value + "'");
+			}
+			return andNeeded;
+		}
+
+		private boolean addNumericConstraint(StringBuilder sb, String var, Long value,
+				boolean andNeeded) {
+			if (value != null) {
+				if (andNeeded) {
+					sb.append(" AND ");
+				} else {
+					sb.append(" ");
+					andNeeded = true;
+				}
+				sb.append(var + " = " + value);
+			}
+			return andNeeded;
 		}
 
 	}
@@ -149,6 +257,12 @@ public class Tidier {
 	private boolean twoLevel;
 	private int preparedCount;
 
+	private StorageUnit storageUnit;
+
+	private int tidyBlockSize;
+
+	private String key;
+
 	@PreDestroy
 	public void exit() {
 		timer.cancel();
@@ -168,10 +282,13 @@ public class Tidier {
 			linkLifetimeMillis = propertyHandler.getlinkLifetimeMillis();
 			mainStorage = propertyHandler.getMainStorage();
 			twoLevel = propertyHandler.getArchiveStorage() != null;
+			key = propertyHandler.getKey();
 			if (twoLevel) {
 				mainStorage = propertyHandler.getMainStorage();
 				startArchivingLevel = propertyHandler.getStartArchivingLevel();
 				stopArchivingLevel = propertyHandler.getStopArchivingLevel();
+				storageUnit = propertyHandler.getStorageUnit();
+				tidyBlockSize = propertyHandler.getTidyBlockSize();
 			}
 			timer.schedule(new Action(), sizeCheckIntervalMillis);
 

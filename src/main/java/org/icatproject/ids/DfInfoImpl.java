@@ -1,5 +1,8 @@
 package org.icatproject.ids;
 
+import org.icatproject.Datafile;
+import org.icatproject.Dataset;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.plugin.DfInfo;
 
 public class DfInfoImpl implements DfInfo {
@@ -43,7 +46,7 @@ public class DfInfoImpl implements DfInfo {
 	}
 
 	@Override
-	public long getDfId() {
+	public Long getDfId() {
 		return dfId;
 	}
 

@@ -99,7 +99,8 @@ public class DataSelection {
 					dsInfos.put(dsid, new DsInfoImpl(ds));
 					if (dfWanted) {
 						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
-						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df.getLocation(), df
+						String location = IdsBean.getLocation(df);
+						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df
 								.getCreateId(), df.getModId(), dsid));
 					}
 				} else {
@@ -114,7 +115,8 @@ public class DataSelection {
 					ds = (Dataset) icat.get(sessionId,
 							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 					for (Datafile df : ds.getDatafiles()) {
-						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df.getLocation(), df
+						String location = IdsBean.getLocation(df);
+						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df
 								.getCreateId(), df.getModId(), dsid));
 						empty = false;
 					}
@@ -147,8 +149,9 @@ public class DataSelection {
 						long dsid = ds.getId();
 						if (dfWanted) {
 							for (Datafile df : ds.getDatafiles()) {
-								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), df
-										.getLocation(), df.getCreateId(), df.getModId(), dsid));
+								String location = IdsBean.getLocation(df);
+								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df
+										.getCreateId(), df.getModId(), dsid));
 								empty = false;
 							}
 						}

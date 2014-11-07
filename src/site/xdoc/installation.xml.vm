@@ -156,6 +156,9 @@
                     <dd>See startArchivingLevel1024bytes.
                     </dd>
 
+                    <dt>tidyBlockSize</dt>
+                    <dd>The number of datafiles or datasets to get back in one call for archive request when space on main storage is low.</dd>
+
                 </dl>
 
 

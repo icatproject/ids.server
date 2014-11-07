@@ -41,6 +41,9 @@ import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
+import org.icatproject.ids.IdsBean;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
@@ -105,7 +108,7 @@ public class BaseTest {
 		testingClient = new TestingClient(setup.getIdsUrl());
 		sessionId = setup.getGoodSessionId();
 		waitForIds();
-		populateStorage(setup.isTwoLevel(), setup.getStorageUnit());
+		populateStorage(setup.isTwoLevel(), setup.getStorageUnit(), setup.getKey());
 	}
 
 	protected void checkAbsent(Path file) {
@@ -177,9 +180,9 @@ public class BaseTest {
 		}
 	}
 
-	private void populateStorage(boolean twoLevel, String storageUnit) throws IOException,
-			IcatException_Exception {
-
+	private void populateStorage(boolean twoLevel, String storageUnit, String key)
+			throws IOException, IcatException_Exception, InternalException,
+			InsufficientPrivilegesException {
 		clearStorage();
 		long timestamp = System.currentTimeMillis();
 
@@ -243,13 +246,13 @@ public class BaseTest {
 			df1.setName("a/df1_" + timestamp);
 			df1.setLocation(ds1Loc + UUID.randomUUID());
 			df1.setDataset(ds1);
-			writeToFile(df1, "df1 test content very compressible very compressible");
+			writeToFile(df1, "df1 test content very compressible very compressible", key);
 
 			Datafile df2 = new Datafile();
 			df2.setName("df2_" + timestamp);
 			df2.setLocation(ds1Loc + UUID.randomUUID());
 			df2.setDataset(ds1);
-			writeToFile(df2, "df2 test content very compressible very compressible");
+			writeToFile(df2, "df2 test content very compressible very compressible", key);
 
 			// System.out.println("ds " + ds1.getId() + " holds dfs " + df1.getId() + " and "
 			// + df2.getId());
@@ -258,13 +261,13 @@ public class BaseTest {
 			df3.setName("df3_" + timestamp);
 			df3.setLocation(ds2Loc + UUID.randomUUID());
 			df3.setDataset(ds2);
-			writeToFile(df3, "df3 test content very compressible very compressible");
+			writeToFile(df3, "df3 test content very compressible very compressible", key);
 
 			Datafile df4 = new Datafile();
 			df4.setName("df4_" + timestamp);
 			df4.setLocation(ds2Loc + UUID.randomUUID());
 			df4.setDataset(ds2);
-			writeToFile(df4, "df4 test content very compressible very compressible");
+			writeToFile(df4, "df4 test content very compressible very compressible", key);
 
 			// System.out.println("ds " + ds2.getId() + " holds dfs " + df3.getId() + " and "
 			// + df4.getId());
@@ -278,8 +281,8 @@ public class BaseTest {
 			datafileIds.add(df4.getId());
 
 			if (twoLevel) {
-				moveDatasetToArchive(storageUnit, ds1, ds1Loc, fac, inv);
-				moveDatasetToArchive(storageUnit, ds2, ds2Loc, fac, inv);
+				moveDatasetToArchive(storageUnit, ds1, ds1Loc, fac, inv, key);
+				moveDatasetToArchive(storageUnit, ds2, ds2Loc, fac, inv, key);
 			}
 
 			newFileLocation = setup.getUpdownDir().resolve("new_file_" + timestamp);
@@ -341,8 +344,8 @@ public class BaseTest {
 		assertTrue(found);
 	}
 
-	private void writeToFile(Datafile df, String content) throws IOException,
-			IcatException_Exception {
+	private void writeToFile(Datafile df, String content, String key) throws IOException,
+			IcatException_Exception, InternalException {
 		Path path = setup.getStorageDir().resolve(df.getLocation());
 		Files.createDirectories(path.getParent());
 		byte[] bytes = content.getBytes();
@@ -353,7 +356,14 @@ public class BaseTest {
 		out.close();
 		df.setChecksum(Long.toHexString(crc.getValue()));
 		df.setFileSize((long) bytes.length);
-		df.setId(icat.create(sessionId, df));
+		long dfId = icat.create(sessionId, df);
+		df.setId(dfId);
+		if (key != null) {
+			String location = df.getLocation();
+			df.setLocation(location + " " + IdsBean.digest(dfId, location, key));
+		}
+		icat.update(sessionId, df);
+
 		crcs.put(df.getLocation(), df.getChecksum());
 		fsizes.put(df.getLocation(), df.getFileSize());
 		contents.put(df.getLocation(), content);
@@ -368,7 +378,8 @@ public class BaseTest {
 	}
 
 	private void moveDatasetToArchive(String storageUnit, Dataset ds, String dsLoc, Facility fac,
-			Investigation inv) throws IOException, IcatException_Exception {
+			Investigation inv, String key) throws IOException, IcatException_Exception,
+			InsufficientPrivilegesException, InternalException {
 		ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", ds.getId());
 		Path top = setup.getStorageDir();
 
@@ -380,8 +391,13 @@ public class BaseTest {
 			zos.setLevel(0);
 
 			for (Datafile df : ds.getDatafiles()) {
-
-				Path file = top.resolve(df.getLocation());
+				Path file;
+				if (key == null) {
+					file = top.resolve(df.getLocation());
+				} else {
+					file = top.resolve(IdsBean.getLocationFromDigest(df.getId(), df.getLocation(),
+							key));
+				}
 				InputStream fis = Files.newInputStream(file);
 
 				zos.putNextEntry(new ZipEntry("ids/" + fac.getName() + "/" + inv.getName() + "/"
@@ -401,12 +417,23 @@ public class BaseTest {
 			Path archive = setup.getStorageArchiveDir().resolve(dsLoc);
 			Files.createDirectories(archive);
 			for (Datafile df : ds.getDatafiles()) {
-				Path p = top.resolve(df.getLocation());
+				Path p;
+				if (key == null) {
+					p = top.resolve(df.getLocation());
+				} else {
+					p = top.resolve(IdsBean.getLocationFromDigest(df.getId(), df.getLocation(), key));
+				}
 				Files.move(p, archive.resolve(p.getFileName()), StandardCopyOption.REPLACE_EXISTING);
 			}
 		}
 		for (Datafile df : ds.getDatafiles()) {
-			Path file = top.resolve(df.getLocation());
+			Path file;
+			if (key == null) {
+				file = top.resolve(df.getLocation());
+			} else {
+				file = top
+						.resolve(IdsBean.getLocationFromDigest(df.getId(), df.getLocation(), key));
+			}
 			Files.deleteIfExists(file);
 			Path parent = file.getParent();
 			while (!parent.equals(top)) {

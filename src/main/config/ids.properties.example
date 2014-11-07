@@ -21,6 +21,7 @@ writeDelaySeconds = 60
 startArchivingLevel1024bytes = 5000000
 stopArchivingLevel1024bytes =  4000000
 storageUnit = dataset
+tidyBlockSize = 500
 
 # File checking properties
 filesCheck.parallelCount = 5

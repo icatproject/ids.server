@@ -1,5 +1,6 @@
 package org.icatproject.ids.thread;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -43,14 +44,23 @@ public class DfRestorer implements Runnable {
 		// for (DfInfo dfInfo : dfInfos) {
 		// String dfLocation = dfInfo.getDfLocation(); TODO Should check that it is good
 		// }
-		Set<DfInfo> failures = archiveStorageInterface.restore(mainStorageInterface, dfInfos);
-		for (DfInfo dfInfo : dfInfos) {
-			if (failures.contains(dfInfo)) {
-				logger.error("Restore of " + dfInfo + " failed");
-			} else {
-				logger.debug("Restore of " + dfInfo + " completed");
+		try {
+			Set<DfInfo> failures = archiveStorageInterface.restore(mainStorageInterface, dfInfos);
+			for (DfInfo dfInfo : dfInfos) {
+				if (failures.contains(dfInfo)) {
+					logger.error("Restore of " + dfInfo + " failed");
+				} else {
+					logger.debug("Restore of " + dfInfo + " completed");
+				}
+				fsm.removeFromChanging(dfInfo);
 			}
-			fsm.removeFromChanging(dfInfo);
+		} catch (IOException e) {
+			for (DfInfo dfInfo : dfInfos) {
+				logger.error("Restore of " + dfInfo + " failed");
+				fsm.removeFromChanging(dfInfo);
+			}
+			return;
 		}
+
 	}
 }

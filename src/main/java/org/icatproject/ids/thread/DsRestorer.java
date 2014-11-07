@@ -12,6 +12,7 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.IcatReader;
+import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
@@ -59,7 +60,7 @@ public class DsRestorer implements Runnable {
 					dsInfo.getDsId())).getDatafiles();
 			Map<String, String> nameToLocalMap = new HashMap<>(datafiles.size());
 			for (Datafile datafile : datafiles) {
-				nameToLocalMap.put(datafile.getName(), datafile.getLocation());
+				nameToLocalMap.put(datafile.getName(), IdsBean.getLocation(datafile));
 				size += datafile.getFileSize();
 				n++;
 			}

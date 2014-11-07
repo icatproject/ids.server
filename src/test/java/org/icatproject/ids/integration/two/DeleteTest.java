@@ -35,7 +35,7 @@ public class DeleteTest extends BaseTest {
 		testingClient.delete(sessionId, new DataSelection().addDatafile(datafileIds.get(3)), 204);
 		waitForIds();
 
-		checkZipFile(fileOnArchiveStorage, datafileIds.subList(2, 3), 57);
+		checkZipFile(fileOnArchiveStorage, datafileIds.subList(2, 3), 36);
 	}
 
 	@Test

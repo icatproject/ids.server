@@ -12,6 +12,7 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.DfInfoImpl;
 import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
@@ -71,15 +72,14 @@ public class DsWriteThenArchiver implements Runnable {
 						StandardOpenOption.CREATE));
 				zos.setLevel(0);
 				for (Datafile datafile : datafiles) {
-					String entryName = zipMapper
-							.getFullEntryName(
-									dsInfo,
-									new DfInfoImpl(datafile.getId(), datafile.getName(), datafile
-											.getLocation(), datafile.getCreateId(), datafile
-											.getModId(), 0L));
+					String location = IdsBean.getLocation(datafile);
+					String entryName = zipMapper.getFullEntryName(
+							dsInfo,
+							new DfInfoImpl(datafile.getId(), datafile.getName(), location, datafile
+									.getCreateId(), datafile.getModId(), 0L));
 					zos.putNextEntry(new ZipEntry(entryName));
-					InputStream is = mainStorageInterface.get(datafile.getLocation(),
-							datafile.getCreateId(), datafile.getModId());
+					InputStream is = mainStorageInterface.get(location, datafile.getCreateId(),
+							datafile.getModId());
 					int bytesRead = 0;
 					byte[] buffer = new byte[BUFSIZ];
 					while ((bytesRead = is.read(buffer)) > 0) {

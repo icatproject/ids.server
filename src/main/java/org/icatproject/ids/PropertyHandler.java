@@ -47,7 +47,6 @@ public class PropertyHandler {
 
 	private ArchiveStorageInterface archiveStorage;
 	private Path cacheDir;
-	private boolean compressDatasetCache;
 	private Path filesCheckErrorLog;
 	private int filesCheckGapMillis;
 	private Path filesCheckLastIdFile;
@@ -69,6 +68,8 @@ public class PropertyHandler {
 	private StorageUnit storageUnit;
 	private long writeDelaySeconds;
 	private ZipMapperInterface zipMapper;
+	private int tidyBlockSize;
+	private String key;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -120,6 +121,8 @@ public class PropertyHandler {
 			readOnly = props.getBoolean("readOnly", false);
 
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
+			
+			key = props.getProperty("key");
 
 			try {
 				Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class.forName(props
@@ -147,7 +150,6 @@ public class PropertyHandler {
 				logger.info("Property plugin.archive.class not set, single storage enabled.");
 			} else {
 				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
-				compressDatasetCache = props.getBoolean("compressDatasetCache", false);
 
 				try {
 					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
@@ -178,6 +180,7 @@ public class PropertyHandler {
 					abort("storageUnit value " + props.getString("storageUnit")
 							+ " must be taken from " + vs);
 				}
+				tidyBlockSize = props.getPositiveInt("tidyBlockSize");
 			}
 
 			try {
@@ -295,8 +298,12 @@ public class PropertyHandler {
 		return zipMapper;
 	}
 
-	public boolean isCompressDatasetCache() {
-		return compressDatasetCache;
+	public int getTidyBlockSize() {
+		return tidyBlockSize;
+	}
+
+	public String getKey() {
+		return key;
 	}
 
 }

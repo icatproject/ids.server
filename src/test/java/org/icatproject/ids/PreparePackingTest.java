@@ -82,11 +82,11 @@ public class PreparePackingTest {
 			} else {
 				fail();
 			}
-			assertEquals(invId, value.getInvId());
+			assertEquals((Long) invId, value.getInvId());
 			assertEquals("invName", value.getInvName());
 
 			assertEquals("visitId", value.getVisitId());
-			assertEquals(facilityId, value.getFacilityId());
+			assertEquals((Long) facilityId, value.getFacilityId());
 			assertEquals("facilityName", value.getFacilityName());
 
 		}

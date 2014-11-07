@@ -13,6 +13,7 @@ import org.icatproject.Dataset;
 import org.icatproject.ids.DfInfoImpl;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.IcatReader;
+import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
@@ -35,7 +36,6 @@ public class DsWriter implements Runnable {
 	private ArchiveStorageInterface archiveStorageInterface;
 	private Path datasetCache;
 	private Path markerDir;
-	private boolean compress;
 	private IcatReader reader;
 	private ZipMapperInterface zipMapper;
 
@@ -48,7 +48,6 @@ public class DsWriter implements Runnable {
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
 		markerDir = propertyHandler.getCacheDir().resolve("marker");
-		compress = propertyHandler.isCompressDatasetCache();
 		this.reader = reader;
 	}
 
@@ -68,18 +67,14 @@ public class DsWriter implements Runnable {
 
 				ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(datasetCachePath,
 						StandardOpenOption.CREATE));
-				if (!compress) {
-					zos.setLevel(0);
-				}
 				for (Datafile datafile : datafiles) {
-					zos.putNextEntry(new ZipEntry(zipMapper
-							.getFullEntryName(
-									dsInfo,
-									new DfInfoImpl(datafile.getId(), datafile.getName(), datafile
-											.getLocation(), datafile.getCreateId(), datafile
-											.getModId(), 0L))));
-					InputStream is = mainStorageInterface.get(datafile.getLocation(),
-							datafile.getCreateId(), datafile.getModId());
+					String location = IdsBean.getLocation(datafile);
+					zos.putNextEntry(new ZipEntry(zipMapper.getFullEntryName(
+							dsInfo,
+							new DfInfoImpl(datafile.getId(), datafile.getName(), location, datafile
+									.getCreateId(), datafile.getModId(), 0L))));
+					InputStream is = mainStorageInterface.get(location, datafile.getCreateId(),
+							datafile.getModId());
 					int bytesRead = 0;
 					byte[] buffer = new byte[BUFSIZ];
 					while ((bytesRead = is.read(buffer)) > 0) {
