@@ -122,10 +122,16 @@
 
                     <dt>reader</dt>
                     <dd>
-                        space separated icat plugin name and credentials for a user permitted to read all datasets, datafiles, investigations and
+                        Space separated icat plugin name and credentials for a user permitted to read all datasets, datafiles, investigations and
                         facilities.
                         For example:
                         <code>db username db/root password password.</code>
+                    </dd>
+
+                    <dt>key</dt>
+                    <dd>Optional key value. If specified this contributes to the computation of a cryptographic hash added to the location value in
+                        the
+                        database. The ids plugins do not see the hash. The key must of course be long enough to be secure and must be kept private.
                     </dd>
 
                 </dl>

@@ -13,10 +13,13 @@
             <ul>
                 <li>getApiVersion call added to return version of server
                 </li>
-                <li>ids.properties values: preparedCacheSize1024bytes, datasetCacheSize1024bytes, compressDatasetCache,  and tolerateWrongCompression are no longer used.</li>
+                <li>ids.properties values: preparedCacheSize1024bytes, datasetCacheSize1024bytes, compressDatasetCache, and tolerateWrongCompression
+                    are no longer used.</li>
                 <li>ids.properties value preparedCount has changed its meaning.</li>
                 <li>ids.properties value tidyBlockSize has been added.</li>
                 <li>The json string returned by getServiceStatus has changed.</li>
+                <li>The Datafile.location value can be protected by a cryptographic hash. This is enabled by adding a property "key" to the
+                    ids.properties file.</li>
             </ul>
         </section>
 
