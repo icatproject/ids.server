@@ -80,7 +80,7 @@ public class FileCheckerTest extends BaseTest {
 		df.setLocation("Zoo");
 		icat.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
-		checkHas("Datafile", dfid, "/Zoo");
+		checkHas("Datafile", dfid, "Zoo\" does not contain hash.");
 
 		df.setLocation(null);
 		icat.update(sessionId, df);
