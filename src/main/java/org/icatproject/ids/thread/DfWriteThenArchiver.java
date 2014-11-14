@@ -43,11 +43,11 @@ public class DfWriteThenArchiver implements Runnable {
 
 		for (DfInfo dfInfo : dfInfos) {
 			try {
-				String dfLocation = dfInfo.getDfLocation(); // TODO Should check this
+				String dfLocation = dfInfo.getDfLocation();
 				InputStream is = mainStorageInterface.get(dfLocation, dfInfo.getCreateId(),
 						dfInfo.getModId());
 				archiveStorageInterface.put(is, dfLocation);
-				mainStorageInterface.delete(dfLocation);
+				mainStorageInterface.delete(dfLocation, dfInfo.getCreateId(), dfInfo.getModId());
 				Path marker = markerDir.resolve(Long.toString(dfInfo.getDfId()));
 				Files.deleteIfExists(marker);
 				logger.debug("Removed marker " + marker);

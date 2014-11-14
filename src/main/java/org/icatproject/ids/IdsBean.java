@@ -130,7 +130,7 @@ public class IdsBean {
 		}
 	}
 
-	public static String digest(Long id, String location, String key) throws InternalException {
+	static String digest(Long id, String location, String key) throws InternalException {
 		byte[] pattern = (id + location + key).getBytes();
 		MessageDigest digest = null;
 		try {
@@ -162,7 +162,7 @@ public class IdsBean {
 		}
 	}
 
-	public static String getLocationFromDigest(Long id, String locationWithHash, String key)
+	static String getLocationFromDigest(Long id, String locationWithHash, String key)
 			throws InternalException, InsufficientPrivilegesException {
 		int i = locationWithHash.lastIndexOf(' ');
 		try {
@@ -507,7 +507,7 @@ public class IdsBean {
 			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
 				String location = dfInfo.getDfLocation();
 				if (mainStorage.exists(location)) {
-					mainStorage.delete(location);
+					mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
 				}
 			}
 		} catch (IOException e) {
@@ -1256,7 +1256,14 @@ public class IdsBean {
 						| BadRequestException e) {
 					logger.debug("Problem with registration " + e.getClass() + " " + e.getMessage()
 							+ " datafile will now be deleted");
-					mainStorage.delete(location);
+					String userId = null;
+					try {
+						userId = icat.getUserName(sessionId);
+					} catch (IcatException_Exception e1) {
+						logger.error("Unable to get user name for session " + sessionId
+								+ " so mainstorage.delete of " + location + " may fail");
+					}
+					mainStorage.delete(location, userId, userId);
 					throw e;
 				}
 

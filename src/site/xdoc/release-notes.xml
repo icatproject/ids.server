@@ -8,7 +8,8 @@
     <body>
 
         <section name="1.3.0">
-            <p>Add getApiVersion call, make major change to prepareData and make it also support archive by datafile.
+            <p>Add getApiVersion call, make major change to prepareData, make it also support archive by datafile and provide the option of protecting
+                Datafile.location with a cryptographic hash.
             </p>
             <ul>
                 <li>getApiVersion call added to return version of server

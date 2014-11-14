@@ -30,7 +30,7 @@ public class DfArchiver implements Runnable {
 		for (DfInfo dfInfo : dfInfos) {
 			try {
 				String dfLocation = dfInfo.getDfLocation();
-				mainStorageInterface.delete(dfLocation);
+				mainStorageInterface.delete(dfLocation, dfInfo.getCreateId(), dfInfo.getModId());
 				logger.debug("Archive of " + dfInfo + " completed");
 			} catch (Exception e) {
 				logger.error("Archive of " + dfInfo + " failed due to " + e.getClass() + " "

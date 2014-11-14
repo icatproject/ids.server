@@ -15,6 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,9 +43,6 @@ import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
-import org.icatproject.ids.IdsBean;
-import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
@@ -181,8 +180,7 @@ public class BaseTest {
 	}
 
 	private void populateStorage(boolean twoLevel, String storageUnit, String key)
-			throws IOException, IcatException_Exception, InternalException,
-			InsufficientPrivilegesException {
+			throws IOException, IcatException_Exception, NoSuchAlgorithmException {
 		clearStorage();
 		long timestamp = System.currentTimeMillis();
 
@@ -345,7 +343,7 @@ public class BaseTest {
 	}
 
 	private void writeToFile(Datafile df, String content, String key) throws IOException,
-			IcatException_Exception, InternalException {
+			IcatException_Exception, NoSuchAlgorithmException {
 		Path path = setup.getStorageDir().resolve(df.getLocation());
 		Files.createDirectories(path.getParent());
 		byte[] bytes = content.getBytes();
@@ -360,7 +358,7 @@ public class BaseTest {
 		df.setId(dfId);
 		if (key != null) {
 			String location = df.getLocation();
-			df.setLocation(location + " " + IdsBean.digest(dfId, location, key));
+			df.setLocation(location + " " + digest(dfId, location, key));
 		}
 		icat.update(sessionId, df);
 
@@ -377,9 +375,26 @@ public class BaseTest {
 						+ df.getName(), df.getLocation());
 	}
 
+	private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			'A', 'B', 'C', 'D', 'E', 'F' };
+
+	private String digest(Long id, String location, String key) throws NoSuchAlgorithmException {
+		byte[] pattern = (id + location + key).getBytes();
+		MessageDigest digest = null;
+		digest = MessageDigest.getInstance("SHA-256");
+		byte[] bytes = digest.digest(pattern);
+		char[] hexChars = new char[bytes.length * 2];
+		int v;
+		for (int j = 0; j < bytes.length; j++) {
+			v = bytes[j] & 0xFF;
+			hexChars[j * 2] = HEX_CHARS[v >>> 4];
+			hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
+		}
+		return new String(hexChars);
+	}
+
 	private void moveDatasetToArchive(String storageUnit, Dataset ds, String dsLoc, Facility fac,
-			Investigation inv, String key) throws IOException, IcatException_Exception,
-			InsufficientPrivilegesException, InternalException {
+			Investigation inv, String key) throws IOException, IcatException_Exception {
 		ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", ds.getId());
 		Path top = setup.getStorageDir();
 
@@ -395,8 +410,7 @@ public class BaseTest {
 				if (key == null) {
 					file = top.resolve(df.getLocation());
 				} else {
-					file = top.resolve(IdsBean.getLocationFromDigest(df.getId(), df.getLocation(),
-							key));
+					file = top.resolve(getLocationFromDigest(df.getId(), df.getLocation(), key));
 				}
 				InputStream fis = Files.newInputStream(file);
 
@@ -421,7 +435,7 @@ public class BaseTest {
 				if (key == null) {
 					p = top.resolve(df.getLocation());
 				} else {
-					p = top.resolve(IdsBean.getLocationFromDigest(df.getId(), df.getLocation(), key));
+					p = top.resolve(getLocationFromDigest(df.getId(), df.getLocation(), key));
 				}
 				Files.move(p, archive.resolve(p.getFileName()), StandardCopyOption.REPLACE_EXISTING);
 			}
@@ -431,8 +445,7 @@ public class BaseTest {
 			if (key == null) {
 				file = top.resolve(df.getLocation());
 			} else {
-				file = top
-						.resolve(IdsBean.getLocationFromDigest(df.getId(), df.getLocation(), key));
+				file = top.resolve(getLocationFromDigest(df.getId(), df.getLocation(), key));
 			}
 			Files.deleteIfExists(file);
 			Path parent = file.getParent();
@@ -446,6 +459,11 @@ public class BaseTest {
 			}
 		}
 
+	}
+
+	static String getLocationFromDigest(Long id, String locationWithHash, String key) {
+		int i = locationWithHash.lastIndexOf(' ');
+		return locationWithHash.substring(0, i);
 	}
 
 }
