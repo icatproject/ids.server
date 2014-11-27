@@ -10,7 +10,7 @@ props = actions.getGlassfish("ids-setup.properties", ["glassfish", "libraries"])
 prop_name = "ids.properties"
 prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
 "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "reader",
-"filesCheck.parallelCount", "linkLifetimeSeconds"]
+"filesCheck.parallelCount", "linkLifetimeSeconds", "maxIdsInQuery"]
 
 if arg in ["CONFIGURE", "INSTALL"]:
     actions.configure(prop_name, prop_list)

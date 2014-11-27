@@ -134,6 +134,9 @@
                         database. The ids plugins do not see the hash. The key must of course be long enough to be secure and must be kept private.
                     </dd>
 
+                    <dt>maxIdsInQuery</dt>
+                    <dd>The number of literal id values to be generated in an ICAT query. For Oracle this must not exceed 1000.</dd>
+
                 </dl>
 
                 <h4>Properties for archive storage</h4>

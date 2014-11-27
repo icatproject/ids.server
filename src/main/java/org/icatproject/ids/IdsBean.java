@@ -315,6 +315,8 @@ public class IdsBean {
 
 	private ZipMapperInterface zipMapper;
 
+	private int maxIdsInQuery;
+
 	public void archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, InternalException, NotFoundException {
@@ -349,14 +351,13 @@ public class IdsBean {
 			throws NotFoundException, InternalException {
 		/* Check that datafiles have not been deleted before locking */
 		int n = 0;
-		int nmax = 1000;
 		StringBuffer sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
 		for (DfInfo dfInfo : dfInfos) {
 			if (n != 0) {
 				sb.append(',');
 			}
 			sb.append(dfInfo.getDfId());
-			if (n++ == nmax) {
+			if (++n == maxIdsInQuery) {
 				try {
 					if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
 						fsm.unlock(lockId);
@@ -1028,7 +1029,8 @@ public class IdsBean {
 					}
 				}
 
-				linkEnabled = propertyHandler.getlinkLifetimeMillis() > 0;
+				linkEnabled = propertyHandler.getLinkLifetimeMillis() > 0;
+				maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
 
 				inited = true;
 

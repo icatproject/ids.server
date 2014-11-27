@@ -279,7 +279,7 @@ public class Tidier {
 			Files.createDirectories(preparedDir);
 			linkDir = propertyHandler.getCacheDir().resolve("link");
 			Files.createDirectories(linkDir);
-			linkLifetimeMillis = propertyHandler.getlinkLifetimeMillis();
+			linkLifetimeMillis = propertyHandler.getLinkLifetimeMillis();
 			mainStorage = propertyHandler.getMainStorage();
 			twoLevel = propertyHandler.getArchiveStorage() != null;
 			key = propertyHandler.getKey();

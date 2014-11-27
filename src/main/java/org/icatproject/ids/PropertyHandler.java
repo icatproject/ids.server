@@ -70,6 +70,7 @@ public class PropertyHandler {
 	private ZipMapperInterface zipMapper;
 	private int tidyBlockSize;
 	private String key;
+	private int maxIdsInQuery;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -121,7 +122,7 @@ public class PropertyHandler {
 			readOnly = props.getBoolean("readOnly", false);
 
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
-			
+
 			key = props.getProperty("key");
 
 			try {
@@ -207,9 +208,15 @@ public class PropertyHandler {
 
 			linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
 
+			maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
+
 		} catch (CheckedPropertyException e) {
 			abort(e.getMessage());
 		}
+	}
+
+	public int getMaxIdsInQuery() {
+		return maxIdsInQuery;
 	}
 
 	private void abort(String msg) {
@@ -246,7 +253,7 @@ public class PropertyHandler {
 		return icatService;
 	}
 
-	public long getlinkLifetimeMillis() {
+	public long getLinkLifetimeMillis() {
 		return linkLifetimeMillis;
 	}
 
