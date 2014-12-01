@@ -41,9 +41,6 @@ public class DfRestorer implements Runnable {
 	@Override
 	public void run() {
 
-		// for (DfInfo dfInfo : dfInfos) {
-		// String dfLocation = dfInfo.getDfLocation(); TODO Should check that it is good
-		// }
 		try {
 			Set<DfInfo> failures = archiveStorageInterface.restore(mainStorageInterface, dfInfos);
 			for (DfInfo dfInfo : dfInfos) {
