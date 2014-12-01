@@ -44,8 +44,10 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
 import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
+import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.Before;
 
 public class BaseTest {
@@ -101,6 +103,7 @@ public class BaseTest {
 	protected Path newFileLocation;
 	protected DatafileFormat supportedDatafileFormat;
 	protected long investigationId;
+	private long time;
 
 	@Before
 	public void before() throws Exception {
@@ -119,10 +122,14 @@ public class BaseTest {
 	}
 
 	protected void waitForIds() throws Exception {
+		waitForIds(20);
+	}
+
+	protected void waitForIds(int nmax) throws Exception {
 		int n = 0;
 		while (true) {
 			n++;
-			if (n > 20) {
+			if (n > nmax) {
 				throw new Exception("Got bored waiting");
 			}
 			ServiceStatus stat = testingClient.getServiceStatus(sessionId, 200);
@@ -138,6 +145,16 @@ public class BaseTest {
 			}
 			Thread.sleep(1000);
 		}
+	}
+
+	protected void logTime(String msg) {
+		long now = System.currentTimeMillis();
+		if (time != 0) {
+			System.out.println(msg + " took " + (now - time) + "ms.");
+		} else {
+			System.out.println(msg);
+		}
+		time = now;
 	}
 
 	protected void checkZipFile(Path file, List<Long> ids, int compressedSize) throws IOException {
@@ -464,6 +481,58 @@ public class BaseTest {
 	static String getLocationFromDigest(Long id, String locationWithHash, String key) {
 		int i = locationWithHash.lastIndexOf(' ');
 		return locationWithHash.substring(0, i);
+	}
+
+	protected void raceTest() throws Exception {
+		logTime("Starting");
+
+		Path path = Files.createTempFile(null, null);
+		try (OutputStream st = Files.newOutputStream(path)) {
+			byte[] bytes = new byte[1000];
+			for (int i = 0; i < 100000; i++) {
+				st.write(bytes);
+			}
+		}
+		logTime("File created");
+
+		Investigation inv = (Investigation) icat.search(sessionId, "Investigation").get(0);
+		DatasetType dst = (DatasetType) icat.search(sessionId, "DatasetType").get(0);
+
+		Dataset ds = new Dataset();
+		ds.setName("Big ds");
+		ds.setType(dst);
+		ds.setInvestigation(inv);
+		long dsid = icat.create(sessionId, ds);
+		ds.setId(dsid);
+
+		for (int i = 0; i < 30; i++) {
+			testingClient.put(sessionId, Files.newInputStream(path), "uploaded_file" + i, dsid,
+					supportedDatafileFormat.getId(), "A rather splendid datafile", 201);
+		}
+		testingClient.archive(sessionId, new DataSelection().addDataset(dsid), 204);
+		logTime("Put and archive calls");
+
+		waitForIds(300);
+
+		logTime("Archive complete");
+		testingClient.restore(sessionId, new DataSelection().addDataset(dsid), 204);
+		while (testingClient.getStatus(sessionId, new DataSelection().addDataset(dsid), 200) != Status.ONLINE) {
+			Thread.sleep(1000);
+		}
+		logTime("Marked online");
+
+		ServiceStatus stat = testingClient.getServiceStatus(sessionId, 200);
+
+		assertTrue(stat.getOpItems().toString(), stat.getOpItems().isEmpty());
+
+		testingClient.delete(sessionId, new DataSelection().addDataset(dsid), 204);
+		icat.delete(sessionId, ds);
+
+		waitForIds(300);
+		logTime("Deleted");
+
+		Files.delete(path);
+
 	}
 
 }
