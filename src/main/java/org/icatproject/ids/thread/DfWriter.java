@@ -40,7 +40,7 @@ public class DfWriter implements Runnable {
 	public void run() {
 		for (DfInfo dfInfo : dfInfos) {
 			try {
-				String dfLocation = dfInfo.getDfLocation(); // TODO should check this
+				String dfLocation = dfInfo.getDfLocation();
 				InputStream is = mainStorageInterface.get(dfLocation, dfInfo.getCreateId(),
 						dfInfo.getModId());
 				archiveStorageInterface.put(is, dfLocation);
