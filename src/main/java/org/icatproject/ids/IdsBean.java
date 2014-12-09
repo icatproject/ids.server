@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -49,6 +50,7 @@ import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.DataSelection.Returns;
+import org.icatproject.ids.FiniteStateMachine.SetLockType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.IdsException;
@@ -311,11 +313,11 @@ public class IdsBean {
 
 	private StorageUnit storageUnit;
 
-	private boolean twoLevel;
-
 	private ZipMapperInterface zipMapper;
 
 	private int maxIdsInQuery;
+
+	private boolean twoLevel;
 
 	public void archive(String sessionId, String investigationIds, String datasetIds,
 			String datafileIds) throws NotImplementedException, BadRequestException,
@@ -328,21 +330,19 @@ public class IdsBean {
 		validateUUID("sessionId", sessionId);
 
 		// Do it
-		if (twoLevel) {
-			if (storageUnit == StorageUnit.DATASET) {
-				DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
-						datasetIds, datafileIds, Returns.DATASETS);
-				Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-				for (DsInfo dsInfo : dsInfos.values()) {
-					fsm.queue(dsInfo, DeferredOp.ARCHIVE);
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
-						datasetIds, datafileIds, Returns.DATAFILES);
-				Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-				for (DfInfo dfInfo : dfInfos) {
-					fsm.queue(dfInfo, DeferredOp.ARCHIVE);
-				}
+		if (storageUnit == StorageUnit.DATASET) {
+			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
+					datasetIds, datafileIds, Returns.DATASETS);
+			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+			for (DsInfo dsInfo : dsInfos.values()) {
+				fsm.queue(dsInfo, DeferredOp.ARCHIVE);
+			}
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
+					datasetIds, datafileIds, Returns.DATAFILES);
+			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+			for (DfInfoImpl dfInfo : dfInfos) {
+				fsm.queue(dfInfo, DeferredOp.ARCHIVE);
 			}
 		}
 	}
@@ -360,14 +360,14 @@ public class IdsBean {
 			if (++n == maxIdsInQuery) {
 				try {
 					if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
-						fsm.unlock(lockId);
+						fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 						throw new NotFoundException(
 								"One of the datafiles requested has been deleted");
 					}
 					n = 0;
 					sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
 				} catch (IcatException_Exception e) {
-					fsm.unlock(lockId);
+					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 					throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
 				}
 			}
@@ -375,54 +375,75 @@ public class IdsBean {
 		if (n != 0) {
 			try {
 				if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
-					fsm.unlock(lockId);
+					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 					throw new NotFoundException("One of the datafiles requested has been deleted");
 				}
 			} catch (IcatException_Exception e) {
-				fsm.unlock(lockId);
+				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 				throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
 			}
 		}
 
 	}
 
-	private void checkOnline(Collection<DsInfo> dsInfos, Set<Long> emptyDatasets,
-			Set<DfInfoImpl> dfInfos, String lockId) throws InternalException,
-			DataNotOnlineException {
+	private void checkOnlineAndFreeLockOnFailure(Collection<DsInfo> dsInfos,
+			Set<Long> emptyDatasets, Set<DfInfoImpl> dfInfos, String lockId, SetLockType lockType)
+			throws InternalException, DataNotOnlineException {
 		try {
 			if (storageUnit == StorageUnit.DATASET) {
-				boolean restoreNeeded = false;
-
+				boolean maybeOffline = false;
 				for (DsInfo dsInfo : dsInfos) {
-					if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-						fsm.queue(dsInfo, DeferredOp.RESTORE);
-						restoreNeeded = true;
+					if (restoreIfOffline(dsInfo, emptyDatasets)) {
+						maybeOffline = true;
 					}
 				}
-				if (restoreNeeded) {
-					fsm.unlock(lockId);
+				if (maybeOffline) {
+					fsm.unlock(lockId, lockType);
 					throw new DataNotOnlineException(
-							"Before getting a datafile, its dataset has to be restored, restoration requested automatically");
+							"Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
 				}
 			} else if (storageUnit == StorageUnit.DATAFILE) {
-				boolean restoreNeeded = false;
-				for (DfInfo dfInfo : dfInfos) {
-					if (!mainStorage.exists(dfInfo.getDfLocation())) {
-						fsm.queue(dfInfo, DeferredOp.RESTORE);
-						restoreNeeded = true;
+				boolean maybeOffline = false;
+				for (DfInfoImpl dfInfo : dfInfos) {
+					if (restoreIfOffline(dfInfo)) {
+						maybeOffline = true;
 					}
+
 				}
-				if (restoreNeeded) {
-					fsm.unlock(lockId);
+				if (maybeOffline) {
+					fsm.unlock(lockId, lockType);
 					throw new DataNotOnlineException(
 							"Before getting a datafile, it must be restored, restoration requested automatically");
 				}
 			}
 		} catch (IOException e) {
-			fsm.unlock(lockId);
+			fsm.unlock(lockId, lockType);
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
+	}
+
+	private boolean restoreIfOffline(DfInfoImpl dfInfo) throws InternalException, IOException {
+		boolean maybeOffline = false;
+		if (fsm.getDfMaybeOffline().contains(dfInfo)) {
+			maybeOffline = true;
+		} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
+			fsm.queue(dfInfo, DeferredOp.RESTORE);
+			maybeOffline = true;
+		}
+		return maybeOffline;
+	}
+
+	private boolean restoreIfOffline(DsInfo dsInfo, Set<Long> emptyDatasets)
+			throws InternalException, IOException {
+		boolean maybeOffline = false;
+		if (fsm.getDsMaybeOffline().contains(dsInfo)) {
+			maybeOffline = true;
+		} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+			fsm.queue(dsInfo, DeferredOp.RESTORE);
+			maybeOffline = true;
+		}
+		return maybeOffline;
 	}
 
 	public void delete(String sessionId, String investigationIds, String datasetIds,
@@ -444,89 +465,84 @@ public class IdsBean {
 				datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
-		DataNotOnlineException exc = null;
-
 		Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-		if (twoLevel) {
-			if (storageUnit == StorageUnit.DATASET) {
-				Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
-				try {
-					for (DsInfo dsInfo : dsInfos) {
-						if (!emptyDatasets.contains(dsInfo.getDsId())
-								&& !mainStorage.exists(dsInfo)) {
-							fsm.queue(dsInfo, DeferredOp.RESTORE);
-							exc = new DataNotOnlineException(
-									"Before deleting a datafile, its dataset has to be restored, restoration requested automatically");
-						}
-					}
-				} catch (IOException e) {
-					throw new InternalException(e.getClass() + " " + e.getMessage());
-				}
-			}
-		}
 
-		if (exc != null) {
-			throw exc;
-		}
-
-		for (DsInfo dsInfo : dsInfos) {
-			logger.debug("DS " + dsInfo.getDsId() + " " + dsInfo);
-			if (fsm.isLocked(dsInfo.getDsId())) {
-				throw new BadRequestException("Dataset " + dsInfo
-						+ " (or a part of it) is currently being streamed to a user");
-			}
-		}
-
-		/* Now delete from ICAT */
-		List<EntityBaseBean> dfs = new ArrayList<>();
-		for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
-			Datafile df = new Datafile();
-			df.setId(dfInfo.getDfId());
-			dfs.add(df);
-		}
-		try {
-			icat.deleteMany(sessionId, dfs);
-		} catch (IcatException_Exception e) {
-			IcatExceptionType type = e.getFaultInfo().getType();
-
-			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-					|| type == IcatExceptionType.SESSION) {
-				throw new InsufficientPrivilegesException(e.getMessage());
-			}
-			if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-				throw new NotFoundException(e.getMessage());
-			}
-			throw new InternalException(type + " " + e.getMessage());
-		}
-
-		try {
+		String lockId = null;
+		if (storageUnit == StorageUnit.DATASET) {
 			/*
-			 * Delete the local copy directly rather than queueing it as it has been removed from
-			 * ICAT so will not be accessible to any subsequent IDS calls.
+			 * Lock the datasets to prevent archiving of the datasets. It is important that they be
+			 * unlocked again.
 			 */
-			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
-				String location = dfInfo.getDfLocation();
-				if (mainStorage.exists(location)) {
-					mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
-				}
+			Set<Long> dsIds = new HashSet<>();
+			for (DsInfo dsInfo : dsInfos) {
+				dsIds.add(dsInfo.getDsId());
 			}
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
+			lockId = fsm.lock(dsIds, FiniteStateMachine.SetLockType.ARCHIVE);
+			checkOnlineAndFreeLockOnFailure(dsInfos, dataSelection.getEmptyDatasets(), dfInfos,
+					lockId, FiniteStateMachine.SetLockType.ARCHIVE);
 		}
 
-		if (twoLevel) {
+		try {
+			for (DsInfo dsInfo : dsInfos) {
+				logger.debug("DS " + dsInfo.getDsId() + " " + dsInfo);
+				if (fsm.isLocked(dsInfo.getDsId(), FiniteStateMachine.QueryLockType.DELETE)) {
+					throw new BadRequestException("Dataset " + dsInfo
+							+ " (or a part of it) is currently being streamed to a user");
+				}
+			}
+
+			/* Now delete from ICAT */
+			List<EntityBaseBean> dfs = new ArrayList<>();
+			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
+				Datafile df = new Datafile();
+				df.setId(dfInfo.getDfId());
+				dfs.add(df);
+			}
+			try {
+				icat.deleteMany(sessionId, dfs);
+			} catch (IcatException_Exception e) {
+				IcatExceptionType type = e.getFaultInfo().getType();
+
+				if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
+						|| type == IcatExceptionType.SESSION) {
+					throw new InsufficientPrivilegesException(e.getMessage());
+				}
+				if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+					throw new NotFoundException(e.getMessage());
+				}
+				throw new InternalException(type + " " + e.getMessage());
+			}
+
+			try {
+				/*
+				 * Delete the local copy directly rather than queueing it as it has been removed
+				 * from ICAT so will not be accessible to any subsequent IDS calls.
+				 */
+				for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
+					String location = dfInfo.getDfLocation();
+					if (mainStorage.exists(location)) {
+						mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
+					}
+				}
+			} catch (IOException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+
 			if (storageUnit == StorageUnit.DATASET) {
 				for (DsInfo dsInfo : dsInfos) {
 					fsm.queue(dsInfo, DeferredOp.WRITE);
 				}
 			} else if (storageUnit == StorageUnit.DATAFILE) {
-				for (DfInfo dfInfo : dfInfos) {
+				for (DfInfoImpl dfInfo : dfInfos) {
 					fsm.queue(dfInfo, DeferredOp.DELETE);
 				}
 			}
+		} finally {
+			if (lockId != null) {
+				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);
+			}
 		}
-
 	}
 
 	public Response getData(String preparedId, String outname, final long offset)
@@ -559,10 +575,12 @@ public class IdsBean {
 		 * Lock the datasets which prevents deletion of datafiles within the dataset and archiving
 		 * of the datasets. It is important that they be unlocked again.
 		 */
-		final String lockId = fsm.lock(dsInfos.keySet());
+		final String lockId = fsm.lock(dsInfos.keySet(),
+				FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 
 		if (twoLevel) {
-			checkOnline(dsInfos.values(), emptyDatasets, dfInfos, lockId);
+			checkOnlineAndFreeLockOnFailure(dsInfos.values(), emptyDatasets, dfInfos, lockId,
+					FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 		}
 
 		checkDatafilesPresent(dfInfos, lockId);
@@ -610,7 +628,7 @@ public class IdsBean {
 						output.close();
 					}
 				} finally {
-					fsm.unlock(lockId);
+					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 				}
 
 			}
@@ -669,10 +687,12 @@ public class IdsBean {
 		 * of the datasets. It is important that they be unlocked again.
 		 */
 
-		final String lockId = fsm.lock(dsInfos.keySet());
+		final String lockId = fsm.lock(dsInfos.keySet(),
+				FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 
 		if (twoLevel) {
-			checkOnline(dsInfos.values(), dataSelection.getEmptyDatasets(), dfInfos, lockId);
+			checkOnlineAndFreeLockOnFailure(dsInfos.values(), dataSelection.getEmptyDatasets(),
+					dfInfos, lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 		}
 
 		checkDatafilesPresent(dfInfos, lockId);
@@ -723,7 +743,7 @@ public class IdsBean {
 						output.close();
 					}
 				} finally {
-					fsm.unlock(lockId);
+					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 				}
 			}
 		};
@@ -793,28 +813,25 @@ public class IdsBean {
 		}
 
 		String location = getLocation(datafile);
-		if (twoLevel) {
-			try {
-				if (storageUnit == StorageUnit.DATASET) {
-					DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
-					if (!mainStorage.exists(dsInfo)) {
-						fsm.queue(dsInfo, DeferredOp.RESTORE);
-						throw new DataNotOnlineException(
-								"Before linking a datafile, its dataset has to be restored, restoration requested automatically");
-					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					DfInfo dfInfo = new DfInfoImpl(datafileId, datafile.getName(), location,
-							datafile.getCreateId(), datafile.getModId(), datafile.getDataset()
-									.getId());
-					if (!mainStorage.exists(dfInfo.getDfLocation())) {
-						fsm.queue(dfInfo, DeferredOp.RESTORE);
-						throw new DataNotOnlineException(
-								"Before linking a datafile, it has to be restored, restoration requested automatically");
-					}
+
+		try {
+			if (storageUnit == StorageUnit.DATASET) {
+				DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
+				Set<Long> mt = Collections.emptySet();
+				if (restoreIfOffline(dsInfo, mt)) {
+					throw new DataNotOnlineException(
+							"Before linking a datafile, its dataset has to be restored, restoration requested automatically");
 				}
-			} catch (IOException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				DfInfoImpl dfInfo = new DfInfoImpl(datafileId, datafile.getName(), location,
+						datafile.getCreateId(), datafile.getModId(), datafile.getDataset().getId());
+				if (restoreIfOffline(dfInfo)) {
+					throw new DataNotOnlineException(
+							"Before linking a datafile, it has to be restored, restoration requested automatically");
+				}
 			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
 		try {
@@ -916,70 +933,55 @@ public class IdsBean {
 
 		// Do it
 		Status status = Status.ONLINE;
-		if (twoLevel) {
-			try {
-				if (storageUnit == StorageUnit.DATASET) {
-					DataSelection dataSelection = new DataSelection(icat, sessionId,
-							investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-					Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-					/*
-					 * Restoring shows also data sets which are currently being changed so it may
-					 * indicate that something is restoring when it should have been marked as
-					 * archived.
-					 */
-					Set<DsInfo> restoring = fsm.getDsRestoring();
-					for (DsInfo dsInfo : dsInfos.values()) {
-						if (!mainStorage.exists(dsInfo)) {
-							if (status == Status.ONLINE) {
-								if (restoring.contains(dsInfo)) {
-									status = Status.RESTORING;
-								} else {
-									status = Status.ARCHIVED;
-								}
-							} else if (status == Status.RESTORING) {
-								if (!restoring.contains(dsInfo)) {
-									status = Status.ARCHIVED;
-									break;
-								}
-							}
-						}
-					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					DataSelection dataSelection = new DataSelection(icat, sessionId,
-							investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-					Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-					/*
-					 * Restoring shows also data files which are currently being changed so it may
-					 * indicate that something is restoring when it should have been marked as
-					 * archived.
-					 */
-					Set<DfInfo> restoring = fsm.getDfRestoring();
-					for (DfInfo dfInfo : dfInfos) {
-						if (!mainStorage.exists(dfInfo.getDfLocation())) {
-							if (status == Status.ONLINE) {
-								if (restoring.contains(dfInfo)) {
-									status = Status.RESTORING;
-								} else {
-									status = Status.ARCHIVED;
-								}
-							} else if (status == Status.RESTORING) {
-								if (!restoring.contains(dfInfo)) {
-									status = Status.ARCHIVED;
-									break;
-								}
-							}
-						}
+
+		try {
+			if (storageUnit == StorageUnit.DATASET) {
+				DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
+						datasetIds, datafileIds, Returns.DATASETS);
+				Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+
+				Set<DsInfo> restoring = fsm.getDsRestoring();
+				Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
+				Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
+				for (DsInfo dsInfo : dsInfos.values()) {
+					if (restoring.contains(dsInfo)) {
+						status = Status.RESTORING;
+					} else if (maybeOffline.contains(dsInfo)) {
+						status = Status.ARCHIVED;
+						break;
+					} else if (!emptyDatasets.contains(dsInfo.getDsId())
+							&& !mainStorage.exists(dsInfo)) {
+						status = Status.ARCHIVED;
+						break;
 					}
 				}
-			} catch (IOException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
-			}
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
+						datasetIds, datafileIds, Returns.DATAFILES);
+				Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		} else {
-			// Throw exception if selection does not exist
-			new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds,
-					Returns.DATASETS);
+				Set<DfInfo> restoring = fsm.getDfRestoring();
+				Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
+				for (DfInfo dfInfo : dfInfos) {
+					if (restoring.contains(dfInfo)) {
+						status = Status.RESTORING;
+					} else if (maybeOffline.contains(dfInfo)) {
+						status = Status.ARCHIVED;
+						break;
+					} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
+						status = Status.ARCHIVED;
+						break;
+					}
+				}
+			} else {
+				// Throw exception if selection does not exist
+				new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds,
+						Returns.DATASETS);
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
+
 		logger.debug("Status is " + status.name());
 		return status.name();
 
@@ -1062,33 +1064,24 @@ public class IdsBean {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
-		if (twoLevel) {
-			try {
-				if (storageUnit == StorageUnit.DATASET) {
-					for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
-						if (fsm.getDsRestoring().contains(dsInfo)) {
-							prepared = false;
-						} else if (!preparedJson.emptyDatasets.contains(dsInfo.getDsId())
-								&& !mainStorage.exists(dsInfo)) {
-							fsm.queue(dsInfo, DeferredOp.RESTORE);
-							prepared = false;
-						}
-					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					for (DfInfo dfInfo : preparedJson.dfInfos) {
-						if (fsm.getDfRestoring().contains(dfInfo)) {
-							prepared = false;
-						} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-							fsm.queue(dfInfo, DeferredOp.RESTORE);
-							prepared = false;
-						}
+		try {
+			if (storageUnit == StorageUnit.DATASET) {
+				for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
+					if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
+						prepared = false;
 					}
 				}
-			} catch (IOException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				for (DfInfoImpl dfInfo : preparedJson.dfInfos) {
+					if (restoreIfOffline(dfInfo)) {
+						prepared = false;
+					}
+				}
 			}
-
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
+
 		return prepared;
 
 	}
@@ -1123,33 +1116,18 @@ public class IdsBean {
 		Set<Long> emptyDs = dataSelection.getEmptyDatasets();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		if (twoLevel) {
-			try {
-				if (storageUnit == StorageUnit.DATASET) {
-					for (DsInfo dsInfo : dsInfos.values()) {
-						if (fsm.getDsRestoring().contains(dsInfo)) {
-							logger.debug("Restore of " + dsInfo + " is requested or in progress");
-						} else if (!emptyDs.contains(dsInfo.getDsId())
-								&& !mainStorage.exists(dsInfo)) {
-							logger.debug("Queueing restore of " + dsInfo + " for preparedId: "
-									+ preparedId);
-							fsm.queue(dsInfo, DeferredOp.RESTORE);
-						}
-					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					for (DfInfo dfInfo : dfInfos) {
-						if (fsm.getDfRestoring().contains(dfInfo)) {
-							logger.debug("Restore of " + dfInfo + " is requested or in progress");
-						} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-							logger.debug("Queueing restore of " + dfInfo + " for preparedId: "
-									+ preparedId);
-							fsm.queue(dfInfo, DeferredOp.RESTORE);
-						}
-					}
+		try {
+			if (storageUnit == StorageUnit.DATASET) {
+				for (DsInfo dsInfo : dsInfos.values()) {
+					restoreIfOffline(dsInfo, emptyDs);
 				}
-			} catch (IOException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				for (DfInfoImpl dfInfo : dfInfos) {
+					restoreIfOffline(dfInfo);
+				}
 			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
 		if (dataSelection.mustZip()) {
@@ -1217,33 +1195,42 @@ public class IdsBean {
 			}
 
 			DsInfo dsInfo = new DsInfoImpl(ds);
-			try {
-
-				if (twoLevel && storageUnit == StorageUnit.DATASET) {
-					if (!mainStorage.exists(dsInfo)) {
-						try {
-							List<Object> counts = icat.search(sessionId,
-									"COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
-							if ((Long) counts.get(0) != 0) {
-								fsm.queue(dsInfo, DeferredOp.RESTORE);
-								throw new DataNotOnlineException(
-										"Before putting a datafile, its dataset has to be restored, restoration requested automatically");
-							}
-						} catch (IcatException_Exception e) {
-							IcatExceptionType type = e.getFaultInfo().getType();
-							if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-									|| type == IcatExceptionType.SESSION) {
-								throw new InsufficientPrivilegesException(e.getMessage());
-							}
-							if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-								throw new NotFoundException(e.getMessage());
-							}
-							throw new InternalException(type + " " + e.getMessage());
-						}
-
+			String lockId = null;
+			if (storageUnit == StorageUnit.DATASET) {
+				/*
+				 * Lock the datasets to prevent archiving of the datasets. It is important that they
+				 * be unlocked again.
+				 */
+				Set<Long> dsIds = new HashSet<>();
+				dsIds.add(datasetId);
+				lockId = fsm.lock(dsIds, FiniteStateMachine.SetLockType.ARCHIVE);
+				Set<DfInfoImpl> dfInfos = Collections.emptySet();
+				Set<Long> emptyDatasets = new HashSet<>();
+				try {
+					List<Object> counts = icat.search(sessionId, "COUNT(Datafile) <-> Dataset [id="
+							+ dsInfo.getDsId() + "]");
+					if ((Long) counts.get(0) == 0) {
+						emptyDatasets.add(dsInfo.getDsId());
 					}
+				} catch (IcatException_Exception e) {
+					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);
+					IcatExceptionType type = e.getFaultInfo().getType();
+					if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
+							|| type == IcatExceptionType.SESSION) {
+						throw new InsufficientPrivilegesException(e.getMessage());
+					}
+					if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+						throw new NotFoundException(e.getMessage());
+					}
+					throw new InternalException(type + " " + e.getMessage());
 				}
+				Set<DsInfo> dsInfos = new HashSet<>();
+				dsInfos.add(dsInfo);
+				checkOnlineAndFreeLockOnFailure(dsInfos, emptyDatasets, dfInfos, lockId,
+						FiniteStateMachine.SetLockType.ARCHIVE);
+			}
 
+			try {
 				CRC32 crc = new CRC32();
 				CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
 				String location = mainStorage.put(dsInfo, name, is);
@@ -1269,22 +1256,20 @@ public class IdsBean {
 					throw e;
 				}
 
-				if (twoLevel) {
-					if (storageUnit == StorageUnit.DATASET) {
-						fsm.queue(dsInfo, DeferredOp.WRITE);
-					} else if (storageUnit == StorageUnit.DATAFILE) {
-						Datafile df;
-						try {
-							df = (Datafile) reader.get("Datafile", dfId);
-						} catch (IcatException_Exception e) {
-							throw new InternalException(e.getFaultInfo().getType() + " "
-									+ e.getMessage());
-						}
-						fsm.queue(
-								new DfInfoImpl(dfId, name, location, df.getCreateId(), df
-										.getModId(), dsInfo.getDsId()), DeferredOp.WRITE);
+				if (storageUnit == StorageUnit.DATASET) {
+					fsm.queue(dsInfo, DeferredOp.WRITE);
+				} else if (storageUnit == StorageUnit.DATAFILE) {
+					Datafile df;
+					try {
+						df = (Datafile) reader.get("Datafile", dfId);
+					} catch (IcatException_Exception e) {
+						throw new InternalException(e.getFaultInfo().getType() + " "
+								+ e.getMessage());
 					}
+					fsm.queue(new DfInfoImpl(dfId, name, location, df.getCreateId(), df.getModId(),
+							dsInfo.getDsId()), DeferredOp.WRITE);
 				}
+
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				Json.createGenerator(baos).writeStartObject().write("id", dfId)
 						.write("checksum", checksum)
@@ -1300,6 +1285,10 @@ public class IdsBean {
 
 			} catch (IOException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
+			} finally {
+				if (lockId != null) {
+					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);
+				}
 			}
 		} catch (IdsException e) {
 
@@ -1413,7 +1402,7 @@ public class IdsBean {
 					try {
 						df = (Datafile) reader.get("Datafile ds INCLUDE ds.dataset", dfid);
 						String location = getLocation(df);
-						DfInfo dfInfo = new DfInfoImpl(dfid, df.getName(), location,
+						DfInfoImpl dfInfo = new DfInfoImpl(dfid, df.getName(), location,
 								df.getCreateId(), df.getModId(), df.getDataset().getId());
 						fsm.queue(dfInfo, DeferredOp.WRITE);
 						logger.info("Queued datafile with id " + dfid + " " + dfInfo
@@ -1445,35 +1434,20 @@ public class IdsBean {
 		validateUUID("sessionId", sessionId);
 
 		// Do it
-
-		if (twoLevel) {
-			if (storageUnit == StorageUnit.DATASET) {
-				DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
-						datasetIds, datafileIds, Returns.DATASETS);
-				Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-				for (DsInfo dsInfo : dsInfos.values()) {
-					if (!fsm.getDsRestoring().contains(dsInfo)) {
-						logger.debug("Restore of " + dsInfo + " requested");
-						fsm.queue(dsInfo, DeferredOp.RESTORE);
-					}
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				try {
-					DataSelection dataSelection = new DataSelection(icat, sessionId,
-							investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-					Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-					for (DfInfo dfInfo : dfInfos) {
-						if (!mainStorage.exists(dfInfo.getDfLocation())
-								&& !fsm.getDfRestoring().contains(dfInfo)) {
-							logger.debug("Restore of " + dfInfo + " requested");
-							fsm.queue(dfInfo, DeferredOp.RESTORE);
-						}
-					}
-				} catch (IOException e) {
-					throw new InternalException(e.getClass() + " " + e.getMessage());
-				}
+		if (storageUnit == StorageUnit.DATASET) {
+			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
+					datasetIds, datafileIds, Returns.DATASETS);
+			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+			for (DsInfo dsInfo : dsInfos.values()) {
+				fsm.queue(dsInfo, DeferredOp.RESTORE);
+			}
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds,
+					datasetIds, datafileIds, Returns.DATAFILES);
+			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+			for (DfInfoImpl dfInfo : dfInfos) {
+				fsm.queue(dfInfo, DeferredOp.RESTORE);
 			}
 		}
 	}
-
 }

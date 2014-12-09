@@ -83,9 +83,9 @@ public class DataSelection {
 	private void resolveDatasetIds() throws NotFoundException, InsufficientPrivilegesException,
 			InternalException, BadRequestException {
 		dsInfos = new HashMap<>();
+		emptyDatasets = new HashSet<>();
 		if (dfWanted) {
 			dfInfos = new HashSet<>();
-			emptyDatasets = new HashSet<>();
 		}
 
 		try {
@@ -109,23 +109,17 @@ public class DataSelection {
 				}
 			}
 			for (Long dsid : dsids) {
-				Dataset ds;
-				boolean empty = true;
+				Dataset ds = (Dataset) icat.get(sessionId,
+						"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 				if (dfWanted) {
-					ds = (Dataset) icat.get(sessionId,
-							"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 					for (Datafile df : ds.getDatafiles()) {
 						String location = IdsBean.getLocation(df);
 						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df
 								.getCreateId(), df.getModId(), dsid));
-						empty = false;
 					}
-				} else {
-					ds = (Dataset) icat.get(sessionId,
-							"Dataset ds INCLUDE ds.investigation.facility", dsid);
 				}
 				dsInfos.put(dsid, new DsInfoImpl(ds));
-				if (dfWanted && empty) {
+				if (ds.getDatafiles().isEmpty()) {
 					emptyDatasets.add(dsid);
 				}
 			}
@@ -156,7 +150,7 @@ public class DataSelection {
 							}
 						}
 						dsInfos.put(dsid, new DsInfoImpl(ds));
-						if (dfWanted && empty) {
+						if (empty) {
 							emptyDatasets.add(dsid);
 						}
 					}

@@ -1,4 +1,4 @@
-package org.icatproject.ids.integration.one;
+package org.icatproject.ids.integration.twodf;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
@@ -9,7 +9,7 @@ public class RaceTest extends BaseTest {
 
 	@BeforeClass
 	public static void setup() throws Exception {
-		setup = new Setup("two.properties");
+		setup = new Setup("twodf.properties");
 		icatsetup();
 	}
 
