@@ -54,13 +54,12 @@ public class DsWriter implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Path datasetCachePath = Files.createTempFile(datasetCache, null, null);
-
 			if (!mainStorageInterface.exists(dsInfo)) {
 				logger.info("No files present for " + dsInfo + " - archive deleted");
 				mainStorageInterface.delete(dsInfo);
 				archiveStorageInterface.delete(dsInfo);
 			} else {
+				Path datasetCachePath = Files.createTempFile(datasetCache, null, null);
 				logger.debug("Creating " + datasetCachePath);
 				List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile",
 						dsInfo.getDsId())).getDatafiles();
