@@ -106,7 +106,8 @@
                     </dd>
 
                     <dt>rootUserNames</dt>
-                    <dd>A space separated list of users allowed to make the getServiceStatus call.</dd>
+                    <dd>A space separated list of users allowed to make the getServiceStatus call. The user name must include the mechanism if the
+                        authenticators have been configured that way.</dd>
 
                     <dt>sizeCheckIntervalSeconds</dt>
                     <dd>How frequently to check the cache sizes and clean up if necessary.</dd>
@@ -125,7 +126,7 @@
                         Space separated icat plugin name and credentials for a user permitted to read all datasets, datafiles, investigations and
                         facilities.
                         For example:
-                        <code>db username db/root password password.</code>
+                        <code>db username root password secret.</code>
                     </dd>
 
                     <dt>key</dt>
@@ -163,6 +164,12 @@
 
                     <dt>stopArchivingLevel1024bytes</dt>
                     <dd>See startArchivingLevel1024bytes.
+                    </dd>
+
+                    <dt>storageUnit</dt>
+                    <dd>May be dataset or datafile and is not case sensitive. A value of "dataset" means that a whole dataset of files are zipped
+                        up to
+                        be stored as a single file whereas "datafile" causes datafiles to be stored individually.
                     </dd>
 
                     <dt>tidyBlockSize</dt>
