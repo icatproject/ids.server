@@ -8,7 +8,12 @@
     <body>
 
         <section name="1.3.1">
-            <p>Minor corections to the documentation.</p>
+            <p>Bug fix release to fix file handle leak.</p>
+            <ul>
+                <li>Minor corections to the documentation.</li>
+                <li>Ensure that files are closed when returned indivdually.</li>
+                <li>Remove redundant (and possibly dangerous) line of code from DsWriter.</li>
+            </ul>
         </section>
 
         <section name="1.3.0">

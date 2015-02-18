@@ -626,6 +626,7 @@ public class IdsBean {
 							output.write(bytes, 0, length);
 						}
 						output.close();
+						stream.close();
 					}
 				} finally {
 					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);

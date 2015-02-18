@@ -55,8 +55,8 @@ public class DsWriter implements Runnable {
 	public void run() {
 		try {
 			if (!mainStorageInterface.exists(dsInfo)) {
-				logger.info("No files present for " + dsInfo + " - archive deleted");
-				mainStorageInterface.delete(dsInfo);
+				logger.info("No files present in main storage for " + dsInfo
+						+ " - will delete archive");
 				archiveStorageInterface.delete(dsInfo);
 			} else {
 				Path datasetCachePath = Files.createTempFile(datasetCache, null, null);
