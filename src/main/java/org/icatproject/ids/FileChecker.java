@@ -184,12 +184,10 @@ public class FileChecker {
 			logger.info(msg);
 			DateFormat dft = DateFormat.getDateTimeInstance();
 			try {
-				Files.write(filesCheckErrorLog,
-						(dft.format(new Date()) + ": " + msg + ls).getBytes(),
+				Files.write(filesCheckErrorLog, (dft.format(new Date()) + ": " + msg + ls).getBytes(),
 						StandardOpenOption.APPEND, StandardOpenOption.CREATE);
 			} catch (IOException e) {
-				logger.error("Unable to write FileChecker log file " + e.getClass() + " "
-						+ e.getMessage());
+				logger.error("Unable to write FileChecker log file " + e.getClass() + " " + e.getMessage());
 			}
 		}
 
@@ -202,12 +200,10 @@ public class FileChecker {
 			logger.info(msg);
 			DateFormat dft = DateFormat.getDateTimeInstance();
 			try {
-				Files.write(filesCheckErrorLog,
-						(dft.format(new Date()) + ": " + msg + ls).getBytes(),
+				Files.write(filesCheckErrorLog, (dft.format(new Date()) + ": " + msg + ls).getBytes(),
 						StandardOpenOption.APPEND, StandardOpenOption.CREATE);
 			} catch (IOException e) {
-				logger.error("Unable to write FileChecker log file " + e.getClass() + " "
-						+ e.getMessage());
+				logger.error("Unable to write FileChecker log file " + e.getClass() + " " + e.getMessage());
 			}
 		}
 	}
@@ -221,8 +217,7 @@ public class FileChecker {
 				String query;
 				if (twoLevel) {
 					if (maxId != null) {
-						query = "SELECT ds FROM Dataset ds WHERE ds.id > "
-								+ maxId
+						query = "SELECT ds FROM Dataset ds WHERE ds.id > " + maxId
 								+ " ORDER BY ds.id INCLUDE ds.datafiles, ds.investigation.facility LIMIT 0, "
 								+ filesCheckParallelCount;
 					} else {
@@ -231,11 +226,10 @@ public class FileChecker {
 					}
 				} else {
 					if (maxId != null) {
-						query = "SELECT df FROM Datafile df WHERE df.id > " + maxId
-								+ " ORDER BY df.id LIMIT 0, " + filesCheckParallelCount;
-					} else {
-						query = "SELECT df FROM Datafile df ORDER BY df.id LIMIT 0, "
+						query = "SELECT df FROM Datafile df WHERE df.id > " + maxId + " ORDER BY df.id LIMIT 0, "
 								+ filesCheckParallelCount;
+					} else {
+						query = "SELECT df FROM Datafile df ORDER BY df.id LIMIT 0, " + filesCheckParallelCount;
 					}
 				}
 				List<Object> os = reader.search(query);
@@ -270,8 +264,7 @@ public class FileChecker {
 						Files.deleteIfExists(filesCheckLastIdFile);
 					}
 				} catch (IOException e) {
-					logger.error("Unable to write FileChecker last id file " + e.getClass() + " "
-							+ e.getMessage());
+					logger.error("Unable to write FileChecker last id file " + e.getClass() + " " + e.getMessage());
 				}
 
 			} catch (IcatException_Exception e) {
@@ -323,10 +316,9 @@ public class FileChecker {
 				maxId = null;
 				if (Files.exists(filesCheckLastIdFile)) {
 					try {
-						maxId = Long.parseLong(Files.readAllLines(filesCheckLastIdFile,
-								StandardCharsets.UTF_8).get(0));
-					} catch (NumberFormatException | IOException e) {
-						throw new RuntimeException(e.getClass() + " " + e.getMessage());
+						maxId = Long.parseLong(Files.readAllLines(filesCheckLastIdFile, StandardCharsets.UTF_8).get(0));
+					} catch (Exception e) {
+						logger.error("Unable to read FileChecker last id file " + e.getClass() + " " + e.getMessage());
 					}
 				}
 
