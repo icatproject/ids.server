@@ -1,6 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<groupId>org.icatproject</groupId>
 	<artifactId>ids.server</artifactId>
 	<packaging>war</packaging>
@@ -12,7 +13,38 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<repoUrl>http://www.icatproject.org/mvn/repo</repoUrl>
 		<storage.plugin>ids.storage_file-1.3.3-SNAPSHOT.jar</storage.plugin>
+		<project.scm.id>github</project.scm.id>
 	</properties>
+
+	<repositories>
+		<repository>
+			<id>ICAT Repo</id>
+			<url>http://www.icatproject.org/mvn/repo</url>
+		</repository>
+	</repositories>
+
+	<scm>
+		<connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
+		<developerConnection>scm:git:https://github.com/icatproject/ids.server.git</developerConnection>
+		<url>https://github.com/icatproject/ids.server</url>
+	</scm>
+
+	<issueManagement>
+		<url>https://github.com/icatproject/ids.server/issues</url>
+		<system>GitHub</system>
+	</issueManagement>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+	</licenses>
+
+	<organization>
+		<name>The ICAT Collaboration</name>
+		<url>http://www.icatproject.org</url>
+	</organization>
 
 	<distributionManagement>
 		<downloadUrl>http://www.icatproject.org/mvn/repo</downloadUrl>
@@ -27,56 +59,13 @@
 	</distributionManagement>
 
 	<description>ICAT Data Service to provide a uniform interface to data.</description>
-	<issueManagement>
-		<url>http://code.google.com/p/icat-data-service/issues/list</url>
-		<system>Google Code</system>
-	</issueManagement>
-
-	<scm>
-		<connection>scm:svn:http://icat-data-service.googlecode.com/svn/ids/trunk</connection>
-		<developerConnection>scm:svn:https://icat-data-service.googlecode.com/svn/ids/trunk</developerConnection>
-		<url>http://code.google.com/p/icat-data-service/source/browse/#svn%2Fids%2Ftrunk</url>
-	</scm>
-
-	<licenses>
-		<license>
-			<name>Apache License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
-		</license>
-	</licenses>
-
-	<organization>
-		<name>The ICAT Collaboration</name>
-		<url>http://www.icatproject.org</url>
-	</organization>
-
-	<repositories>
-		<repository>
-			<id>java.net2</id>
-			<name>Repository hosting the jee6 artifacts</name>
-			<url>http://download.java.net/maven/2</url>
-		</repository>
-		<repository>
-			<url>http://download.eclipse.org/rt/eclipselink/maven.repo</url>
-			<id>eclipselink</id>
-			<layout>default</layout>
-			<name>Repository for library Library[eclipselink]</name>
-		</repository>
-		<repository>
-			<id>ICAT Repo</id>
-			<url>http://www.icatproject.org/mvn/repo</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
 
 	<dependencies>
 
 		<dependency>
 			<groupId>org.icatproject</groupId>
 			<artifactId>icat.client</artifactId>
-			<version>4.3.3</version>
+			<version>4.5.0</version>
 		</dependency>
 
 		<dependency>
@@ -148,6 +137,7 @@
 		</dependency>
 
 	</dependencies>
+
 	<build>
 
 		<resources>
@@ -168,7 +158,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
+				<version>3.3</version>
 				<configuration>
 					<source>1.7</source>
 					<target>1.7</target>
@@ -178,7 +168,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.16</version>
+				<version>2.18.1</version>
 				<configuration>
 					<excludes>
 						<exclude>
@@ -192,7 +182,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.4</version>
+				<version>2.6</version>
 				<executions>
 					<execution>
 						<goals>
@@ -205,13 +195,13 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
-				<version>2.0.2</version>
+				<version>2.6</version>
 			</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.4</version>
+				<version>2.5.5</version>
 				<configuration>
 					<descriptors>
 						<descriptor>${project.basedir}/assemble/distribution.xml</descriptor>
@@ -230,7 +220,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.2.1</version>
+				<version>1.4.0</version>
 				<executions>
 					<execution>
 						<id>Undeploy from glassfish</id>
@@ -275,7 +265,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
-				<version>3.1</version>
+				<version>3.4</version>
 				<dependencies>
 					<dependency><!-- add support for ssh/scp -->
 						<groupId>org.apache.maven.wagon</groupId>
@@ -288,7 +278,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-deploy-plugin</artifactId>
-				<version>2.7</version>
+				<version>2.8.2</version>
 				<dependencies>
 					<dependency><!-- add support for ssh/scp -->
 						<groupId>org.apache.maven.wagon</groupId>
@@ -301,7 +291,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.16</version>
+				<version>2.18.1</version>
 				<configuration>
 					<includes>
 						<include>**/integration/**/*Test.java</include>
@@ -326,14 +316,13 @@
 
 	</build>
 
-
 	<reporting>
 		<plugins>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>2.7</version>
+				<version>2.8</version>
 				<configuration>
 					<dependencyLocationsEnabled>false</dependencyLocationsEnabled>
 				</configuration>
