@@ -1371,4 +1371,8 @@ public class IdsBean {
 			}
 		}
 	}
+
+	public String getIcatUrl() {
+		return propertyHandler.getIcatUrl();
+	}
 }

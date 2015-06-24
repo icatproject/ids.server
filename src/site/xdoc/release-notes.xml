@@ -8,15 +8,15 @@
 
 	<body>
 
-		<section name="1.3.2">
-			<p>Bug fix release and work with icat 4.5</p>
+		<section name="1.4.0">
+			<p>New getIcatUrl and now uses icat 4.5 client.</p>
 			<ul>
 				<li>Bug fix release to fix handling of corrupt filesCheck.lastIdFile
 					file.
 				</li>
 				<li>Work with icat 4.5</li>
+				<li>Added getIcatUrl call.</li>
 			</ul>
-
 		</section>
 
 		<section name="1.3.1">

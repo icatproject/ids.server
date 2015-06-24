@@ -5,7 +5,7 @@ import org.icatproject.ids.integration.util.Setup;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class RaceTest extends BaseTest {
+public class BaseTests extends BaseTest {
 
 	@BeforeClass
 	public static void setup() throws Exception {
@@ -16,6 +16,16 @@ public class RaceTest extends BaseTest {
 	@Test
 	public void raceTest() throws Exception {
 		super.raceTest();
+	}
+
+	@Test
+	public void getIcatUrlTest() throws Exception {
+		super.getIcatUrlTest();
+	}
+
+	@Test
+	public void apiVersionTest() throws Exception {
+		super.apiVersionTest();
 	}
 
 }

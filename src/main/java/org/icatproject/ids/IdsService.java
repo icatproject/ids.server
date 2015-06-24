@@ -53,10 +53,9 @@ public class IdsService {
 	@Path("getLink")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getLink(@FormParam("sessionId") String sessionId,
-			@FormParam("datafileId") long datafileId, @FormParam("username") String username)
-			throws BadRequestException, InsufficientPrivilegesException, NotImplementedException,
-			InternalException, NotFoundException, DataNotOnlineException {
+	public String getLink(@FormParam("sessionId") String sessionId, @FormParam("datafileId") long datafileId,
+			@FormParam("username") String username) throws BadRequestException, InsufficientPrivilegesException,
+			NotImplementedException, InternalException, NotFoundException, DataNotOnlineException {
 		return idsBean.getLink(sessionId, datafileId, username);
 	}
 
@@ -64,21 +63,18 @@ public class IdsService {
 	@Path("archive")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public void archive(@FormParam("sessionId") String sessionId,
-			@FormParam("investigationIds") String investigationIds,
-			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
-			throws BadRequestException, InsufficientPrivilegesException, NotImplementedException,
-			InternalException, NotFoundException {
+			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+			@FormParam("datafileIds") String datafileIds) throws BadRequestException, InsufficientPrivilegesException,
+			NotImplementedException, InternalException, NotFoundException {
 		idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds);
 	}
 
 	@DELETE
 	@Path("delete")
 	public void delete(@QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds,
-			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafileIds) throws NotImplementedException,
-			BadRequestException, InsufficientPrivilegesException, NotFoundException,
-			InternalException, DataNotOnlineException {
+			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+			@QueryParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
+			InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
 		idsBean.delete(sessionId, investigationIds, datasetIds, datafileIds);
 	}
 
@@ -104,28 +100,31 @@ public class IdsService {
 	}
 
 	@GET
+	@Path("getIcatUrl")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getIcatUrl() {
+		return idsBean.getIcatUrl();
+	}
+
+	@GET
 	@Path("getSize")
 	@Produces(MediaType.TEXT_PLAIN)
 	public long getSize(@QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds,
-			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException,
-			NotFoundException, InsufficientPrivilegesException, InternalException {
+			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException, NotFoundException,
+			InsufficientPrivilegesException, InternalException {
 		return idsBean.getSize(sessionId, investigationIds, datasetIds, datafilesIds);
 	}
 
 	@GET
 	@Path("getData")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public Response getData(@QueryParam("preparedId") String preparedId,
-			@QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds,
-			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafileIds,
-			@QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
-			@QueryParam("outname") String outname, @HeaderParam("Range") String range)
-			throws BadRequestException, NotFoundException, InternalException,
-			InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
+	public Response getData(@QueryParam("preparedId") String preparedId, @QueryParam("sessionId") String sessionId,
+			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+			@QueryParam("datafileIds") String datafileIds, @QueryParam("compress") boolean compress,
+			@QueryParam("zip") boolean zip, @QueryParam("outname") String outname, @HeaderParam("Range") String range)
+			throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException {
 		Response response = null;
 
 		long offset = 0;
@@ -142,8 +141,8 @@ public class IdsService {
 		if (preparedId != null) {
 			response = idsBean.getData(preparedId, outname, offset);
 		} else {
-			response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds,
-					compress, zip, outname, offset);
+			response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname,
+					offset);
 		}
 		return response;
 	}
@@ -152,26 +151,25 @@ public class IdsService {
 	@Path("getStatus")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getStatus(@QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds,
-			@QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException,
-			NotFoundException, InsufficientPrivilegesException, InternalException {
+			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+			@QueryParam("datafileIds") String datafilesIds) throws BadRequestException, NotFoundException,
+			InsufficientPrivilegesException, InternalException {
 		return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafilesIds);
 	}
 
 	@GET
 	@Path("isPrepared")
 	@Produces(MediaType.TEXT_PLAIN)
-	public boolean isPrepared(@QueryParam("preparedId") String preparedId)
-			throws BadRequestException, NotFoundException, InternalException {
+	public boolean isPrepared(@QueryParam("preparedId") String preparedId) throws BadRequestException,
+			NotFoundException, InternalException {
 		return idsBean.isPrepared(preparedId);
 	}
 
 	@GET
 	@Path("getServiceStatus")
 	@Produces(MediaType.APPLICATION_JSON)
-	public String getServiceStatus(@QueryParam("sessionId") String sessionId)
-			throws InternalException, InsufficientPrivilegesException {
+	public String getServiceStatus(@QueryParam("sessionId") String sessionId) throws InternalException,
+			InsufficientPrivilegesException {
 		return idsBean.getServiceStatus(sessionId);
 	}
 
@@ -200,36 +198,31 @@ public class IdsService {
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.TEXT_PLAIN)
 	public String prepareData(@FormParam("sessionId") String sessionId,
-			@FormParam("investigationIds") String investigationIds,
-			@FormParam("datasetIds") String datasetIds,
+			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
 			@FormParam("zip") boolean zip) throws NotImplementedException, BadRequestException,
 			InsufficientPrivilegesException, NotFoundException, InternalException {
-		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress,
-				zip);
+		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip);
 	}
 
 	@PUT
 	@Path("put")
 	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
-	public Response put(InputStream body, @QueryParam("sessionId") String sessionId,
-			@QueryParam("name") String name, @QueryParam("datafileFormatId") long datafileFormatId,
-			@QueryParam("datasetId") long datasetId, @QueryParam("description") String description,
-			@QueryParam("doi") String doi,
+	public Response put(InputStream body, @QueryParam("sessionId") String sessionId, @QueryParam("name") String name,
+			@QueryParam("datafileFormatId") long datafileFormatId, @QueryParam("datasetId") long datasetId,
+			@QueryParam("description") String description, @QueryParam("doi") String doi,
 			@QueryParam("datafileCreateTime") Long datafileCreateTime,
-			@QueryParam("datafileModTime") Long datafileModTime) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException,
-			NotImplementedException, DataNotOnlineException {
-		return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description, doi,
-				datafileCreateTime, datafileModTime, false, false);
+			@QueryParam("datafileModTime") Long datafileModTime) throws BadRequestException, NotFoundException,
+			InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
+		return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description, doi, datafileCreateTime,
+				datafileModTime, false, false);
 	}
 
 	@POST
 	@Path("put")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException,
-			NotImplementedException, DataNotOnlineException {
+	public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
+			InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
 		if (!ServletFileUpload.isMultipartContent(request)) {
 			throw new BadRequestException("Multipart content expected");
 		}
@@ -276,15 +269,14 @@ public class IdsService {
 					} else if (fieldName.equals("padding")) {
 						padding = (value != null && value.toUpperCase().equals("TRUE"));
 					} else {
-						throw new BadRequestException("Form field " + fieldName
-								+ "is not recognised");
+						throw new BadRequestException("Form field " + fieldName + "is not recognised");
 					}
 				} else {
 					if (name == null) {
 						name = item.getName();
 					}
-					result = idsBean.put(stream, sessionId, name, datafileFormatId, datasetId,
-							description, doi, datafileCreateTime, datafileModTime, wrap, padding);
+					result = idsBean.put(stream, sessionId, name, datafileFormatId, datasetId, description, doi,
+							datafileCreateTime, datafileModTime, wrap, padding);
 				}
 			}
 			return result;
@@ -297,10 +289,9 @@ public class IdsService {
 	@Path("restore")
 	@Consumes("application/x-www-form-urlencoded")
 	public void restore(@FormParam("sessionId") String sessionId,
-			@FormParam("investigationIds") String investigationIds,
-			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException,
-			InternalException, NotFoundException {
+			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+			@FormParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
+			InsufficientPrivilegesException, InternalException, NotFoundException {
 		idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds);
 	}
 

@@ -24,11 +24,6 @@ public class MiscTest extends BaseTest {
 	}
 
 	@Test
-	public void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.3."));
-	}
-
-	@Test
 	public void isReadOnlyTest() throws Exception {
 		assertFalse(testingClient.isReadOnly(200));
 	}
