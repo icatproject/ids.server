@@ -81,8 +81,7 @@ public class BaseTest {
 
 	protected Path getFileOnArchiveStorage(Long dsId) throws IcatException_Exception {
 		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation", dsId);
-		return setup.getStorageArchiveDir()
-				.resolve(Long.toString(icatDs.getInvestigation().getId()))
+		return setup.getStorageArchiveDir().resolve(Long.toString(icatDs.getInvestigation().getId()))
 				.resolve(Long.toString(icatDs.getId()));
 	}
 
@@ -90,8 +89,8 @@ public class BaseTest {
 	protected static Setup setup = null;
 
 	public static void icatsetup() throws Exception {
-		ICATService icatService = new ICATService(setup.getIcatUrl(), new QName(
-				"http://icatproject.org", "ICATService"));
+		ICATService icatService = new ICATService(setup.getIcatUrl(),
+				new QName("http://icatproject.org", "ICATService"));
 		icat = icatService.getICATPort();
 	}
 
@@ -196,8 +195,8 @@ public class BaseTest {
 		}
 	}
 
-	private void populateStorage(boolean twoLevel, String storageUnit, String key)
-			throws IOException, IcatException_Exception, NoSuchAlgorithmException {
+	private void populateStorage(boolean twoLevel, String storageUnit, String key) throws IOException,
+			IcatException_Exception, NoSuchAlgorithmException {
 		clearStorage();
 		long timestamp = System.currentTimeMillis();
 
@@ -269,7 +268,8 @@ public class BaseTest {
 			df2.setDataset(ds1);
 			writeToFile(df2, "df2 test content very compressible very compressible", key);
 
-			// System.out.println("ds " + ds1.getId() + " holds dfs " + df1.getId() + " and "
+			// System.out.println("ds " + ds1.getId() + " holds dfs " +
+			// df1.getId() + " and "
 			// + df2.getId());
 
 			Datafile df3 = new Datafile();
@@ -284,7 +284,8 @@ public class BaseTest {
 			df4.setDataset(ds2);
 			writeToFile(df4, "df4 test content very compressible very compressible", key);
 
-			// System.out.println("ds " + ds2.getId() + " holds dfs " + df3.getId() + " and "
+			// System.out.println("ds " + ds2.getId() + " holds dfs " +
+			// df3.getId() + " and "
 			// + df4.getId());
 
 			datasetIds.add(ds1.getId());
@@ -320,8 +321,7 @@ public class BaseTest {
 	protected Map<String, Long> ids = new HashMap<>();
 	protected Map<String, String> paths = new HashMap<>();
 
-	protected void checkZipStream(InputStream stream, List<Long> datafileIds, long compressedSize)
-			throws IOException {
+	protected void checkZipStream(InputStream stream, List<Long> datafileIds, long compressedSize) throws IOException {
 		ZipInputStream zis = new ZipInputStream(stream);
 		ZipEntry ze = zis.getNextEntry();
 		Set<Long> idsNeeded = new HashSet<>(datafileIds);
@@ -359,8 +359,8 @@ public class BaseTest {
 		assertTrue(found);
 	}
 
-	private void writeToFile(Datafile df, String content, String key) throws IOException,
-			IcatException_Exception, NoSuchAlgorithmException {
+	private void writeToFile(Datafile df, String content, String key) throws IOException, IcatException_Exception,
+			NoSuchAlgorithmException {
 		Path path = setup.getStorageDir().resolve(df.getLocation());
 		Files.createDirectories(path.getParent());
 		byte[] bytes = content.getBytes();
@@ -386,14 +386,12 @@ public class BaseTest {
 		Dataset ds = df.getDataset();
 		Investigation inv = ds.getInvestigation();
 		Facility fac = inv.getFacility();
-		paths.put(
-				"ids/" + fac.getName() + "/" + inv.getName() + "/"
-						+ URLEncoder.encode(inv.getVisitId(), "UTF-8") + "/" + ds.getName() + "/"
-						+ df.getName(), df.getLocation());
+		paths.put("ids/" + fac.getName() + "/" + inv.getName() + "/" + URLEncoder.encode(inv.getVisitId(), "UTF-8")
+				+ "/" + ds.getName() + "/" + df.getName(), df.getLocation());
 	}
 
-	private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'A', 'B', 'C', 'D', 'E', 'F' };
+	private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
+			'E', 'F' };
 
 	private String digest(Long id, String location, String key) throws NoSuchAlgorithmException {
 		byte[] pattern = (id + location + key).getBytes();
@@ -410,8 +408,8 @@ public class BaseTest {
 		return new String(hexChars);
 	}
 
-	private void moveDatasetToArchive(String storageUnit, Dataset ds, String dsLoc, Facility fac,
-			Investigation inv, String key) throws IOException, IcatException_Exception {
+	private void moveDatasetToArchive(String storageUnit, Dataset ds, String dsLoc, Facility fac, Investigation inv,
+			String key) throws IOException, IcatException_Exception {
 		ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", ds.getId());
 		Path top = setup.getStorageDir();
 
@@ -432,8 +430,7 @@ public class BaseTest {
 				InputStream fis = Files.newInputStream(file);
 
 				zos.putNextEntry(new ZipEntry("ids/" + fac.getName() + "/" + inv.getName() + "/"
-						+ URLEncoder.encode(inv.getVisitId(), "UTF-8") + "/" + ds.getName() + "/"
-						+ df.getName()));
+						+ URLEncoder.encode(inv.getVisitId(), "UTF-8") + "/" + ds.getName() + "/" + df.getName()));
 				byte[] bytes = new byte[1024];
 				int length;
 				while ((length = fis.read(bytes)) >= 0) {
@@ -481,6 +478,14 @@ public class BaseTest {
 	static String getLocationFromDigest(Long id, String locationWithHash, String key) {
 		int i = locationWithHash.lastIndexOf(' ');
 		return locationWithHash.substring(0, i);
+	}
+
+	protected void getIcatUrlTest() throws Exception {
+		System.out.println(testingClient.getIcatUrl(200));
+	}
+
+	protected void apiVersionTest() throws Exception {
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.4."));
 	}
 
 	protected void raceTest() throws Exception {

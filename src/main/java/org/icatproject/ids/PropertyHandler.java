@@ -71,6 +71,7 @@ public class PropertyHandler {
 	private int tidyBlockSize;
 	private String key;
 	private int maxIdsInQuery;
+	private String icatUrl;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -82,37 +83,35 @@ public class PropertyHandler {
 			logger.info("Property file ids.properties loaded");
 
 			// do some very basic error checking on the config options
-			String icatUrl = props.getProperty("icat.url");
-			if (!icatUrl.endsWith("ICATService/ICAT?wsdl")) {
-				if (icatUrl.charAt(icatUrl.length() - 1) == '/') {
-					icatUrl = icatUrl + "ICATService/ICAT?wsdl";
+			String icatUrlWsdl = props.getProperty("icat.url");
+			if (!icatUrlWsdl.endsWith("ICATService/ICAT?wsdl")) {
+				if (icatUrlWsdl.charAt(icatUrlWsdl.length() - 1) == '/') {
+					icatUrlWsdl = icatUrlWsdl + "ICATService/ICAT?wsdl";
 				} else {
-					icatUrl = icatUrl + "/ICATService/ICAT?wsdl";
+					icatUrlWsdl = icatUrlWsdl + "/ICATService/ICAT?wsdl";
 				}
 			}
 
 			try {
-				URL url = new URL(icatUrl);
-				icatService = new ICATService(url, new QName("http://icatproject.org",
-						"ICATService")).getICATPort();
+				URL url = new URL(icatUrlWsdl);
+				icatService = new ICATService(url, new QName("http://icatproject.org", "ICATService")).getICATPort();
+				icatUrl = icatUrlWsdl.substring(0, icatUrlWsdl.length() - 22);
 			} catch (MalformedURLException e) {
-				String msg = "Invalid property icat.url (" + icatUrl + "). Check URL format";
+				String msg = "Invalid property icat.url (" + icatUrlWsdl + "). Check URL format";
 				logger.error(msg);
 				throw new IllegalStateException(msg);
 			}
 			try {
 				icatService.getApiVersion();// make a test call
 			} catch (IcatException_Exception e) {
-				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " "
-						+ e.getMessage();
+				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " " + e.getMessage();
 				logger.error(msg);
 				throw new IllegalStateException(msg);
 			}
 
 			preparedCount = props.getPositiveInt("preparedCount");
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
-			rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim()
-					.split("\\s+")));
+			rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim().split("\\s+")));
 
 			reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
 			if (reader.size() % 2 != 1) {
@@ -135,10 +134,9 @@ public class PropertyHandler {
 			}
 
 			try {
-				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
-						.forName(props.getString("plugin.main.class"));
-				mainStorage = klass.getConstructor(File.class).newInstance(
-						props.getFile("plugin.main.properties"));
+				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class.forName(props
+						.getString("plugin.main.class"));
+				mainStorage = klass.getConstructor(File.class).newInstance(props.getFile("plugin.main.properties"));
 				logger.debug("mainStorage initialised");
 			} catch (InvocationTargetException e) {
 				Throwable cause = e.getCause();
@@ -153,8 +151,8 @@ public class PropertyHandler {
 				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
 
 				try {
-					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
-							.forName(props.getString("plugin.archive.class"));
+					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class.forName(props
+							.getString("plugin.archive.class"));
 					archiveStorage = klass.getConstructor(File.class).newInstance(
 							props.getFile("plugin.archive.properties"));
 					logger.debug("archiveStorage initialised");
@@ -178,8 +176,7 @@ public class PropertyHandler {
 					for (StorageUnit s : StorageUnit.values()) {
 						vs.add(s.name());
 					}
-					abort("storageUnit value " + props.getString("storageUnit")
-							+ " must be taken from " + vs);
+					abort("storageUnit value " + props.getString("storageUnit") + " must be taken from " + vs);
 				}
 				tidyBlockSize = props.getPositiveInt("tidyBlockSize");
 			}
@@ -311,6 +308,10 @@ public class PropertyHandler {
 
 	public String getKey() {
 		return key;
+	}
+
+	public String getIcatUrl() {
+		return icatUrl;
 	}
 
 }
