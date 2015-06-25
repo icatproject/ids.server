@@ -269,7 +269,7 @@ public class TestingClient {
 		}
 	}
 
-	public InputStream getData(String sessionId, DataSelection data, Flag flags, String outname, long offset, Integer sc)
+	public InputStream getData(String sessionId, DataSelection data, Flag flags, long offset, Integer sc)
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, NotFoundException,
 			InternalException, DataNotOnlineException {
 
@@ -285,9 +285,7 @@ public class TestingClient {
 		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
 			uriBuilder.setParameter("compress", "true");
 		}
-		if (outname != null) {
-			uriBuilder.setParameter("outname", outname);
-		}
+	
 		URI uri = getUri(uriBuilder);
 		CloseableHttpResponse response = null;
 		CloseableHttpClient httpclient = null;
@@ -322,15 +320,12 @@ public class TestingClient {
 		}
 	}
 
-	public InputStream getData(String preparedId, String outname, long offset, Integer sc)
+	public InputStream getData(String preparedId, long offset, Integer sc)
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, NotFoundException,
 			InternalException, DataNotOnlineException {
 
 		URIBuilder uriBuilder = getUriBuilder("getData");
 		uriBuilder.setParameter("preparedId", preparedId);
-		if (outname != null) {
-			uriBuilder.setParameter("outname", outname);
-		}
 		URI uri = getUri(uriBuilder);
 
 		CloseableHttpResponse response = null;
