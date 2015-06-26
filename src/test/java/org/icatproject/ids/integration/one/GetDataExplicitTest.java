@@ -32,8 +32,7 @@ public class GetDataExplicitTest extends BaseTest {
 			size = df.getFileSize();
 			df.setFileSize(size + 1);
 			icat.update(sessionId, df);
-			assertEquals(209L, testingClient.getSize(sessionId,
-					new DataSelection().addDatafiles(datafileIds), 200));
+			assertEquals(209L, testingClient.getSize(sessionId, new DataSelection().addDatafiles(datafileIds), 200));
 		} finally {
 			if (df != null) {
 				df.setFileSize(size);
@@ -44,66 +43,65 @@ public class GetDataExplicitTest extends BaseTest {
 
 	@Test(expected = BadRequestException.class)
 	public void badPreparedIdFormatTest() throws Exception {
-		try (InputStream z = testingClient.getData("bad preparedId format", null, 0, 400)) {
+		try (InputStream z = testingClient.getData("bad preparedId format", 0, 400)) {
 		}
 	}
 
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
 		try (InputStream z = testingClient.getData(setup.getForbiddenSessionId(),
-				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 403)) {
+				new DataSelection().addDatafiles(datafileIds), Flag.NONE, 0, 403)) {
 		}
 	}
 
 	@Test
 	public void correctBehaviourTestNone() throws Exception {
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+				Flag.NONE, 0, 200)) {
 			checkZipStream(stream, datafileIds, 57L);
 		}
 
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.NONE, 0, 200)) {
 			checkStream(stream, datafileIds.get(0));
 		}
 	}
 
 	@Test
 	public void correctBehaviourTestCompress() throws Exception {
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafiles(datafileIds), Flag.COMPRESS, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+				Flag.COMPRESS, 0, 200)) {
 			checkZipStream(stream, datafileIds, 36L);
 		}
 
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.COMPRESS, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.COMPRESS, 0, 200)) {
 			checkStream(stream, datafileIds.get(0));
 		}
 	}
 
 	@Test
 	public void correctBehaviourTestZip() throws Exception {
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafiles(datafileIds), Flag.ZIP, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+				Flag.ZIP, 0, 200)) {
 			checkZipStream(stream, datafileIds, 57L);
 		}
 
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.ZIP, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.ZIP, 0, 200)) {
 			checkZipStream(stream, datafileIds.subList(0, 1), 57L);
 		}
 	}
 
 	@Test
 	public void correctBehaviourTestZipAndCompress() throws Exception {
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafiles(datafileIds), Flag.ZIP_AND_COMPRESS, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+				Flag.ZIP_AND_COMPRESS, 0, 200)) {
 			checkZipStream(stream, datafileIds, 36L);
 		}
 
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.ZIP_AND_COMPRESS, null,
-				0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.ZIP_AND_COMPRESS, 0, 200)) {
 			checkZipStream(stream, datafileIds.subList(0, 1), 36L);
 		}
 	}
@@ -111,12 +109,12 @@ public class GetDataExplicitTest extends BaseTest {
 	@Test
 	public void correctBehaviourInvestigation() throws Exception {
 		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addInvestigation(investigationId), Flag.NONE, null, 0, 200)) {
+				new DataSelection().addInvestigation(investigationId), Flag.NONE, 0, 200)) {
 			checkZipStream(stream, datafileIds, 57L);
 		}
 
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.ZIP, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.ZIP, 0, 200)) {
 			checkZipStream(stream, datafileIds.subList(0, 1), 57L);
 		}
 	}
@@ -124,13 +122,12 @@ public class GetDataExplicitTest extends BaseTest {
 	@Test
 	public void correctBehaviourInvestigations() throws Exception {
 		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addInvestigations(Arrays.asList(investigationId)), Flag.NONE,
-				null, 0, 200)) {
+				new DataSelection().addInvestigations(Arrays.asList(investigationId)), Flag.NONE, 0, 200)) {
 			checkZipStream(stream, datafileIds, 57L);
 		}
 
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.ZIP, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.ZIP, 0, 200)) {
 			checkZipStream(stream, datafileIds.subList(0, 1), 57L);
 		}
 	}

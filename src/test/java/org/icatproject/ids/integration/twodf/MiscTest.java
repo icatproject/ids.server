@@ -40,8 +40,8 @@ public class MiscTest extends BaseTest {
 
 	@Test
 	public void correctBehaviourNoOffsetTest() throws Exception {
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
+		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.NONE, 200);
 
 		assertFalse(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
 
@@ -54,7 +54,7 @@ public class MiscTest extends BaseTest {
 		waitForIds();
 		assertTrue(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
 
-		try (InputStream stream = testingClient.getData(preparedId, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
 			checkStream(stream, datafileIds.get(0));
 		}
 

@@ -31,14 +31,14 @@ public class GetDataExplicitTest extends BaseTest {
 
 	@Test(expected = BadRequestException.class)
 	public void badPreparedIdFormatTest() throws Exception {
-		try (InputStream z = testingClient.getData("bad preparedId format", "filename", 0L, 400)) {
+		try (InputStream z = testingClient.getData("bad preparedId format", 0L, 400)) {
 		}
 	}
 
 	@Test(expected = InsufficientPrivilegesException.class)
 	public void forbiddenTest() throws Exception {
 		try (InputStream z = testingClient.getData(setup.getForbiddenSessionId(),
-				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 403)) {
+				new DataSelection().addDatafiles(datafileIds), Flag.NONE, 0, 403)) {
 		}
 	}
 
@@ -51,8 +51,7 @@ public class GetDataExplicitTest extends BaseTest {
 			size = df.getFileSize();
 			df.setFileSize(size + 1);
 			icat.update(sessionId, df);
-			assertEquals(209L, testingClient.getSize(sessionId,
-					new DataSelection().addDatafiles(datafileIds), 200));
+			assertEquals(209L, testingClient.getSize(sessionId, new DataSelection().addDatafiles(datafileIds), 200));
 		} finally {
 			if (df != null) {
 				df.setFileSize(size);
@@ -64,16 +63,16 @@ public class GetDataExplicitTest extends BaseTest {
 	@Test
 	public void correctBehaviourTest() throws Exception {
 
-		try (InputStream z = testingClient.getData(sessionId,
-				new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, 404)) {
+		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds), Flag.NONE,
+				0, 404)) {
 			fail("Should have thrown exception");
 		} catch (IdsException e) {
 			assertEquals(DataNotOnlineException.class, e.getClass());
 		}
 
 		while (true) {
-			try (InputStream stream = testingClient.getData(sessionId,
-					new DataSelection().addDatafiles(datafileIds), Flag.NONE, null, 0, null)) {
+			try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+					Flag.NONE, 0, null)) {
 				checkZipStream(stream, datafileIds, 57);
 				break;
 			} catch (IdsException e) {
@@ -86,16 +85,16 @@ public class GetDataExplicitTest extends BaseTest {
 	@Test
 	public void gettingDatafileRestoresItsDatasetTest() throws Exception {
 
-		try (InputStream z = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(2)), Flag.NONE, null, 0, null)) {
+		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(2)),
+				Flag.NONE, 0, null)) {
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
 		}
 
 		waitForIds();
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(3)), Flag.NONE, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(3)),
+				Flag.NONE, 0, 200)) {
 			checkStream(stream, datafileIds.get(3));
 		}
 
@@ -104,8 +103,8 @@ public class GetDataExplicitTest extends BaseTest {
 	@Test
 	public void gettingDatasetUsesCacheTest() throws Exception {
 
-		try (InputStream z = testingClient.getData(sessionId,
-				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, null, 0, null)) {
+		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
+				Flag.NONE, 0, null)) {
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
@@ -113,8 +112,8 @@ public class GetDataExplicitTest extends BaseTest {
 
 		waitForIds();
 
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
+				Flag.NONE, 0, 200)) {
 			checkZipStream(stream, datafileIds.subList(0, 2), 57);
 		}
 
@@ -123,17 +122,16 @@ public class GetDataExplicitTest extends BaseTest {
 	@Test
 	public void gettingDatafileAndDatasetShouldRestoreBothDatasetsTest() throws Exception {
 
-		try (InputStream z = testingClient.getData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(2)).addDataset(datasetIds.get(0)),
-				Flag.NONE, null, 0, 404)) {
+		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(2))
+				.addDataset(datasetIds.get(0)), Flag.NONE, 0, 404)) {
 			fail("Should throw exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
 		}
 
 		waitForIds();
-		try (InputStream stream = testingClient.getData(sessionId,
-				new DataSelection().addDatasets(datasetIds), Flag.NONE, null, 0, 200)) {
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatasets(datasetIds),
+				Flag.NONE, 0, 200)) {
 			checkZipStream(stream, datafileIds, 57);
 		}
 	}
