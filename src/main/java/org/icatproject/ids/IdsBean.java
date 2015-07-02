@@ -841,7 +841,7 @@ public class IdsBean {
 				sb.append(',');
 			}
 			sb.append(df.getDfId());
-			if (n++ == 100) {
+			if (n++ == 500) {
 				size += getSizeFor(sessionId, sb);
 				sb = new StringBuilder();
 				n = 0;

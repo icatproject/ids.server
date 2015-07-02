@@ -22,8 +22,9 @@ import org.icatproject.ids.plugin.DsInfo;
 public class DataSelection {
 
 	/**
-	 * Checks to see if the investigation, dataset or datafile id list is a valid comma separated
-	 * list of longs. No spaces or leading 0's. Also accepts null.
+	 * Checks to see if the investigation, dataset or datafile id list is a
+	 * valid comma separated list of longs. No spaces or leading 0's. Also
+	 * accepts null.
 	 */
 	public static List<Long> getValidIds(String thing, String idList) throws BadRequestException {
 
@@ -37,8 +38,7 @@ public class DataSelection {
 				try {
 					result.add(Long.parseLong(id));
 				} catch (NumberFormatException e) {
-					throw new BadRequestException("The " + thing + " parameter '" + idList
-							+ "' is not a valid "
+					throw new BadRequestException("The " + thing + " parameter '" + idList + "' is not a valid "
 							+ "string representation of a comma separated list of longs");
 				}
 			}
@@ -61,9 +61,9 @@ public class DataSelection {
 		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
 	}
 
-	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds,
-			String datafileIds, Returns returns) throws BadRequestException, NotFoundException,
-			InsufficientPrivilegesException, InternalException {
+	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds, String datafileIds,
+			Returns returns) throws BadRequestException, NotFoundException, InsufficientPrivilegesException,
+			InternalException {
 
 		this.icat = icat;
 		this.sessionId = sessionId;
@@ -80,8 +80,8 @@ public class DataSelection {
 		return dsInfos;
 	}
 
-	private void resolveDatasetIds() throws NotFoundException, InsufficientPrivilegesException,
-			InternalException, BadRequestException {
+	private void resolveDatasetIds() throws NotFoundException, InsufficientPrivilegesException, InternalException,
+			BadRequestException {
 		dsInfos = new HashMap<>();
 		emptyDatasets = new HashSet<>();
 		if (dfWanted) {
@@ -100,11 +100,12 @@ public class DataSelection {
 					if (dfWanted) {
 						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
 						String location = IdsBean.getLocation(df);
-						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df
-								.getCreateId(), df.getModId(), dsid));
+						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df.getCreateId(), df.getModId(),
+								dsid));
 					}
 				} else {
-					icat.get(sessionId, "Datafile", dfid); // May reveal a permissions problem
+					// Next line may reveal a permissions problem
+					icat.get(sessionId, "Datafile", dfid);
 					throw new NotFoundException("Datafile " + dfid);
 				}
 			}
@@ -114,8 +115,8 @@ public class DataSelection {
 				if (dfWanted) {
 					for (Datafile df : ds.getDatafiles()) {
 						String location = IdsBean.getLocation(df);
-						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df
-								.getCreateId(), df.getModId(), dsid));
+						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df.getCreateId(), df.getModId(),
+								dsid));
 					}
 				}
 				dsInfos.put(dsid, new DsInfoImpl(ds));
@@ -125,27 +126,26 @@ public class DataSelection {
 			}
 
 			for (Long invid : invids) {
-				List<Object> dss;
+				/*
+				 * This code now avoids getting all the datafiles in an
+				 * investigation in one go as it will fail for huge
+				 * investigations.
+				 */
+				List<Object> dss = icat.search(sessionId, "SELECT ds FROM Dataset ds WHERE ds.investigation.id = "
+						+ invid + " INCLUDE ds.investigation.facility");
 
-				if (dfWanted) {
-					dss = icat.search(sessionId,
-							"SELECT ds FROM Dataset ds WHERE ds.investigation.id = " + invid
-									+ " INCLUDE ds.datafiles, ds.investigation.facility");
-				} else {
-					dss = icat.search(sessionId,
-							"SELECT ds FROM Dataset ds WHERE ds.investigation.id = " + invid
-									+ " INCLUDE ds.investigation.facility");
-				}
 				if (dss.size() >= 1) {
 					for (Object o : dss) {
 						Dataset ds = (Dataset) o;
 						boolean empty = true;
 						long dsid = ds.getId();
 						if (dfWanted) {
+							ds = (Dataset) icat.get(sessionId,
+									"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
 							for (Datafile df : ds.getDatafiles()) {
 								String location = IdsBean.getLocation(df);
-								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df
-										.getCreateId(), df.getModId(), dsid));
+								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df.getCreateId(), df
+										.getModId(), dsid));
 								empty = false;
 							}
 						}
@@ -159,8 +159,7 @@ public class DataSelection {
 
 		} catch (IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-					|| type == IcatExceptionType.SESSION) {
+			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
 				throw new InsufficientPrivilegesException(e.getMessage());
 			} else if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
 				throw new NotFoundException(e.getMessage());
@@ -170,7 +169,8 @@ public class DataSelection {
 
 		}
 		/*
-		 * TODO don't calculate what is not needed - however this ensures that the flag is respected
+		 * TODO don't calculate what is not needed - however this ensures that
+		 * the flag is respected
 		 */
 		if (!dsWanted) {
 			dsInfos = null;
