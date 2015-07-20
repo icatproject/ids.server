@@ -16,6 +16,7 @@
 				</li>
 				<li>Work with icat 4.5</li>
 				<li>Added getIcatUrl call.</li>
+				<li>All calls now produce CORS headers.</li>
 			</ul>
 		</section>
 
