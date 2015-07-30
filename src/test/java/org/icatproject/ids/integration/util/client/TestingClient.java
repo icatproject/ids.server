@@ -285,7 +285,7 @@ public class TestingClient {
 		if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
 			uriBuilder.setParameter("compress", "true");
 		}
-	
+
 		URI uri = getUri(uriBuilder);
 		CloseableHttpResponse response = null;
 		CloseableHttpClient httpclient = null;
@@ -320,9 +320,9 @@ public class TestingClient {
 		}
 	}
 
-	public InputStream getData(String preparedId, long offset, Integer sc)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, NotFoundException,
-			InternalException, DataNotOnlineException {
+	public InputStream getData(String preparedId, long offset, Integer sc) throws NotImplementedException,
+			BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException,
+			DataNotOnlineException {
 
 		URIBuilder uriBuilder = getUriBuilder("getData");
 		uriBuilder.setParameter("preparedId", preparedId);
@@ -730,6 +730,78 @@ public class TestingClient {
 			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
 				expectNothing(response, sc);
 			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public List<Long> getDatafileIds(String preparedId, Integer sc) throws InternalException, BadRequestException,
+			NotFoundException {
+
+		URIBuilder uriBuilder = getUriBuilder("getDatafileIds");
+		uriBuilder.setParameter("preparedId", preparedId);
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				String result = getString(response, sc);
+				try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
+
+					JsonObject rootNode = jsonReader.readObject();
+					List<Long> ids = new ArrayList<>();
+					for (JsonValue num : rootNode.getJsonArray("ids")) {
+						Long id = ((JsonNumber) num).longValueExact();
+						ids.add(id);
+					}
+					return ids;
+				} catch (JsonException e) {
+					throw new InternalException("TestingClient " + e.getClass() + " " + e.getMessage() + " from "
+							+ result);
+				}
+
+			} catch (InsufficientStorageException | DataNotOnlineException | InsufficientPrivilegesException
+					| NotImplementedException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public List<Long> getDatafileIds(String sessionId, DataSelection data, Integer sc) throws InternalException,
+			BadRequestException, ParseException, NotFoundException {
+		URIBuilder uriBuilder = getUriBuilder("getDatafileIds");
+		uriBuilder.setParameter("sessionId", sessionId);
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			uriBuilder.setParameter(entry.getKey(), entry.getValue());
+		}
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				String result = getString(response, sc);
+				try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
+
+					JsonObject rootNode = jsonReader.readObject();
+					List<Long> ids = new ArrayList<>();
+					for (JsonValue num : rootNode.getJsonArray("ids")) {
+						Long id = ((JsonNumber) num).longValueExact();
+						ids.add(id);
+					}
+					return ids;
+				} catch (JsonException e) {
+					throw new InternalException("TestingClient " + e.getClass() + " " + e.getMessage() + " from "
+							+ result);
+				}
+
+			} catch (InsufficientStorageException | DataNotOnlineException | InsufficientPrivilegesException
+					| NotImplementedException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 		} catch (IOException e) {

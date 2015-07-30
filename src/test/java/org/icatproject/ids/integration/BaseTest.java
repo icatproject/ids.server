@@ -485,7 +485,7 @@ public class BaseTest {
 	}
 
 	protected void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.4."));
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.5."));
 	}
 
 	protected void raceTest() throws Exception {
@@ -537,6 +537,26 @@ public class BaseTest {
 		logTime("Deleted");
 
 		Files.delete(path);
+
+	}
+
+	public void getDatafileIdsTest() throws Exception {
+
+		List<Long> ids = testingClient.getDatafileIds(sessionId, new DataSelection().addDataset(datasetIds.get(0))
+				.addDatafile(datafileIds.get(0)), 200);
+		assertEquals(2, ids.size());
+		assertTrue(ids.contains(datafileIds.get(0)));
+		assertTrue(ids.contains(datafileIds.get(1)));
+
+		ids = testingClient.getDatafileIds(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 200);
+		assertEquals(1, ids.size());
+		assertTrue(ids.contains(datafileIds.get(0)));
+
+		ids = testingClient.getDatafileIds(sessionId, new DataSelection().addInvestigation(investigationId), 200);
+		assertEquals(4, ids.size());
+		for (Long id : datafileIds) {
+			assertTrue(ids.contains(id));
+		}
 
 	}
 

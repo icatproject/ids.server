@@ -30,4 +30,9 @@ public class BaseTests extends BaseTest {
 		super.apiVersionTest();
 	}
 
+	@Test
+	public void getDatafileIdsTest() throws Exception {
+		super.getDatafileIdsTest();
+	}
+
 }

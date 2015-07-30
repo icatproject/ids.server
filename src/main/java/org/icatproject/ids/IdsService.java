@@ -49,6 +49,21 @@ public class IdsService {
 
 	private Pattern rangeRe;
 
+	@GET
+	@Path("getDatafileIds")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getDatafileIds(@QueryParam("preparedId") String preparedId,
+			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
+			throws NotImplementedException, BadRequestException, InternalException, NotFoundException,
+			InsufficientPrivilegesException {
+		if (preparedId != null) {
+			return idsBean.getDatafileIds(preparedId);
+		} else {
+			return idsBean.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds);
+		}
+	}
+
 	@POST
 	@Path("getLink")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)

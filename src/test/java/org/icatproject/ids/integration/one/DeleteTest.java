@@ -37,7 +37,8 @@ public class DeleteTest extends BaseTest {
 		}
 	}
 
-	// Note that deleting the datafiles within the dataset does not cause the getStatus on the
+	// Note that deleting the datafiles within the dataset does not cause the
+	// getStatus on the
 	// dataset to fail - it just happens to be empty
 	@Test
 	public void deleteDatasetTest() throws Exception {

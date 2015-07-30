@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -69,6 +72,44 @@ import org.slf4j.LoggerFactory;
 
 @Stateless
 public class IdsBean {
+
+	public class RestoreDfTask implements Callable<Void> {
+
+		private Set<DfInfoImpl> dfInfos;
+
+		public RestoreDfTask(Set<DfInfoImpl> dfInfos) {
+			this.dfInfos = dfInfos;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			for (DfInfoImpl dfInfo : dfInfos) {
+				restoreIfOffline(dfInfo);
+			}
+			return null;
+		}
+
+	}
+
+	public class RestoreDsTask implements Callable<Void> {
+		private Collection<DsInfo> dsInfos;
+		private Set<Long> emptyDs;
+
+		public RestoreDsTask(Collection<DsInfo> dsInfos, Set<Long> emptyDs) {
+			this.dsInfos = dsInfos;
+			this.emptyDs = emptyDs;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			for (DsInfo dsInfo : dsInfos) {
+				restoreIfOffline(dsInfo, emptyDs);
+			}
+			return null;
+		}
+	}
+
+	private ExecutorService threadPool;
 
 	private static final int BUFSIZ = 2048;
 
@@ -543,7 +584,7 @@ public class IdsBean {
 		logger.info("New webservice request: getData preparedId = '" + preparedId + "' outname = '" + outname
 				+ "' offset = " + offset);
 
-		validateUUID("sessionId", preparedId);
+		validateUUID("preparedId", preparedId);
 
 		// Do it
 		Prepared prepared;
@@ -975,6 +1016,8 @@ public class IdsBean {
 				linkEnabled = propertyHandler.getLinkLifetimeMillis() > 0;
 				maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
 
+				threadPool = Executors.newCachedThreadPool();
+
 				inited = true;
 
 				logger.info("created IdsBean");
@@ -1055,18 +1098,11 @@ public class IdsBean {
 		Set<Long> emptyDs = dataSelection.getEmptyDatasets();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		try {
-			if (storageUnit == StorageUnit.DATASET) {
-				for (DsInfo dsInfo : dsInfos.values()) {
-					restoreIfOffline(dsInfo, emptyDs);
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				for (DfInfoImpl dfInfo : dfInfos) {
-					restoreIfOffline(dfInfo);
-				}
-			}
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
+		if (storageUnit == StorageUnit.DATASET) {
+			threadPool.submit(new RestoreDsTask(dsInfos.values(), emptyDs));
+
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			threadPool.submit(new RestoreDfTask(dfInfos));
 		}
 
 		if (dataSelection.mustZip()) {
@@ -1374,5 +1410,64 @@ public class IdsBean {
 
 	public String getIcatUrl() {
 		return propertyHandler.getIcatUrl();
+	}
+
+	public String getDatafileIds(String preparedId) throws BadRequestException, InternalException, NotFoundException {
+		// Log and validate
+		logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
+
+		validateUUID("preparedId", preparedId);
+
+		// Do it
+		Prepared prepared;
+		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
+			prepared = unpack(stream);
+		} catch (NoSuchFileException e) {
+			throw new NotFoundException("The preparedId " + preparedId + " is not known");
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+		final boolean zip = prepared.zip;
+		final boolean compress = prepared.compress;
+		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			gen.write("zip", zip);
+			gen.write("compress", compress);
+			gen.writeStartArray("ids");
+			for (DfInfoImpl dfInfo : dfInfos) {
+				gen.write(dfInfo.getDfId());
+			}
+			gen.writeEnd().writeEnd().close();
+		}
+		return baos.toString();
+	}
+
+	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+		// Log and validate
+		logger.info(String.format(
+				"New webservice request: getDatafileIds investigationIds=%s, datasetIds=%s, datafileIds=%s",
+				investigationIds, datasetIds, datafileIds));
+
+		validateUUID("sessionId", sessionId);
+
+		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+				datafileIds, Returns.DATAFILES);
+
+		// Do it
+		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			gen.writeStartArray("ids");
+			for (DfInfoImpl dfInfo : dfInfos) {
+				gen.write(dfInfo.getDfId());
+			}
+			gen.writeEnd().writeEnd().close();
+		}
+		return baos.toString();
+
 	}
 }

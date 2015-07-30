@@ -8,6 +8,18 @@
 
 	<body>
 
+		<section name="1.5.0">
+			<p>New getDatafileIds getIcatUrl and improved performance of
+				prepareData.
+			</p>
+			<ul>
+				<li>Added getDatafileIds call.</li>
+				<li>Improved performance of prepareData by performing some
+					operations asynchronously.
+				</li>
+			</ul>
+		</section>
+
 		<section name="1.4.0">
 			<p>New getIcatUrl and now uses icat 4.5 client.</p>
 			<ul>

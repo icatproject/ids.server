@@ -1,9 +1,11 @@
 package org.icatproject.ids.integration.one;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
+import java.util.List;
 
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
@@ -24,8 +26,8 @@ public class PrepareDataTest extends BaseTest {
 
 	@Test(expected = BadRequestException.class)
 	public void badSessionIdFormatTest() throws Exception {
-		testingClient.prepareData("bad sessionId format",
-				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 400);
+		testingClient.prepareData("bad sessionId format", new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE,
+				400);
 	}
 
 	@Test(expected = BadRequestException.class)
@@ -43,8 +45,8 @@ public class PrepareDataTest extends BaseTest {
 
 	@Test
 	public void correctBehaviourTest() throws Exception {
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDatafiles(datafileIds), Flag.NONE, 200);
+		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafiles(datafileIds),
+				Flag.NONE, 200);
 		System.out.println(preparedId);
 		assertNotNull(preparedId);
 	}
@@ -52,8 +54,13 @@ public class PrepareDataTest extends BaseTest {
 	@Test
 	public void prepareDataset() throws Exception {
 
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 200);
+		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
+				Flag.NONE, 200);
+
+		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+		assertEquals(2, ids.size());
+		assertTrue(ids.contains(datafileIds.get(0)));
+		assertTrue(ids.contains(datafileIds.get(1)));
 
 		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
@@ -65,9 +72,14 @@ public class PrepareDataTest extends BaseTest {
 	@Test
 	public void prepareTwoDatasets() throws Exception {
 
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)),
-				Flag.NONE, 200);
+		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
+				.addDataset(datasetIds.get(1)), Flag.NONE, 200);
+
+		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+		assertEquals(4, ids.size());
+		for (Long id : datafileIds) {
+			assertTrue(ids.contains(id));
+		}
 
 		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
@@ -79,8 +91,12 @@ public class PrepareDataTest extends BaseTest {
 	@Test
 	public void prepareDatafile() throws Exception {
 
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
+		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+				Flag.NONE, 200);
+
+		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+		assertEquals(1, ids.size());
+		assertTrue(ids.contains(datafileIds.get(0)));
 
 		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
@@ -92,9 +108,13 @@ public class PrepareDataTest extends BaseTest {
 	@Test
 	public void prepareDatafileAndItsDataset() throws Exception {
 
-		String preparedId = testingClient.prepareData(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)),
-				Flag.NONE, 200);
+		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0))
+				.addDataset(datasetIds.get(0)), Flag.NONE, 200);
+
+		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+		assertEquals(2, ids.size());
+		assertTrue(ids.contains(datafileIds.get(0)));
+		assertTrue(ids.contains(datafileIds.get(1)));
 
 		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);
