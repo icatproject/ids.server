@@ -56,7 +56,7 @@ if arg == "INSTALL":
        
     try:          
         app = actions.getAppName("ids.server")
-        if app: actions.asadmin("undeploy " + app)
+        if app: actions.undeploy(app)
           
         actions.deploy("ids.server-*.war", deploymentorder=120, libraries=props["libraries"].split())
                       
@@ -69,7 +69,7 @@ if arg == "UNINSTALL":
     
     try:
         app = actions.getAppName("ids.server")
-        if app: actions.asadmin("undeploy " + app)       
+        if app: actions.undeploy(app)       
   
                   
     except Exception, e:

@@ -9,13 +9,17 @@
 	<body>
 
 		<section name="1.5.0">
-			<p>New getDatafileIds getIcatUrl and improved performance of
+			<p>New getDatafileIds, getIcatUrl and improved performance of
 				prepareData.
 			</p>
 			<ul>
 				<li>Added getDatafileIds call.</li>
 				<li>Improved performance of prepareData by performing some
 					operations asynchronously.
+				</li>
+				<li>Changed values of filesCheck.lastIdFile and filesCheck.errorLog
+					to be relative to ../data/ids rather than ../data/icat in the
+					ids.properties.example file.
 				</li>
 			</ul>
 		</section>

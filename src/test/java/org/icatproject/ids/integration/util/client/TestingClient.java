@@ -449,9 +449,11 @@ public class TestingClient {
 			NotFoundException, InsufficientPrivilegesException, InternalException, NotImplementedException {
 
 		URIBuilder uriBuilder = getUriBuilder("getStatus");
-		uriBuilder.setParameter("sessionId", sessionId);
+		if (sessionId != null) {
+			uriBuilder.setParameter("sessionId", sessionId);
+		}
 		for (Entry<String, String> entry : data.getParameters().entrySet()) {
-			uriBuilder.addParameter(entry.getKey(), entry.getValue());
+			uriBuilder.setParameter(entry.getKey(), entry.getValue());
 		}
 		URI uri = getUri(uriBuilder);
 

@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.icatproject</groupId>
@@ -22,12 +23,20 @@
 		</repository>
 	</repositories>
 
+	<pluginRepositories>
+		<pluginRepository>
+			<id>miredot</id>
+			<name>MireDot Releases</name>
+			<url>http://nexus.qmino.com/content/repositories/miredot</url>
+		</pluginRepository>
+	</pluginRepositories>
+
 	<scm>
 		<connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
 		<developerConnection>scm:git:https://github.com/icatproject/ids.server.git</developerConnection>
 		<url>https://github.com/icatproject/ids.server</url>
-	  <tag>HEAD</tag>
-  </scm>
+		<tag>HEAD</tag>
+	</scm>
 
 	<issueManagement>
 		<url>https://github.com/icatproject/ids.server/issues</url>
@@ -71,7 +80,7 @@
 		<dependency>
 			<groupId>org.icatproject</groupId>
 			<artifactId>icat.utils</artifactId>
-			<version>4.7.0</version>
+			<version>4.11.0</version>
 		</dependency>
 
 		<dependency>
@@ -155,6 +164,103 @@
 		</testResources>
 
 		<plugins>
+
+			<plugin>
+				<groupId>com.qmino</groupId>
+				<artifactId>miredot-plugin</artifactId>
+				<version>1.6.2</version>
+				<executions>
+					<execution>
+						<id>miredot</id>
+						<goals>
+							<goal>restdoc</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<licence>cHJvamVjdHxvcmcuaWNhdHByb2plY3QuaWRzLnNlcnZlcnwyMDE2LTA4LTI3fHRydWV8LTEjTUMwQ0ZRQ1E1OXovbjlLYUkxQTFNYU45TUZ4czdJYVcxQUlVWGpKZ2Z3RlZpZXJla0R6ajRwQ1FZVHAwbG5vPQ==</licence>
+					<output>
+						<html>
+							<location>site/miredot</location>
+							<baseUrl>https://example.com/ids</baseUrl>
+						</html>
+					</output>
+					<analysis>
+						<checks>
+							<JAVADOC_MISSING_EXCEPTION_DOCUMENTATION>ignore</JAVADOC_MISSING_EXCEPTION_DOCUMENTATION>
+							<REST_UNMAPPED_EXCEPTION>ignore</REST_UNMAPPED_EXCEPTION>
+							<JAVADOC_MISSING_SUMMARY>warn</JAVADOC_MISSING_SUMMARY>
+							<JAVADOC_MISSING_INTERFACEDOCUMENTATION>warn</JAVADOC_MISSING_INTERFACEDOCUMENTATION>
+							<JAVADOC_MISSING_PARAMETER_DOCUMENTATION>warn</JAVADOC_MISSING_PARAMETER_DOCUMENTATION>
+							<JAVADOC_MISSING_AUTHORS>ignore</JAVADOC_MISSING_AUTHORS>
+							<JAXRS_MISSING_PRODUCES>warn</JAXRS_MISSING_PRODUCES>
+							<JAXRS_MISSING_CONSUMES>warn</JAXRS_MISSING_CONSUMES>
+							<JAXRS_MISSING_PATH_PARAM>warn</JAXRS_MISSING_PATH_PARAM>
+							<UNREACHABLE_RESOURCE>warn</UNREACHABLE_RESOURCE>
+							<PARTIAL_RESOURCE_OVERLAP>warn</PARTIAL_RESOURCE_OVERLAP>
+						</checks>
+					</analysis>
+					<restModel>
+						<httpStatusCodes>
+							<httpStatusCode>
+								<httpCode>400</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.BadRequestException</document>
+								<defaultMessage>Invalid request.</defaultMessage>
+							</httpStatusCode>
+							<httpStatusCode>
+								<httpCode>403</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.InsufficientPrivilegesException</document>
+								<defaultMessage>Insufficient privileges.</defaultMessage>
+							</httpStatusCode>
+
+							<httpStatusCode>
+								<httpCode>404</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.DataNotOnlineException</document>
+								<defaultMessage>Data not online or not found.</defaultMessage>
+							</httpStatusCode>
+
+							<httpStatusCode>
+								<httpCode>404</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.NotFoundException</document>
+								<defaultMessage>Data not online or not found.</defaultMessage>
+							</httpStatusCode>
+
+							<httpStatusCode>
+								<httpCode>500</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.InsufficientStorageException</document>
+								<defaultMessage>The service call has not succeeded.</defaultMessage>
+							</httpStatusCode>
+
+							<httpStatusCode>
+								<httpCode>500</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.InternalException</document>
+								<defaultMessage>The service call has not succeeded.</defaultMessage>
+							</httpStatusCode>
+
+							<httpStatusCode>
+								<httpCode>500</httpCode>
+								<document>always</document>
+								<defaultMessage>The service call has not succeeded.</defaultMessage>
+								<sticky>true</sticky> <!-- Document always, even if there is an @statuscode tag -->
+							</httpStatusCode>
+
+							<httpStatusCode>
+								<httpCode>501</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.NotImplementedException</document>
+								<defaultMessage>Not implemented.</defaultMessage>
+							</httpStatusCode>
+						</httpStatusCodes>
+					</restModel>
+				</configuration>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>

@@ -396,7 +396,7 @@ public class IdsBean {
 				try {
 					if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
 						fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
-						throw new NotFoundException("One of the datafiles requested has been deleted");
+						throw new NotFoundException("One of the data files requested has been deleted");
 					}
 					n = 0;
 					sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
@@ -913,7 +913,15 @@ public class IdsBean {
 				"New webservice request: getStatus investigationIds=%s, datasetIds=%s, datafileIds=%s",
 				investigationIds, datasetIds, datafileIds));
 
-		validateUUID("sessionId", sessionId);
+		if (sessionId == null) {
+			try {
+				sessionId = reader.getSessionId();
+			} catch (IcatException_Exception e) {
+				throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+			}
+		} else {
+			validateUUID("sessionId", sessionId);
+		}
 
 		// Do it
 		Status status = Status.ONLINE;

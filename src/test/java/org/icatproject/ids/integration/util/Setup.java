@@ -10,13 +10,12 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Properties;
 
-import javax.xml.namespace.QName;
-
 import org.icatproject.ICAT;
-import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
+import org.icatproject.utils.CheckedProperties;
+import org.icatproject.utils.ICATGetter;
 import org.icatproject.utils.ShellCommand;
 
 /*
@@ -62,8 +61,7 @@ public class Setup {
 		try {
 			testProps.load(is);
 		} catch (Exception e) {
-			System.out.println("Problem loading test.properties: " + e.getClass() + " "
-					+ e.getMessage());
+			System.out.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
 		}
 
 		idsUrl = new URL(testProps.getProperty("ids.url") + "/ids");
@@ -74,8 +72,8 @@ public class Setup {
 
 		ShellCommand sc = new ShellCommand("asadmin", "get", "property.administrative.domain.name");
 		String domain = sc.getStdout().split("[\r\n]+")[0].split("=")[1];
-		Path config = new File(glassfish).toPath().resolve("glassfish").resolve("domains")
-				.resolve(domain).resolve("config");
+		Path config = new File(glassfish).toPath().resolve("glassfish").resolve("domains").resolve(domain)
+				.resolve("config");
 
 		sc = new ShellCommand("cmp", config.resolve("ids.properties").toString(),
 				"src/test/resources/" + idsPropertyFile);
@@ -85,8 +83,8 @@ public class Setup {
 			if (sc.getExitValue() != 0) {
 				System.out.println(sc.getMessage());
 			}
-			Files.copy(new File("src/test/resources/" + idsPropertyFile).toPath(),
-					config.resolve("ids.properties"), StandardCopyOption.REPLACE_EXISTING);
+			Files.copy(new File("src/test/resources/" + idsPropertyFile).toPath(), config.resolve("ids.properties"),
+					StandardCopyOption.REPLACE_EXISTING);
 			sc = new ShellCommand("asadmin", "enable", appName);
 			if (sc.getExitValue() != 0) {
 				System.out.println(sc.getMessage());
@@ -98,57 +96,48 @@ public class Setup {
 		}
 
 		// Having set up the ids.properties file read it find other things
-		Properties idsProperties = new Properties();
-		idsProperties.load(Files.newInputStream(config.resolve("ids.properties")));
-		key = idsProperties.getProperty("key");
-		updownDir = new File(testProps.getProperty("updownDir")).toPath();
-
-		String icatUrlString = idsProperties.getProperty("icat.url");
-		if (!icatUrlString.endsWith("ICATService/ICAT?wsdl")) {
-			if (icatUrlString.charAt(icatUrlString.length() - 1) == '/') {
-				icatUrlString = icatUrlString + "ICATService/ICAT?wsdl";
-			} else {
-				icatUrlString = icatUrlString + "/ICATService/ICAT?wsdl";
-			}
+		CheckedProperties idsProperties = new CheckedProperties();
+		idsProperties.loadFromFile(config.resolve("ids.properties").toString());
+		if (idsProperties.has("key")) {
+			key = idsProperties.getString("key");
 		}
-
-		icatUrl = new URL(icatUrlString);
+		updownDir = new File(testProps.getProperty("updownDir")).toPath();
+		icatUrl = idsProperties.getURL("icat.url");
 		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
 				testProps.getProperty("authorizedIcatPassword"));
 		forbiddenSessionId = login(testProps.getProperty("unauthorizedIcatUsername"),
 				testProps.getProperty("unauthorizedIcatPassword"));
 
-		// Lookup up the plugin config files and read those to find where they will store data
-		String mainProps = idsProperties.getProperty("plugin.main.properties");
+		// Lookup up the plugin config files and read those to find where they
+		// will store data
+		String mainProps = idsProperties.getString("plugin.main.properties");
 		Properties storageProps = new Properties();
 		storageProps.load(Files.newInputStream(config.resolve(mainProps)));
 		storageDir = new File(storageProps.getProperty("dir")).toPath();
 
-		String archiveProps = idsProperties.getProperty("plugin.archive.properties");
-		if (archiveProps != null) {
+		if (idsProperties.has("plugin.archive.properties")) {
+			String archiveProps = idsProperties.getString("plugin.archive.properties");
 			storageProps.load(Files.newInputStream(config.resolve(archiveProps)));
 			storageArchiveDir = new File(storageProps.getProperty("dir")).toPath();
 		}
 
-		Path cacheDir = new File(idsProperties.getProperty("cache.dir")).toPath();
+		Path cacheDir = new File(idsProperties.getString("cache.dir")).toPath();
 		preparedCacheDir = cacheDir.resolve("prepared");
-		twoLevel = idsProperties.getProperty("plugin.archive.class") != null;
+		twoLevel = idsProperties.has("plugin.archive.class");
 		if (twoLevel) {
-			String storageUnitString = idsProperties.getProperty("storageUnit");
+			String storageUnitString = idsProperties.getString("storageUnit");
 			if (storageUnitString == null) {
 				throw new Exception("storageUnit not set");
 			}
 			storageUnit = storageUnitString.toUpperCase();
 		}
 
-		errorLog = config.resolve(idsProperties.getProperty("filesCheck.errorLog"));
+		errorLog = config.resolve(idsProperties.getString("filesCheck.errorLog"));
 
 	}
 
-	public String login(String username, String password) throws IcatException_Exception,
-			MalformedURLException {
-		ICAT icat = new ICATService(icatUrl, new QName("http://icatproject.org", "ICATService"))
-				.getICATPort();
+	public String login(String username, String password) throws IcatException_Exception, MalformedURLException {
+		ICAT icat = ICATGetter.getService(icatUrl.toString());
 
 		Credentials credentials = new Credentials();
 		List<Entry> entries = credentials.getEntry();

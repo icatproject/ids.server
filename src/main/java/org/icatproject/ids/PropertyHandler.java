@@ -3,8 +3,6 @@ package org.icatproject.ids;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,16 +11,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.namespace.QName;
-
 import org.icatproject.ICAT;
-import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
+import org.icatproject.utils.ICATGetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,26 +79,9 @@ public class PropertyHandler {
 			logger.info("Property file ids.properties loaded");
 
 			// do some very basic error checking on the config options
-			String icatUrlWsdl = props.getProperty("icat.url");
-			if (!icatUrlWsdl.endsWith("ICATService/ICAT?wsdl")) {
-				if (icatUrlWsdl.charAt(icatUrlWsdl.length() - 1) == '/') {
-					icatUrlWsdl = icatUrlWsdl + "ICATService/ICAT?wsdl";
-				} else {
-					icatUrlWsdl = icatUrlWsdl + "/ICATService/ICAT?wsdl";
-				}
-			}
-
+			icatUrl = props.getString("icat.url");
 			try {
-				URL url = new URL(icatUrlWsdl);
-				icatService = new ICATService(url, new QName("http://icatproject.org", "ICATService")).getICATPort();
-				icatUrl = icatUrlWsdl.substring(0, icatUrlWsdl.length() - 22);
-			} catch (MalformedURLException e) {
-				String msg = "Invalid property icat.url (" + icatUrlWsdl + "). Check URL format";
-				logger.error(msg);
-				throw new IllegalStateException(msg);
-			}
-			try {
-				icatService.getApiVersion();// make a test call
+				icatService = ICATGetter.getService(icatUrl);
 			} catch (IcatException_Exception e) {
 				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " " + e.getMessage();
 				logger.error(msg);
@@ -122,11 +101,13 @@ public class PropertyHandler {
 
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
 
-			key = props.getProperty("key");
+			if (props.has("key")) {
+				key = props.getString("key");
+			}
 
 			try {
-				Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class.forName(props
-						.getString("plugin.zipMapper.class"));
+				Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class
+						.forName(props.getString("plugin.zipMapper.class"));
 				zipMapper = klass.newInstance();
 				logger.debug("ZipMapper initialised");
 			} catch (Exception e) {
@@ -134,8 +115,8 @@ public class PropertyHandler {
 			}
 
 			try {
-				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class.forName(props
-						.getString("plugin.main.class"));
+				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
+						.forName(props.getString("plugin.main.class"));
 				mainStorage = klass.getConstructor(File.class).newInstance(props.getFile("plugin.main.properties"));
 				logger.debug("mainStorage initialised");
 			} catch (InvocationTargetException e) {
@@ -145,16 +126,16 @@ public class PropertyHandler {
 				abort(e.getClass() + " " + e.getMessage());
 			}
 
-			if (props.getProperty("plugin.archive.class") == null) {
+			if (!props.has("plugin.archive.class")) {
 				logger.info("Property plugin.archive.class not set, single storage enabled.");
 			} else {
 				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
 
 				try {
-					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class.forName(props
-							.getString("plugin.archive.class"));
-					archiveStorage = klass.getConstructor(File.class).newInstance(
-							props.getFile("plugin.archive.properties"));
+					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
+							.forName(props.getString("plugin.archive.class"));
+					archiveStorage = klass.getConstructor(File.class)
+							.newInstance(props.getFile("plugin.archive.properties"));
 					logger.debug("archiveStorage initialised");
 				} catch (InvocationTargetException e) {
 					Throwable cause = e.getCause();

@@ -30,8 +30,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import javax.xml.namespace.QName;
-
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
@@ -39,7 +37,6 @@ import org.icatproject.DatasetType;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.Facility;
 import org.icatproject.ICAT;
-import org.icatproject.ICATService;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
@@ -48,6 +45,7 @@ import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
+import org.icatproject.utils.ICATGetter;
 import org.junit.Before;
 
 public class BaseTest {
@@ -89,9 +87,7 @@ public class BaseTest {
 	protected static Setup setup = null;
 
 	public static void icatsetup() throws Exception {
-		ICATService icatService = new ICATService(setup.getIcatUrl(),
-				new QName("http://icatproject.org", "ICATService"));
-		icat = icatService.getICATPort();
+		icat = ICATGetter.getService(setup.getIcatUrl().toString());
 	}
 
 	protected ArrayList<Long> datafileIds = new ArrayList<>();
@@ -195,8 +191,8 @@ public class BaseTest {
 		}
 	}
 
-	private void populateStorage(boolean twoLevel, String storageUnit, String key) throws IOException,
-			IcatException_Exception, NoSuchAlgorithmException {
+	private void populateStorage(boolean twoLevel, String storageUnit, String key)
+			throws IOException, IcatException_Exception, NoSuchAlgorithmException {
 		clearStorage();
 		long timestamp = System.currentTimeMillis();
 
@@ -359,8 +355,8 @@ public class BaseTest {
 		assertTrue(found);
 	}
 
-	private void writeToFile(Datafile df, String content, String key) throws IOException, IcatException_Exception,
-			NoSuchAlgorithmException {
+	private void writeToFile(Datafile df, String content, String key)
+			throws IOException, IcatException_Exception, NoSuchAlgorithmException {
 		Path path = setup.getStorageDir().resolve(df.getLocation());
 		Files.createDirectories(path.getParent());
 		byte[] bytes = content.getBytes();
@@ -390,8 +386,8 @@ public class BaseTest {
 				+ "/" + ds.getName() + "/" + df.getName(), df.getLocation());
 	}
 
-	private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
-			'E', 'F' };
+	private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
+			'F' };
 
 	private String digest(Long id, String location, String key) throws NoSuchAlgorithmException {
 		byte[] pattern = (id + location + key).getBytes();
@@ -542,8 +538,8 @@ public class BaseTest {
 
 	public void getDatafileIdsTest() throws Exception {
 
-		List<Long> ids = testingClient.getDatafileIds(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-				.addDatafile(datafileIds.get(0)), 200);
+		List<Long> ids = testingClient.getDatafileIds(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(datafileIds.get(0)), 200);
 		assertEquals(2, ids.size());
 		assertTrue(ids.contains(datafileIds.get(0)));
 		assertTrue(ids.contains(datafileIds.get(1)));

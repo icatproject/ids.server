@@ -77,4 +77,18 @@ public class IcatReader {
 		}
 	}
 
+	public String getSessionId() throws IcatException_Exception {
+		try {
+			icat.refresh(sessionId);
+			return sessionId;
+		} catch (IcatException_Exception e) {
+			if (e.getFaultInfo().getType().equals(IcatExceptionType.SESSION)) {
+				login();
+				return sessionId;
+			} else {
+				throw e;
+			}
+		}
+	}
+
 }

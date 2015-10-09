@@ -27,8 +27,8 @@ tidyBlockSize = 500
 # File checking properties
 filesCheck.parallelCount = 5
 filesCheck.gapSeconds = 5
-filesCheck.lastIdFile = ../data/icat/lastIdFile
-filesCheck.errorLog = ../data/icat/errorLog
+filesCheck.lastIdFile = ../data/ids/lastIdFile
+filesCheck.errorLog = ../data/ids/errorLog
 
 # Link properties
 linkLifetimeSeconds = 3600
