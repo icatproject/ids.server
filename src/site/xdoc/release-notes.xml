@@ -21,6 +21,7 @@
 					to be relative to ../data/ids rather than ../data/icat in the
 					ids.properties.example file.
 				</li>
+				<li>getStatus allows sessionId to be null.</li>
 			</ul>
 		</section>
 
