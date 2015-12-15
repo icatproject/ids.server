@@ -79,15 +79,8 @@ public class PropertyHandler {
 			props.loadFromFile("ids.properties");
 			logger.info("Property file ids.properties loaded");
 
-			// do some very basic error checking on the config options
 			icatUrl = props.getString("icat.url");
-			try {
-				icatService = ICATGetter.getService(icatUrl);
-			} catch (IcatException_Exception e) {
-				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " " + e.getMessage();
-				logger.error(msg);
-				throw new IllegalStateException(msg);
-			}
+
 			try {
 				// TODO get this from ICAT when possible
 				maxEntities = props.getPositiveInt("maxEntities");
@@ -236,7 +229,26 @@ public class PropertyHandler {
 		return filesCheckParallelCount;
 	}
 
-	public ICAT getIcatService() {
+	public synchronized ICAT getIcatService() {
+		if (icatService == null) {
+			// Keep trying every 10 seconds to connect to ICAT. Each failure
+			// will produce an error message.
+			while (true) {
+				try {
+					icatService = ICATGetter.getService(icatUrl);
+					break;
+				} catch (IcatException_Exception e) {
+					String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " "
+							+ e.getMessage();
+					logger.error(msg);
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e1) {
+						throw new IllegalStateException(msg);
+					}
+				}
+			}
+		}
 		return icatService;
 	}
 

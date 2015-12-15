@@ -19,6 +19,8 @@
 				<li>The messages from the file checker have been improved when
 					storage is by dataset and a zip file is found to be corrupt.
 				</li>
+				<li>Now waits for ICAT connection if ICAT not available at startup.
+				</li>
 			</ul>
 		</section>
 
