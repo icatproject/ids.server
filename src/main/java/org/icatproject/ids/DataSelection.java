@@ -57,13 +57,15 @@ public class DataSelection {
 	private Set<Long> emptyDatasets;
 	private boolean dsWanted;
 
+	public static int maxEntities = PropertyHandler.getInstance().getMaxEntities();
+
 	public enum Returns {
 		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
 	}
 
 	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			Returns returns) throws BadRequestException, NotFoundException, InsufficientPrivilegesException,
-			InternalException {
+			Returns returns)
+					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 
 		this.icat = icat;
 		this.sessionId = sessionId;
@@ -80,8 +82,8 @@ public class DataSelection {
 		return dsInfos;
 	}
 
-	private void resolveDatasetIds() throws NotFoundException, InsufficientPrivilegesException, InternalException,
-			BadRequestException {
+	private void resolveDatasetIds()
+			throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
 		dsInfos = new HashMap<>();
 		emptyDatasets = new HashSet<>();
 		if (dfWanted) {
@@ -110,50 +112,74 @@ public class DataSelection {
 				}
 			}
 			for (Long dsid : dsids) {
-				Dataset ds = (Dataset) icat.get(sessionId,
-						"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
-				if (dfWanted) {
-					for (Datafile df : ds.getDatafiles()) {
-						String location = IdsBean.getLocation(df);
-						dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df.getCreateId(), df.getModId(),
-								dsid));
-					}
-				}
+				Dataset ds = (Dataset) icat.get(sessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
 				dsInfos.put(dsid, new DsInfoImpl(ds));
-				if (ds.getDatafiles().isEmpty()) {
-					emptyDatasets.add(dsid);
+				int offset = 0;
+				boolean more = true;
+				while (more) {
+					List<Object> os = icat.search(sessionId, "SELECT df FROM Datafile df WHERE df.dataset.id = " + dsid
+							+ " ORDER BY df.id LIMIT " + offset + "," + maxEntities);
+
+					if (dfWanted) {
+						for (Object o : os) {
+							Datafile df = (Datafile) o;
+							String location = IdsBean.getLocation(df);
+							dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df.getCreateId(),
+									df.getModId(), dsid));
+						}
+					}
+					if (os.isEmpty()) {
+						if (offset == 0) {
+							emptyDatasets.add(dsid);
+						}
+						more = false;
+					}
+					offset += maxEntities;
 				}
 			}
 
 			for (Long invid : invids) {
-				/*
-				 * This code now avoids getting all the datafiles in an
-				 * investigation in one go as it will fail for huge
-				 * investigations.
-				 */
-				List<Object> dss = icat.search(sessionId, "SELECT ds FROM Dataset ds WHERE ds.investigation.id = "
-						+ invid + " INCLUDE ds.investigation.facility");
-
-				if (dss.size() >= 1) {
+				int dsOffset = 0;
+				boolean dsMore = true;
+				while (dsMore) {
+					List<Object> dss = icat.search(sessionId,
+							"SELECT ds.id FROM Dataset ds WHERE ds.investigation.id = " + invid
+									+ " ORDER BY ds.id LIMIT " + dsOffset + "," + maxEntities);
 					for (Object o : dss) {
-						Dataset ds = (Dataset) o;
-						boolean empty = true;
-						long dsid = ds.getId();
-						if (dfWanted) {
-							ds = (Dataset) icat.get(sessionId,
-									"Dataset ds INCLUDE ds.datafiles, ds.investigation.facility", dsid);
-							for (Datafile df : ds.getDatafiles()) {
-								String location = IdsBean.getLocation(df);
-								dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df.getCreateId(), df
-										.getModId(), dsid));
-								empty = false;
-							}
-						}
+						long dsid = (Long) o;
+						Dataset ds = (Dataset) icat.get(sessionId, "Dataset ds INCLUDE ds.investigation.facility",
+								dsid);
 						dsInfos.put(dsid, new DsInfoImpl(ds));
-						if (empty) {
-							emptyDatasets.add(dsid);
+
+						int dfOffset = 0;
+						boolean dfMore = true;
+						while (dfMore) {
+							List<Object> dfs = icat.search(sessionId,
+									"SELECT df FROM Datafile df WHERE df.dataset.id = " + dsid
+											+ " ORDER BY df.id LIMIT " + dfOffset + "," + maxEntities);
+
+							if (dfWanted) {
+								for (Object of : dfs) {
+									Datafile df = (Datafile) of;
+									String location = IdsBean.getLocation(df);
+									dfInfos.add(new DfInfoImpl(df.getId(), df.getName(), location, df.getCreateId(),
+											df.getModId(), dsid));
+								}
+							}
+							if (dfs.isEmpty()) {
+								if (dfOffset == 0) {
+									emptyDatasets.add(dsid);
+								}
+								dfMore = false;
+							}
+							dfOffset += maxEntities;
 						}
+
 					}
+					if (dss.isEmpty()) {
+						dsMore = false;
+					}
+					dsOffset += maxEntities;
 				}
 			}
 

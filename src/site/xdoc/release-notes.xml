@@ -7,6 +7,20 @@
 	</properties>
 
 	<body>
+		<section name="1.5.1">
+			<p>Allow maxEntities to be specified.
+			</p>
+			<ul>
+				<li>Allow maxEntities to be specified. This requires a new property
+					maxEntities which should match (or be less than that set in the
+					icat.server). The next icat.server can be queried to find the value
+					that has been set so this property is temporary
+				</li>
+				<li>The messages from the file checker have been improved when
+					storage is by dataset and a zip file is found to be corrupt.
+				</li>
+			</ul>
+		</section>
 
 		<section name="1.5.0">
 			<p>New getDatafileIds, getIcatUrl and improved performance of

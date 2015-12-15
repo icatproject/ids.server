@@ -1,5 +1,6 @@
 # General properties
 icat.url = https://smfisher.esc.rl.ac.uk:8181
+maxEntities = 10000
 
 plugin.zipMapper.class = org.icatproject.ids.storage.ZipMapper
 

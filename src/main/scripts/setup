@@ -8,7 +8,7 @@ actions, options, arg = getActions()
 props = actions.getGlassfish("ids-setup.properties", ["glassfish", "libraries"])
 
 prop_name = "ids.properties"
-prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
+prop_list = ["icat.url", "maxEntities", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
 "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "reader",
 "filesCheck.parallelCount", "linkLifetimeSeconds", "maxIdsInQuery"]
 

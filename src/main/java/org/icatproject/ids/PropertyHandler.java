@@ -68,6 +68,7 @@ public class PropertyHandler {
 	private String key;
 	private int maxIdsInQuery;
 	private String icatUrl;
+	private int maxEntities;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -84,6 +85,14 @@ public class PropertyHandler {
 				icatService = ICATGetter.getService(icatUrl);
 			} catch (IcatException_Exception e) {
 				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " " + e.getMessage();
+				logger.error(msg);
+				throw new IllegalStateException(msg);
+			}
+			try {
+				// TODO get this from ICAT when possible
+				maxEntities = props.getPositiveInt("maxEntities");
+			} catch (Exception e) {
+				String msg = "Problem finding maxEntities from the ICAT server ";
 				logger.error(msg);
 				throw new IllegalStateException(msg);
 			}
@@ -293,6 +302,10 @@ public class PropertyHandler {
 
 	public String getIcatUrl() {
 		return icatUrl;
+	}
+
+	public int getMaxEntities() {
+		return maxEntities;
 	}
 
 }

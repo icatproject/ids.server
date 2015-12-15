@@ -74,13 +74,14 @@ public class FileChecker {
 
 			if (twoLevel) {
 				Dataset ds = (Dataset) eb;
-				logger.debug("Checking Dataset " + ds.getId() + " (" + ds.getName() + ")");
+				logger.info("Checking Dataset " + ds.getId() + " (" + ds.getName() + ")");
 				String dfName = null;
 
 				DsInfo dsInfo;
 				try {
 					dsInfo = new DsInfoImpl(ds);
 				} catch (InsufficientPrivilegesException e) {
+					report(ds, dfName, "Reports: " + e.getClass().getSimpleName() + " " + e.getMessage());
 					return;
 				}
 				Map<String, CrcAndLength> crcAndLength = new HashMap<>();
@@ -121,11 +122,11 @@ public class FileChecker {
 							ze = zis.getNextEntry();
 						}
 						if (!crcAndLength.isEmpty()) {
-							report(ds, null, "unexpected entry in zip file");
+							report(ds, null, "zip file incomplete");
 						}
 					}
 				} catch (IOException e) {
-					report(ds, dfName, e.getClass() + " " + e.getMessage());
+					report(ds, dfName, e.getClass().getName() + (e.getMessage() != null ? " " + e.getMessage() : ""));
 				} catch (Throwable e) {
 					e.printStackTrace();
 					logger.error("Throwable " + e.getClass() + " " + e.getMessage());

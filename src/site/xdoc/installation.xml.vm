@@ -79,6 +79,11 @@
 				<code>https://example.com:443</code>
 			</dd>
 
+			<dt>maxEntities</dt>
+			<dd>This should match (or be less than) that set in the
+				icat.server. It causes queries which would otherwise be too large
+				for the icat.server to be split.</dd>
+
 			<dt>plugin.zipMapper.class</dt>
 			<dd>The class name of the ZipMapper which defines the Zip file
 				structure you want. The class must be deployed in the lib/applibs
