@@ -4,21 +4,28 @@ import os
 
 # ids.server
 
-actions, options, arg = getActions()
-props = actions.getGlassfish("ids-setup.properties", ["glassfish", "libraries"])
+def uninstall():
+    app = actions.getAppName("ids.server")
+    if app: actions.undeploy(app)
+    actions.deleteJMSResource("jms/IDS/log")
+
+actions, arg, props = getActions("ids-setup.properties", [])
 
 prop_name = "ids.properties"
 prop_list = ["icat.url", "maxEntities", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
 "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "reader",
 "filesCheck.parallelCount", "linkLifetimeSeconds", "maxIdsInQuery"]
 
+if arg in ["CONFIGURE", "INSTALL"]: actions.configure(prop_name, prop_list) 
+idsProperties = getProperties(prop_name, prop_list)
+log4backXml = idsProperties.get("logback.xml")
+
+
 if arg in ["CONFIGURE", "INSTALL"]:
-    actions.configure(prop_name, prop_list)
+    if log4backXml: actions.configure(os.path.basename(log4backXml), [], log4backXml)
     actions.checkNoErrors()
 
 if arg == "INSTALL":
-    
-    idsProperties = actions.getProperties(prop_name, prop_list)
     
     sprops = idsProperties.get("plugin.main.properties")
     if not sprops: print "You have specified plugin.main.class but not plugin.main.properties - which may be what you want"
@@ -51,14 +58,24 @@ if arg == "INSTALL":
         if not actions.configFileExists(parent):
             abort("Please create directory " + parent + " for filesCheck.errorLog specified in ids.properties")
         if not idsProperties.get("reader"): abort("reader is not set in ids.properties")
+        
+    if  log4backXml:
+        dir, file = os.path.split(log4backXml)
+        if not os.path.exists(file): abort("log4back.xml file " + file + " not found")
 
     actions.installFile("ids.properties")
+    if log4backXml:
+        dir, file = os.path.split(log4backXml)
+        if dir:
+            actions.installFile(file, dir)
+        else:
+            actions.installFile(file)
        
-    try:          
-        app = actions.getAppName("ids.server")
-        if app: actions.undeploy(app)
+    try:
+        uninstall()          
+        actions.createJMSResource("javax.jms.Topic", "jms/IDS/log")
           
-        actions.deploy("ids.server-*.war", deploymentorder=120, libraries=props["libraries"].split())
+        actions.deploy(deploymentorder=120, libraries=props["libraries"].split(), jmsTopicConnectionFactory=idsProperties.get("jms.topicConnectionFactory"))
                       
     except Exception, e:
         raise
@@ -66,12 +83,15 @@ if arg == "INSTALL":
                 
 if arg == "UNINSTALL":
     actions.removeFile("ids.properties") 
-    
+    if log4backXml:
+        dir, file = os.path.split(log4backXml)
+        if dir:
+            actions.removeFile(file, dir)
+        else:
+            actions.removeFile(file)
+            
     try:
-        app = actions.getAppName("ids.server")
-        if app: actions.undeploy(app)       
-  
-                  
+       uninstall()       
     except Exception, e:
         abort(str(e))       
     

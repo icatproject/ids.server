@@ -3,6 +3,7 @@ package org.icatproject.ids;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.ejb.DependsOn;
 import javax.ejb.Singleton;
 
 import org.icatproject.EntityBaseBean;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@DependsOn("LoggingConfigurator")
 public class IcatReader {
 
 	private ICAT icat;

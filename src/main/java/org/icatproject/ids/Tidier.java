@@ -14,6 +14,7 @@ import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ejb.DependsOn;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @Startup
+@DependsOn("LoggingConfigurator")
 public class Tidier {
 
 	public class Action extends TimerTask {

@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.IdsBean.CallType;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
@@ -69,6 +70,8 @@ public class PropertyHandler {
 	private int maxIdsInQuery;
 	private String icatUrl;
 	private int maxEntities;
+	private String jmsTopicConnectionFactory;
+	private Set<CallType> logSet = new HashSet<>();
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -189,6 +192,25 @@ public class PropertyHandler {
 			linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
 
 			maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
+
+			/* JMS stuff */
+			jmsTopicConnectionFactory = props.getString("jms.topicConnectionFactory",
+					"java:comp/DefaultJMSConnectionFactory");
+
+			/* Call logging categories */
+			if (props.has("log.list")) {
+				for (String callTypeString : props.getString("log.list").split("\\s+")) {
+					try {
+						logSet.add(CallType.valueOf(callTypeString.toUpperCase()));
+					} catch (IllegalArgumentException e) {
+						abort("Value " + callTypeString + " in log.list must be chosen from "
+								+ Arrays.asList(CallType.values()));
+					}
+				}
+				logger.info("log.list: " + logSet);
+			} else {
+				logger.info("'log.list' entry not present so no JMS call logging will be performed");
+			}
 
 		} catch (CheckedPropertyException e) {
 			abort(e.getMessage());
@@ -318,6 +340,14 @@ public class PropertyHandler {
 
 	public int getMaxEntities() {
 		return maxEntities;
+	}
+
+	public String getJmsTopicConnectionFactory() {
+		return jmsTopicConnectionFactory;
+	}
+
+	public Set<CallType> getLogSet() {
+		return logSet;
 	}
 
 }

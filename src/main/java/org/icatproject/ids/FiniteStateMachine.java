@@ -21,6 +21,7 @@ import java.util.UUID;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ejb.DependsOn;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.json.Json;
@@ -42,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@DependsOn("LoggingConfigurator")
 public class FiniteStateMachine {
 
 	private class DfProcessQueue extends TimerTask {

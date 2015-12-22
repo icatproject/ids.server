@@ -33,3 +33,12 @@ filesCheck.errorLog = ../data/ids/errorLog
 
 # Link properties
 linkLifetimeSeconds = 3600
+
+# JMS Logging
+log.list = READ WRITE
+
+# Uncomment to permit configuration of logback
+!logback.xml = ids.logback.xml
+
+# JMS - uncomment and edit if needed
+!jms.topicConnectionFactory = java:comp/DefaultJMSConnectionFactory

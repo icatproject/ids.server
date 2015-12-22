@@ -73,6 +73,13 @@ import org.slf4j.LoggerFactory;
 @Stateless
 public class IdsBean {
 
+	enum CallType {
+		INFO, PREPARE, READ, WRITE, MIGRATE, LINK
+	};
+
+	@EJB
+	Transmitter transmitter;
+
 	public class RestoreDfTask implements Callable<Void> {
 
 		private Set<DfInfoImpl> dfInfos;
@@ -353,9 +360,13 @@ public class IdsBean {
 
 	private boolean twoLevel;
 
-	public void archive(String sessionId, String investigationIds, String datasetIds, String datafileIds)
+	private Set<CallType> logSet;
+
+	public void archive(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
 			NotFoundException {
+
+		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: archive " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
@@ -377,6 +388,21 @@ public class IdsBean {
 			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 			for (DfInfoImpl dfInfo : dfInfos) {
 				fsm.queue(dfInfo, DeferredOp.ARCHIVE);
+			}
+		}
+
+		if (logSet.contains(CallType.MIGRATE)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("archive", ip, body, start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
 			}
 		}
 	}
@@ -478,9 +504,11 @@ public class IdsBean {
 		return maybeOffline;
 	}
 
-	public void delete(String sessionId, String investigationIds, String datasetIds, String datafileIds)
+	public void delete(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
 			NotFoundException, DataNotOnlineException {
+
+		long start = System.currentTimeMillis();
 
 		logger.info("New webservice request: delete " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
 				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
@@ -573,11 +601,28 @@ public class IdsBean {
 				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);
 			}
 		}
+
+		if (logSet.contains(CallType.WRITE)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("delete", ip, body, start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
 	}
 
-	public Response getData(String preparedId, String outname, final long offset)
+	public Response getData(String preparedId, String outname, final long offset, String ip)
 			throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
 			NotImplementedException, DataNotOnlineException {
+
+		long time = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: getData preparedId = '" + preparedId + "' outname = '" + outname
@@ -635,8 +680,19 @@ public class IdsBean {
 				name = outname;
 			}
 		}
+
+		String body = null;
+		if (logSet.contains(CallType.READ)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("preparedId", preparedId);
+				gen.writeEnd();
+			}
+			body = baos.toString();
+		}
+
 		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-				.entity(new SO(dsInfos, dfInfos, offset, zip, compress, lockId))
+				.entity(new SO(dsInfos, dfInfos, offset, zip, compress, lockId, body, ip, time))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
 
@@ -650,20 +706,25 @@ public class IdsBean {
 		private String lockId;
 		private boolean compress;
 		private Set<DfInfoImpl> dfInfos;
+		private String body;
+		private String ip;
+		private long start;
 
 		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
-				String lockId) {
+				String lockId, String body, String ip, long start) {
 			this.offset = offset;
 			this.zip = zip;
 			this.dsInfos = dsInfos;
 			this.dfInfos = dfInfos;
 			this.lockId = lockId;
 			this.compress = compress;
+			this.body = body;
+			this.ip = ip;
+			this.start = start;
 		}
 
 		@Override
 		public void write(OutputStream output) throws IOException {
-
 			try {
 				if (offset != 0) { // Wrap the stream if needed
 					output = new RangeOutputStream(output, offset, null);
@@ -702,6 +763,11 @@ public class IdsBean {
 					output.close();
 					stream.close();
 				}
+
+				if (body != null) {
+					transmitter.processMessage("getData", ip, body, start);
+				}
+
 			} finally {
 				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 			}
@@ -710,9 +776,11 @@ public class IdsBean {
 	}
 
 	public Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			final boolean compress, boolean zip, String outname, final long offset)
+			final boolean compress, boolean zip, String outname, final long offset, String ip)
 					throws BadRequestException, NotImplementedException, InternalException,
 					InsufficientPrivilegesException, NotFoundException, DataNotOnlineException {
+
+		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info(String.format("New webservice request: getData investigationIds=%s, datasetIds=%s, datafileIds=%s",
@@ -764,16 +832,35 @@ public class IdsBean {
 				name = outname;
 			}
 		}
+
+		String body = null;
+		if (logSet.contains(CallType.READ)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				body = baos.toString();
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+
 		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-				.entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress,
-						lockId))
+				.entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lockId,
+						body, ip, start))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
 	}
 
-	public String getLink(String sessionId, long datafileId, String username)
+	public String getLink(String sessionId, long datafileId, String username, String ip)
 			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException,
 			DataNotOnlineException, NotImplementedException {
+
+		long start = System.currentTimeMillis();
+
 		// Log and validate
 		logger.info("New webservice request: getLink datafileId=" + datafileId + " username='" + username + "'");
 
@@ -835,6 +922,22 @@ public class IdsBean {
 			}
 			Path link = linkDir.resolve(UUID.randomUUID().toString());
 			Files.createLink(link, target);
+
+			if (logSet.contains(CallType.LINK)) {
+				try {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+						gen.write("userName", icat.getUserName(sessionId));
+						gen.write("datafileId", datafileId);
+						gen.writeEnd();
+					}
+					String body = baos.toString();
+					transmitter.processMessage("getLink", ip, body, start);
+				} catch (IcatException_Exception e) {
+					logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+				}
+			}
+
 			return link.toString();
 		} catch (IOException e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -842,7 +945,10 @@ public class IdsBean {
 
 	}
 
-	public String getServiceStatus(String sessionId) throws InternalException, InsufficientPrivilegesException {
+	public String getServiceStatus(String sessionId, String ip)
+			throws InternalException, InsufficientPrivilegesException {
+
+		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: getServiceStatus");
@@ -859,11 +965,28 @@ public class IdsBean {
 			}
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
+
+		if (logSet.contains(CallType.INFO)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("getServiceStatus", ip, body, start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+
 		return fsm.getServiceStatus();
 	}
 
-	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds)
+	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info(String.format("New webservice request: getSize investigationIds=%s, datasetIds=%s, datafileIds=%s",
@@ -891,6 +1014,22 @@ public class IdsBean {
 		if (n > 0) {
 			size += getSizeFor(sessionId, sb);
 		}
+
+		if (logSet.contains(CallType.INFO)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("getSize", ip, body, start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+
 		return size;
 	}
 
@@ -905,8 +1044,10 @@ public class IdsBean {
 		}
 	}
 
-	public String getStatus(String sessionId, String investigationIds, String datasetIds, String datafileIds)
+	public String getStatus(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info(
@@ -973,6 +1114,24 @@ public class IdsBean {
 		}
 
 		logger.debug("Status is " + status.name());
+
+		if (logSet.contains(CallType.INFO)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					if (sessionId != null) {
+						gen.write("userName", icat.getUserName(sessionId));
+					}
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("getStatus", ip, body, start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+
 		return status.name();
 
 	}
@@ -1000,7 +1159,7 @@ public class IdsBean {
 
 				if (!inited) {
 					key = propertyHandler.getKey();
-					logger.info("Key is " + key == null ? "not set" : "set");
+					logger.info("Key is " + (key == null ? "not set" : "set"));
 				}
 
 				if (twoLevel) {
@@ -1026,6 +1185,8 @@ public class IdsBean {
 
 				threadPool = Executors.newCachedThreadPool();
 
+				logSet = propertyHandler.getLogSet();
+
 				inited = true;
 
 				logger.info("created IdsBean");
@@ -1036,7 +1197,10 @@ public class IdsBean {
 		}
 	}
 
-	public Boolean isPrepared(String preparedId) throws BadRequestException, NotFoundException, InternalException {
+	public Boolean isPrepared(String preparedId, String ip)
+			throws BadRequestException, NotFoundException, InternalException {
+
+		long start = System.currentTimeMillis();
 
 		logger.info(String.format("New webservice request: isPrepared preparedId=%s", preparedId));
 
@@ -1073,21 +1237,39 @@ public class IdsBean {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
+		if (logSet.contains(CallType.INFO)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("preparedId", preparedId);
+				gen.writeEnd();
+			}
+			String body = baos.toString();
+			transmitter.processMessage("isPrepared", ip, body, start);
+		}
+
 		return prepared;
 
 	}
 
-	public boolean isReadOnly() {
+	public boolean isReadOnly(String ip) {
+		if (logSet.contains(CallType.INFO)) {
+			transmitter.processMessage("isReadOnly", ip, "{}", System.currentTimeMillis());
+		}
 		return readOnly;
 	}
 
-	public boolean isTwoLevel() {
+	public boolean isTwoLevel(String ip) {
+		if (logSet.contains(CallType.INFO)) {
+			transmitter.processMessage("isTwoLevel", ip, "{}", System.currentTimeMillis());
+		}
 		return twoLevel;
 	}
 
 	public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			boolean compress, boolean zip) throws NotImplementedException, BadRequestException, InternalException,
-					InsufficientPrivilegesException, NotFoundException {
+			boolean compress, boolean zip, String ip) throws NotImplementedException, BadRequestException,
+					InternalException, InsufficientPrivilegesException, NotFoundException {
+
+		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
@@ -1126,14 +1308,57 @@ public class IdsBean {
 
 		logger.debug("preparedId is " + preparedId);
 
+		if (logSet.contains(CallType.PREPARE)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.write("preparedId", preparedId);
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("prepareData", ip, body, start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+
 		return preparedId;
+	}
+
+	private void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)
+			throws BadRequestException {
+		if (investigationIds != null) {
+			gen.writeStartArray("investigationIds");
+			for (long invid : DataSelection.getValidIds("investigationIds", investigationIds)) {
+				gen.write(invid);
+			}
+			gen.writeEnd();
+		}
+		if (datasetIds != null) {
+			gen.writeStartArray("datasetIds");
+			for (long invid : DataSelection.getValidIds("datasetIds", datasetIds)) {
+				gen.write(invid);
+			}
+			gen.writeEnd();
+		}
+		if (datafileIds != null) {
+			gen.writeStartArray("datafileIds");
+			for (long invid : DataSelection.getValidIds("datafileIds", datafileIds)) {
+				gen.write(invid);
+			}
+			gen.writeEnd();
+		}
 	}
 
 	public Response put(InputStream body, String sessionId, String name, String datafileFormatIdString,
 			String datasetIdString, String description, String doi, String datafileCreateTimeString,
-			String datafileModTimeString, boolean wrap, boolean padding)
+			String datafileModTimeString, boolean wrap, boolean padding, String ip)
 					throws NotFoundException, DataNotOnlineException, BadRequestException,
 					InsufficientPrivilegesException, InternalException, NotImplementedException {
+
+		long start = System.currentTimeMillis();
 
 		try {
 			// Log and validate
@@ -1282,12 +1507,23 @@ public class IdsBean {
 				Json.createGenerator(baos).writeStartObject().write("id", dfId).write("checksum", checksum)
 						.write("location", location.replace("\\", "\\\\").replace("'", "\\'")).write("size", size)
 						.writeEnd().close();
-				if (wrap) {
-					return Response.status(HttpURLConnection.HTTP_CREATED).entity(prefix + baos.toString() + suffix)
-							.build();
-				} else {
-					return Response.status(HttpURLConnection.HTTP_CREATED).entity(baos.toString()).build();
+				String resp = wrap ? prefix + baos.toString() + suffix : baos.toString();
+
+				if (logSet.contains(CallType.WRITE)) {
+					try {
+						baos = new ByteArrayOutputStream();
+						try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+							gen.write("userName", icat.getUserName(sessionId));
+							gen.write("datafileId", dfId);
+							gen.writeEnd();
+						}
+						transmitter.processMessage("put", ip, baos.toString(), start);
+					} catch (IcatException_Exception e) {
+						logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+					}
 				}
+
+				return Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build();
 
 			} catch (IOException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -1422,9 +1658,11 @@ public class IdsBean {
 		}
 	}
 
-	public void restore(String sessionId, String investigationIds, String datasetIds, String datafileIds)
+	public void restore(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws BadRequestException, NotImplementedException, InsufficientPrivilegesException, InternalException,
 			NotFoundException {
+
+		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: restore " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
@@ -1448,13 +1686,34 @@ public class IdsBean {
 				fsm.queue(dfInfo, DeferredOp.RESTORE);
 			}
 		}
+
+		if (logSet.contains(CallType.MIGRATE)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				transmitter.processMessage("restore", ip, baos.toString(), start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
 	}
 
-	public String getIcatUrl() {
+	public String getIcatUrl(String ip) {
+		if (logSet.contains(CallType.INFO)) {
+			transmitter.processMessage("getIcatUrl", ip, "{}", System.currentTimeMillis());
+		}
 		return propertyHandler.getIcatUrl();
 	}
 
-	public String getDatafileIds(String preparedId) throws BadRequestException, InternalException, NotFoundException {
+	public String getDatafileIds(String preparedId, String ip)
+			throws BadRequestException, InternalException, NotFoundException {
+
+		long start = System.currentTimeMillis();
+
 		// Log and validate
 		logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
 
@@ -1484,11 +1743,26 @@ public class IdsBean {
 			}
 			gen.writeEnd().writeEnd().close();
 		}
-		return baos.toString();
+		String resp = baos.toString();
+
+		if (logSet.contains(CallType.INFO)) {
+			baos = new ByteArrayOutputStream();
+			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("preparedId", preparedId);
+				gen.writeEnd();
+			}
+			transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
+		}
+
+		return resp;
 	}
 
-	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds,
+			String ip)
+					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		long start = System.currentTimeMillis();
+
 		// Log and validate
 		logger.info(String.format(
 				"New webservice request: getDatafileIds investigationIds=%s, datasetIds=%s, datafileIds=%s",
@@ -1509,7 +1783,23 @@ public class IdsBean {
 			}
 			gen.writeEnd().writeEnd().close();
 		}
-		return baos.toString();
+		String resp = baos.toString();
+
+		if (logSet.contains(CallType.INFO)) {
+			baos = new ByteArrayOutputStream();
+			try {
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+
+		return resp;
 
 	}
 }
