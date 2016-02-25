@@ -67,6 +67,7 @@ public class Transmitter {
 			jmsg.setStringProperty("operation", operation);
 			jmsg.setStringProperty("ip", ip);
 			jmsg.setLongProperty("millis", System.currentTimeMillis() - startMillis);
+			jmsg.setLongProperty("start", startMillis);
 			MessageProducer jmsProducer = jmsSession.createProducer(topic);
 			jmsProducer.send(jmsg);
 			logger.debug("Sent jms message " + operation + " " + ip);

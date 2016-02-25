@@ -27,6 +27,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -76,6 +77,8 @@ public class IdsBean {
 	enum CallType {
 		INFO, PREPARE, READ, WRITE, MIGRATE, LINK
 	};
+
+	AtomicLong atomicLong = new AtomicLong();
 
 	@EJB
 	Transmitter transmitter;
@@ -681,21 +684,22 @@ public class IdsBean {
 			}
 		}
 
-		String body = null;
+		Long transferId = null;
 		if (logSet.contains(CallType.READ)) {
+			transferId = atomicLong.getAndIncrement();
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("transferId", transferId);
 				gen.write("preparedId", preparedId);
 				gen.writeEnd();
 			}
-			body = baos.toString();
+			transmitter.processMessage("getDataStart", ip, baos.toString(), time);
 		}
 
 		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-				.entity(new SO(dsInfos, dfInfos, offset, zip, compress, lockId, body, ip, time))
+				.entity(new SO(dsInfos, dfInfos, offset, zip, compress, lockId, transferId, ip, time))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
-
 	}
 
 	private class SO implements StreamingOutput {
@@ -706,19 +710,19 @@ public class IdsBean {
 		private String lockId;
 		private boolean compress;
 		private Set<DfInfoImpl> dfInfos;
-		private String body;
 		private String ip;
 		private long start;
+		private Long transferId;
 
 		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
-				String lockId, String body, String ip, long start) {
+				String lockId, Long transferId, String ip, long start) {
 			this.offset = offset;
 			this.zip = zip;
 			this.dsInfos = dsInfos;
 			this.dfInfos = dfInfos;
 			this.lockId = lockId;
 			this.compress = compress;
-			this.body = body;
+			this.transferId = transferId;
 			this.ip = ip;
 			this.start = start;
 		}
@@ -764,10 +768,25 @@ public class IdsBean {
 					stream.close();
 				}
 
-				if (body != null) {
-					transmitter.processMessage("getData", ip, body, start);
+				if (transferId != null) {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+						gen.write("transferId", transferId);
+						gen.writeEnd();
+					}
+					transmitter.processMessage("getData", ip, baos.toString(), start);
 				}
 
+			} catch (IOException e) {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("transferId", transferId);
+					gen.write("exceptionClass", e.getClass().toString());
+					gen.write("exceptionMessage", e.getMessage());
+					gen.writeEnd();
+				}
+				transmitter.processMessage("getData", ip, baos.toString(), start);
+				throw e;
 			} finally {
 				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 			}
@@ -833,16 +852,18 @@ public class IdsBean {
 			}
 		}
 
-		String body = null;
+		Long transferId = null;
 		if (logSet.contains(CallType.READ)) {
 			try {
+				transferId = atomicLong.getAndIncrement();
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("transferId", transferId);
 					gen.write("userName", icat.getUserName(sessionId));
 					addIds(gen, investigationIds, datasetIds, datafileIds);
 					gen.writeEnd();
 				}
-				body = baos.toString();
+				transmitter.processMessage("getDataStart", ip, baos.toString(), start);
 			} catch (IcatException_Exception e) {
 				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
 			}
@@ -850,7 +871,7 @@ public class IdsBean {
 
 		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
 				.entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lockId,
-						body, ip, start))
+						transferId, ip, start))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
 	}
