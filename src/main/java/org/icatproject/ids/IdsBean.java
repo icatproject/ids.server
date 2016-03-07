@@ -78,11 +78,6 @@ public class IdsBean {
 		INFO, PREPARE, READ, WRITE, MIGRATE, LINK
 	};
 
-	AtomicLong atomicLong = new AtomicLong();
-
-	@EJB
-	Transmitter transmitter;
-
 	public class RestoreDfTask implements Callable<Void> {
 
 		private Set<DfInfoImpl> dfInfos;
@@ -119,7 +114,97 @@ public class IdsBean {
 		}
 	}
 
-	private ExecutorService threadPool;
+	private class SO implements StreamingOutput {
+
+		private long offset;
+		private boolean zip;
+		private Map<Long, DsInfo> dsInfos;
+		private String lockId;
+		private boolean compress;
+		private Set<DfInfoImpl> dfInfos;
+		private String ip;
+		private long start;
+		private Long transferId;
+
+		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
+				String lockId, Long transferId, String ip, long start) {
+			this.offset = offset;
+			this.zip = zip;
+			this.dsInfos = dsInfos;
+			this.dfInfos = dfInfos;
+			this.lockId = lockId;
+			this.compress = compress;
+			this.transferId = transferId;
+			this.ip = ip;
+			this.start = start;
+		}
+
+		@Override
+		public void write(OutputStream output) throws IOException {
+			try {
+				if (offset != 0) { // Wrap the stream if needed
+					output = new RangeOutputStream(output, offset, null);
+				}
+				byte[] bytes = new byte[BUFSIZ];
+				if (zip) {
+					ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
+					if (!compress) {
+						zos.setLevel(0); // Otherwise use default compression
+					}
+
+					for (DfInfoImpl dfInfo : dfInfos) {
+						logger.debug("Adding " + dfInfo + " to zip");
+						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
+						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
+						zos.putNextEntry(new ZipEntry(entryName));
+						InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
+								dfInfo.getModId());
+
+						int length;
+						while ((length = stream.read(bytes)) >= 0) {
+							zos.write(bytes, 0, length);
+						}
+						zos.closeEntry();
+						stream.close();
+					}
+					zos.close();
+				} else {
+					DfInfoImpl dfInfo = dfInfos.iterator().next();
+					InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
+							dfInfo.getModId());
+					int length;
+					while ((length = stream.read(bytes)) >= 0) {
+						output.write(bytes, 0, length);
+					}
+					output.close();
+					stream.close();
+				}
+
+				if (transferId != null) {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+						gen.write("transferId", transferId);
+						gen.writeEnd();
+					}
+					transmitter.processMessage("getData", ip, baos.toString(), start);
+				}
+
+			} catch (IOException e) {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("transferId", transferId);
+					gen.write("exceptionClass", e.getClass().toString());
+					gen.write("exceptionMessage", e.getMessage());
+					gen.writeEnd();
+				}
+				transmitter.processMessage("getData", ip, baos.toString(), start);
+				throw e;
+			} finally {
+				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
+			}
+		}
+
+	}
 
 	private static final int BUFSIZ = 2048;
 
@@ -127,12 +212,12 @@ public class IdsBean {
 			'F' };
 
 	private static Boolean inited = false;
+
 	private static String key;
+
 	private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
 	private static String paddedPrefix;
-
 	private static final String prefix = "<html><script type=\"text/javascript\">window.name='";
-
 	private static final String suffix = "';</script></html>";
 
 	/** matches standard UUID format of 8-4-4-4-12 hexadecimal digits */
@@ -325,6 +410,13 @@ public class IdsBean {
 			throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
 	}
 
+	private static AtomicLong atomicLong = new AtomicLong();
+
+	@EJB
+	Transmitter transmitter;
+
+	private ExecutorService threadPool;
+
 	private ArchiveStorageInterface archiveStorage;
 
 	private Path datasetDir;
@@ -365,9 +457,33 @@ public class IdsBean {
 
 	private Set<CallType> logSet;
 
+	private void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)
+			throws BadRequestException {
+		if (investigationIds != null) {
+			gen.writeStartArray("investigationIds");
+			for (long invid : DataSelection.getValidIds("investigationIds", investigationIds)) {
+				gen.write(invid);
+			}
+			gen.writeEnd();
+		}
+		if (datasetIds != null) {
+			gen.writeStartArray("datasetIds");
+			for (long invid : DataSelection.getValidIds("datasetIds", datasetIds)) {
+				gen.write(invid);
+			}
+			gen.writeEnd();
+		}
+		if (datafileIds != null) {
+			gen.writeStartArray("datafileIds");
+			for (long invid : DataSelection.getValidIds("datafileIds", datafileIds)) {
+				gen.write(invid);
+			}
+			gen.writeEnd();
+		}
+	}
+
 	public void archive(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-			NotFoundException {
+			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
 
 		long start = System.currentTimeMillis();
 
@@ -485,28 +601,6 @@ public class IdsBean {
 
 	}
 
-	private boolean restoreIfOffline(DfInfoImpl dfInfo) throws InternalException, IOException {
-		boolean maybeOffline = false;
-		if (fsm.getDfMaybeOffline().contains(dfInfo)) {
-			maybeOffline = true;
-		} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-			fsm.queue(dfInfo, DeferredOp.RESTORE);
-			maybeOffline = true;
-		}
-		return maybeOffline;
-	}
-
-	private boolean restoreIfOffline(DsInfo dsInfo, Set<Long> emptyDatasets) throws InternalException, IOException {
-		boolean maybeOffline = false;
-		if (fsm.getDsMaybeOffline().contains(dsInfo)) {
-			maybeOffline = true;
-		} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-			fsm.queue(dsInfo, DeferredOp.RESTORE);
-			maybeOffline = true;
-		}
-		return maybeOffline;
-	}
-
 	public void delete(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
 			NotFoundException, DataNotOnlineException {
@@ -621,9 +715,8 @@ public class IdsBean {
 		}
 	}
 
-	public Response getData(String preparedId, String outname, final long offset, String ip)
-			throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
-			NotImplementedException, DataNotOnlineException {
+	public Response getData(String preparedId, String outname, final long offset, String ip) throws BadRequestException,
+			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
 
 		long time = System.currentTimeMillis();
 
@@ -702,102 +795,10 @@ public class IdsBean {
 				.build();
 	}
 
-	private class SO implements StreamingOutput {
-
-		private long offset;
-		private boolean zip;
-		private Map<Long, DsInfo> dsInfos;
-		private String lockId;
-		private boolean compress;
-		private Set<DfInfoImpl> dfInfos;
-		private String ip;
-		private long start;
-		private Long transferId;
-
-		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
-				String lockId, Long transferId, String ip, long start) {
-			this.offset = offset;
-			this.zip = zip;
-			this.dsInfos = dsInfos;
-			this.dfInfos = dfInfos;
-			this.lockId = lockId;
-			this.compress = compress;
-			this.transferId = transferId;
-			this.ip = ip;
-			this.start = start;
-		}
-
-		@Override
-		public void write(OutputStream output) throws IOException {
-			try {
-				if (offset != 0) { // Wrap the stream if needed
-					output = new RangeOutputStream(output, offset, null);
-				}
-				byte[] bytes = new byte[BUFSIZ];
-				if (zip) {
-					ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
-					if (!compress) {
-						zos.setLevel(0); // Otherwise use default compression
-					}
-
-					for (DfInfoImpl dfInfo : dfInfos) {
-						logger.debug("Adding " + dfInfo + " to zip");
-						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
-						zos.putNextEntry(new ZipEntry(entryName));
-						InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
-								dfInfo.getModId());
-
-						int length;
-						while ((length = stream.read(bytes)) >= 0) {
-							zos.write(bytes, 0, length);
-						}
-						zos.closeEntry();
-						stream.close();
-					}
-					zos.close();
-				} else {
-					DfInfoImpl dfInfo = dfInfos.iterator().next();
-					InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
-							dfInfo.getModId());
-					int length;
-					while ((length = stream.read(bytes)) >= 0) {
-						output.write(bytes, 0, length);
-					}
-					output.close();
-					stream.close();
-				}
-
-				if (transferId != null) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-						gen.write("transferId", transferId);
-						gen.writeEnd();
-					}
-					transmitter.processMessage("getData", ip, baos.toString(), start);
-				}
-
-			} catch (IOException e) {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("transferId", transferId);
-					gen.write("exceptionClass", e.getClass().toString());
-					gen.write("exceptionMessage", e.getMessage());
-					gen.writeEnd();
-				}
-				transmitter.processMessage("getData", ip, baos.toString(), start);
-				throw e;
-			} finally {
-				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
-			}
-		}
-
-	}
-
 	public Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
 			final boolean compress, boolean zip, String outname, final long offset, String ip)
-					throws BadRequestException, NotImplementedException, InternalException,
-					InsufficientPrivilegesException, NotFoundException, DataNotOnlineException {
+					throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
+					DataNotOnlineException {
 
 		long start = System.currentTimeMillis();
 
@@ -874,6 +875,107 @@ public class IdsBean {
 						transferId, ip, start))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
+	}
+
+	public String getDatafileIds(String preparedId, String ip)
+			throws BadRequestException, InternalException, NotFoundException {
+
+		long start = System.currentTimeMillis();
+
+		// Log and validate
+		logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
+
+		validateUUID("preparedId", preparedId);
+
+		// Do it
+		Prepared prepared;
+		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
+			prepared = unpack(stream);
+		} catch (NoSuchFileException e) {
+			throw new NotFoundException("The preparedId " + preparedId + " is not known");
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+		final boolean zip = prepared.zip;
+		final boolean compress = prepared.compress;
+		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			gen.write("zip", zip);
+			gen.write("compress", compress);
+			gen.writeStartArray("ids");
+			for (DfInfoImpl dfInfo : dfInfos) {
+				gen.write(dfInfo.getDfId());
+			}
+			gen.writeEnd().writeEnd().close();
+		}
+		String resp = baos.toString();
+
+		if (logSet.contains(CallType.INFO)) {
+			baos = new ByteArrayOutputStream();
+			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("preparedId", preparedId);
+				gen.writeEnd();
+			}
+			transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
+		}
+
+		return resp;
+	}
+
+	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds,
+			String ip)
+					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		long start = System.currentTimeMillis();
+
+		// Log and validate
+		logger.info(String.format(
+				"New webservice request: getDatafileIds investigationIds=%s, datasetIds=%s, datafileIds=%s",
+				investigationIds, datasetIds, datafileIds));
+
+		validateUUID("sessionId", sessionId);
+
+		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+				datafileIds, Returns.DATAFILES);
+
+		// Do it
+		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			gen.writeStartArray("ids");
+			for (DfInfoImpl dfInfo : dfInfos) {
+				gen.write(dfInfo.getDfId());
+			}
+			gen.writeEnd().writeEnd().close();
+		}
+		String resp = baos.toString();
+
+		if (logSet.contains(CallType.INFO)) {
+			baos = new ByteArrayOutputStream();
+			try {
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+
+		return resp;
+
+	}
+
+	public String getIcatUrl(String ip) {
+		if (logSet.contains(CallType.INFO)) {
+			transmitter.processMessage("getIcatUrl", ip, "{}", System.currentTimeMillis());
+		}
+		return propertyHandler.getIcatUrl();
 	}
 
 	public String getLink(String sessionId, long datafileId, String username, String ip)
@@ -1098,6 +1200,7 @@ public class IdsBean {
 				Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
 				Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
 				for (DsInfo dsInfo : dsInfos.values()) {
+					fsm.checkFailure(dsInfo.getDsId());
 					if (restoring.contains(dsInfo)) {
 						status = Status.RESTORING;
 					} else if (maybeOffline.contains(dsInfo)) {
@@ -1116,6 +1219,7 @@ public class IdsBean {
 				Set<DfInfo> restoring = fsm.getDfRestoring();
 				Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
 				for (DfInfo dfInfo : dfInfos) {
+					fsm.checkFailure(dfInfo.getDfId());
 					if (restoring.contains(dfInfo)) {
 						status = Status.RESTORING;
 					} else if (maybeOffline.contains(dfInfo)) {
@@ -1202,6 +1306,7 @@ public class IdsBean {
 				}
 
 				linkEnabled = propertyHandler.getLinkLifetimeMillis() > 0;
+
 				maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
 
 				threadPool = Executors.newCachedThreadPool();
@@ -1212,8 +1317,8 @@ public class IdsBean {
 
 				logger.info("created IdsBean");
 			}
-		} catch (Exception e) {
-			logger.error("Won't start " + (e.getStackTrace())[0]);
+		} catch (Throwable e) {
+			logger.error("Won't start ", e);
 			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
 		}
 	}
@@ -1243,12 +1348,14 @@ public class IdsBean {
 		try {
 			if (storageUnit == StorageUnit.DATASET) {
 				for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
+					fsm.checkFailure(dsInfo.getDsId());
 					if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
 						prepared = false;
 					}
 				}
 			} else if (storageUnit == StorageUnit.DATAFILE) {
 				for (DfInfoImpl dfInfo : preparedJson.dfInfos) {
+					fsm.checkFailure(dfInfo.getDfId());
 					if (restoreIfOffline(dfInfo)) {
 						prepared = false;
 					}
@@ -1287,8 +1394,8 @@ public class IdsBean {
 	}
 
 	public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			boolean compress, boolean zip, String ip) throws NotImplementedException, BadRequestException,
-					InternalException, InsufficientPrivilegesException, NotFoundException {
+			boolean compress, boolean zip, String ip)
+					throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
 
 		long start = System.currentTimeMillis();
 
@@ -1346,31 +1453,6 @@ public class IdsBean {
 		}
 
 		return preparedId;
-	}
-
-	private void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)
-			throws BadRequestException {
-		if (investigationIds != null) {
-			gen.writeStartArray("investigationIds");
-			for (long invid : DataSelection.getValidIds("investigationIds", investigationIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-		if (datasetIds != null) {
-			gen.writeStartArray("datasetIds");
-			for (long invid : DataSelection.getValidIds("datasetIds", datasetIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-		if (datafileIds != null) {
-			gen.writeStartArray("datafileIds");
-			for (long invid : DataSelection.getValidIds("datafileIds", datafileIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
 	}
 
 	public Response put(InputStream body, String sessionId, String name, String datafileFormatIdString,
@@ -1629,10 +1711,88 @@ public class IdsBean {
 		}
 	}
 
+	public void reset(String preparedId, String ip) throws BadRequestException, InternalException, NotFoundException {
+		long start = System.currentTimeMillis();
+
+		logger.info(String.format("New webservice request: reset preparedId=%s", preparedId));
+
+		// Validate
+		validateUUID("preparedId", preparedId);
+
+		// Do it
+		Prepared preparedJson;
+		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
+			preparedJson = unpack(stream);
+		} catch (NoSuchFileException e) {
+			throw new NotFoundException("The preparedId " + preparedId + " is not known");
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+		if (storageUnit == StorageUnit.DATASET) {
+			for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
+				fsm.recordSuccess(dsInfo.getDsId());
+			}
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			for (DfInfoImpl dfInfo : preparedJson.dfInfos) {
+				fsm.recordSuccess(dfInfo.getDfId());
+			}
+		}
+
+		if (logSet.contains(CallType.MIGRATE)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("preparedId", preparedId);
+				gen.writeEnd();
+			}
+			String body = baos.toString();
+			transmitter.processMessage("reset", ip, body, start);
+		}
+	}
+
+	public void reset(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+		long start = System.currentTimeMillis();
+
+		// Log and validate
+		logger.info("New webservice request: reset " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
+				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+
+		validateUUID("sessionId", sessionId);
+
+		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+				datafileIds, Returns.DATASETS_AND_DATAFILES);
+
+		// Do it
+		if (storageUnit == StorageUnit.DATASET) {
+			for (DsInfo dsInfo : dataSelection.getDsInfo().values()) {
+				fsm.recordSuccess(dsInfo.getDsId());
+			}
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
+				fsm.recordSuccess(dfInfo.getDfId());
+			}
+		}
+
+		if (logSet.contains(CallType.MIGRATE)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("reset", ip, body, start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+	}
+
 	private void restartUnfinishedWork() throws InternalException {
 
 		try {
-
 			for (File file : markerDir.toFile().listFiles()) {
 				if (storageUnit == StorageUnit.DATASET) {
 					long dsid = Long.parseLong(file.toPath().getFileName().toString());
@@ -1680,8 +1840,7 @@ public class IdsBean {
 	}
 
 	public void restore(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws BadRequestException, NotImplementedException, InsufficientPrivilegesException, InternalException,
-			NotFoundException {
+			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
 
 		long start = System.currentTimeMillis();
 
@@ -1723,104 +1882,25 @@ public class IdsBean {
 		}
 	}
 
-	public String getIcatUrl(String ip) {
-		if (logSet.contains(CallType.INFO)) {
-			transmitter.processMessage("getIcatUrl", ip, "{}", System.currentTimeMillis());
+	private boolean restoreIfOffline(DfInfoImpl dfInfo) throws InternalException, IOException {
+		boolean maybeOffline = false;
+		if (fsm.getDfMaybeOffline().contains(dfInfo)) {
+			maybeOffline = true;
+		} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
+			fsm.queue(dfInfo, DeferredOp.RESTORE);
+			maybeOffline = true;
 		}
-		return propertyHandler.getIcatUrl();
+		return maybeOffline;
 	}
 
-	public String getDatafileIds(String preparedId, String ip)
-			throws BadRequestException, InternalException, NotFoundException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
-
-		validateUUID("preparedId", preparedId);
-
-		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
+	private boolean restoreIfOffline(DsInfo dsInfo, Set<Long> emptyDatasets) throws InternalException, IOException {
+		boolean maybeOffline = false;
+		if (fsm.getDsMaybeOffline().contains(dsInfo)) {
+			maybeOffline = true;
+		} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+			fsm.queue(dsInfo, DeferredOp.RESTORE);
+			maybeOffline = true;
 		}
-
-		final boolean zip = prepared.zip;
-		final boolean compress = prepared.compress;
-		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
-
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-			gen.write("zip", zip);
-			gen.write("compress", compress);
-			gen.writeStartArray("ids");
-			for (DfInfoImpl dfInfo : dfInfos) {
-				gen.write(dfInfo.getDfId());
-			}
-			gen.writeEnd().writeEnd().close();
-		}
-		String resp = baos.toString();
-
-		if (logSet.contains(CallType.INFO)) {
-			baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
-		}
-
-		return resp;
-	}
-
-	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			String ip)
-					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info(String.format(
-				"New webservice request: getDatafileIds investigationIds=%s, datasetIds=%s, datafileIds=%s",
-				investigationIds, datasetIds, datafileIds));
-
-		validateUUID("sessionId", sessionId);
-
-		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
-				datafileIds, Returns.DATAFILES);
-
-		// Do it
-		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-			gen.writeStartArray("ids");
-			for (DfInfoImpl dfInfo : dfInfos) {
-				gen.write(dfInfo.getDfId());
-			}
-			gen.writeEnd().writeEnd().close();
-		}
-		String resp = baos.toString();
-
-		if (logSet.contains(CallType.INFO)) {
-			baos = new ByteArrayOutputStream();
-			try {
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-
-		return resp;
-
+		return maybeOffline;
 	}
 }

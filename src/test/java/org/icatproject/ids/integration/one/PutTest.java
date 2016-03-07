@@ -20,7 +20,7 @@ import org.junit.Test;
 
 public class PutTest extends BaseTest {
 
-	private static long timestamp;
+	private static long timestamp = System.currentTimeMillis();
 
 	@BeforeClass
 	public static void setup() throws Exception {

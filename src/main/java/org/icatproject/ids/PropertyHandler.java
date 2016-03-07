@@ -1,8 +1,10 @@
 package org.icatproject.ids;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -10,6 +12,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import javax.json.Json;
+import javax.json.JsonReader;
 
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
@@ -19,7 +24,6 @@ import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
-import org.icatproject.utils.ICATGetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +73,7 @@ public class PropertyHandler {
 	private String key;
 	private int maxIdsInQuery;
 	private String icatUrl;
-	private int maxEntities;
+	private Integer maxEntities;
 	private String jmsTopicConnectionFactory;
 	private Set<CallType> logSet = new HashSet<>();
 
@@ -83,15 +87,6 @@ public class PropertyHandler {
 			logger.info("Property file ids.properties loaded");
 
 			icatUrl = props.getString("icat.url");
-
-			try {
-				// TODO get this from ICAT when possible
-				maxEntities = props.getPositiveInt("maxEntities");
-			} catch (Exception e) {
-				String msg = "Problem finding maxEntities from the ICAT server ";
-				logger.error(msg);
-				throw new IllegalStateException(msg);
-			}
 
 			preparedCount = props.getPositiveInt("preparedCount");
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
@@ -217,10 +212,6 @@ public class PropertyHandler {
 		}
 	}
 
-	public int getMaxIdsInQuery() {
-		return maxIdsInQuery;
-	}
-
 	private void abort(String msg) {
 		logger.error(msg);
 		logger.error("IllegalStateException being thrown");
@@ -252,16 +243,62 @@ public class PropertyHandler {
 	}
 
 	public synchronized ICAT getIcatService() {
-		if (icatService == null) {
-			// Keep trying every 10 seconds to connect to ICAT. Each failure
-			// will produce an error message.
-			while (true) {
+		// Keep trying every 10 seconds to connect to ICAT. Each failure
+		// will produce an error message.
+		while (icatService == null) {
+			try {
+				icatService = ICATGetter.getService(icatUrl);
+			} catch (IcatException_Exception e) {
+				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " " + e.getMessage();
+				logger.error(msg);
 				try {
-					icatService = ICATGetter.getService(icatUrl);
-					break;
-				} catch (IcatException_Exception e) {
-					String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " "
-							+ e.getMessage();
+					Thread.sleep(10000);
+				} catch (InterruptedException e1) {
+					throw new IllegalStateException(msg);
+				}
+			}
+		}
+		return icatService;
+	}
+
+	public String getIcatUrl() {
+		return icatUrl;
+	}
+
+	public String getJmsTopicConnectionFactory() {
+		return jmsTopicConnectionFactory;
+	}
+
+	public String getKey() {
+		return key;
+	}
+
+	public long getLinkLifetimeMillis() {
+		return linkLifetimeMillis;
+	}
+
+	public Set<CallType> getLogSet() {
+		return logSet;
+	}
+
+	public MainStorageInterface getMainStorage() {
+		return mainStorage;
+	}
+
+	public synchronized int getMaxEntities() {
+		// Keep trying every 10 seconds to connect to ICAT. Each failure
+		// will produce an error message.
+		while (maxEntities == null) {
+			try {
+				org.icatproject.icat.client.ICAT ricat = new org.icatproject.icat.client.ICAT(icatUrl);
+
+				try (JsonReader parser = Json
+						.createReader(new ByteArrayInputStream(ricat.getProperties().getBytes()))) {
+					maxEntities = parser.readObject().getInt("maxEntities");
+					logger.info("maxEntities from the ICAT.server {} version {} is {}", icatUrl, ricat.getApiVersion(),
+							maxEntities);
+				} catch (Exception e) {
+					String msg = "Problem finding ICAT API version " + e.getClass() + " " + e.getMessage();
 					logger.error(msg);
 					try {
 						Thread.sleep(10000);
@@ -269,17 +306,17 @@ public class PropertyHandler {
 						throw new IllegalStateException(msg);
 					}
 				}
+			} catch (URISyntaxException e) {
+				String msg = "Problem finding ICAT API version " + e.getClass() + " " + e.getMessage();
+				logger.error(msg);
+				throw new IllegalStateException(msg);
 			}
 		}
-		return icatService;
+		return maxEntities;
 	}
 
-	public long getLinkLifetimeMillis() {
-		return linkLifetimeMillis;
-	}
-
-	public MainStorageInterface getMainStorage() {
-		return mainStorage;
+	public int getMaxIdsInQuery() {
+		return maxIdsInQuery;
 	}
 
 	public int getPreparedCount() {
@@ -318,36 +355,16 @@ public class PropertyHandler {
 		return storageUnit;
 	}
 
+	public int getTidyBlockSize() {
+		return tidyBlockSize;
+	}
+
 	public long getWriteDelaySeconds() {
 		return writeDelaySeconds;
 	}
 
 	public ZipMapperInterface getZipMapper() {
 		return zipMapper;
-	}
-
-	public int getTidyBlockSize() {
-		return tidyBlockSize;
-	}
-
-	public String getKey() {
-		return key;
-	}
-
-	public String getIcatUrl() {
-		return icatUrl;
-	}
-
-	public int getMaxEntities() {
-		return maxEntities;
-	}
-
-	public String getJmsTopicConnectionFactory() {
-		return jmsTopicConnectionFactory;
-	}
-
-	public Set<CallType> getLogSet() {
-		return logSet;
 	}
 
 }

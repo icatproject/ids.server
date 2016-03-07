@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -247,6 +248,8 @@ public class FiniteStateMachine {
 	private Long writeTime;
 
 	private Map<DsInfo, Long> writeTimes = new HashMap<>();
+
+	private Map<Long, String> failures = new ConcurrentHashMap<>();
 
 	@PreDestroy
 	private void exit() {
@@ -640,6 +643,22 @@ public class FiniteStateMachine {
 				}
 			}
 		}
+	}
+
+	public void recordSuccess(Long id) {
+		failures.remove(id);
+	}
+
+	public void recordFailure(Long id, String msg) {
+		failures.put(id, msg );
+	}
+
+	public void checkFailure(Long id) throws InternalException {
+		String msg = failures.get(id);
+		if (msg != null){
+			throw new InternalException("Restore failed " + msg);
+		}
+		
 	}
 
 }

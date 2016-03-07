@@ -34,5 +34,10 @@ public class BaseTests extends BaseTest {
 	public void getDatafileIdsTest() throws Exception {
 		super.getDatafileIdsTest();
 	}
+	
+	@Test
+	public void reliabilityTest() throws Exception {
+		super.reliabilityTest();
+	}
 
 }

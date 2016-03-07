@@ -18,6 +18,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,12 +41,13 @@ import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
+import org.icatproject.ids.ICATGetter;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.TestingClient;
+import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
-import org.icatproject.utils.ICATGetter;
 import org.junit.Before;
 
 public class BaseTest {
@@ -70,6 +72,8 @@ public class BaseTest {
 		}
 
 	}
+
+	private static long timestamp = System.currentTimeMillis();
 
 	protected Path getDirOnFastStorage(Long dsId) throws IcatException_Exception {
 		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation", dsId);
@@ -280,10 +284,6 @@ public class BaseTest {
 			df4.setDataset(ds2);
 			writeToFile(df4, "df4 test content very compressible very compressible", key);
 
-			// System.out.println("ds " + ds2.getId() + " holds dfs " +
-			// df3.getId() + " and "
-			// + df4.getId());
-
 			datasetIds.add(ds1.getId());
 			datasetIds.add(ds2.getId());
 
@@ -481,7 +481,7 @@ public class BaseTest {
 	}
 
 	protected void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.5."));
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.6."));
 	}
 
 	protected void raceTest() throws Exception {
@@ -553,6 +553,52 @@ public class BaseTest {
 		for (Long id : datafileIds) {
 			assertTrue(ids.contains(id));
 		}
+
+	}
+
+	public void reliabilityTest() throws Exception {
+
+		testingClient.restore(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)), 204);
+		waitForIds();
+
+		Long dfid1 = testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file2_" + timestamp,
+				datasetIds.get(0), supportedDatafileFormat.getId(), "A rather splendid datafile", 201);
+
+		testingClient.archive(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)), 204);
+		waitForIds();
+
+		setup.setReliability(0.);
+
+		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(dfid1), Flag.NONE,
+				200);
+
+		try {
+			while (!testingClient.isPrepared(preparedId, null)) {
+				Thread.sleep(1000);
+			}
+		} catch (Exception e) {
+			System.out.println(e);
+			setup.setReliability(1.);
+			testingClient.reset(preparedId, 204);
+			while (!testingClient.isPrepared(preparedId, null)) {
+				Thread.sleep(1000);
+			}
+		}
+
+		setup.setReliability(0.);
+		Long dfid2 = testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file3_" + timestamp,
+				datasetIds.get(0), supportedDatafileFormat.getId(), "An even better datafile", "7.1.3",
+				new Date(420000), new Date(42000), 201);
+		waitForIds();
+		System.out.println(testingClient.getStatus(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(dfid2), 200));
+		setup.setReliability(1.);
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)).addDatafile(dfid2), 204);
+		waitForIds();
+		System.out.println(testingClient.getStatus(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(dfid2), 200));
 
 	}
 

@@ -51,15 +51,19 @@
 	<h2>The ids-setup.properties file</h2>
 
 	<dl>
-
-		<dt>glassfish</dt>
-		<dd>is the top level of the glassfish installation. It must
-			contain "glassfish/domains".</dd>
+		<dt>container</dt>
+		<dd>May be either glassfish or wildfly.</dd>
+		<dt>home</dt>
+		<dd>is the top level of the container installation. For
+			glasssfish it must contain "glassfish/domains" and for wildfly it
+			must contain jboss-modules.jar.</dd>
 		<dt>port</dt>
-		<dd>is the administration port of the chosen glassfish domain
-			which is typically 4848.</dd>
+		<dd>is the administration port of the container which is
+			typically 4848 for glassfish and 9990 for wildfly.</dd>
+		<dt>secure</dt>
+		<dd>must be set to true or false. If true then only https and not
+			http connections will be allowed.</dd>
 	</dl>
-
 
 	<h2>The ids.properties file</h2>
 
@@ -72,11 +76,6 @@
 			just have the scheme, the hostname and the port. For example:
 			<code>https://example.com:443</code>
 		</dd>
-
-		<dt>maxEntities</dt>
-		<dd>This should match (or be less than) that set in the
-			icat.server. It causes queries which would otherwise be too large for
-			the icat.server to be split.</dd>
 
 		<dt>plugin.zipMapper.class</dt>
 		<dd>The class name of the ZipMapper which defines the Zip file

@@ -7,12 +7,11 @@
 	<h1>IDS Server Release Notes</h1>
 
 	<h2>1.6.0</h2>
-	<p>Allow maxEntities to be specified.</p>
+	<p>Checks the value of maxEntities from the ICAT it is using and
+		various improvements and bug fixes.</p>
 	<ul>
-		<li>Allow maxEntities to be specified. This requires a new
-			property maxEntities which should match (or be less than that set in
-			the icat.server). The next icat.server can be queried to find the
-			value that has been set so this property is temporary</li>
+		<li>The server checks the value of maxEntities from the ICAT it
+			is using to avoid generating queries that will fail in ICAT.</li>
 		<li>The messages from the file checker have been improved when
 			storage is by dataset and a zip file is found to be corrupt.</li>
 		<li>Now waits for ICAT connection if ICAT not available at

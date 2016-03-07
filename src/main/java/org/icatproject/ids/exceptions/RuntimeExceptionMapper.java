@@ -1,4 +1,4 @@
-package org.icatproject.ids;
+package org.icatproject.ids.exceptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

@@ -96,8 +96,8 @@ public class GetDataForPreparedIdTest extends BaseTest {
 	@Test
 	public void correctBehaviourNoOffsetWithDatasetAndDatafileTest() throws Exception {
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-				.addDatafiles(datafileIds), Flag.NONE, 200);
+		String preparedId = testingClient.prepareData(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)).addDatafiles(datafileIds), Flag.NONE, 200);
 
 		while (!testingClient.isPrepared(preparedId, 200)) {
 			Thread.sleep(1000);

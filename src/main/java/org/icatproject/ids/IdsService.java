@@ -50,89 +50,6 @@ public class IdsService {
 	private Pattern rangeRe;
 
 	/**
-	 * Return list of id values of data files included in the preparedId
-	 * returned by a call to prepareData or by the investigationIds, datasetIds
-	 * and datafileIds specified along with a sessionId if the preparedId is not
-	 * set.
-	 * 
-	 * @summary getDatafileIds
-	 * @param preparedId
-	 *            A valid preparedId returned by a call to prepareData
-	 * @param sessionId
-	 *            A sessionId returned by a call to the icat server.
-	 * @param investigationIds
-	 *            A comma separated list of investigation id values.
-	 * @param datasetIds
-	 *            A comma separated list of data set id values.
-	 * @param datafileIds
-	 *            A comma separated list of datafile id values.
-	 * 
-	 * @return a list of id values
-	 * 
-	 * @throws NotImplementedException
-	 * @throws BadRequestException
-	 * @throws InternalException
-	 * @throws NotFoundException
-	 * @throws InsufficientPrivilegesException
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("getDatafileIds")
-	@Produces(MediaType.APPLICATION_JSON)
-	public String getDatafileIds(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
-			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
-			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-					throws NotImplementedException, BadRequestException, InternalException, NotFoundException,
-					InsufficientPrivilegesException {
-		if (preparedId != null) {
-			return idsBean.getDatafileIds(preparedId,request.getRemoteAddr());
-		} else {
-			return idsBean.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
-		}
-	}
-
-	/**
-	 * Return a hard link to a data file.
-	 * 
-	 * This is only useful in those cases where the user has direct access to
-	 * the file system where the IDS is storing data. Only read access to the
-	 * file is granted.
-	 * 
-	 * @summary getLink
-	 * 
-	 * @param sessionId
-	 *            A valid ICAT session ID
-	 * @param datafileId
-	 *            the id of a data file
-	 * @param username
-	 *            the name of the user who will will be granted access to the
-	 *            linked file.
-	 * 
-	 * @return the path of the created link.
-	 * 
-	 * @throws BadRequestException
-	 * @throws InsufficientPrivilegesException
-	 * @throws NotImplementedException
-	 * @throws InternalException
-	 * @throws NotFoundException
-	 * @throws DataNotOnlineException
-	 * 
-	 * @statuscode 200 To indicate success
-	 * 
-	 */
-	@POST
-	@Path("getLink")
-	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-	@Produces(MediaType.TEXT_PLAIN)
-	public String getLink(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
-			@FormParam("datafileId") long datafileId, @FormParam("username") String username)
-					throws BadRequestException, InsufficientPrivilegesException, NotImplementedException,
-					InternalException, NotFoundException, DataNotOnlineException {
-		return idsBean.getLink(sessionId, datafileId, username,request.getRemoteAddr());
-	}
-
-	/**
 	 * Archive data specified by the investigationIds, datasetIds and
 	 * datafileIds specified along with a sessionId. If two level storage is not
 	 * in use this has no effect.
@@ -151,7 +68,6 @@ public class IdsService {
 	 * 
 	 * @throws BadRequestException
 	 * @throws InsufficientPrivilegesException
-	 * @throws NotImplementedException
 	 * @throws InternalException
 	 * @throws NotFoundException
 	 * 
@@ -162,8 +78,8 @@ public class IdsService {
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	public void archive(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
-			@FormParam("datafileIds") String datafileIds) throws BadRequestException, InsufficientPrivilegesException,
-					NotImplementedException, InternalException, NotFoundException {
+			@FormParam("datafileIds") String datafileIds)
+					throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
 		idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
@@ -201,38 +117,9 @@ public class IdsService {
 		idsBean.delete(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
-	/**
-	 * An ids server can be configured to be read only. This returns the
-	 * readOnly status of the server.
-	 * 
-	 * @summary isReadOnly
-	 * 
-	 * @return true if readonly, else false
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("isReadOnly")
-	@Produces(MediaType.TEXT_PLAIN)
-	public boolean isReadOnly(@Context HttpServletRequest request) {
-		return idsBean.isReadOnly(request.getRemoteAddr());
-	}
-
-	/**
-	 * An ids server can be configured to support one or two levels of data
-	 * storage. This returns the twoLevel status of the server.
-	 * 
-	 * @summary isTwoLevel
-	 * 
-	 * @return true if twoLevel, else false
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("isTwoLevel")
-	@Produces(MediaType.TEXT_PLAIN)
-	public boolean isTwoLevel(@Context HttpServletRequest request) {
-		return idsBean.isTwoLevel(request.getRemoteAddr());
+	@PreDestroy
+	private void exit() {
+		logger.info("destroyed IdsService");
 	}
 
 	/**
@@ -249,57 +136,6 @@ public class IdsService {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getApiVersion() {
 		return Constants.API_VERSION;
-	}
-
-	/**
-	 * Return the url of the icat.server that this ids.server has been
-	 * configured to use. This is the icat.server from which a sessionId must be
-	 * obtained.
-	 * 
-	 * @return the url of the icat server
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("getIcatUrl")
-	@Produces(MediaType.TEXT_PLAIN)
-	public String getIcatUrl(@Context HttpServletRequest request) {
-		return idsBean.getIcatUrl(request.getRemoteAddr());
-	}
-
-	/**
-	 * Return the total size of all the data files specified by the
-	 * investigationIds, datasetIds and datafileIds along with a sessionId.
-	 * 
-	 * @summary getSize
-	 * 
-	 * @param sessionId
-	 *            A sessionId returned by a call to the icat server.
-	 * @param investigationIds
-	 *            If present, a comma separated list of investigation id values
-	 * @param datasetIds
-	 *            If present, a comma separated list of data set id values or
-	 *            null
-	 * @param datafileIds
-	 *            If present, a comma separated list of data file id values.
-	 * 
-	 * @return the size in bytes
-	 * 
-	 * @throws BadRequestException
-	 * @throws NotFoundException
-	 * @throws InsufficientPrivilegesException
-	 * @throws InternalException
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("getSize")
-	@Produces(MediaType.TEXT_PLAIN)
-	public long getSize(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafileIds)
-					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-		return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
 	/**
@@ -342,7 +178,6 @@ public class IdsService {
 	 * @throws NotFoundException
 	 * @throws InternalException
 	 * @throws InsufficientPrivilegesException
-	 * @throws NotImplementedException
 	 * @throws DataNotOnlineException
 	 * 
 	 * @statuscode 200 To indicate success
@@ -354,9 +189,8 @@ public class IdsService {
 			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds,
 			@QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
-			@QueryParam("outname") String outname, @HeaderParam("Range") String range)
-					throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
-					NotImplementedException, DataNotOnlineException {
+			@QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
+					NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
 		Response response = null;
 
 		long offset = 0;
@@ -377,6 +211,164 @@ public class IdsService {
 					offset, request.getRemoteAddr());
 		}
 		return response;
+	}
+
+	/**
+	 * Return list of id values of data files included in the preparedId
+	 * returned by a call to prepareData or by the investigationIds, datasetIds
+	 * and datafileIds specified along with a sessionId if the preparedId is not
+	 * set.
+	 * 
+	 * @summary getDatafileIds
+	 * @param preparedId
+	 *            A valid preparedId returned by a call to prepareData
+	 * @param sessionId
+	 *            A sessionId returned by a call to the icat server.
+	 * @param investigationIds
+	 *            A comma separated list of investigation id values.
+	 * @param datasetIds
+	 *            A comma separated list of data set id values.
+	 * @param datafileIds
+	 *            A comma separated list of datafile id values.
+	 * 
+	 * @return a list of id values
+	 * 
+	 * @throws BadRequestException
+	 * @throws InternalException
+	 * @throws NotFoundException
+	 * @throws InsufficientPrivilegesException
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@GET
+	@Path("getDatafileIds")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getDatafileIds(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
+			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
+					throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
+		if (preparedId != null) {
+			return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
+		} else {
+			return idsBean.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds,
+					request.getRemoteAddr());
+		}
+	}
+
+	/**
+	 * Return the url of the icat.server that this ids.server has been
+	 * configured to use. This is the icat.server from which a sessionId must be
+	 * obtained.
+	 * 
+	 * @return the url of the icat server
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@GET
+	@Path("getIcatUrl")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getIcatUrl(@Context HttpServletRequest request) {
+		return idsBean.getIcatUrl(request.getRemoteAddr());
+	}
+
+	/**
+	 * Return a hard link to a data file.
+	 * 
+	 * This is only useful in those cases where the user has direct access to
+	 * the file system where the IDS is storing data. Only read access to the
+	 * file is granted.
+	 * 
+	 * @summary getLink
+	 * 
+	 * @param sessionId
+	 *            A valid ICAT session ID
+	 * @param datafileId
+	 *            the id of a data file
+	 * @param username
+	 *            the name of the user who will will be granted access to the
+	 *            linked file.
+	 * 
+	 * @return the path of the created link.
+	 * 
+	 * @throws BadRequestException
+	 * @throws InsufficientPrivilegesException
+	 * @throws NotImplementedException
+	 * @throws InternalException
+	 * @throws NotFoundException
+	 * @throws DataNotOnlineException
+	 * 
+	 * @statuscode 200 To indicate success
+	 * 
+	 */
+	@POST
+	@Path("getLink")
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getLink(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
+			@FormParam("datafileId") long datafileId, @FormParam("username") String username)
+					throws BadRequestException, InsufficientPrivilegesException, NotImplementedException,
+					InternalException, NotFoundException, DataNotOnlineException {
+		return idsBean.getLink(sessionId, datafileId, username, request.getRemoteAddr());
+	}
+
+	/**
+	 * Obtain detailed information about what the ids is doing. You need to be
+	 * privileged to use this call.
+	 * 
+	 * @summary getServiceStatus
+	 * 
+	 * @param sessionId
+	 *            A valid ICAT session ID of a user in the IDS rootUserNames
+	 *            set.
+	 * 
+	 * @return a json string.
+	 * 
+	 * @throws InternalException
+	 * @throws InsufficientPrivilegesException
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@GET
+	@Path("getServiceStatus")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getServiceStatus(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId)
+			throws InternalException, InsufficientPrivilegesException {
+		return idsBean.getServiceStatus(sessionId, request.getRemoteAddr());
+	}
+
+	/**
+	 * Return the total size of all the data files specified by the
+	 * investigationIds, datasetIds and datafileIds along with a sessionId.
+	 * 
+	 * @summary getSize
+	 * 
+	 * @param sessionId
+	 *            A sessionId returned by a call to the icat server.
+	 * @param investigationIds
+	 *            If present, a comma separated list of investigation id values
+	 * @param datasetIds
+	 *            If present, a comma separated list of data set id values or
+	 *            null
+	 * @param datafileIds
+	 *            If present, a comma separated list of data file id values.
+	 * 
+	 * @return the size in bytes
+	 * 
+	 * @throws BadRequestException
+	 * @throws NotFoundException
+	 * @throws InsufficientPrivilegesException
+	 * @throws InternalException
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@GET
+	@Path("getSize")
+	@Produces(MediaType.TEXT_PLAIN)
+	public long getSize(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
+			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+			@QueryParam("datafileIds") String datafileIds)
+					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+		return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
 	/**
@@ -420,6 +412,13 @@ public class IdsService {
 		return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
+	@PostConstruct
+	private void init() {
+		logger.info("creating IdsService");
+		rangeRe = Pattern.compile("bytes=(\\d+)-");
+		logger.info("created IdsService");
+	}
+
 	/**
 	 * Returns true if all the data files are ready to be downloaded. As a side
 	 * effect, if any data files are archived and no restoration has been
@@ -447,40 +446,37 @@ public class IdsService {
 	}
 
 	/**
-	 * Obtain detailed information about what the ids is doing. You need to be
-	 * privileged to use this call.
+	 * An ids server can be configured to be read only. This returns the
+	 * readOnly status of the server.
 	 * 
-	 * @summary getServiceStatus
+	 * @summary isReadOnly
 	 * 
-	 * @param sessionId
-	 *            A valid ICAT session ID of a user in the IDS rootUserNames
-	 *            set.
-	 * 
-	 * @return a json string.
-	 * 
-	 * @throws InternalException
-	 * @throws InsufficientPrivilegesException
+	 * @return true if readonly, else false
 	 * 
 	 * @statuscode 200 To indicate success
 	 */
 	@GET
-	@Path("getServiceStatus")
-	@Produces(MediaType.APPLICATION_JSON)
-	public String getServiceStatus(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId)
-			throws InternalException, InsufficientPrivilegesException {
-		return idsBean.getServiceStatus(sessionId, request.getRemoteAddr());
+	@Path("isReadOnly")
+	@Produces(MediaType.TEXT_PLAIN)
+	public boolean isReadOnly(@Context HttpServletRequest request) {
+		return idsBean.isReadOnly(request.getRemoteAddr());
 	}
 
-	@PostConstruct
-	private void init() {
-		logger.info("creating IdsService");
-		rangeRe = Pattern.compile("bytes=(\\d+)-");
-		logger.info("created IdsService");
-	}
-
-	@PreDestroy
-	private void exit() {
-		logger.info("destroyed IdsService");
+	/**
+	 * An ids server can be configured to support one or two levels of data
+	 * storage. This returns the twoLevel status of the server.
+	 * 
+	 * @summary isTwoLevel
+	 * 
+	 * @return true if twoLevel, else false
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@GET
+	@Path("isTwoLevel")
+	@Produces(MediaType.TEXT_PLAIN)
+	public boolean isTwoLevel(@Context HttpServletRequest request) {
+		return idsBean.isTwoLevel(request.getRemoteAddr());
 	}
 
 	/**
@@ -529,7 +525,6 @@ public class IdsService {
 	 * 
 	 * @return a string with the preparedId
 	 * 
-	 * @throws NotImplementedException
 	 * @throws BadRequestException
 	 * @throws InsufficientPrivilegesException
 	 * @throws NotFoundException
@@ -544,8 +539,8 @@ public class IdsService {
 	public String prepareData(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
-			@FormParam("zip") boolean zip) throws NotImplementedException, BadRequestException,
-					InsufficientPrivilegesException, NotFoundException, InternalException {
+			@FormParam("zip") boolean zip)
+					throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException {
 		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip,
 				request.getRemoteAddr());
 	}
@@ -695,6 +690,49 @@ public class IdsService {
 	}
 
 	/**
+	 * Reset a particular set of datafiles or datasets so that they can be
+	 * queried again.
+	 * 
+	 * If secondary storage is in use restores may fail and cause a flag to be
+	 * set so that isPrepared and getStatus calls will throw an exception. This
+	 * call clears the flag.
+	 * 
+	 * @summary reset
+	 * @param preparedId
+	 *            A valid preparedId returned by a call to prepareData
+	 * @param sessionId
+	 *            A sessionId returned by a call to the icat server.
+	 * @param investigationIds
+	 *            A comma separated list of investigation id values.
+	 * @param datasetIds
+	 *            A comma separated list of data set id values.
+	 * @param datafileIds
+	 *            A comma separated list of data file id values.
+	 * 
+	 * @return a stream of json data.
+	 * 
+	 * @throws BadRequestException
+	 * @throws NotFoundException
+	 * @throws InternalException
+	 * @throws InsufficientPrivilegesException
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@POST
+	@Path("reset")
+	public void reset(@Context HttpServletRequest request, @FormParam("preparedId") String preparedId,
+			@FormParam("sessionId") String sessionId, @FormParam("investigationIds") String investigationIds,
+			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
+					throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
+		if (preparedId != null) {
+			idsBean.reset(preparedId, request.getRemoteAddr());
+		} else {
+			idsBean.reset(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+		}
+
+	}
+
+	/**
 	 * Restore data specified by the investigationIds, datasetIds and
 	 * datafileIds specified along with a sessionId. If two level storage is not
 	 * in use this has no effect.
@@ -711,7 +749,6 @@ public class IdsService {
 	 * @param datafileIds
 	 *            If present, a comma separated list of datafile id values.
 	 *
-	 * @throws NotImplementedException
 	 * @throws BadRequestException
 	 * @throws InsufficientPrivilegesException
 	 * @throws InternalException
@@ -724,8 +761,8 @@ public class IdsService {
 	@Consumes("application/x-www-form-urlencoded")
 	public void restore(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
-			@FormParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
-					InsufficientPrivilegesException, InternalException, NotFoundException {
+			@FormParam("datafileIds") String datafileIds)
+					throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
 		idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 

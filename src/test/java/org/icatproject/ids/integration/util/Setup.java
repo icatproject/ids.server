@@ -1,11 +1,14 @@
 package org.icatproject.ids.integration.util;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Properties;
@@ -14,8 +17,8 @@ import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
+import org.icatproject.ids.ICATGetter;
 import org.icatproject.utils.CheckedProperties;
-import org.icatproject.utils.ICATGetter;
 import org.icatproject.utils.ShellCommand;
 
 /*
@@ -63,6 +66,8 @@ public class Setup {
 		} catch (Exception e) {
 			System.out.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
 		}
+
+		setReliability(1.);
 
 		idsUrl = new URL(testProps.getProperty("ids.url") + "/ids");
 
@@ -134,6 +139,13 @@ public class Setup {
 
 		errorLog = config.resolve(idsProperties.getString("filesCheck.errorLog"));
 
+	}
+
+	public void setReliability(double d) throws IOException {
+		Path p = Paths.get(System.getProperty("user.home"), "reliability");
+		try (BufferedWriter out = Files.newBufferedWriter(p)) {
+			out.write(d + "\n");
+		}
 	}
 
 	public String login(String username, String password) throws IcatException_Exception, MalformedURLException {
