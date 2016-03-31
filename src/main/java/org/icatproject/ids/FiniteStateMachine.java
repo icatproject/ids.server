@@ -38,7 +38,6 @@ import org.icatproject.ids.thread.DfWriteThenArchiver;
 import org.icatproject.ids.thread.DfWriter;
 import org.icatproject.ids.thread.DsArchiver;
 import org.icatproject.ids.thread.DsRestorer;
-import org.icatproject.ids.thread.DsWriteThenArchiver;
 import org.icatproject.ids.thread.DsWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,6 +144,7 @@ public class FiniteStateMachine {
 			try {
 				synchronized (deferredDsOpsQueue) {
 					final long now = System.currentTimeMillis();
+					Map<DsInfo, RequestedState> newOps = new HashMap<>();
 					final Iterator<Entry<DsInfo, RequestedState>> it = deferredDsOpsQueue
 							.entrySet().iterator();
 					while (it.hasNext()) {
@@ -152,25 +152,18 @@ public class FiniteStateMachine {
 						final DsInfo dsInfo = opEntry.getKey();
 						if (!dsChanging.containsKey(dsInfo)) {
 							final RequestedState state = opEntry.getValue();
-							if (state == RequestedState.WRITE_REQUESTED) {
+							if (state == RequestedState.WRITE_REQUESTED || state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 								if (now > writeTimes.get(dsInfo)) {
 									logger.debug("Will process " + dsInfo + " with " + state);
 									writeTimes.remove(dsInfo);
-									dsChanging.put(dsInfo, state);
+									dsChanging.put(dsInfo, RequestedState.WRITE_REQUESTED);
 									it.remove();
 									final Thread w = new Thread(new DsWriter(dsInfo,
 											propertyHandler, FiniteStateMachine.this, reader));
 									w.start();
-								}
-							} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-								if (now > writeTimes.get(dsInfo)) {
-									logger.debug("Will process " + dsInfo + " with " + state);
-									writeTimes.remove(dsInfo);
-									dsChanging.put(dsInfo, state);
-									it.remove();
-									final Thread w = new Thread(new DsWriteThenArchiver(dsInfo,
-											propertyHandler, FiniteStateMachine.this, reader));
-									w.start();
+									if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+										newOps.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
+									}
 								}
 							} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 								it.remove();
@@ -195,6 +188,7 @@ public class FiniteStateMachine {
 							}
 						}
 					}
+					deferredDsOpsQueue.putAll(newOps);
 				}
 
 			} finally {
