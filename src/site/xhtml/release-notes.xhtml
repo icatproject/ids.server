@@ -24,6 +24,11 @@
 			ids.properties file</li>
 		<li>Moved to the latest icat.utils to support multiple containers</li>
 		<li>Uses logback via slf4j rather than log4j via slf4j</li>
+		<li>A race condition has been avoided which could have resulted
+			in the loss of data</li>
+		<li>If writing to secondary storage fails then archive is
+			inhibited for that data set or data file. This is to prevent data
+			loss.</li>
 	</ul>
 
 	<h2>1.5.0</h2>

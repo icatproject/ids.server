@@ -41,16 +41,14 @@ public class DfWriter implements Runnable {
 		for (DfInfo dfInfo : dfInfos) {
 			try {
 				String dfLocation = dfInfo.getDfLocation();
-				InputStream is = mainStorageInterface.get(dfLocation, dfInfo.getCreateId(),
-						dfInfo.getModId());
+				InputStream is = mainStorageInterface.get(dfLocation, dfInfo.getCreateId(), dfInfo.getModId());
 				archiveStorageInterface.put(is, dfLocation);
 				Path marker = markerDir.resolve(Long.toString(dfInfo.getDfId()));
 				Files.deleteIfExists(marker);
 				logger.debug("Removed marker " + marker);
 				logger.debug("Write of " + dfInfo + " completed");
 			} catch (Exception e) {
-				logger.error("Write of " + dfInfo + " failed due to " + e.getClass() + " "
-						+ e.getMessage());
+				logger.error("Write of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
 			} finally {
 				fsm.removeFromChanging(dfInfo);
 			}
