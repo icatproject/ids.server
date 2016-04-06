@@ -34,7 +34,6 @@ import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.thread.DfArchiver;
 import org.icatproject.ids.thread.DfDeleter;
 import org.icatproject.ids.thread.DfRestorer;
-import org.icatproject.ids.thread.DfWriteThenArchiver;
 import org.icatproject.ids.thread.DfWriter;
 import org.icatproject.ids.thread.DsArchiver;
 import org.icatproject.ids.thread.DsRestorer;
@@ -58,11 +57,11 @@ public class FiniteStateMachine {
 						logger.debug("deferredDfOpsQueue has " + deferredDfOpsQueue.size()
 								+ " entries");
 						List<DfInfo> writes = new ArrayList<>();
-						List<DfInfo> writeThenArchives = new ArrayList<>();
 						List<DfInfo> archives = new ArrayList<>();
 						List<DfInfo> restores = new ArrayList<>();
 						List<DfInfo> deletes = new ArrayList<>();
 
+						Map<DfInfoImpl, RequestedState> newOps = new HashMap<>();
 						final Iterator<Entry<DfInfoImpl, RequestedState>> it = deferredDfOpsQueue
 								.entrySet().iterator();
 						while (it.hasNext()) {
@@ -71,12 +70,14 @@ public class FiniteStateMachine {
 							if (!dfChanging.containsKey(dfInfo)) {
 								it.remove();
 								final RequestedState state = opEntry.getValue();
-								dfChanging.put(dfInfo, state);
 								logger.debug(dfInfo + " " + state);
 								if (state == RequestedState.WRITE_REQUESTED) {
+									dfChanging.put(dfInfo, state);
 									writes.add(dfInfo);
 								} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-									writeThenArchives.add(dfInfo);
+									dfChanging.put(dfInfo, RequestedState.WRITE_REQUESTED);
+									writes.add(dfInfo);
+									newOps.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
 								} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 									long dsId = dfInfo.getDsId();
 									if (isLocked(dsId, QueryLockType.ARCHIVE)) {
@@ -84,27 +85,24 @@ public class FiniteStateMachine {
 												+ " skipped because getData in progress");
 										continue;
 									}
+									dfChanging.put(dfInfo, state);
 									archives.add(dfInfo);
 								} else if (state == RequestedState.RESTORE_REQUESTED) {
+									dfChanging.put(dfInfo, state);
 									restores.add(dfInfo);
 								} else if (state == RequestedState.DELETE_REQUESTED) {
+									dfChanging.put(dfInfo, state);
 									deletes.add(dfInfo);
 								} else {
 									throw new AssertionError("Impossible state");
 								}
 							}
 						}
+						deferredDfOpsQueue.putAll(newOps);
 						if (!writes.isEmpty()) {
 							logger.debug("Launch thread to process " + writes.size() + " writes");
 							Thread w = new Thread(new DfWriter(writes, propertyHandler,
 									FiniteStateMachine.this));
-							w.start();
-						}
-						if (!writeThenArchives.isEmpty()) {
-							logger.debug("Launch thread to process " + writeThenArchives.size()
-									+ " writeThenArchives");
-							Thread w = new Thread(new DfWriteThenArchiver(writeThenArchives,
-									propertyHandler, FiniteStateMachine.this));
 							w.start();
 						}
 						if (!archives.isEmpty()) {
