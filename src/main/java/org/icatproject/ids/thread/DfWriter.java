@@ -46,6 +46,7 @@ public class DfWriter implements Runnable {
 				archiveStorageInterface.put(is, dfLocation);
 				Path marker = markerDir.resolve(Long.toString(dfInfo.getDfId()));
 				Files.deleteIfExists(marker);
+				is.close();
 				logger.debug("Removed marker " + marker);
 				logger.debug("Write of " + dfInfo + " completed");
 			} catch (Exception e) {
