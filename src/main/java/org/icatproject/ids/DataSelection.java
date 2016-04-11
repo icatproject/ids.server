@@ -65,7 +65,7 @@ public class DataSelection {
 
 	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds, String datafileIds,
 			Returns returns)
-					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 
 		this.icat = icat;
 		this.sessionId = sessionId;
@@ -114,11 +114,10 @@ public class DataSelection {
 			for (Long dsid : dsids) {
 				Dataset ds = (Dataset) icat.get(sessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
 				dsInfos.put(dsid, new DsInfoImpl(ds));
-				int offset = 0;
-				boolean more = true;
-				while (more) {
+				long dfStart = -1L;
+				while (true) {
 					List<Object> os = icat.search(sessionId, "SELECT df FROM Datafile df WHERE df.dataset.id = " + dsid
-							+ " ORDER BY df.id LIMIT " + offset + "," + maxEntities);
+							+ " AND df.id > " + dfStart + " ORDER BY df.id LIMIT 0," + maxEntities);
 
 					if (dfWanted) {
 						for (Object o : os) {
@@ -129,34 +128,32 @@ public class DataSelection {
 						}
 					}
 					if (os.isEmpty()) {
-						if (offset == 0) {
+						if (dfStart == -1) {
 							emptyDatasets.add(dsid);
 						}
-						more = false;
+						break;
 					}
-					offset += maxEntities;
+					dfStart = ((Datafile) os.get(os.size() - 1)).getId();
 				}
 			}
 
 			for (Long invid : invids) {
-				int dsOffset = 0;
-				boolean dsMore = true;
-				while (dsMore) {
+				long dsStart = -1;
+				while (true) {
 					List<Object> dss = icat.search(sessionId,
-							"SELECT ds.id FROM Dataset ds WHERE ds.investigation.id = " + invid
-									+ " ORDER BY ds.id LIMIT " + dsOffset + "," + maxEntities);
+							"SELECT ds.id FROM Dataset ds WHERE ds.investigation.id = " + invid + " AND ds.id > "
+									+ dsStart + " ORDER BY ds.id LIMIT 0," + maxEntities);
 					for (Object o : dss) {
 						long dsid = (Long) o;
 						Dataset ds = (Dataset) icat.get(sessionId, "Dataset ds INCLUDE ds.investigation.facility",
 								dsid);
 						dsInfos.put(dsid, new DsInfoImpl(ds));
 
-						int dfOffset = 0;
-						boolean dfMore = true;
-						while (dfMore) {
+						long dfStart = -1L;
+						while (true) {
 							List<Object> dfs = icat.search(sessionId,
-									"SELECT df FROM Datafile df WHERE df.dataset.id = " + dsid
-											+ " ORDER BY df.id LIMIT " + dfOffset + "," + maxEntities);
+									"SELECT df FROM Datafile df WHERE df.dataset.id = " + dsid + " AND df.id > "
+											+ dfStart + " ORDER BY df.id LIMIT 0," + maxEntities);
 
 							if (dfWanted) {
 								for (Object of : dfs) {
@@ -167,19 +164,19 @@ public class DataSelection {
 								}
 							}
 							if (dfs.isEmpty()) {
-								if (dfOffset == 0) {
+								if (dfStart == -1) {
 									emptyDatasets.add(dsid);
 								}
-								dfMore = false;
+								break;
 							}
-							dfOffset += maxEntities;
+							dfStart = ((Datafile) dfs.get(dfs.size() - 1)).getId();
 						}
 
 					}
 					if (dss.isEmpty()) {
-						dsMore = false;
+						break;
 					}
-					dsOffset += maxEntities;
+					dsStart = (Long) dss.get(dss.size() - 1);
 				}
 			}
 

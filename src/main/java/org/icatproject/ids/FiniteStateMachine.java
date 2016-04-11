@@ -51,19 +51,16 @@ public class FiniteStateMachine {
 		public void run() {
 			try {
 				synchronized (deferredDfOpsQueue) {
-					if (writeTime != null && System.currentTimeMillis() > writeTime
-							&& !deferredDfOpsQueue.isEmpty()) {
+					if (writeTime != null && System.currentTimeMillis() > writeTime && !deferredDfOpsQueue.isEmpty()) {
 						writeTime = null;
-						logger.debug("deferredDfOpsQueue has " + deferredDfOpsQueue.size()
-								+ " entries");
+						logger.debug("deferredDfOpsQueue has " + deferredDfOpsQueue.size() + " entries");
 						List<DfInfo> writes = new ArrayList<>();
 						List<DfInfo> archives = new ArrayList<>();
 						List<DfInfo> restores = new ArrayList<>();
 						List<DfInfo> deletes = new ArrayList<>();
 
 						Map<DfInfoImpl, RequestedState> newOps = new HashMap<>();
-						final Iterator<Entry<DfInfoImpl, RequestedState>> it = deferredDfOpsQueue
-								.entrySet().iterator();
+						final Iterator<Entry<DfInfoImpl, RequestedState>> it = deferredDfOpsQueue.entrySet().iterator();
 						while (it.hasNext()) {
 							Entry<DfInfoImpl, RequestedState> opEntry = it.next();
 							DfInfoImpl dfInfo = opEntry.getKey();
@@ -81,8 +78,7 @@ public class FiniteStateMachine {
 								} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 									long dsId = dfInfo.getDsId();
 									if (isLocked(dsId, QueryLockType.ARCHIVE)) {
-										logger.debug("Archive of " + dfInfo
-												+ " skipped because getData in progress");
+										logger.debug("Archive of " + dfInfo + " skipped because getData in progress");
 										continue;
 									}
 									dfChanging.put(dfInfo, state);
@@ -98,31 +94,29 @@ public class FiniteStateMachine {
 								}
 							}
 						}
-						deferredDfOpsQueue.putAll(newOps);
+						if (!newOps.isEmpty()) {
+							deferredDfOpsQueue.putAll(newOps);
+							logger.debug("Adding {} operations to be scheduled next time round", newOps.size());
+							writeTime = 0L;
+						}
 						if (!writes.isEmpty()) {
 							logger.debug("Launch thread to process " + writes.size() + " writes");
-							Thread w = new Thread(new DfWriter(writes, propertyHandler,
-									FiniteStateMachine.this));
+							Thread w = new Thread(new DfWriter(writes, propertyHandler, FiniteStateMachine.this));
 							w.start();
 						}
 						if (!archives.isEmpty()) {
-							logger.debug("Launch thread to process " + archives.size()
-									+ " archives");
-							Thread w = new Thread(new DfArchiver(archives, propertyHandler,
-									FiniteStateMachine.this));
+							logger.debug("Launch thread to process " + archives.size() + " archives");
+							Thread w = new Thread(new DfArchiver(archives, propertyHandler, FiniteStateMachine.this));
 							w.start();
 						}
 						if (!restores.isEmpty()) {
-							logger.debug("Launch thread to process " + restores.size()
-									+ " restores");
-							Thread w = new Thread(new DfRestorer(restores, propertyHandler,
-									FiniteStateMachine.this));
+							logger.debug("Launch thread to process " + restores.size() + " restores");
+							Thread w = new Thread(new DfRestorer(restores, propertyHandler, FiniteStateMachine.this));
 							w.start();
 						}
 						if (!deletes.isEmpty()) {
 							logger.debug("Launch thread to process " + deletes.size() + " deletes");
-							Thread w = new Thread(new DfDeleter(deletes, propertyHandler,
-									FiniteStateMachine.this));
+							Thread w = new Thread(new DfDeleter(deletes, propertyHandler, FiniteStateMachine.this));
 							w.start();
 						}
 					}
@@ -143,21 +137,21 @@ public class FiniteStateMachine {
 				synchronized (deferredDsOpsQueue) {
 					final long now = System.currentTimeMillis();
 					Map<DsInfo, RequestedState> newOps = new HashMap<>();
-					final Iterator<Entry<DsInfo, RequestedState>> it = deferredDsOpsQueue
-							.entrySet().iterator();
+					final Iterator<Entry<DsInfo, RequestedState>> it = deferredDsOpsQueue.entrySet().iterator();
 					while (it.hasNext()) {
 						final Entry<DsInfo, RequestedState> opEntry = it.next();
 						final DsInfo dsInfo = opEntry.getKey();
 						if (!dsChanging.containsKey(dsInfo)) {
 							final RequestedState state = opEntry.getValue();
-							if (state == RequestedState.WRITE_REQUESTED || state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+							if (state == RequestedState.WRITE_REQUESTED
+									|| state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 								if (now > writeTimes.get(dsInfo)) {
 									logger.debug("Will process " + dsInfo + " with " + state);
 									writeTimes.remove(dsInfo);
 									dsChanging.put(dsInfo, RequestedState.WRITE_REQUESTED);
 									it.remove();
-									final Thread w = new Thread(new DsWriter(dsInfo,
-											propertyHandler, FiniteStateMachine.this, reader));
+									final Thread w = new Thread(
+											new DsWriter(dsInfo, propertyHandler, FiniteStateMachine.this, reader));
 									w.start();
 									if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 										newOps.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
@@ -167,21 +161,20 @@ public class FiniteStateMachine {
 								it.remove();
 								long dsId = dsInfo.getDsId();
 								if (isLocked(dsId, QueryLockType.ARCHIVE)) {
-									logger.debug("Archive of " + dsInfo
-											+ " skipped because getData in progress");
+									logger.debug("Archive of " + dsInfo + " skipped because getData in progress");
 									continue;
 								}
 								logger.debug("Will process " + dsInfo + " with " + state);
 								dsChanging.put(dsInfo, state);
-								final Thread w = new Thread(new DsArchiver(dsInfo, propertyHandler,
-										FiniteStateMachine.this));
+								final Thread w = new Thread(
+										new DsArchiver(dsInfo, propertyHandler, FiniteStateMachine.this));
 								w.start();
 							} else if (state == RequestedState.RESTORE_REQUESTED) {
 								logger.debug("Will process " + dsInfo + " with " + state);
 								dsChanging.put(dsInfo, state);
 								it.remove();
-								final Thread w = new Thread(new DsRestorer(dsInfo, propertyHandler,
-										FiniteStateMachine.this, reader));
+								final Thread w = new Thread(
+										new DsRestorer(dsInfo, propertyHandler, FiniteStateMachine.this, reader));
 								w.start();
 							}
 						}
@@ -237,6 +230,10 @@ public class FiniteStateMachine {
 
 	private Timer timer = new Timer("FSM Timer");
 
+	/*
+	 * Note that the variable writeTime has been abused and now also delays
+	 * restore operations TODO
+	 */
 	private Long writeTime;
 
 	private Map<DsInfo, Long> writeTimes = new HashMap<>();
@@ -344,8 +341,8 @@ public class FiniteStateMachine {
 				for (Entry<DsInfo, RequestedState> entry : union.entrySet()) {
 					DsInfo item = entry.getKey();
 
-					gen.writeStartObject().write("data", item.toString())
-							.write("request", entry.getValue().name()).writeEnd();
+					gen.writeStartObject().write("data", item.toString()).write("request", entry.getValue().name())
+							.writeEnd();
 
 				}
 				gen.writeEnd(); // end Array("opsQueue")
@@ -378,8 +375,8 @@ public class FiniteStateMachine {
 				gen.writeStartArray("opsQueue");
 				for (Entry<DfInfo, RequestedState> entry : union.entrySet()) {
 					DfInfo item = entry.getKey();
-					gen.writeStartObject().write("data", item.toString())
-							.write("request", entry.getValue().name()).writeEnd();
+					gen.writeStartObject().write("data", item.toString()).write("request", entry.getValue().name())
+							.writeEnd();
 				}
 				gen.writeEnd(); // end Array("opsQueue")
 
@@ -412,13 +409,11 @@ public class FiniteStateMachine {
 			storageUnit = propertyHandler.getStorageUnit();
 			if (storageUnit == StorageUnit.DATASET) {
 				timer.schedule(new DsProcessQueue(), processQueueIntervalMillis);
-				logger.info("DsProcessQueue scheduled to run in " + processQueueIntervalMillis
-						+ " milliseconds");
+				logger.info("DsProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
 				synchLocksOnDataset = true;
 			} else if (storageUnit == StorageUnit.DATAFILE) {
 				timer.schedule(new DfProcessQueue(), processQueueIntervalMillis);
-				logger.info("DfProcessQueue scheduled to run in " + processQueueIntervalMillis
-						+ " milliseconds");
+				logger.info("DfProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
 				synchLocksOnDataset = false;
 			} else {
 				synchLocksOnDataset = true;
@@ -426,8 +421,7 @@ public class FiniteStateMachine {
 			markerDir = propertyHandler.getCacheDir().resolve("marker");
 			Files.createDirectories(markerDir);
 		} catch (IOException e) {
-			throw new RuntimeException("FiniteStateMachine reports " + e.getClass() + " "
-					+ e.getMessage());
+			throw new RuntimeException("FiniteStateMachine reports " + e.getClass() + " " + e.getMessage());
 		}
 	}
 
@@ -642,15 +636,15 @@ public class FiniteStateMachine {
 	}
 
 	public void recordFailure(Long id, String msg) {
-		failures.put(id, msg );
+		failures.put(id, msg);
 	}
 
 	public void checkFailure(Long id) throws InternalException {
 		String msg = failures.get(id);
-		if (msg != null){
+		if (msg != null) {
 			throw new InternalException("Restore failed " + msg);
 		}
-		
+
 	}
 
 }
