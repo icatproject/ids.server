@@ -52,7 +52,11 @@
 
 	<dl>
 		<dt>container</dt>
-		<dd>May be either glassfish or wildfly.</dd>
+		<dd>
+			Values must be chosen from: <a target="_blank"
+				href="http://www.eclipse.org/eclipselink/api/2.6/org/eclipse/persistence/config/TargetServer.html">TargetServer</a>
+			Though only Glassfish is working properly at the moment.
+		</dd>
 		<dt>home</dt>
 		<dd>is the top level of the container installation. For
 			glasssfish it must contain "glassfish/domains" and for wildfly it

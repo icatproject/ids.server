@@ -1,12 +1,12 @@
 # Glassfish
 secure         = true
-container      = glassfish
+container      = Glassfish
 home           = /home/fisher/pf/glassfish4
 port           = 4848
 
 # WildFly
 !secure         = false
-!container      = wildfly
+!container      = JBoss
 !home           = /home/fisher/pf/wildfly
 !port           = 9990
 
