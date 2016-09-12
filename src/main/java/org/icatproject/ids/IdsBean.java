@@ -10,7 +10,6 @@ import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -67,6 +66,7 @@ import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.utils.IcatSecurity;
 import org.icatproject.utils.ShellCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -208,9 +208,6 @@ public class IdsBean {
 
 	private static final int BUFSIZ = 2048;
 
-	private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
-			'F' };
-
 	private static Boolean inited = false;
 
 	private static String key;
@@ -268,25 +265,6 @@ public class IdsBean {
 		}
 	}
 
-	static String digest(Long id, String location, String key) throws InternalException {
-		byte[] pattern = (id + location + key).getBytes();
-		MessageDigest digest = null;
-		try {
-			digest = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new InternalException(e.getMessage());
-		}
-		byte[] bytes = digest.digest(pattern);
-		char[] hexChars = new char[bytes.length * 2];
-		int v;
-		for (int j = 0; j < bytes.length; j++) {
-			v = bytes[j] & 0xFF;
-			hexChars[j * 2] = HEX_CHARS[v >>> 4];
-			hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
-		}
-		return new String(hexChars);
-	}
-
 	public static String getLocation(Datafile df) throws InsufficientPrivilegesException, InternalException {
 		String location = df.getLocation();
 		if (location == null) {
@@ -305,13 +283,15 @@ public class IdsBean {
 		try {
 			String location = locationWithHash.substring(0, i);
 			String hash = locationWithHash.substring(i + 1);
-			if (!hash.equals(digest(id, location, key))) {
+			if (!hash.equals(IcatSecurity.digest(id, location, key))) {
 				throw new InsufficientPrivilegesException(
 						"Location \"" + locationWithHash + "\" does not contain a valid hash.");
 			}
 			return location;
 		} catch (IndexOutOfBoundsException e) {
 			throw new InsufficientPrivilegesException("Location \"" + locationWithHash + "\" does not contain hash.");
+		} catch (NoSuchAlgorithmException e) {
+			throw new InternalException(e.getMessage());
 		}
 	}
 
@@ -566,7 +546,7 @@ public class IdsBean {
 
 	private void checkOnlineAndFreeLockOnFailure(Collection<DsInfo> dsInfos, Set<Long> emptyDatasets,
 			Set<DfInfoImpl> dfInfos, String lockId, SetLockType lockType)
-					throws InternalException, DataNotOnlineException {
+			throws InternalException, DataNotOnlineException {
 		try {
 			if (storageUnit == StorageUnit.DATASET) {
 				boolean maybeOffline = false;
@@ -797,8 +777,8 @@ public class IdsBean {
 
 	public Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
 			final boolean compress, boolean zip, String outname, final long offset, String ip)
-					throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
-					DataNotOnlineException {
+			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
+			DataNotOnlineException {
 
 		long start = System.currentTimeMillis();
 
@@ -927,7 +907,7 @@ public class IdsBean {
 
 	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds,
 			String ip)
-					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 
 		long start = System.currentTimeMillis();
 
@@ -1395,7 +1375,7 @@ public class IdsBean {
 
 	public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
 			boolean compress, boolean zip, String ip)
-					throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
+			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
 
 		long start = System.currentTimeMillis();
 
@@ -1458,8 +1438,8 @@ public class IdsBean {
 	public Response put(InputStream body, String sessionId, String name, String datafileFormatIdString,
 			String datasetIdString, String description, String doi, String datafileCreateTimeString,
 			String datafileModTimeString, boolean wrap, boolean padding, String ip)
-					throws NotFoundException, DataNotOnlineException, BadRequestException,
-					InsufficientPrivilegesException, InternalException, NotImplementedException {
+			throws NotFoundException, DataNotOnlineException, BadRequestException, InsufficientPrivilegesException,
+			InternalException, NotImplementedException {
 
 		long start = System.currentTimeMillis();
 
@@ -1654,7 +1634,7 @@ public class IdsBean {
 
 	private Long registerDatafile(String sessionId, String name, long datafileFormatId, String location, long checksum,
 			long size, Dataset dataset, String description, String doi, Long datafileCreateTime, Long datafileModTime)
-					throws InsufficientPrivilegesException, NotFoundException, InternalException, BadRequestException {
+			throws InsufficientPrivilegesException, NotFoundException, InternalException, BadRequestException {
 		final Datafile df = new Datafile();
 		DatafileFormat format;
 		try {
@@ -1693,7 +1673,7 @@ public class IdsBean {
 			df.setId(dfId);
 
 			if (key != null) {
-				df.setLocation(location + " " + digest(dfId, location, key));
+				df.setLocation(location + " " + IcatSecurity.digest(dfId, location, key));
 				icat.update(sessionId, df);
 			}
 
@@ -1708,6 +1688,8 @@ public class IdsBean {
 				throw new BadRequestException(e.getMessage());
 			}
 			throw new InternalException(type + " " + e.getMessage());
+		} catch (NoSuchAlgorithmException e) {
+			throw new InternalException(e.getMessage());
 		}
 	}
 

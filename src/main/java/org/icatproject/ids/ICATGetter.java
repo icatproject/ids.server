@@ -50,11 +50,7 @@ public class ICATGetter {
 		if (emptyFile) {
 			for (String suffix : suffices) {
 				String icatUrlWsdl;
-				if (urlString.endsWith("/")) {
-					icatUrlWsdl = urlString + suffix;
-				} else {
-					icatUrlWsdl = urlString + "/" + suffix;
-				}
+				icatUrlWsdl = urlString + "/" + suffix;
 				try {
 					icatService = new ICATService(new URL(icatUrlWsdl)).getICATPort();
 					icatService.getApiVersion();
@@ -89,6 +85,19 @@ public class ICATGetter {
 		}
 		throwSessionException("Unable to connect to: " + urlString);
 		return null; // To please the compiler
+	}
+
+	public static String getCleanUrl(String urlString) {
+		for (String suffix : suffices) {
+			suffix = "/" + suffix;
+			if (urlString.endsWith(suffix)) {
+				return urlString.substring(0, urlString.length() - suffix.length());
+			}
+		}
+		if (urlString.endsWith("/")) {
+			return urlString.substring(0, urlString.length() - 1);
+		}
+		return urlString;
 	}
 
 	private static void throwSessionException(String msg) throws IcatException_Exception {

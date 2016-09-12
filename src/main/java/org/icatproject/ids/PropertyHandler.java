@@ -86,7 +86,7 @@ public class PropertyHandler {
 			props.loadFromFile("ids.properties");
 			logger.info("Property file ids.properties loaded");
 
-			icatUrl = props.getString("icat.url");
+			icatUrl = ICATGetter.getCleanUrl(props.getString("icat.url"));
 
 			preparedCount = props.getPositiveInt("preparedCount");
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
