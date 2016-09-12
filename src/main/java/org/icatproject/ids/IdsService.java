@@ -84,7 +84,7 @@ public class IdsService {
 	}
 
 	/**
-	 * Archive data specified by the investigationIds, datasetIds and
+	 * Delete data specified by the investigationIds, datasetIds and
 	 * datafileIds specified along with a sessionId.
 	 * 
 	 * @summary delete
