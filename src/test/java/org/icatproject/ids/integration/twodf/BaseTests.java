@@ -34,10 +34,15 @@ public class BaseTests extends BaseTest {
 	public void getDatafileIdsTest() throws Exception {
 		super.getDatafileIdsTest();
 	}
-	
+
 	@Test
 	public void reliabilityTest() throws Exception {
 		super.reliabilityTest();
+	}
+
+	@Test
+	public void cloningTest() throws Exception {
+		super.cloningTest();
 	}
 
 }

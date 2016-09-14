@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Copies datafiles from main to archive
+ * Delete datafiles from archive
  */
 public class DfDeleter implements Runnable {
 
@@ -36,8 +36,7 @@ public class DfDeleter implements Runnable {
 				archiveStorageInterface.delete(dfLocation);
 				logger.debug("Delete of " + dfInfo + " completed");
 			} catch (Exception e) {
-				logger.error("Delete of " + dfInfo + " failed due to " + e.getClass() + " "
-						+ e.getMessage());
+				logger.error("Delete of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
 			} finally {
 				fsm.removeFromChanging(dfInfo);
 			}

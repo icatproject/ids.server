@@ -39,5 +39,11 @@ public class BaseTests extends BaseTest {
 	public void reliabilityTest() throws Exception {
 		super.reliabilityTest();
 	}
+	
+	@Test
+	public void cloningTest() throws Exception {
+		super.cloningTest();
+	}
+
 
 }

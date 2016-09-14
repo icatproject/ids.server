@@ -34,9 +34,9 @@ public class FileCheckerTest extends BaseTest {
 	@Test
 	public void everythingTest() throws Exception {
 
-		List<Object> os = icat.search(sessionId, "Datafile");
+		List<Object> os = icatWS.search(sessionId, "Datafile");
 		for (Object o : os) {
-			icat.delete(sessionId, (EntityBaseBean) o);
+			icatWS.delete(sessionId, (EntityBaseBean) o);
 		}
 
 		Files.deleteIfExists(errorLog);
@@ -48,7 +48,7 @@ public class FileCheckerTest extends BaseTest {
 					"A rather splendid datafile", 201);
 		}
 
-		Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE 1", dfid);
+		Datafile df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", dfid);
 
 		assertFalse(Files.exists(errorLog));
 
@@ -56,34 +56,34 @@ public class FileCheckerTest extends BaseTest {
 		String checksum = df.getChecksum();
 
 		df.setFileSize(fileSize + 1);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 
 		checkHas("Datafile", dfid, "file size wrong");
 
 		df.setFileSize(null);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Datafile", dfid, "file size null");
 
 		df.setFileSize(fileSize);
 		df.setChecksum("Aardvark");
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Datafile", dfid, "checksum wrong");
 
 		df.setChecksum(null);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Datafile", dfid, "checksum null");
 
 		df.setChecksum(checksum);
 		df.setLocation("Zoo");
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Datafile", dfid, "Zoo\" does not contain hash.");
 
 		df.setLocation(null);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Datafile", dfid, "location null");
 

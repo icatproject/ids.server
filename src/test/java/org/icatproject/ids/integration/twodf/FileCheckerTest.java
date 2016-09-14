@@ -47,7 +47,7 @@ public class FileCheckerTest extends BaseTest {
 					"uploaded_file_" + i, datasetIds.get(0), supportedDatafileFormat.getId(),
 					"A rather splendid datafile", 201);
 		}
-		Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE 1", dfid);
+		Datafile df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", dfid);
 
 		waitForIds();
 		Files.deleteIfExists(errorLog);
@@ -56,28 +56,28 @@ public class FileCheckerTest extends BaseTest {
 		String checksum = df.getChecksum();
 
 		df.setFileSize(fileSize + 1);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 
 		checkHas("Dataset", datasetIds.get(0), "file size wrong");
 
 		df.setFileSize(null);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "file size null");
 
 		df.setFileSize(fileSize);
 		df.setChecksum("Aardvark");
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "checksum wrong");
 
 		df.setChecksum(null);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "checksum null");
 
 		df.setChecksum(checksum);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.delete(fileOnArchiveStorage);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "/" + datasetIds.get(0));

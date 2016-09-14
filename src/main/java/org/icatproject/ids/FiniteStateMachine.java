@@ -644,7 +644,6 @@ public class FiniteStateMachine {
 		if (msg != null) {
 			throw new InternalException("Restore failed " + msg);
 		}
-
 	}
 
 }

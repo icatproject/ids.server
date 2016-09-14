@@ -55,7 +55,7 @@ public class FileCheckerTest extends BaseTest {
 					datasetIds.get(0), supportedDatafileFormat.getId(), "A rather splendid datafile", 201);
 		}
 
-		Datafile df = (Datafile) icat.get(sessionId, "Datafile INCLUDE 1", dfid);
+		Datafile df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", dfid);
 
 		waitForIds();
 
@@ -65,28 +65,28 @@ public class FileCheckerTest extends BaseTest {
 		String checksum = df.getChecksum();
 
 		df.setFileSize(fileSize + 1);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 
 		checkHas("Dataset", datasetIds.get(0), "file size wrong");
 
 		df.setFileSize(null);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "file size null");
 
 		df.setFileSize(fileSize);
 		df.setChecksum("Aardvark");
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "checksum wrong");
 
 		df.setChecksum(null);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "checksum null");
 
 		df.setChecksum(checksum);
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 		Files.delete(fileOnArchiveStorage);
 		Files.deleteIfExists(errorLog);
 		checkHas("Dataset", datasetIds.get(0), "/" + datasetIds.get(0));
@@ -112,23 +112,23 @@ public class FileCheckerTest extends BaseTest {
 
 		Facility fac = new Facility();
 		fac.setName("Facility_" + timestamp);
-		fac.setId(icat.create(sessionId, fac));
+		fac.setId(icatWS.create(sessionId, fac));
 
 		DatasetType dsType = new DatasetType();
 		dsType.setFacility(fac);
 		dsType.setName("DatasetType_" + timestamp);
-		dsType.setId(icat.create(sessionId, dsType));
+		dsType.setId(icatWS.create(sessionId, dsType));
 
 		supportedDatafileFormat = new DatafileFormat();
 		supportedDatafileFormat.setFacility(fac);
 		supportedDatafileFormat.setName("test_format");
 		supportedDatafileFormat.setVersion("42.0.0");
-		supportedDatafileFormat.setId(icat.create(sessionId, supportedDatafileFormat));
+		supportedDatafileFormat.setId(icatWS.create(sessionId, supportedDatafileFormat));
 
 		InvestigationType invType = new InvestigationType();
 		invType.setName("Not null");
 		invType.setFacility(fac);
-		invType.setId(icat.create(sessionId, invType));
+		invType.setId(icatWS.create(sessionId, invType));
 
 		Investigation inv = new Investigation();
 		inv.setName("Investigation_" + timestamp);
@@ -136,7 +136,7 @@ public class FileCheckerTest extends BaseTest {
 		inv.setTitle("Not null");
 		inv.setFacility(fac);
 		inv.setVisitId("N/A");
-		inv.setId(icat.create(sessionId, inv));
+		inv.setId(icatWS.create(sessionId, inv));
 		investigationId = inv.getId();
 		String invLoc = inv.getId() + "/";
 
@@ -146,7 +146,7 @@ public class FileCheckerTest extends BaseTest {
 			ds1.setLocation(invLoc + ds1.getId());
 			ds1.setType(dsType);
 			ds1.setInvestigation(inv);
-			ds1.setId(icat.create(sessionId, ds1));
+			ds1.setId(icatWS.create(sessionId, ds1));
 
 			testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file_1" + timestamp,
 					ds1.getId(), supportedDatafileFormat.getId(), null, 201);

@@ -54,7 +54,7 @@ public class PutTest extends BaseTest {
 
 		waitForIds();
 
-		Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
+		Datafile df = (Datafile) icatWS.get(sessionId, "Datafile", dfid);
 		assertEquals("A rather splendid datafile", df.getDescription());
 		assertNull(df.getDoi());
 		assertNull(df.getDatafileCreateTime());
@@ -63,7 +63,7 @@ public class PutTest extends BaseTest {
 		dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
 				"uploaded_file3_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
 				"An even better datafile", "7.1.3", new Date(420000), new Date(42000), 201);
-		df = (Datafile) icat.get(sessionId, "Datafile", dfid);
+		df = (Datafile) icatWS.get(sessionId, "Datafile", dfid);
 		assertEquals("An even better datafile", df.getDescription());
 		assertEquals("7.1.3", df.getDoi());
 

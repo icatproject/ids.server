@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import javax.annotation.PostConstruct;
@@ -156,16 +157,21 @@ public class IdsBean {
 						logger.debug("Adding " + dfInfo + " to zip");
 						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
 						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
-						zos.putNextEntry(new ZipEntry(entryName));
-						InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
-								dfInfo.getModId());
-
-						int length;
-						while ((length = stream.read(bytes)) >= 0) {
-							zos.write(bytes, 0, length);
+						InputStream stream = null;
+						try {
+							zos.putNextEntry(new ZipEntry(entryName));
+							stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(), dfInfo.getModId());
+							int length;
+							while ((length = stream.read(bytes)) >= 0) {
+								zos.write(bytes, 0, length);
+							}
+						} catch (ZipException e) {
+							logger.debug("Skipped duplicate");
 						}
 						zos.closeEntry();
-						stream.close();
+						if (stream != null) {
+							stream.close();
+						}
 					}
 					zos.close();
 				} else {
@@ -656,9 +662,22 @@ public class IdsBean {
 				 */
 				for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
 					String location = dfInfo.getDfLocation();
-					if (mainStorage.exists(location)) {
-						mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
+					try {
+						if ((long) reader
+								.search("SELECT COUNT(df) FROM Datafile df WHERE df.location LIKE '" + location + "%'")
+								.get(0) == 0) {
+							if (mainStorage.exists(location)) {
+								logger.debug("Delete physical file " + location + " from main storage");
+								mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
+							}
+							if (storageUnit == StorageUnit.DATAFILE) {
+								fsm.queue(dfInfo, DeferredOp.DELETE);
+							}
+						}
+					} catch (IcatException_Exception e) {
+						throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
 					}
+
 				}
 			} catch (IOException e) {
 				throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -668,11 +687,8 @@ public class IdsBean {
 				for (DsInfo dsInfo : dsInfos) {
 					fsm.queue(dsInfo, DeferredOp.WRITE);
 				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				for (DfInfoImpl dfInfo : dfInfos) {
-					fsm.queue(dfInfo, DeferredOp.DELETE);
-				}
 			}
+
 		} finally {
 			if (lockId != null) {
 				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);

@@ -49,8 +49,7 @@ public class ICATGetter {
 		ICAT icatService;
 		if (emptyFile) {
 			for (String suffix : suffices) {
-				String icatUrlWsdl;
-				icatUrlWsdl = urlString + "/" + suffix;
+				String icatUrlWsdl = urlString + "/" + suffix;
 				try {
 					icatService = new ICATService(new URL(icatUrlWsdl)).getICATPort();
 					icatService.getApiVersion();

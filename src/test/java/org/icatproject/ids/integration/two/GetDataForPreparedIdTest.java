@@ -73,7 +73,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		}
 
 		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
-			checkZipStream(stream, datafileIds, 57);
+			checkZipStream(stream, datafileIds, 57, 0);
 		}
 
 	}
@@ -89,7 +89,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		}
 
 		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
-			checkZipStream(stream, datafileIds.subList(0, 2), 57);
+			checkZipStream(stream, datafileIds.subList(0, 2), 57, 0);
 		}
 	}
 
@@ -104,7 +104,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		}
 
 		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
-			checkZipStream(stream, datafileIds, 57);
+			checkZipStream(stream, datafileIds, 57, 0);
 		}
 	}
 

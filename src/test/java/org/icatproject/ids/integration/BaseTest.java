@@ -20,11 +20,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -37,10 +35,10 @@ import org.icatproject.Dataset;
 import org.icatproject.DatasetType;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.Facility;
-import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
+import org.icatproject.icat.client.Session;
 import org.icatproject.ids.ICATGetter;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
@@ -76,22 +74,25 @@ public class BaseTest {
 	private static long timestamp = System.currentTimeMillis();
 
 	protected Path getDirOnFastStorage(Long dsId) throws IcatException_Exception {
-		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation", dsId);
+		Dataset icatDs = (Dataset) icatWS.get(sessionId, "Dataset INCLUDE Investigation", dsId);
 		return setup.getStorageDir().resolve(Long.toString(icatDs.getInvestigation().getId()))
 				.resolve(Long.toString(icatDs.getId()));
 	}
 
 	protected Path getFileOnArchiveStorage(Long dsId) throws IcatException_Exception {
-		Dataset icatDs = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation", dsId);
+		Dataset icatDs = (Dataset) icatWS.get(sessionId, "Dataset INCLUDE Investigation", dsId);
 		return setup.getStorageArchiveDir().resolve(Long.toString(icatDs.getInvestigation().getId()))
 				.resolve(Long.toString(icatDs.getId()));
 	}
 
-	protected static ICAT icat;
+	protected static org.icatproject.ICAT icatWS;
+	protected static org.icatproject.icat.client.ICAT icat;
 	protected static Setup setup = null;
 
 	public static void icatsetup() throws Exception {
-		icat = ICATGetter.getService(setup.getIcatUrl().toString());
+		String icatUrl = setup.getIcatUrl().toString();
+		icatWS = ICATGetter.getService(icatUrl);
+		icat = new org.icatproject.icat.client.ICAT(icatUrl);
 	}
 
 	protected ArrayList<Long> datafileIds = new ArrayList<>();
@@ -157,7 +158,7 @@ public class BaseTest {
 	}
 
 	protected void checkZipFile(Path file, List<Long> ids, int compressedSize) throws IOException {
-		checkZipStream(Files.newInputStream(file), ids, compressedSize);
+		checkZipStream(Files.newInputStream(file), ids, compressedSize, 0);
 	}
 
 	private void clearStorage() throws IOException {
@@ -202,33 +203,33 @@ public class BaseTest {
 
 		try {
 
-			List<Object> objects = icat.search(sessionId, "Facility");
+			List<Object> objects = icatWS.search(sessionId, "Facility");
 			List<EntityBaseBean> facilities = new ArrayList<>();
 			for (Object o : objects) {
 				facilities.add((Facility) o);
 			}
 
-			icat.deleteMany(sessionId, facilities);
+			icatWS.deleteMany(sessionId, facilities);
 
 			Facility fac = new Facility();
 			fac.setName("Facility_" + timestamp);
-			fac.setId(icat.create(sessionId, fac));
+			fac.setId(icatWS.create(sessionId, fac));
 
 			DatasetType dsType = new DatasetType();
 			dsType.setFacility(fac);
 			dsType.setName("DatasetType_" + timestamp);
-			dsType.setId(icat.create(sessionId, dsType));
+			dsType.setId(icatWS.create(sessionId, dsType));
 
 			supportedDatafileFormat = new DatafileFormat();
 			supportedDatafileFormat.setFacility(fac);
 			supportedDatafileFormat.setName("test_format");
 			supportedDatafileFormat.setVersion("42.0.0");
-			supportedDatafileFormat.setId(icat.create(sessionId, supportedDatafileFormat));
+			supportedDatafileFormat.setId(icatWS.create(sessionId, supportedDatafileFormat));
 
 			InvestigationType invType = new InvestigationType();
 			invType.setName("Not null");
 			invType.setFacility(fac);
-			invType.setId(icat.create(sessionId, invType));
+			invType.setId(icatWS.create(sessionId, invType));
 
 			Investigation inv = new Investigation();
 			inv.setName("Investigation_" + timestamp);
@@ -236,7 +237,7 @@ public class BaseTest {
 			inv.setTitle("Not null");
 			inv.setFacility(fac);
 			inv.setVisitId("N/A");
-			inv.setId(icat.create(sessionId, inv));
+			inv.setId(icatWS.create(sessionId, inv));
 			investigationId = inv.getId();
 			String invLoc = inv.getId() + "/";
 
@@ -245,7 +246,7 @@ public class BaseTest {
 			ds1.setLocation(invLoc + ds1.getId());
 			ds1.setType(dsType);
 			ds1.setInvestigation(inv);
-			ds1.setId(icat.create(sessionId, ds1));
+			ds1.setId(icatWS.create(sessionId, ds1));
 			String ds1Loc = invLoc + ds1.getId() + "/";
 
 			Dataset ds2 = new Dataset();
@@ -253,7 +254,7 @@ public class BaseTest {
 			ds2.setLocation(invLoc + ds2.getId());
 			ds2.setType(dsType);
 			ds2.setInvestigation(inv);
-			ds2.setId(icat.create(sessionId, ds2));
+			ds2.setId(icatWS.create(sessionId, ds2));
 			String ds2Loc = invLoc + ds2.getId() + "/";
 
 			Datafile df1 = new Datafile();
@@ -317,10 +318,11 @@ public class BaseTest {
 	protected Map<String, Long> ids = new HashMap<>();
 	protected Map<String, String> paths = new HashMap<>();
 
-	protected void checkZipStream(InputStream stream, List<Long> datafileIds, long compressedSize) throws IOException {
+	protected void checkZipStream(InputStream stream, List<Long> datafileIdsIn, long compressedSize, int numLeft)
+			throws IOException {
 		ZipInputStream zis = new ZipInputStream(stream);
 		ZipEntry ze = zis.getNextEntry();
-		Set<Long> idsNeeded = new HashSet<>(datafileIds);
+		List<Long> idsNeeded = new ArrayList<>(datafileIdsIn);
 		while (ze != null) {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			byte[] bytes = new byte[1024];
@@ -339,8 +341,7 @@ public class BaseTest {
 			ze = zis.getNextEntry();
 		}
 		zis.close();
-		assertTrue(idsNeeded.isEmpty());
-
+		assertEquals(numLeft, idsNeeded.size());
 	}
 
 	protected void checkStream(InputStream stream, long id) throws IOException {
@@ -367,13 +368,13 @@ public class BaseTest {
 		out.close();
 		df.setChecksum(Long.toHexString(crc.getValue()));
 		df.setFileSize((long) bytes.length);
-		long dfId = icat.create(sessionId, df);
+		long dfId = icatWS.create(sessionId, df);
 		df.setId(dfId);
 		if (key != null) {
 			String location = df.getLocation();
 			df.setLocation(location + " " + digest(dfId, location, key));
 		}
-		icat.update(sessionId, df);
+		icatWS.update(sessionId, df);
 
 		crcs.put(df.getLocation(), df.getChecksum());
 		fsizes.put(df.getLocation(), df.getFileSize());
@@ -406,7 +407,7 @@ public class BaseTest {
 
 	private void moveDatasetToArchive(String storageUnit, Dataset ds, String dsLoc, Facility fac, Investigation inv,
 			String key) throws IOException, IcatException_Exception {
-		ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Datafile", ds.getId());
+		ds = (Dataset) icatWS.get(sessionId, "Dataset INCLUDE Datafile", ds.getId());
 		Path top = setup.getStorageDir();
 
 		if (storageUnit.equals("DATASET")) {
@@ -421,7 +422,7 @@ public class BaseTest {
 				if (key == null) {
 					file = top.resolve(df.getLocation());
 				} else {
-					file = top.resolve(getLocationFromDigest(df.getId(), df.getLocation(), key));
+					file = top.resolve(getLocationFromDigest(df.getId(), df.getLocation()));
 				}
 				InputStream fis = Files.newInputStream(file);
 
@@ -445,7 +446,7 @@ public class BaseTest {
 				if (key == null) {
 					p = top.resolve(df.getLocation());
 				} else {
-					p = top.resolve(getLocationFromDigest(df.getId(), df.getLocation(), key));
+					p = top.resolve(getLocationFromDigest(df.getId(), df.getLocation()));
 				}
 				Files.move(p, archive.resolve(p.getFileName()), StandardCopyOption.REPLACE_EXISTING);
 			}
@@ -455,7 +456,7 @@ public class BaseTest {
 			if (key == null) {
 				file = top.resolve(df.getLocation());
 			} else {
-				file = top.resolve(getLocationFromDigest(df.getId(), df.getLocation(), key));
+				file = top.resolve(getLocationFromDigest(df.getId(), df.getLocation()));
 			}
 			Files.deleteIfExists(file);
 			Path parent = file.getParent();
@@ -471,7 +472,7 @@ public class BaseTest {
 
 	}
 
-	static String getLocationFromDigest(Long id, String locationWithHash, String key) {
+	static String getLocationFromDigest(Long id, String locationWithHash) {
 		int i = locationWithHash.lastIndexOf(' ');
 		return locationWithHash.substring(0, i);
 	}
@@ -481,7 +482,7 @@ public class BaseTest {
 	}
 
 	protected void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.6."));
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.7."));
 	}
 
 	protected void raceTest() throws Exception {
@@ -496,14 +497,14 @@ public class BaseTest {
 		}
 		logTime("File created");
 
-		Investigation inv = (Investigation) icat.search(sessionId, "Investigation").get(0);
-		DatasetType dst = (DatasetType) icat.search(sessionId, "DatasetType").get(0);
+		Investigation inv = (Investigation) icatWS.search(sessionId, "Investigation").get(0);
+		DatasetType dst = (DatasetType) icatWS.search(sessionId, "DatasetType").get(0);
 
 		Dataset ds = new Dataset();
 		ds.setName("Big ds");
 		ds.setType(dst);
 		ds.setInvestigation(inv);
-		long dsid = icat.create(sessionId, ds);
+		long dsid = icatWS.create(sessionId, ds);
 		ds.setId(dsid);
 
 		for (int i = 0; i < 30; i++) {
@@ -527,7 +528,7 @@ public class BaseTest {
 		assertTrue(stat.getOpItems().toString(), stat.getOpItems().isEmpty());
 
 		testingClient.delete(sessionId, new DataSelection().addDataset(dsid), 204);
-		icat.delete(sessionId, ds);
+		icatWS.delete(sessionId, ds);
 
 		waitForIds(300);
 		logTime("Deleted");
@@ -554,6 +555,46 @@ public class BaseTest {
 			assertTrue(ids.contains(id));
 		}
 
+	}
+
+	public void cloningTest() throws Exception {
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
+		waitForIds();
+		assertEquals(104, testingClient.getSize(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200));
+		Session s = icat.getSession(sessionId);
+		Map<String, String> m = new HashMap<>();
+		m.put("name", "newOne");
+		long dfid = datafileIds.get(0);
+		long ndfid = s.cloneEntity("Datafile", dfid, m);
+		Datafile df = (Datafile) icatWS.get(sessionId, "Datafile df INCLUDE df.dataset.investigation.facility", ndfid);
+		Dataset ds = df.getDataset();
+		Investigation inv = ds.getInvestigation();
+		Facility fac = inv.getFacility();
+		paths.put("ids/" + fac.getName() + "/" + inv.getName() + "/" + URLEncoder.encode(inv.getVisitId(), "UTF-8")
+				+ "/" + ds.getName() + "/" + df.getName(), df.getLocation());
+		crcs.put(df.getLocation(), df.getChecksum());
+		fsizes.put(df.getLocation(), df.getFileSize());
+		contents.put(df.getLocation(), "df1 test content very compressible very compressible");
+		ids.put(df.getLocation(), df.getId());
+		assertEquals(156, testingClient.getSize(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 200));
+		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
+				Flag.NONE, 0, 200)) {
+			List<Long> dfids = new ArrayList<>(datafileIds.subList(0, 2));
+			dfids.add(ndfid);
+			checkZipStream(stream, dfids, 57, 0);
+		}
+		long dsid = datasetIds.get(0);
+		assertEquals(2, getDirOnFastStorage(dsid).toFile().list().length);
+		assertEquals("[3]", s.search("SELECT COUNT(df) from Datafile df WHERE df.dataset.id = " + dsid));
+		testingClient.delete(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 204);
+		assertEquals(2, getDirOnFastStorage(datasetIds.get(0)).toFile().list().length);
+		assertEquals("[2]", s.search("SELECT COUNT(df) from Datafile df WHERE df.dataset.id = " + dsid));
+		testingClient.delete(sessionId, new DataSelection().addDatafile(datafileIds.get(1)), 204);
+		assertEquals(1, getDirOnFastStorage(datasetIds.get(0)).toFile().list().length);
+		assertEquals("[1]", s.search("SELECT COUNT(df) from Datafile df WHERE df.dataset.id = " + dsid));
+		testingClient.delete(sessionId, new DataSelection().addDatafile(ndfid), 204);
+		assertFalse(getDirOnFastStorage(datasetIds.get(0)).toFile().exists());
+		assertEquals("[0]", s.search("SELECT COUNT(df) from Datafile df WHERE df.dataset.id = " + dsid));
 	}
 
 	public void reliabilityTest() throws Exception {

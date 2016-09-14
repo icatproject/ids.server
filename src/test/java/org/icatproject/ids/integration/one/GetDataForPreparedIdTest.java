@@ -65,9 +65,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
 				if (flag == Flag.NONE || flag == Flag.COMPRESS) {
 					checkStream(stream, datafileIds.get(0));
 				} else if (flag == Flag.ZIP) {
-					checkZipStream(stream, datafileIds.subList(0, 1), 57);
+					checkZipStream(stream, datafileIds.subList(0, 1), 57, 0);
 				} else {
-					checkZipStream(stream, datafileIds.subList(0, 1), 36);
+					checkZipStream(stream, datafileIds.subList(0, 1), 36, 0);
 				}
 			}
 		}
@@ -83,7 +83,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		}
 
 		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
-			checkZipStream(stream, datafileIds, 57);
+			checkZipStream(stream, datafileIds, 57, 0);
 		}
 	}
 
@@ -97,7 +97,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 			Thread.sleep(1000);
 		}
 		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
-			checkZipStream(stream, datafileIds.subList(0, 2), 57);
+			checkZipStream(stream, datafileIds.subList(0, 2), 57, 0);
 		}
 	}
 
@@ -112,7 +112,7 @@ public class GetDataForPreparedIdTest extends BaseTest {
 		}
 
 		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
-			checkZipStream(stream, datafileIds, 57);
+			checkZipStream(stream, datafileIds, 57, 0);
 		}
 	}
 

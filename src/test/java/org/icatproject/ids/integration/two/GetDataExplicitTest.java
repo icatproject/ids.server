@@ -47,15 +47,15 @@ public class GetDataExplicitTest extends BaseTest {
 		Datafile df = null;
 		Long size = 0L;
 		try {
-			df = (Datafile) icat.get(sessionId, "Datafile INCLUDE 1", datafileIds.get(0));
+			df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", datafileIds.get(0));
 			size = df.getFileSize();
 			df.setFileSize(size + 1);
-			icat.update(sessionId, df);
+			icatWS.update(sessionId, df);
 			assertEquals(209L, testingClient.getSize(sessionId, new DataSelection().addDatafiles(datafileIds), 200));
 		} finally {
 			if (df != null) {
 				df.setFileSize(size);
-				icat.update(sessionId, df);
+				icatWS.update(sessionId, df);
 			}
 		}
 	}
@@ -73,7 +73,7 @@ public class GetDataExplicitTest extends BaseTest {
 		while (true) {
 			try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
 					Flag.NONE, 0, null)) {
-				checkZipStream(stream, datafileIds, 57);
+				checkZipStream(stream, datafileIds, 57, 0);
 				break;
 			} catch (IdsException e) {
 				assertEquals(DataNotOnlineException.class, e.getClass());
@@ -114,7 +114,7 @@ public class GetDataExplicitTest extends BaseTest {
 
 		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
 				Flag.NONE, 0, 200)) {
-			checkZipStream(stream, datafileIds.subList(0, 2), 57);
+			checkZipStream(stream, datafileIds.subList(0, 2), 57, 0);
 		}
 
 	}
@@ -132,7 +132,7 @@ public class GetDataExplicitTest extends BaseTest {
 		waitForIds();
 		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatasets(datasetIds),
 				Flag.NONE, 0, 200)) {
-			checkZipStream(stream, datafileIds, 57);
+			checkZipStream(stream, datafileIds, 57, 0);
 		}
 	}
 
