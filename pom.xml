@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.icatproject</groupId>
@@ -153,7 +154,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<licence>cHJvamVjdHxvcmcuaWNhdHByb2plY3QuaWRzLnNlcnZlcnwyMDE2LTA4LTI3fHRydWV8LTEjTUMwQ0ZRQ1E1OXovbjlLYUkxQTFNYU45TUZ4czdJYVcxQUlVWGpKZ2Z3RlZpZXJla0R6ajRwQ1FZVHAwbG5vPQ==</licence>
+					<licence>cHJvamVjdHxvcmcuaWNhdHByb2plY3QuaWRzLnNlcnZlcnwyMDE4LTA5LTE1fHRydWV8LTEjTUN3Q0ZGemNNQ0g2VWduNVNvbHFsVS8wOG1rRDN3ZFdBaFFnbHRNSVJvUFNuckRqekNjN3hpQTRGUGJqY3c9PQ==</licence>
 					<output>
 						<html>
 							<location>site/miredot</location>
