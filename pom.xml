@@ -11,7 +11,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<repoUrl>http://www.icatproject.org/mvn/repo</repoUrl>
+		<repoUrl>https://repo.icatproject.org/repo</repoUrl>
 		<storage.plugin>ids.storage_test-1.0.0-SNAPSHOT.jar</storage.plugin>
 		<project.scm.id>github</project.scm.id>
 	</properties>
@@ -19,7 +19,7 @@
 	<repositories>
 		<repository>
 			<id>ICAT Repo</id>
-			<url>http://www.icatproject.org/mvn/repo</url>
+			<url>https://repo.icatproject.org/repo</url>
 		</repository>
 	</repositories>
 
@@ -56,14 +56,14 @@
 	</organization>
 
 	<distributionManagement>
-		<downloadUrl>http://www.icatproject.org/mvn/repo</downloadUrl>
+		<downloadUrl>https://repo.icatproject.org/repo</downloadUrl>
 		<site>
-			<id>website</id>
-			<url>scp://www.icatproject.org/var/www/html/mvn/site/ids/server/${project.version}</url>
+			<id>repo.icatproject.org</id>
+			<url>dav:https://repo.icatproject.org/site/ids/server/${project.version}</url>
 		</site>
 		<repository>
-			<id>repo</id>
-			<url>scp://www.icatproject.org/var/www/html/mvn/repo</url>
+			<id>repo.icatproject.org</id>
+			<url>dav:https://repo.icatproject.org/repo</url>
 		</repository>
 	</distributionManagement>
 
@@ -124,6 +124,14 @@
 	</dependencies>
 
 	<build>
+
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-webdav-jackrabbit</artifactId>
+				<version>2.10</version>
+			</extension>
+		</extensions>
 
 		<resources>
 			<resource>
@@ -347,27 +355,13 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
-				<version>3.4</version>
-				<dependencies>
-					<dependency><!-- add support for ssh/scp -->
-						<groupId>org.apache.maven.wagon</groupId>
-						<artifactId>wagon-ssh</artifactId>
-						<version>2.10</version>
-					</dependency>
-				</dependencies>
+				<version>3.5.1</version>
 			</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-deploy-plugin</artifactId>
 				<version>2.8.2</version>
-				<dependencies>
-					<dependency><!-- add support for ssh/scp -->
-						<groupId>org.apache.maven.wagon</groupId>
-						<artifactId>wagon-ssh</artifactId>
-						<version>2.10</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 
 			<plugin>
