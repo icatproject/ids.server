@@ -26,19 +26,24 @@ public class LockManager {
 	}
 
 	private class LockEntry {
+		public final Long id;
 		public final LockType type;
 		private int count;
-		public LockEntry(LockType type) {
+		public LockEntry(Long id, LockType type) {
+			this.id = id;
 			this.type = type;
 			this.count = 0;
+			locks.put(id, this);
 		}
 		public void inc() {
 			count += 1;
 		}
-		public boolean dec() {
+		public void dec() {
 			assert count > 0;
 			count -= 1;
-			return count > 0;
+			if (count == 0) {
+				locks.remove(id);
+			}
 		}
 	}
 
@@ -52,11 +57,7 @@ public class LockManager {
 		public void release() throws IOException {
 			synchronized (locks) {
 				if (isValid) {
-					LockEntry le = locks.get(id);
-					assert le != null;
-					if (!le.dec()) {
-						locks.remove(id);
-					}
+					locks.get(id).dec();
 					isValid = false;
 					logger.debug("Released a lock on {}.", 
 						     id);
@@ -82,8 +83,7 @@ public class LockManager {
 		synchronized (locks) {
 			LockEntry le = locks.get(id);
 			if (le == null) {
-				le = new LockEntry(type);
-				locks.put(id, le);
+				le = new LockEntry(id, type);
 			}
 			else {
 				if (type == LockType.EXCLUSIVE || 
