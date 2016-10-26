@@ -1,6 +1,8 @@
 package org.icatproject.ids;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.PostConstruct;
@@ -69,6 +71,32 @@ public class LockManager {
 		}
 	}
 
+	public class LockCollection implements AutoCloseable {
+		private ArrayList<Lock> locklist;
+		public LockCollection() {
+			locklist = new ArrayList<>();
+		}
+		public void add(Lock l) {
+			locklist.add(l);
+		}
+		public void release() throws IOException {
+			IOException exc = null;
+			for (Lock l: locklist) {
+				try {
+					l.release();
+				} catch (IOException e) {
+					if (exc == null) { exc = e; }
+				}
+			}
+			if (exc != null) {
+				throw exc;
+			}
+		}
+		public void close() throws IOException {
+			release();
+		}
+	}
+
 	private static Logger logger 
 		= LoggerFactory.getLogger(LockManager.class);
 	private Map<Long, LockEntry> locks = new HashMap<>();
@@ -95,6 +123,20 @@ public class LockManager {
 			logger.debug("Acquired a {} lock on {}.", type, id);
 			return new Lock(id);
 		}
+	}
+
+	public LockCollection lock(Collection<Long> ids, 
+				   LockType type) throws IOException {
+		LockCollection lockCollection = new LockCollection();
+		try {
+			for (Long id: ids) {
+				lockCollection.add(lock(id, type));
+			}
+		} catch (IOException e) {
+			lockCollection.release();
+			throw e;
+		}
+		return lockCollection;
 	}
 
 }
