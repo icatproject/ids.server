@@ -12,6 +12,8 @@ import javax.ejb.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.icatproject.ids.plugin.DsInfo;
+
 
 @Singleton
 @DependsOn("LoggingConfigurator")
@@ -106,7 +108,8 @@ public class LockManager {
 		logger.debug("LockManager initialized.");
 	}
 
-	public Lock lock(Long id, LockType type) throws IOException {
+	public Lock lock(DsInfo ds, LockType type) throws IOException {
+		Long id = ds.getDsId();
 		assert id != null;
 		synchronized (locks) {
 			LockEntry le = locks.get(id);
@@ -125,12 +128,12 @@ public class LockManager {
 		}
 	}
 
-	public LockCollection lock(Collection<Long> ids, 
+	public LockCollection lock(Collection<DsInfo> datasets, 
 				   LockType type) throws IOException {
 		LockCollection lockCollection = new LockCollection();
 		try {
-			for (Long id: ids) {
-				lockCollection.add(lock(id, type));
+			for (DsInfo ds: datasets) {
+				lockCollection.add(lock(ds, type));
 			}
 		} catch (IOException e) {
 			lockCollection.release();
