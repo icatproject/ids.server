@@ -90,7 +90,11 @@ public class IdsBean {
 		@Override
 		public Void call() throws Exception {
 			for (DfInfoImpl dfInfo : dfInfos) {
-				restoreIfOffline(dfInfo);
+				try {
+					restoreIfOffline(dfInfo);
+				} catch (IOException e) {
+					logger.error("I/O error " + e.getMessage() + " for " + dfInfo);
+				}
 			}
 			return null;
 		}
@@ -109,7 +113,11 @@ public class IdsBean {
 		@Override
 		public Void call() throws Exception {
 			for (DsInfo dsInfo : dsInfos) {
-				restoreIfOffline(dsInfo, emptyDs);
+				try {
+					restoreIfOffline(dsInfo, emptyDs);
+				} catch (IOException e) {
+					logger.error("I/O error " + e.getMessage() + " for " + dsInfo);
+				}
 			}
 			return null;
 		}
@@ -142,6 +150,7 @@ public class IdsBean {
 
 		@Override
 		public void write(OutputStream output) throws IOException {
+			Object transfer = "??";
 			try {
 				if (offset != 0) { // Wrap the stream if needed
 					output = new RangeOutputStream(output, offset, null);
@@ -155,6 +164,7 @@ public class IdsBean {
 
 					for (DfInfoImpl dfInfo : dfInfos) {
 						logger.debug("Adding " + dfInfo + " to zip");
+						transfer = dfInfo;
 						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
 						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
 						InputStream stream = null;
@@ -176,6 +186,7 @@ public class IdsBean {
 					zos.close();
 				} else {
 					DfInfoImpl dfInfo = dfInfos.iterator().next();
+					transfer = dfInfo;
 					InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
 							dfInfo.getModId());
 					int length;
@@ -204,6 +215,7 @@ public class IdsBean {
 					gen.writeEnd();
 				}
 				transmitter.processMessage("getData", ip, baos.toString(), start);
+				logger.error("Failed to stream " + transfer + " due to " + e.getMessage());
 				throw e;
 			} finally {
 				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
@@ -582,6 +594,7 @@ public class IdsBean {
 			}
 		} catch (IOException e) {
 			fsm.unlock(lockId, lockType);
+			logger.error("I/O error " + e.getMessage() + " checking online");
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
@@ -654,33 +667,31 @@ public class IdsBean {
 				throw new InternalException(type + " " + e.getMessage());
 			}
 
-			try {
-				/*
-				 * Delete the local copy directly rather than queueing it as it
-				 * has been removed from ICAT so will not be accessible to any
-				 * subsequent IDS calls.
-				 */
-				for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
-					String location = dfInfo.getDfLocation();
-					try {
-						if ((long) reader
-								.search("SELECT COUNT(df) FROM Datafile df WHERE df.location LIKE '" + location + "%'")
-								.get(0) == 0) {
-							if (mainStorage.exists(location)) {
-								logger.debug("Delete physical file " + location + " from main storage");
-								mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
-							}
-							if (storageUnit == StorageUnit.DATAFILE) {
-								fsm.queue(dfInfo, DeferredOp.DELETE);
-							}
+			/*
+			 * Delete the local copy directly rather than queueing it as it has
+			 * been removed from ICAT so will not be accessible to any
+			 * subsequent IDS calls.
+			 */
+			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
+				String location = dfInfo.getDfLocation();
+				try {
+					if ((long) reader
+							.search("SELECT COUNT(df) FROM Datafile df WHERE df.location LIKE '" + location + "%'")
+							.get(0) == 0) {
+						if (mainStorage.exists(location)) {
+							logger.debug("Delete physical file " + location + " from main storage");
+							mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
 						}
-					} catch (IcatException_Exception e) {
-						throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+						if (storageUnit == StorageUnit.DATAFILE) {
+							fsm.queue(dfInfo, DeferredOp.DELETE);
+						}
 					}
-
+				} catch (IcatException_Exception e) {
+					throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+				} catch (IOException e) {
+					logger.error("I/O error " + e.getMessage() + " deleting " + dfInfo);
+					throw new InternalException(e.getClass() + " " + e.getMessage());
 				}
-			} catch (IOException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 
 			if (storageUnit == StorageUnit.DATASET) {
@@ -1030,6 +1041,7 @@ public class IdsBean {
 				}
 			}
 		} catch (IOException e) {
+			logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
@@ -1059,6 +1071,7 @@ public class IdsBean {
 
 			return link.toString();
 		} catch (IOException e) {
+			logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
@@ -1231,6 +1244,7 @@ public class IdsBean {
 				new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 			}
 		} catch (IOException e) {
+			logger.error("I/O Exception " + e.getMessage() + " thrown");
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
@@ -1358,6 +1372,7 @@ public class IdsBean {
 				}
 			}
 		} catch (IOException e) {
+			logger.error("I/O error " + e.getMessage() + " isPrepared of " + preparedId);
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
@@ -1582,7 +1597,7 @@ public class IdsBean {
 					try {
 						userId = icat.getUserName(sessionId);
 					} catch (IcatException_Exception e1) {
-						logger.error("Unable to get user name for session " + sessionId + " so mainstorage.delete of "
+						logger.error("Unable to get user name for session " + sessionId + " so mainStorage.delete of "
 								+ location + " may fail");
 					}
 					mainStorage.delete(location, userId, userId);
@@ -1625,6 +1640,8 @@ public class IdsBean {
 				return Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build();
 
 			} catch (IOException e) {
+				logger.error("I/O exception " + e.getMessage() + " putting " + name + " to Dataset with id "
+						+ datasetIdString);
 				throw new InternalException(e.getClass() + " " + e.getMessage());
 			} finally {
 				if (lockId != null) {
