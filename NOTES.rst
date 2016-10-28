@@ -9,10 +9,6 @@ mechanism for ids.server.
 Implementation
 ~~~~~~~~~~~~~~
 
-As a general note, I will concentrate on the case of storage unit
-dataset first and consider the storage unit datafile case later on.
-
-
 LockManager
 -----------
 
@@ -28,6 +24,22 @@ the LockManager.  A better place may be found later on.  In
 particular, for the `Locking in Storage Plugin Option`_, the plugin
 must also be able to raise it.  Maybe move it to the package
 `org.icatproject.ids.plugin` then?
+
+Unsorted Notes
+--------------
+
+ * Web service calls that fail because the corresponding data is
+   locked will throw a DataNotOnlineException for the moment.  While
+   the previous definition of the error condition might not quite
+   match this case, from the client's point of view it's the same: it
+   is a temporary failure and the client may retry the same request
+   later on.  We still may define another more specific error class or
+   even redfine DataNotOnlineException.
+
+ * Although the put web service call is actually writing to the
+   dataset, it only acquires a SHARED lock.  This is because it does
+   not modify any existing data, so it may be run in parallel with
+   other read accesses or put calls.
 
 
 Observations Regarding the Existing Code
@@ -84,6 +96,11 @@ Unsorted Observations
    ARCHIVE_AND_DELETE lock on the datasets in the prepared data.  But
    not on the datafiles in the prepared data or the datasets
    containing those datafiles.
+
+ * The delete() web service call throws a BadRequestException if any
+   of the concerned dataset has a DELETE lock set.  I'd consider this
+   wrong: there is nothing bad in the request, only the ressource it
+   targets to happens to be currently not available.
 
 
 Locking in Storage Plugin Option
