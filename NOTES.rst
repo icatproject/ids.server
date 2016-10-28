@@ -92,11 +92,6 @@ Places where locking, unlocking, and checking for locks occurs:
 Unsorted Observations
 ---------------------
 
- * The getData(preparedId, ...) web service call sets an
-   ARCHIVE_AND_DELETE lock on the datasets in the prepared data.  But
-   not on the datafiles in the prepared data or the datasets
-   containing those datafiles.
-
  * The delete() web service call throws a BadRequestException if any
    of the concerned dataset has a DELETE lock set.  I'd consider this
    wrong: there is nothing bad in the request, only the ressource it
