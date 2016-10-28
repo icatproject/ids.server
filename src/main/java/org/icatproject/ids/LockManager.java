@@ -1,6 +1,5 @@
 package org.icatproject.ids;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,7 +22,7 @@ public class LockManager {
 		SHARED, EXCLUSIVE
 	}
 
-	public class AlreadyLockedException extends IOException {
+	public class AlreadyLockedException extends Exception {
 		public AlreadyLockedException() {
 			super("Resource is already locked.");
 		}
@@ -58,7 +57,7 @@ public class LockManager {
 			this.id = id;
 			this.isValid = true;
 		}
-		public void release() throws IOException {
+		public void release() {
 			synchronized (locks) {
 				if (isValid) {
 					locks.get(id).dec();
@@ -68,7 +67,7 @@ public class LockManager {
 				}
 			}
 		}
-		public void close() throws IOException {
+		public void close() {
 			release();
 		}
 	}
@@ -81,20 +80,12 @@ public class LockManager {
 		public void add(Lock l) {
 			locklist.add(l);
 		}
-		public void release() throws IOException {
-			IOException exc = null;
+		public void release() {
 			for (Lock l: locklist) {
-				try {
-					l.release();
-				} catch (IOException e) {
-					if (exc == null) { exc = e; }
-				}
-			}
-			if (exc != null) {
-				throw exc;
+				l.release();
 			}
 		}
-		public void close() throws IOException {
+		public void close() {
 			release();
 		}
 	}
@@ -108,7 +99,8 @@ public class LockManager {
 		logger.debug("LockManager initialized.");
 	}
 
-	public Lock lock(DsInfo ds, LockType type) throws IOException {
+	public Lock lock(DsInfo ds, LockType type) 
+		throws AlreadyLockedException {
 		Long id = ds.getDsId();
 		assert id != null;
 		synchronized (locks) {
@@ -128,14 +120,14 @@ public class LockManager {
 		}
 	}
 
-	public LockCollection lock(Collection<DsInfo> datasets, 
-				   LockType type) throws IOException {
+	public LockCollection lock(Collection<DsInfo> datasets, LockType type) 
+		throws AlreadyLockedException {
 		LockCollection lockCollection = new LockCollection();
 		try {
 			for (DsInfo ds: datasets) {
 				lockCollection.add(lock(ds, type));
 			}
-		} catch (IOException e) {
+		} catch (AlreadyLockedException e) {
 			lockCollection.release();
 			throw e;
 		}

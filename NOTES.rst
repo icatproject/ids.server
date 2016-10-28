@@ -29,8 +29,6 @@ particular, for the `Locking in Storage Plugin Option`_, the plugin
 must also be able to raise it.  Maybe move it to the package
 `org.icatproject.ids.plugin` then?
 
-This exception is an IOException.  This may be an arguable decision.
-
 
 Observations Regarding the Existing Code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
