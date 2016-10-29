@@ -56,7 +56,6 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.DataSelection.Returns;
 import org.icatproject.ids.LockManager.AlreadyLockedException;
 import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.LockManager.LockCollection;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -131,7 +130,7 @@ public class IdsBean {
 		private long offset;
 		private boolean zip;
 		private Map<Long, DsInfo> dsInfos;
-		private LockCollection lock;
+		private Lock lock;
 		private boolean compress;
 		private Set<DfInfoImpl> dfInfos;
 		private String ip;
@@ -139,7 +138,7 @@ public class IdsBean {
 		private Long transferId;
 
 		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
-				LockCollection lock, Long transferId, String ip, long start) {
+				Lock lock, Long transferId, String ip, long start) {
 			this.offset = offset;
 			this.zip = zip;
 			this.dsInfos = dsInfos;
@@ -621,7 +620,7 @@ public class IdsBean {
 		Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		try (LockCollection lock = lockManager.lock(dsInfos, LockType.EXCLUSIVE)) {
+		try (Lock lock = lockManager.lock(dsInfos, LockType.EXCLUSIVE)) {
 			if (storageUnit == StorageUnit.DATASET) {
 				checkOnline(dsInfos, dataSelection.getEmptyDatasets(), dfInfos);
 			}
@@ -727,7 +726,7 @@ public class IdsBean {
 		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
 		Set<Long> emptyDatasets = prepared.emptyDatasets;
 
-		LockCollection lock = null;
+		Lock lock = null;
 		try {
 			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
 
@@ -801,7 +800,7 @@ public class IdsBean {
 		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		LockCollection lock = null;
+		Lock lock = null;
 		try {
 			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
 

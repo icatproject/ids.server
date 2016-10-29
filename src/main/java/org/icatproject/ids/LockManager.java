@@ -50,10 +50,20 @@ public class LockManager {
 		}
 	}
 
-	public class Lock implements AutoCloseable {
+	/**
+	 * Define the common interface of SingleLock and LockCollection
+	 */
+	public abstract class Lock implements AutoCloseable {
+		public abstract void release();
+		public void close() {
+			release();
+		}
+	}
+
+	private class SingleLock extends Lock {
 		private final Long id;
 		private boolean isValid;
-		public Lock(Long id) {
+		SingleLock(Long id) {
 			this.id = id;
 			this.isValid = true;
 		}
@@ -62,31 +72,24 @@ public class LockManager {
 				if (isValid) {
 					locks.get(id).dec();
 					isValid = false;
-					logger.debug("Released a lock on {}.", 
-						     id);
+					logger.debug("Released a lock on {}.", id);
 				}
 			}
 		}
-		public void close() {
-			release();
-		}
 	}
 
-	public class LockCollection implements AutoCloseable {
+	private class LockCollection extends Lock {
 		private ArrayList<Lock> locklist;
-		public LockCollection() {
+		LockCollection() {
 			locklist = new ArrayList<>();
 		}
-		public void add(Lock l) {
+		void add(Lock l) {
 			locklist.add(l);
 		}
 		public void release() {
 			for (Lock l: locklist) {
 				l.release();
 			}
-		}
-		public void close() {
-			release();
 		}
 	}
 
@@ -116,11 +119,11 @@ public class LockManager {
 			}
 			le.inc();
 			logger.debug("Acquired a {} lock on {}.", type, id);
-			return new Lock(id);
+			return new SingleLock(id);
 		}
 	}
 
-	public LockCollection lock(Collection<DsInfo> datasets, LockType type) 
+	public Lock lock(Collection<DsInfo> datasets, LockType type) 
 		throws AlreadyLockedException {
 		LockCollection lockCollection = new LockCollection();
 		try {
