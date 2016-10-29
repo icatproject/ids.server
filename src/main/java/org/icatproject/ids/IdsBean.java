@@ -221,7 +221,7 @@ public class IdsBean {
 				logger.error("Failed to stream " + transfer + " due to " + e.getMessage());
 				throw e;
 			} finally {
-				lock.close();
+				lock.release();
 			}
 		}
 
@@ -727,23 +727,14 @@ public class IdsBean {
 		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
 		Set<Long> emptyDatasets = prepared.emptyDatasets;
 
-		/*
-		 * Lock the datasets which prevents deletion of datafiles within the
-		 * dataset and archiving of the datasets. It is important that they be
-		 * unlocked again.
-		 */
+		LockCollection lock = null;
 		try {
-			LockCollection lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
+			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
 
-			try {
-				if (twoLevel) {
-					checkOnline(dsInfos.values(), emptyDatasets, dfInfos);
-				}
-				checkDatafilesPresent(dfInfos);
-			} catch (IdsException e) {
-				lock.release();
-				throw e;
+			if (twoLevel) {
+				checkOnline(dsInfos.values(), emptyDatasets, dfInfos);
 			}
+			checkDatafilesPresent(dfInfos);
 
 			/* Construct the name to include in the headers */
 			String name;
@@ -784,6 +775,9 @@ public class IdsBean {
 					.build();
 		} catch (AlreadyLockedException e) {
 			throw new DataNotOnlineException("Data is busy");
+		} catch (IdsException e) {
+			lock.release();
+			throw e;
 		}
 	}
 
@@ -807,24 +801,14 @@ public class IdsBean {
 		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		/*
-		 * Lock the datasets which prevents deletion of datafiles within the
-		 * dataset and archiving of the datasets. It is important that they be
-		 * unlocked again.
-		 */
-
+		LockCollection lock = null;
 		try {
-			LockCollection lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
+			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
 
-			try {
-				if (twoLevel) {
-					checkOnline(dsInfos.values(), dataSelection.getEmptyDatasets(), dfInfos);
-				}
-				checkDatafilesPresent(dfInfos);
-			} catch (IdsException e) {
-				lock.release();
-				throw e;
+			if (twoLevel) {
+				checkOnline(dsInfos.values(), dataSelection.getEmptyDatasets(), dfInfos);
 			}
+			checkDatafilesPresent(dfInfos);
 
 			final boolean finalZip = zip ? true : dataSelection.mustZip();
 
@@ -873,6 +857,9 @@ public class IdsBean {
 					.build();
 		} catch (AlreadyLockedException e) {
 			throw new DataNotOnlineException("Data is busy");
+		} catch (IdsException e) {
+			lock.release();
+			throw e;
 		}
 	}
 
