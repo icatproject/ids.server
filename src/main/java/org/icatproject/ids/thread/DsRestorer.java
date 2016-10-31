@@ -14,6 +14,7 @@ import org.icatproject.Dataset;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.IdsBean;
+import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
@@ -40,8 +41,9 @@ public class DsRestorer implements Runnable {
 	private IcatReader reader;
 
 	private ZipMapperInterface zipMapper;
+	private Lock lock;
 
-	public DsRestorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader) {
+	public DsRestorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
 		zipMapper = propertyHandler.getZipMapper();
@@ -49,6 +51,7 @@ public class DsRestorer implements Runnable {
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
 		this.reader = reader;
+		this.lock = lock;
 	}
 
 	@Override
@@ -111,6 +114,7 @@ public class DsRestorer implements Runnable {
 			logger.error("Restore of " + dsInfo + " failed due to " + msg);
 		} finally {
 			fsm.removeFromChanging(dsInfo);
+			lock.release();
 		}
 	}
 }

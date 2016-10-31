@@ -15,6 +15,7 @@ import org.icatproject.ids.DfInfoImpl;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.IdsBean;
+import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
@@ -39,8 +40,9 @@ public class DsWriter implements Runnable {
 	private Path markerDir;
 	private IcatReader reader;
 	private ZipMapperInterface zipMapper;
+	private Lock lock;
 
-	public DsWriter(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader) {
+	public DsWriter(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
 		this.zipMapper = propertyHandler.getZipMapper();
@@ -49,6 +51,7 @@ public class DsWriter implements Runnable {
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
 		markerDir = propertyHandler.getCacheDir().resolve("marker");
 		this.reader = reader;
+		this.lock = lock;
 	}
 
 	@Override
@@ -101,6 +104,7 @@ public class DsWriter implements Runnable {
 			logger.error("Write of " + dsInfo + " failed due to " + e.getClass() + " " + e.getMessage());
 		} finally {
 			fsm.removeFromChanging(dsInfo);
+			lock.release();
 		}
 	}
 }

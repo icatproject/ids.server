@@ -28,6 +28,9 @@ import javax.ejb.Singleton;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+import org.icatproject.ids.LockManager.AlreadyLockedException;
+import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
@@ -146,36 +149,47 @@ public class FiniteStateMachine {
 							if (state == RequestedState.WRITE_REQUESTED
 									|| state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 								if (now > writeTimes.get(dsInfo)) {
-									logger.debug("Will process " + dsInfo + " with " + state);
-									writeTimes.remove(dsInfo);
-									dsChanging.put(dsInfo, RequestedState.WRITE_REQUESTED);
-									it.remove();
-									final Thread w = new Thread(
-											new DsWriter(dsInfo, propertyHandler, FiniteStateMachine.this, reader));
-									w.start();
-									if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-										newOps.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
+									try {
+										Lock lock = lockManager.lock(dsInfo, LockType.SHARED);
+										logger.debug("Will process " + dsInfo + " with " + state);
+										writeTimes.remove(dsInfo);
+										dsChanging.put(dsInfo, RequestedState.WRITE_REQUESTED);
+										it.remove();
+										final Thread w = new Thread(
+													    new DsWriter(dsInfo, propertyHandler, FiniteStateMachine.this, reader, lock));
+										w.start();
+										if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+											newOps.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
+										}
+									} catch (AlreadyLockedException e) {
+										logger.debug("Could not acquire lock on " + dsInfo + ", postpone process with " + state);
 									}
 								}
 							} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-								it.remove();
-								long dsId = dsInfo.getDsId();
-								if (isLocked(dsId, QueryLockType.ARCHIVE)) {
-									logger.debug("Archive of " + dsInfo + " skipped because getData in progress");
-									continue;
+								try {
+									Lock lock = lockManager.lock(dsInfo, LockType.EXCLUSIVE);
+									it.remove();
+									long dsId = dsInfo.getDsId();
+									logger.debug("Will process " + dsInfo + " with " + state);
+									dsChanging.put(dsInfo, state);
+									final Thread w = new Thread(
+												    new DsArchiver(dsInfo, propertyHandler, FiniteStateMachine.this, lock));
+									w.start();
+								} catch (AlreadyLockedException e) {
+									logger.debug("Could not acquire lock on " + dsInfo + ", postpone process with " + state);
 								}
-								logger.debug("Will process " + dsInfo + " with " + state);
-								dsChanging.put(dsInfo, state);
-								final Thread w = new Thread(
-										new DsArchiver(dsInfo, propertyHandler, FiniteStateMachine.this));
-								w.start();
 							} else if (state == RequestedState.RESTORE_REQUESTED) {
-								logger.debug("Will process " + dsInfo + " with " + state);
-								dsChanging.put(dsInfo, state);
-								it.remove();
-								final Thread w = new Thread(
-										new DsRestorer(dsInfo, propertyHandler, FiniteStateMachine.this, reader));
-								w.start();
+								try {
+									Lock lock = lockManager.lock(dsInfo, LockType.EXCLUSIVE);
+									logger.debug("Will process " + dsInfo + " with " + state);
+									dsChanging.put(dsInfo, state);
+									it.remove();
+									final Thread w = new Thread(
+												    new DsRestorer(dsInfo, propertyHandler, FiniteStateMachine.this, reader, lock));
+									w.start();
+								} catch (AlreadyLockedException e) {
+									logger.debug("Could not acquire lock on " + dsInfo + ", postpone process with " + state);
+								}
 							}
 						}
 					}
@@ -223,6 +237,9 @@ public class FiniteStateMachine {
 	private PropertyHandler propertyHandler;
 	@EJB
 	IcatReader reader;
+
+	@EJB
+	private LockManager lockManager;
 
 	private StorageUnit storageUnit;
 
