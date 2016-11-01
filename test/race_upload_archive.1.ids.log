@@ -1,0 +1,58 @@
+* put file01.dat
+
+2016-11-01 12:23:43,607 INFO [http-listener-2(4)] IdsService - creating IdsService
+2016-11-01 12:23:43,612 INFO [http-listener-2(4)] IdsService - created IdsService
+2016-11-01 12:23:43,613 INFO [http-listener-2(4)] IdsBean - creating IdsBean
+2016-11-01 12:23:43,614 INFO [http-listener-2(4)] IdsBean - created IdsBean
+2016-11-01 12:23:43,615 INFO [http-listener-2(4)] IdsBean - New webservice request: put name='file01.dat' datafileFormatId='911036' datasetId='911209' description='null' doi='null' datafileCreateTime='null' datafileModTime='null'
+2016-11-01 12:23:43,666 DEBUG [http-listener-2(4)] LockManager - Acquired a SHARED lock on 911209.
+2016-11-01 12:24:26,036 DEBUG [http-listener-2(4)] IdsBean - Registered datafile for dataset 911209 for file01.dat at 911105/911209/464689a9-ecfd-473a-8252-6e50dbe8bd85
+2016-11-01 12:24:26,036 INFO [http-listener-2(4)] FiniteStateMachine - Requesting WRITE of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive)
+2016-11-01 12:24:26,037 DEBUG [http-listener-2(4)] FiniteStateMachine - Created marker /srv/ids/storage/no-icat/cache/marker/911209
+2016-11-01 12:24:26,038 DEBUG [http-listener-2(4)] FiniteStateMachine - Requesting delay of writing of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) till Tue Nov 01 12:25:26 CET 2016
+2016-11-01 12:24:26,061 DEBUG [http-listener-2(4)] Transmitter - Sent jms message put 134.30.210.106
+2016-11-01 12:24:26,062 DEBUG [http-listener-2(4)] LockManager$SingleLock - Released a lock on 911209.
+
+* put file02.dat
+
+2016-11-01 12:23:43,568 INFO [http-listener-2(2)] IdsBean - New webservice request: put name='file02.dat' datafileFormatId='911036' datasetId='911209' description='null' doi='null' datafileCreateTime='null' datafileModTime='null'
+2016-11-01 12:23:43,640 DEBUG [http-listener-2(2)] LockManager - Acquired a SHARED lock on 911209.
+2016-11-01 12:25:36,865 DEBUG [http-listener-2(2)] IdsBean - Registered datafile for dataset 911209 for file02.dat at 911105/911209/e96b8cdb-d69c-41d8-b7bd-34026f57ce3d
+2016-11-01 12:25:36,865 INFO [http-listener-2(2)] FiniteStateMachine - Requesting WRITE of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive)
+2016-11-01 12:25:36,866 DEBUG [http-listener-2(2)] FiniteStateMachine - Requesting delay of writing of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) till Tue Nov 01 12:26:36 CET 2016
+2016-11-01 12:25:36,870 DEBUG [http-listener-2(2)] Transmitter - Sent jms message put 134.30.210.106
+2016-11-01 12:25:36,871 DEBUG [http-listener-2(2)] LockManager$SingleLock - Released a lock on 911209.
+
+* archive dataset
+
+2016-11-01 12:24:26,237 INFO [http-listener-2(3)] IdsBean - New webservice request: archive investigationIds='null' datasetIds='911209' datafileIds='null'
+2016-11-01 12:24:26,500 INFO [http-listener-2(3)] FiniteStateMachine - Requesting ARCHIVE of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive)
+
+* WRITE of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive)
+
+2016-11-01 12:25:28,913 DEBUG [FSM Timer] LockManager - Acquired a SHARED lock on 911209.
+2016-11-01 12:25:28,914 DEBUG [FSM Timer] FiniteStateMachine$DsProcessQueue - Will process 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) with WRITE_THEN_ARCHIVE_REQUESTED
+2016-11-01 12:25:28,919 DEBUG [Thread-46] DsWriter - Creating /srv/ids/storage/no-icat/cache/dataset/8640713652418060145.tmp
+2016-11-01 12:25:39,812 DEBUG [Thread-46] DsWriter - Removed marker /srv/ids/storage/no-icat/cache/marker/911209
+2016-11-01 12:25:39,851 DEBUG [Thread-46] DsWriter - Write of 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) completed
+2016-11-01 12:25:39,851 DEBUG [Thread-46] LockManager$SingleLock - Released a lock on 911209.
+
+* WRITE of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive)
+
+2016-11-01 12:26:38,917 DEBUG [FSM Timer] LockManager - Acquired a SHARED lock on 911209.
+2016-11-01 12:26:38,918 DEBUG [FSM Timer] FiniteStateMachine$DsProcessQueue - Will process 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) with WRITE_THEN_ARCHIVE_REQUESTED
+2016-11-01 12:26:38,920 DEBUG [Thread-47] DsWriter - Creating /srv/ids/storage/no-icat/cache/dataset/4856776909097996840.tmp
+2016-11-01 12:26:49,652 DEBUG [Thread-47] DsWriter - Removed marker /srv/ids/storage/no-icat/cache/marker/911209
+2016-11-01 12:26:49,652 DEBUG [Thread-47] DsWriter - Write of 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) completed
+2016-11-01 12:26:49,652 DEBUG [Thread-47] LockManager$SingleLock - Released a lock on 911209.
+
+* ARCHIVE of dataset 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive)
+
+2016-11-01 12:26:53,919 DEBUG [FSM Timer] LockManager - Acquired a EXCLUSIVE lock on 911209.
+2016-11-01 12:26:53,920 DEBUG [FSM Timer] FiniteStateMachine$DsProcessQueue - Will process 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) with ARCHIVE_REQUESTED
+2016-11-01 12:26:53,953 DEBUG [Thread-48] DsArchiver - Archive of 911105/911209 (ESNF/12100409-ST/1.1-P/test_race_upload_archive) completed
+2016-11-01 12:26:53,954 DEBUG [Thread-48] LockManager$SingleLock - Released a lock on 911209.
+
+# Local Variables:
+# mode: org
+# End:
