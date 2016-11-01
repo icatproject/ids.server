@@ -102,10 +102,8 @@ public class LockManager {
 		logger.debug("LockManager initialized.");
 	}
 
-	public Lock lock(DsInfo ds, LockType type) 
+	public Lock lock(Long id, LockType type) 
 		throws AlreadyLockedException {
-		Long id = ds.getDsId();
-		assert id != null;
 		synchronized (locks) {
 			LockEntry le = locks.get(id);
 			if (le == null) {
@@ -121,6 +119,13 @@ public class LockManager {
 			logger.debug("Acquired a {} lock on {}.", type, id);
 			return new SingleLock(id);
 		}
+	}
+
+	public Lock lock(DsInfo ds, LockType type) 
+		throws AlreadyLockedException {
+		Long id = ds.getDsId();
+		assert id != null;
+		return lock(id, type);
 	}
 
 	public Lock lock(Collection<DsInfo> datasets, LockType type) 
