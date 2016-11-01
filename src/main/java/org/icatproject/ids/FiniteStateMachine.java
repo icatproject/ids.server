@@ -162,7 +162,7 @@ public class FiniteStateMachine {
 											newOps.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
 										}
 									} catch (AlreadyLockedException e) {
-										logger.debug("Could not acquire lock on " + dsInfo + ", postpone process with " + state);
+										logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
 									}
 								}
 							} else if (state == RequestedState.ARCHIVE_REQUESTED) {
@@ -176,7 +176,7 @@ public class FiniteStateMachine {
 												    new DsArchiver(dsInfo, propertyHandler, FiniteStateMachine.this, lock));
 									w.start();
 								} catch (AlreadyLockedException e) {
-									logger.debug("Could not acquire lock on " + dsInfo + ", postpone process with " + state);
+									logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
 								}
 							} else if (state == RequestedState.RESTORE_REQUESTED) {
 								try {
@@ -188,7 +188,7 @@ public class FiniteStateMachine {
 												    new DsRestorer(dsInfo, propertyHandler, FiniteStateMachine.this, reader, lock));
 									w.start();
 								} catch (AlreadyLockedException e) {
-									logger.debug("Could not acquire lock on " + dsInfo + ", postpone process with " + state);
+									logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
 								}
 							}
 						}
