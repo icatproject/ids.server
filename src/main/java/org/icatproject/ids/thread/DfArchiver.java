@@ -2,9 +2,11 @@ package org.icatproject.ids.thread;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 
 import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
@@ -21,10 +23,12 @@ public class DfArchiver implements Runnable {
 	private FiniteStateMachine fsm;
 	private List<DfInfo> dfInfos;
 	private Path markerDir;
+	private Collection<Lock> locks;
 
-	public DfArchiver(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+	public DfArchiver(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
 		this.dfInfos = dfInfos;
 		this.fsm = fsm;
+		this.locks = locks;
 		mainStorageInterface = propertyHandler.getMainStorage();
 		markerDir = propertyHandler.getCacheDir().resolve("marker");
 	}
@@ -46,6 +50,9 @@ public class DfArchiver implements Runnable {
 			} finally {
 				fsm.removeFromChanging(dfInfo);
 			}
+		}
+		for (Lock l: locks) {
+			l.release();
 		}
 	}
 }

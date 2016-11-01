@@ -61,35 +61,79 @@ public class FiniteStateMachine {
 						List<DfInfo> archives = new ArrayList<>();
 						List<DfInfo> restores = new ArrayList<>();
 						List<DfInfo> deletes = new ArrayList<>();
+						Map<Long, Lock> writeLocks = new HashMap<>();
+						Map<Long, Lock> archiveLocks = new HashMap<>();
+						Map<Long, Lock> restoreLocks = new HashMap<>();
+						Map<Long, Lock> deleteLocks = new HashMap<>();
 
 						Map<DfInfoImpl, RequestedState> newOps = new HashMap<>();
 						final Iterator<Entry<DfInfoImpl, RequestedState>> it = deferredDfOpsQueue.entrySet().iterator();
 						while (it.hasNext()) {
 							Entry<DfInfoImpl, RequestedState> opEntry = it.next();
 							DfInfoImpl dfInfo = opEntry.getKey();
+							Long dsId = dfInfo.getDsId();
 							if (!dfChanging.containsKey(dfInfo)) {
-								it.remove();
 								final RequestedState state = opEntry.getValue();
 								logger.debug(dfInfo + " " + state);
 								if (state == RequestedState.WRITE_REQUESTED) {
+									if (!writeLocks.containsKey(dsId)) {
+										try {
+											writeLocks.put(dsId, lockManager.lock(dsId, LockType.SHARED));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									writes.add(dfInfo);
 								} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+									if (!writeLocks.containsKey(dsId)) {
+										try {
+											writeLocks.put(dsId, lockManager.lock(dsId, LockType.SHARED));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, RequestedState.WRITE_REQUESTED);
 									writes.add(dfInfo);
 									newOps.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
 								} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-									long dsId = dfInfo.getDsId();
-									if (isLocked(dsId, QueryLockType.ARCHIVE)) {
-										logger.debug("Archive of " + dfInfo + " skipped because getData in progress");
-										continue;
+									if (!archiveLocks.containsKey(dsId)) {
+										try {
+											archiveLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
 									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									archives.add(dfInfo);
 								} else if (state == RequestedState.RESTORE_REQUESTED) {
+									if (!restoreLocks.containsKey(dsId)) {
+										try {
+											restoreLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									restores.add(dfInfo);
 								} else if (state == RequestedState.DELETE_REQUESTED) {
+									if (!deleteLocks.containsKey(dsId)) {
+										try {
+											deleteLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									deletes.add(dfInfo);
 								} else {
@@ -104,22 +148,22 @@ public class FiniteStateMachine {
 						}
 						if (!writes.isEmpty()) {
 							logger.debug("Launch thread to process " + writes.size() + " writes");
-							Thread w = new Thread(new DfWriter(writes, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfWriter(writes, propertyHandler, FiniteStateMachine.this, writeLocks.values()));
 							w.start();
 						}
 						if (!archives.isEmpty()) {
 							logger.debug("Launch thread to process " + archives.size() + " archives");
-							Thread w = new Thread(new DfArchiver(archives, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfArchiver(archives, propertyHandler, FiniteStateMachine.this, archiveLocks.values()));
 							w.start();
 						}
 						if (!restores.isEmpty()) {
 							logger.debug("Launch thread to process " + restores.size() + " restores");
-							Thread w = new Thread(new DfRestorer(restores, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfRestorer(restores, propertyHandler, FiniteStateMachine.this, restoreLocks.values()));
 							w.start();
 						}
 						if (!deletes.isEmpty()) {
 							logger.debug("Launch thread to process " + deletes.size() + " deletes");
-							Thread w = new Thread(new DfDeleter(deletes, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfDeleter(deletes, propertyHandler, FiniteStateMachine.this, deleteLocks.values()));
 							w.start();
 						}
 					}
