@@ -680,6 +680,7 @@ public class IdsBean {
 			}
 
 		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, delete failed");
 			throw new DataNotOnlineException("Data is busy");
 		}
 
@@ -773,6 +774,7 @@ public class IdsBean {
 					.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 					.build();
 		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, getData failed");
 			throw new DataNotOnlineException("Data is busy");
 		} catch (IdsException e) {
 			lock.release();
@@ -855,6 +857,7 @@ public class IdsBean {
 					.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 					.build();
 		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, getData failed");
 			throw new DataNotOnlineException("Data is busy");
 		} catch (IdsException e) {
 			lock.release();
@@ -1608,6 +1611,7 @@ public class IdsBean {
 				return Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build();
 
 			} catch (AlreadyLockedException e) {
+				logger.debug("Could not acquire lock, put failed");
 				throw new DataNotOnlineException("Data is busy");
 			} catch (IOException e) {
 				logger.error("I/O exception " + e.getMessage() + " putting " + name + " to Dataset with id "
