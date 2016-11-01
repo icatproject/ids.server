@@ -102,8 +102,7 @@ def archive():
 
 # Step 1: Upload a file to the dataset.  The file should be fairly
 # large to make sure that writing the archive file in step 4 takes
-# some time, to allow step 5 to be finished before the
-# DsWriteThenArchiver starts to delete the dataset from main storage.
+# some time.
 
 step = 1
 ult = Thread(target=upload, args=(1,SizedDataSource(200*MiB)))
@@ -132,8 +131,7 @@ t.start()
 
 
 # Step 4: Wait a little longer then 60 seconds (assuming this is the
-# value of writeDelaySeconds in ids.properties).  Now the
-# DsWriteThenArchiver will be started.
+# value of writeDelaySeconds in ids.properties).
 
 sleep(sleeptime)
 step = 4
@@ -146,11 +144,13 @@ step = 4
 step = 5
 
 
-# After another 60 seconds the DsWriter will be started.  But since
-# the DsWriteThenArchiver already deleted the dataset from
-# main storage, the DsWriter will also delete the archive file.
-# Booom -> All data is lost.
+# After another 60 seconds the second DsWriter will be started.
 
 # Clean up.
 for thread in thread_list:
     thread.join()
+sleep(sleeptime)
+client.ids.restore(DataSelection([dataset]))
+sleep(20)
+client.deleteData([dataset])
+client.delete(dataset)
