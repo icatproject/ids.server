@@ -28,6 +28,17 @@ public class LockManager {
 		}
 	}
 
+	public class LockInfo {
+		public final Long id;
+		public final LockType type;
+		public final int count;
+		LockInfo(LockEntry le) {
+			this.id = le.id;
+			this.type = le.type;
+			this.count = le.count;
+		}
+	}
+
 	private class LockEntry {
 		final Long id;
 		final LockType type;
@@ -140,6 +151,18 @@ public class LockManager {
 			throw e;
 		}
 		return locks;
+	}
+
+	public Collection<LockInfo> getLockInfo() {
+		Collection<LockInfo> lockInfo = new ArrayList<>();
+		Collection<LockEntry> lockEntries;
+		synchronized (lockMap) {
+			lockEntries = lockMap.values();
+		}
+		for (LockEntry le: lockEntries) {
+			lockInfo.add(new LockInfo(le));
+		}
+		return lockInfo;
 	}
 
 }
