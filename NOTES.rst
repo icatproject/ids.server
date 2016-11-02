@@ -46,6 +46,13 @@ desired, this can easily be changed.
 Unsorted Notes
 --------------
 
+ * Locks are always set on whole datasets, even in the case of
+   storageUnit datafile.  Note that this was also the case in the old
+   implementation.  I also believe that this is good, because the
+   setting for the storage unit is a configuration detail that should
+   not have an impact on the behavior of the IDS server visible to the
+   client.
+
  * Web service calls that fail because the corresponding data is
    locked will throw a DataNotOnlineException for the moment.  While
    the previous definition of the error condition might not quite
