@@ -253,14 +253,6 @@ public class FiniteStateMachine {
 		ARCHIVE_REQUESTED, DELETE_REQUESTED, RESTORE_REQUESTED, WRITE_REQUESTED, WRITE_THEN_ARCHIVE_REQUESTED
 	}
 
-	public enum SetLockType {
-		ARCHIVE, ARCHIVE_AND_DELETE
-	}
-
-	public enum QueryLockType {
-		ARCHIVE, DELETE
-	}
-
 	private static Logger logger = LoggerFactory.getLogger(FiniteStateMachine.class);
 
 	private long archiveWriteDelayMillis;
@@ -273,9 +265,6 @@ public class FiniteStateMachine {
 
 	private Map<DsInfo, RequestedState> dsChanging = new HashMap<>();
 
-	private Map<String, Set<Long>> deleteLocks = new HashMap<>();
-	private Map<String, Set<Long>> archiveLocks = new HashMap<>();
-
 	private Path markerDir;
 	private long processQueueIntervalMillis;
 
@@ -287,8 +276,6 @@ public class FiniteStateMachine {
 	private LockManager lockManager;
 
 	private StorageUnit storageUnit;
-
-	private boolean synchLocksOnDataset;
 
 	private Timer timer = new Timer("FSM Timer");
 
@@ -436,68 +423,15 @@ public class FiniteStateMachine {
 			if (storageUnit == StorageUnit.DATASET) {
 				timer.schedule(new DsProcessQueue(), processQueueIntervalMillis);
 				logger.info("DsProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
-				synchLocksOnDataset = true;
 			} else if (storageUnit == StorageUnit.DATAFILE) {
 				timer.schedule(new DfProcessQueue(), processQueueIntervalMillis);
 				logger.info("DfProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
-				synchLocksOnDataset = false;
-			} else {
-				synchLocksOnDataset = true;
 			}
 			markerDir = propertyHandler.getCacheDir().resolve("marker");
 			Files.createDirectories(markerDir);
 		} catch (IOException e) {
 			throw new RuntimeException("FiniteStateMachine reports " + e.getClass() + " " + e.getMessage());
 		}
-	}
-
-	public boolean isLocked(long dsId, QueryLockType lockType) {
-		if (synchLocksOnDataset) {
-			synchronized (deferredDsOpsQueue) {
-				return locked(dsId, lockType);
-			}
-		} else {
-			synchronized (deferredDfOpsQueue) {
-				return locked(dsId, lockType);
-			}
-		}
-	}
-
-	public String lock(Set<Long> set, SetLockType lockType) {
-		String lockId = UUID.randomUUID().toString();
-		if (synchLocksOnDataset) {
-			synchronized (deferredDsOpsQueue) {
-				archiveLocks.put(lockId, set);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.put(lockId, set);
-				}
-			}
-		} else {
-			synchronized (deferredDfOpsQueue) {
-				archiveLocks.put(lockId, set);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.put(lockId, set);
-				}
-			}
-		}
-		return lockId;
-	}
-
-	private boolean locked(long dsId, QueryLockType lockType) {
-		if (lockType == QueryLockType.ARCHIVE) {
-			for (Set<Long> lock : archiveLocks.values()) {
-				if (lock.contains(dsId)) {
-					return true;
-				}
-			}
-		} else if (lockType == QueryLockType.DELETE) {
-			for (Set<Long> lock : deleteLocks.values()) {
-				if (lock.contains(dsId)) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	public void queue(DfInfoImpl dfInfo, DeferredOp deferredOp) throws InternalException {
@@ -636,24 +570,6 @@ public class FiniteStateMachine {
 		if (logger.isDebugEnabled()) {
 			final Date d = new Date(writeTimes.get(dsInfo));
 			logger.debug("Requesting delay of writing of dataset " + dsInfo + " till " + d);
-		}
-	}
-
-	public void unlock(String lockId, SetLockType lockType) {
-		if (synchLocksOnDataset) {
-			synchronized (deferredDsOpsQueue) {
-				archiveLocks.remove(lockId);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.remove(lockId);
-				}
-			}
-		} else {
-			synchronized (deferredDfOpsQueue) {
-				archiveLocks.remove(lockId);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.remove(lockId);
-				}
-			}
 		}
 	}
 
