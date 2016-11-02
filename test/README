@@ -2,8 +2,8 @@ Testing IDS Locking
 ===================
 
 This directory contains some tests for the new IDS locking mechanism.
-I did not intregrate this into the maven junit test setup, first
-because I don't know how it works abd how to add tests to it and
+I did not integrate this into the maven junit test setup, first
+because I don't know how it works and how to add tests to it and
 secondly because it is rather difficult to check for a positive test
 result.  The effect becomes mainly visible looking into the ids.log in
 Glassfish, but is hardly visible to the client.
@@ -43,4 +43,15 @@ A delete web service call fails because a WRITE request on the same
 dataset is in process.  With ids.server 1.7.0 the WRITE request would
 fail instead because the file it tries to write to archive has been
 deleted.
+
+
+Test case race_delete_writer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In a sense the inverse of the last one: the FSM want to process a
+WRITE request while a delete web service call is still in process.
+One can observe how the WRITE request is held back by the exclusive
+lock on the dataset.  Again with ids.server 1.7.0 the WRITE request
+would have been started and might have failed because the the files it
+tries to write to archive are deleted from storage at the same time.
 
