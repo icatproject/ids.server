@@ -29,23 +29,23 @@ public class LockManager {
 	}
 
 	private class LockEntry {
-		public final Long id;
-		public final LockType type;
-		private int count;
-		public LockEntry(Long id, LockType type) {
+		final Long id;
+		final LockType type;
+		int count;
+		LockEntry(Long id, LockType type) {
 			this.id = id;
 			this.type = type;
 			this.count = 0;
-			locks.put(id, this);
+			lockMap.put(id, this);
 		}
-		public void inc() {
+		void inc() {
 			count += 1;
 		}
-		public void dec() {
+		void dec() {
 			assert count > 0;
 			count -= 1;
 			if (count == 0) {
-				locks.remove(id);
+				lockMap.remove(id);
 			}
 		}
 	}
@@ -68,9 +68,9 @@ public class LockManager {
 			this.isValid = true;
 		}
 		public void release() {
-			synchronized (locks) {
+			synchronized (lockMap) {
 				if (isValid) {
-					locks.get(id).dec();
+					lockMap.get(id).dec();
 					isValid = false;
 					logger.debug("Released a lock on {}.", id);
 				}
@@ -79,15 +79,15 @@ public class LockManager {
 	}
 
 	private class LockCollection extends Lock {
-		private ArrayList<Lock> locklist;
+		private ArrayList<Lock> locks;
 		LockCollection() {
-			locklist = new ArrayList<>();
+			locks = new ArrayList<>();
 		}
 		void add(Lock l) {
-			locklist.add(l);
+			locks.add(l);
 		}
 		public void release() {
-			for (Lock l: locklist) {
+			for (Lock l: locks) {
 				l.release();
 			}
 		}
@@ -95,7 +95,7 @@ public class LockManager {
 
 	private static Logger logger 
 		= LoggerFactory.getLogger(LockManager.class);
-	private Map<Long, LockEntry> locks = new HashMap<>();
+	private Map<Long, LockEntry> lockMap = new HashMap<>();
 
 	@PostConstruct
 	private void init() {
@@ -104,8 +104,8 @@ public class LockManager {
 
 	public Lock lock(Long id, LockType type) 
 		throws AlreadyLockedException {
-		synchronized (locks) {
-			LockEntry le = locks.get(id);
+		synchronized (lockMap) {
+			LockEntry le = lockMap.get(id);
 			if (le == null) {
 				le = new LockEntry(id, type);
 			}
@@ -130,16 +130,16 @@ public class LockManager {
 
 	public Lock lock(Collection<DsInfo> datasets, LockType type) 
 		throws AlreadyLockedException {
-		LockCollection lockCollection = new LockCollection();
+		LockCollection locks = new LockCollection();
 		try {
 			for (DsInfo ds: datasets) {
-				lockCollection.add(lock(ds, type));
+				locks.add(lock(ds, type));
 			}
 		} catch (AlreadyLockedException e) {
-			lockCollection.release();
+			locks.release();
 			throw e;
 		}
-		return lockCollection;
+		return locks;
 	}
 
 }
