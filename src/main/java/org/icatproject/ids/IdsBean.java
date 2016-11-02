@@ -1005,7 +1005,7 @@ public class IdsBean {
 
 		String location = getLocation(datafile);
 
-		try {
+		try (Lock lock = lockManager.lock(datafile.getDataset().getId(), LockType.SHARED)) {
 			if (storageUnit == StorageUnit.DATASET) {
 				DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
 				Set<Long> mt = Collections.emptySet();
@@ -1021,12 +1021,7 @@ public class IdsBean {
 							"Before linking a datafile, it has to be restored, restoration requested automatically");
 				}
 			}
-		} catch (IOException e) {
-			logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
 
-		try {
 			Path target = mainStorage.getPath(location, datafile.getCreateId(), datafile.getModId());
 			ShellCommand sc = new ShellCommand("setfacl", "-m", "user:" + username + ":r", target.toString());
 			if (sc.getExitValue() != 0) {
@@ -1051,6 +1046,9 @@ public class IdsBean {
 			}
 
 			return link.toString();
+		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, getLink failed");
+			throw new DataNotOnlineException("Data is busy");
 		} catch (IOException e) {
 			logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
 			throw new InternalException(e.getClass() + " " + e.getMessage());
