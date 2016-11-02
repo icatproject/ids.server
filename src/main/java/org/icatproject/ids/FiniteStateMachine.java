@@ -30,6 +30,7 @@ import javax.json.stream.JsonGenerator;
 
 import org.icatproject.ids.LockManager.AlreadyLockedException;
 import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.LockManager.LockInfo;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
@@ -381,58 +382,28 @@ public class FiniteStateMachine {
 
 	public String getServiceStatus() throws InternalException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		if (storageUnit == null) {
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			if (storageUnit == null) {
 				gen.writeStartArray("opsQueue").writeEnd();
-				gen.write("lockCount", 0);
-				gen.writeStartArray("lockedIds").writeEnd();
-				gen.writeEnd(); // end Object()
-			}
-		} else if (storageUnit == StorageUnit.DATASET) {
-			Map<DsInfo, RequestedState> union;
-			Collection<Set<Long>> locksContentsClone;
-			synchronized (deferredDsOpsQueue) {
-				union = new HashMap<>(dsChanging);
-				union.putAll(deferredDsOpsQueue);
-				locksContentsClone = new HashSet<>(archiveLocks.values());
-				locksContentsClone.addAll(deleteLocks.values());
-			}
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			} else if (storageUnit == StorageUnit.DATASET) {
+				Map<DsInfo, RequestedState> union;
+				synchronized (deferredDsOpsQueue) {
+					union = new HashMap<>(dsChanging);
+					union.putAll(deferredDsOpsQueue);
+				}
 				gen.writeStartArray("opsQueue");
 				for (Entry<DsInfo, RequestedState> entry : union.entrySet()) {
 					DsInfo item = entry.getKey();
-
 					gen.writeStartObject().write("data", item.toString()).write("request", entry.getValue().name())
 							.writeEnd();
-
 				}
 				gen.writeEnd(); // end Array("opsQueue")
-
-				gen.write("lockCount", locksContentsClone.size());
-
-				Set<Long> lockedDs = new HashSet<>();
-
-				for (Set<Long> entry : locksContentsClone) {
-					lockedDs.addAll(entry);
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				Map<DfInfo, RequestedState> union;
+				synchronized (deferredDfOpsQueue) {
+					union = new HashMap<>(dfChanging);
+					union.putAll(deferredDfOpsQueue);
 				}
-				gen.writeStartArray("lockedIds");
-				for (Long dsId : lockedDs) {
-					gen.write(dsId);
-				}
-				gen.writeEnd(); // end Array("lockedDs")
-
-				gen.writeEnd(); // end Object()
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			Map<DfInfo, RequestedState> union;
-			Collection<Set<Long>> locksContentsClone;
-			synchronized (deferredDfOpsQueue) {
-				union = new HashMap<>(dfChanging);
-				union.putAll(deferredDfOpsQueue);
-				locksContentsClone = new HashSet<>(archiveLocks.values());
-				locksContentsClone.addAll(deleteLocks.values());
-			}
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
 				gen.writeStartArray("opsQueue");
 				for (Entry<DfInfo, RequestedState> entry : union.entrySet()) {
 					DfInfo item = entry.getKey();
@@ -440,25 +411,19 @@ public class FiniteStateMachine {
 							.writeEnd();
 				}
 				gen.writeEnd(); // end Array("opsQueue")
-
-				gen.write("lockCount", locksContentsClone.size());
-
-				Set<Long> lockedDs = new HashSet<>();
-
-				for (Set<Long> entry : locksContentsClone) {
-					lockedDs.addAll(entry);
-				}
-				gen.writeStartArray("lockedIds");
-				for (Long dsId : lockedDs) {
-					gen.write(dsId);
-				}
-				gen.writeEnd(); // end Array("lockedDs")
-
-				gen.writeEnd(); // end Object()
 			}
+
+			Collection<LockInfo> lockInfo = lockManager.getLockInfo();
+			gen.write("lockCount", lockInfo.size());
+			gen.writeStartArray("locks");
+			for (LockInfo li : lockInfo) {
+				gen.writeStartObject().write("id", li.id).write("type", li.type.name()).write("count", li.count).writeEnd();
+			}
+			gen.writeEnd(); // end Array("locks")
+
+			gen.writeEnd(); // end Object()
 		}
 		return baos.toString();
-
 	}
 
 	@PostConstruct
