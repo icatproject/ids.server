@@ -8,6 +8,12 @@ secondly because it is rather difficult to check for a positive test
 result.  The effect becomes mainly visible looking into the ids.log in
 Glassfish, but is hardly visible to the client.
 
+Note that testing locking is much harder in the case of storage unit
+datafile, because there are much more and smaller independent actions
+going on.  As a result, time windows are smaller and it's much harder
+to construct and observe an access conflict that is to be prevented by
+the locking.
+
 This directory is added temporarily to the source tree and is supposed
 to be removed before merging into main.
 
