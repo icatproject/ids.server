@@ -56,8 +56,10 @@ public class DfRestorer implements Runnable {
 					fsm.removeFromChanging(dfInfo);
 				}
 			} catch (IOException e) {
-				logger.error("Check on existence of {} failed with {} {}", dfInfo.getDfLocation(), e.getClass(),
-						e.getMessage());
+				fsm.recordFailure(dfInfo.getDfId(), "");
+				logger.error("Restore of " + dfInfo + " failed " + e.getClass() + " " + e.getMessage());
+				fsm.removeFromChanging(dfInfo);
+				iter.remove();
 			}
 		}
 
