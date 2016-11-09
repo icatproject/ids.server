@@ -10,6 +10,7 @@ import javax.ejb.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.DsInfo;
 
 @Singleton
@@ -17,13 +18,6 @@ public class LockManager {
 
 	public enum LockType {
 		SHARED, EXCLUSIVE
-	}
-
-	@SuppressWarnings("serial")
-	public class AlreadyLockedException extends Exception {
-		public AlreadyLockedException() {
-			super("Resource is already locked.");
-		}
 	}
 
 	public class LockInfo {

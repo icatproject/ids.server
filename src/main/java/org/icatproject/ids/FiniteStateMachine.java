@@ -28,11 +28,11 @@ import javax.ejb.Singleton;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-import org.icatproject.ids.LockManager.AlreadyLockedException;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockInfo;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.thread.DfArchiver;
