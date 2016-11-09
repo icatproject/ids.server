@@ -28,6 +28,7 @@ import javax.ejb.Singleton;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+import org.icatproject.Dataset;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockInfo;
 import org.icatproject.ids.LockManager.LockType;
@@ -73,13 +74,21 @@ public class FiniteStateMachine {
 							Entry<DfInfoImpl, RequestedState> opEntry = it.next();
 							DfInfoImpl dfInfo = opEntry.getKey();
 							Long dsId = dfInfo.getDsId();
+							DsInfo dsInfo;
+							try {
+								Dataset ds = (Dataset) reader.get("Dataset ds INCLUDE ds.investigation.facility", dsId);
+								dsInfo = new DsInfoImpl(ds);
+							} catch (Exception e) {
+								logger.error("Could not get dsInfo {}: {}.", dsId, e.getMessage());
+								continue;
+							}
 							if (!dfChanging.containsKey(dfInfo)) {
 								final RequestedState state = opEntry.getValue();
 								logger.debug(dfInfo + " " + state);
 								if (state == RequestedState.WRITE_REQUESTED) {
 									if (!writeLocks.containsKey(dsId)) {
 										try {
-											writeLocks.put(dsId, lockManager.lock(dsId, LockType.SHARED));
+											writeLocks.put(dsId, lockManager.lock(dsInfo, LockType.SHARED));
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;
@@ -91,7 +100,7 @@ public class FiniteStateMachine {
 								} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 									if (!writeLocks.containsKey(dsId)) {
 										try {
-											writeLocks.put(dsId, lockManager.lock(dsId, LockType.SHARED));
+											writeLocks.put(dsId, lockManager.lock(dsInfo, LockType.SHARED));
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;
@@ -104,7 +113,7 @@ public class FiniteStateMachine {
 								} else if (state == RequestedState.ARCHIVE_REQUESTED) {
 									if (!archiveLocks.containsKey(dsId)) {
 										try {
-											archiveLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+											archiveLocks.put(dsId, lockManager.lock(dsInfo, LockType.EXCLUSIVE));
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;
@@ -116,7 +125,7 @@ public class FiniteStateMachine {
 								} else if (state == RequestedState.RESTORE_REQUESTED) {
 									if (!restoreLocks.containsKey(dsId)) {
 										try {
-											restoreLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+											restoreLocks.put(dsId, lockManager.lock(dsInfo, LockType.EXCLUSIVE));
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;
@@ -128,7 +137,7 @@ public class FiniteStateMachine {
 								} else if (state == RequestedState.DELETE_REQUESTED) {
 									if (!deleteLocks.containsKey(dsId)) {
 										try {
-											deleteLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+											deleteLocks.put(dsId, lockManager.lock(dsInfo, LockType.EXCLUSIVE));
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;

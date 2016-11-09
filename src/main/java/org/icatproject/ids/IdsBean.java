@@ -1063,10 +1063,10 @@ public class IdsBean {
 		}
 
 		String location = getLocation(datafile.getId(), datafile.getLocation());
+		DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
 
-		try (Lock lock = lockManager.lock(datafile.getDataset().getId(), LockType.SHARED)) {
+		try (Lock lock = lockManager.lock(dsInfo, LockType.SHARED)) {
 			if (storageUnit == StorageUnit.DATASET) {
-				DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
 				Set<Long> mt = Collections.emptySet();
 				if (restoreIfOffline(dsInfo, mt)) {
 					throw new DataNotOnlineException(

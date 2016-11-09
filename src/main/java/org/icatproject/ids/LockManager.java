@@ -114,7 +114,9 @@ public class LockManager {
 		logger.debug("LockManager initialized.");
 	}
 
-	public Lock lock(Long id, LockType type) throws AlreadyLockedException {
+	public Lock lock(DsInfo ds, LockType type) throws AlreadyLockedException {
+		Long id = ds.getDsId();
+		assert id != null;
 		synchronized (lockMap) {
 			LockEntry le = lockMap.get(id);
 			if (le == null) {
@@ -130,13 +132,8 @@ public class LockManager {
 		}
 	}
 
-	public Lock lock(DsInfo ds, LockType type) throws AlreadyLockedException {
-		Long id = ds.getDsId();
-		assert id != null;
-		return lock(id, type);
-	}
-
-	public Lock lock(Collection<DsInfo> datasets, LockType type) throws AlreadyLockedException {
+	public Lock lock(Collection<DsInfo> datasets, LockType type) 
+		throws AlreadyLockedException {
 		LockCollection locks = new LockCollection();
 		try {
 			for (DsInfo ds : datasets) {
