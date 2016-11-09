@@ -92,6 +92,9 @@ public class FiniteStateMachine {
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;
+										} catch (IOException e) {
+											logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+											continue;
 										}
 									}
 									it.remove();
@@ -103,6 +106,9 @@ public class FiniteStateMachine {
 											writeLocks.put(dsId, lockManager.lock(dsInfo, LockType.SHARED));
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										} catch (IOException e) {
+											logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
 											continue;
 										}
 									}
@@ -117,6 +123,9 @@ public class FiniteStateMachine {
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;
+										} catch (IOException e) {
+											logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+											continue;
 										}
 									}
 									it.remove();
@@ -129,6 +138,9 @@ public class FiniteStateMachine {
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
 											continue;
+										} catch (IOException e) {
+											logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+											continue;
 										}
 									}
 									it.remove();
@@ -140,6 +152,9 @@ public class FiniteStateMachine {
 											deleteLocks.put(dsId, lockManager.lock(dsInfo, LockType.EXCLUSIVE));
 										} catch (AlreadyLockedException e) {
 											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										} catch (IOException e) {
+											logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
 											continue;
 										}
 									}
@@ -219,6 +234,8 @@ public class FiniteStateMachine {
 										}
 									} catch (AlreadyLockedException e) {
 										logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
+									} catch (IOException e) {
+										logger.error("I/O exception " + e.getMessage() + " locking " + dsInfo);
 									}
 								}
 							} else if (state == RequestedState.ARCHIVE_REQUESTED) {
@@ -233,6 +250,8 @@ public class FiniteStateMachine {
 									w.start();
 								} catch (AlreadyLockedException e) {
 									logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
+								} catch (IOException e) {
+									logger.error("I/O exception " + e.getMessage() + " locking " + dsInfo);
 								}
 							} else if (state == RequestedState.RESTORE_REQUESTED) {
 								try {
@@ -245,6 +264,8 @@ public class FiniteStateMachine {
 									w.start();
 								} catch (AlreadyLockedException e) {
 									logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
+								} catch (IOException e) {
+									logger.error("I/O exception " + e.getMessage() + " locking " + dsInfo);
 								}
 							}
 						}
