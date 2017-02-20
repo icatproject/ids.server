@@ -10,6 +10,7 @@ import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
+import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.junit.BeforeClass;
@@ -39,6 +40,26 @@ public class GetDataExplicitTest extends BaseTest {
 				icatWS.update(sessionId, df);
 			}
 		}
+	}
+
+	@Test
+	public void getSizes1() throws Exception {
+		assertEquals(208L, testingClient.getSize(sessionId, new DataSelection().addDatafiles(datafileIds), 200));
+		assertEquals(208L, testingClient.getSize(sessionId, new DataSelection().addDatasets(datasetIds), 200));
+		assertEquals(208L,
+				testingClient.getSize(sessionId, new DataSelection().addInvestigation(investigationId), 200));
+		assertEquals(208L, testingClient.getSize(sessionId,
+				new DataSelection().addInvestigation(investigationId).addDatafiles(datafileIds), 200));
+	}
+
+	@Test(expected = NotFoundException.class)
+	public void getSizesBad() throws Exception {
+		testingClient.getSize(sessionId, new DataSelection().addDatafile(563L), 404);
+	}
+
+	@Test(expected = NotFoundException.class)
+	public void getSizesBad2() throws Exception {
+		testingClient.getSize(sessionId, new DataSelection().addDatafile(563L).addDatafile(564L), 404);
 	}
 
 	@Test(expected = BadRequestException.class)

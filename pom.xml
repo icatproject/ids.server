@@ -79,7 +79,7 @@
 		<dependency>
 			<groupId>org.icatproject</groupId>
 			<artifactId>icat.utils</artifactId>
-			<version>4.15.0</version>
+			<version>4.15.1</version>
 		</dependency>
 
 		<dependency>
