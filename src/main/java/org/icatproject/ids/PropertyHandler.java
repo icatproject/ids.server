@@ -295,7 +295,7 @@ public class PropertyHandler {
 				try (JsonReader parser = Json
 						.createReader(new ByteArrayInputStream(ricat.getProperties().getBytes()))) {
 					maxEntities = parser.readObject().getInt("maxEntities");
-					logger.info("maxEntities from the ICAT.server {} version {} is {}", icatUrl, ricat.getApiVersion(),
+					logger.info("maxEntities from the ICAT.server {} version {} is {}", icatUrl, ricat.getVersion(),
 							maxEntities);
 				} catch (Exception e) {
 					String msg = "Problem finding ICAT API version " + e.getClass() + " " + e.getMessage();
