@@ -404,8 +404,8 @@ public class TestingClient {
 						serviceStatus.storeOpItems(dsInfo, request);
 					}
 					serviceStatus.setLockedCount(rootNode.getInt("lockCount"));
-					for (JsonValue num : rootNode.getJsonArray("lockedIds")) {
-						Long dsId = ((JsonNumber) num).longValueExact();
+					for (JsonValue lock : rootNode.getJsonArray("locks")) {
+						Long dsId = ((JsonObject) lock).getJsonNumber("id").longValueExact();
 						serviceStatus.storeLockedDs(dsId);
 					}
 					return serviceStatus;
