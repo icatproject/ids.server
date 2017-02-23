@@ -1105,25 +1105,51 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
-		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
-				datafileIds, Returns.DATASETS_AND_DATAFILES);
+		List<Long> dfids = DataSelection.getValidIds("datafileIds", datafileIds);
+		List<Long> dsids = DataSelection.getValidIds("datasetIds", datasetIds);
+		List<Long> invids = DataSelection.getValidIds("investigationIds", investigationIds);
 
 		long size = 0;
-		StringBuilder sb = new StringBuilder();
-		int n = 0;
-		for (DfInfoImpl df : dataSelection.getDfInfo()) {
-			if (sb.length() != 0) {
-				sb.append(',');
+		if (dfids.size() + dsids.size() + invids.size() == 1) {
+			size = getSizeFor(sessionId, invids, "df.dataset.investigation.id")
+					+ getSizeFor(sessionId, dsids, "df.dataset.id") + getSizeFor(sessionId, dfids, "df.id");
+			logger.debug("Fast computation for simple case");
+			if (size == 0) {
+				try {
+					if (dfids.size() != 0) {
+						icat.get(sessionId, "Datafile", dfids.get(0));
+					}
+					if (dsids.size() != 0) {
+						icat.get(sessionId, "Dataset", dsids.get(0));
+					}
+					if (invids.size() != 0) {
+						icat.get(sessionId, "Investigation", invids.get(0));
+					}
+				} catch (IcatException_Exception e) {
+					throw new NotFoundException(e.getMessage());
+				}
 			}
-			sb.append(df.getDfId());
-			if (n++ == 500) {
+		} else {
+			logger.debug("Slow computation for normal case");
+			final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+					datafileIds, Returns.DATASETS_AND_DATAFILES);
+
+			StringBuilder sb = new StringBuilder();
+			int n = 0;
+			for (DfInfoImpl df : dataSelection.getDfInfo()) {
+				if (sb.length() != 0) {
+					sb.append(',');
+				}
+				sb.append(df.getDfId());
+				if (n++ == 500) {
+					size += getSizeFor(sessionId, sb);
+					sb = new StringBuilder();
+					n = 0;
+				}
+			}
+			if (n > 0) {
 				size += getSizeFor(sessionId, sb);
-				sb = new StringBuilder();
-				n = 0;
 			}
-		}
-		if (n > 0) {
-			size += getSizeFor(sessionId, sb);
 		}
 
 		if (logSet.contains(CallType.INFO)) {
@@ -1144,8 +1170,45 @@ public class IdsBean {
 		return size;
 	}
 
+	private long getSizeFor(String sessionId, List<Long> ids, String where) throws InternalException {
+
+		long size = 0;
+		if (ids != null) {
+
+			StringBuilder sb = new StringBuilder();
+			int n = 0;
+			for (Long id : ids) {
+				if (sb.length() != 0) {
+					sb.append(',');
+				}
+				sb.append(id);
+				if (n++ == 500) {
+					size += evalSizeFor(sessionId, where, sb);
+					sb = new StringBuilder();
+					n = 0;
+				}
+			}
+			if (n > 0) {
+				size += evalSizeFor(sessionId, where, sb);
+			}
+		}
+		return size;
+	}
+
 	private long getSizeFor(String sessionId, StringBuilder sb) throws InternalException {
 		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE df.id IN (" + sb.toString() + ")";
+		try {
+			return (Long) icat.search(sessionId, query).get(0);
+		} catch (IcatException_Exception e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} catch (IndexOutOfBoundsException e) {
+			return 0L;
+		}
+	}
+
+	private long evalSizeFor(String sessionId, String where, StringBuilder sb) throws InternalException {
+		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE " + where + " IN (" + sb.toString() + ")";
+		logger.debug("icat query for size: {}", query);
 		try {
 			return (Long) icat.search(sessionId, query).get(0);
 		} catch (IcatException_Exception e) {
