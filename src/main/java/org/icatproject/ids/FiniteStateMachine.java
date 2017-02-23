@@ -46,7 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-@DependsOn("LoggingConfigurator")
+@DependsOn({ "LoggingConfigurator", "LockManager" })
 public class FiniteStateMachine {
 
 	private class DfProcessQueue extends TimerTask {

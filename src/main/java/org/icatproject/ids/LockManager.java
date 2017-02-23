@@ -157,12 +157,11 @@ public class LockManager {
 		Collection<LockInfo> lockInfo = new ArrayList<>();
 		Collection<LockEntry> lockEntries;
 		synchronized (lockMap) {
-			lockEntries = lockMap.values();
+			for (LockEntry le: lockMap.values()) {
+				lockInfo.add(new LockInfo(le));
+			}
+			return lockInfo;
 		}
-		for (LockEntry le: lockEntries) {
-			lockInfo.add(new LockInfo(le));
-		}
-		return lockInfo;
 	}
 
 }
