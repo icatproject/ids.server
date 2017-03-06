@@ -766,4 +766,39 @@ public class IdsService {
 		idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
+
+	/**
+	 * Write data specified by the investigationIds, datasetIds
+	 * and datafileIds specified along with a sessionId to archive
+	 * storage. If two level storage is not in use this has no
+	 * effect.
+	 * 
+	 * @summary write
+	 * 
+	 * @param sessionId
+	 *            A sessionId returned by a call to the icat server.
+	 * @param investigationIds
+	 *            If present, a comma separated list of investigation id values
+	 * @param datasetIds
+	 *            If present, a comma separated list of data set id values or
+	 *            null
+	 * @param datafileIds
+	 *            If present, a comma separated list of datafile id values.
+	 * 
+	 * @throws BadRequestException
+	 * @throws InsufficientPrivilegesException
+	 * @throws InternalException
+	 * @throws NotFoundException
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@POST
+	@Path("write")
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	public void write(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
+			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+			@FormParam("datafileIds") String datafileIds)
+					throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+		idsBean.write(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+	}
 }
