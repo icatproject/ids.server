@@ -1983,7 +1983,8 @@ public class IdsBean {
 	}
 
 	public void write(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException, 
+			       DataNotOnlineException {
 
 		long start = System.currentTimeMillis();
 
@@ -1993,21 +1994,60 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
+		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+				datafileIds, Returns.DATASETS_AND_DATAFILES);
+
 		// Do it
-		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds,
-					Returns.DATASETS);
-			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.queue(dsInfo, DeferredOp.WRITE);
+		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+
+		/*
+		 * Lock the datasets which prevents deletion of datafiles within the
+		 * dataset and archiving of the datasets. It is important that they be
+		 * unlocked again.
+		 */
+
+		final String lockId = fsm.lock(dsInfos.keySet(), FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
+		try {
+			if (twoLevel) {
+				try {
+					boolean maybeOffline = false;
+					if (storageUnit == StorageUnit.DATASET) {
+						for (DsInfo dsInfo : dsInfos.values()) {
+							if (fsm.getDsMaybeOffline().contains(dsInfo) ||
+							    (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) && 
+							     !mainStorage.exists(dsInfo))) {
+								maybeOffline = true;
+							}
+						}
+					} else if (storageUnit == StorageUnit.DATAFILE) {
+						for (DfInfoImpl dfInfo : dfInfos) {
+							if (fsm.getDfMaybeOffline().contains(dfInfo) || 
+							    !mainStorage.exists(dfInfo.getDfLocation())) {
+								maybeOffline = true;
+							}
+						}
+					}
+					if (maybeOffline) {
+						throw new DataNotOnlineException("Requested data is not online, write request refused");
+					}
+				} catch (IOException e) {
+					logger.error("I/O error " + e.getMessage() + " checking online");
+					throw new InternalException(e.getClass() + " " + e.getMessage());
+				}
 			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds,
-					Returns.DATAFILES);
-			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-			for (DfInfoImpl dfInfo : dfInfos) {
-				fsm.queue(dfInfo, DeferredOp.WRITE);
+
+			if (storageUnit == StorageUnit.DATASET) {
+				for (DsInfo dsInfo : dsInfos.values()) {
+					fsm.queue(dsInfo, DeferredOp.WRITE);
+				}
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				for (DfInfoImpl dfInfo : dfInfos) {
+					fsm.queue(dfInfo, DeferredOp.WRITE);
+				}
 			}
+		} finally {
+			fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 		}
 
 		if (logSet.contains(CallType.MIGRATE)) {
