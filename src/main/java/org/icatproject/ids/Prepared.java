@@ -1,7 +1,8 @@
 package org.icatproject.ids;
 
-import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 
 import org.icatproject.ids.plugin.DsInfo;
 
@@ -9,7 +10,7 @@ import org.icatproject.ids.plugin.DsInfo;
 class Prepared {
 	boolean zip;
 	boolean compress;
-	Set<DfInfoImpl> dfInfos;
-	Map<Long, DsInfo> dsInfos;
+	SortedSet<DfInfoImpl> dfInfos;
+	SortedMap<Long, DsInfo> dsInfos;
 	Set<Long> emptyDatasets;
 }
