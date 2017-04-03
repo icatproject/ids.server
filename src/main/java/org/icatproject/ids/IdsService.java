@@ -1,5 +1,6 @@
 package org.icatproject.ids;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.regex.Matcher;
@@ -9,6 +10,8 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -79,13 +82,13 @@ public class IdsService {
 	public void archive(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds)
-					throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
 		idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
 	/**
-	 * Delete data specified by the investigationIds, datasetIds and
-	 * datafileIds specified along with a sessionId.
+	 * Delete data specified by the investigationIds, datasetIds and datafileIds
+	 * specified along with a sessionId.
 	 * 
 	 * @summary delete
 	 * 
@@ -113,7 +116,7 @@ public class IdsService {
 	public void delete(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
-					InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
+			InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
 		idsBean.delete(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
@@ -134,8 +137,27 @@ public class IdsService {
 	@GET
 	@Path("getApiVersion")
 	@Produces(MediaType.TEXT_PLAIN)
+	@Deprecated
 	public String getApiVersion() {
 		return Constants.API_VERSION;
+	}
+
+	/**
+	 * Return the version of the server
+	 * 
+	 * @summary Version
+	 * 
+	 * @return json string of the form: <samp>{"version":"4.4.0"}</samp>
+	 */
+	@GET
+	@Path("version")
+	@Produces(MediaType.APPLICATION_JSON)
+	public String getVersion() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		JsonGenerator gen = Json.createGenerator(baos);
+		gen.writeStartObject().write("version", Constants.API_VERSION).writeEnd();
+		gen.close();
+		return baos.toString();
 	}
 
 	/**
@@ -190,7 +212,7 @@ public class IdsService {
 			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds,
 			@QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
 			@QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
-					NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
+			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
 		Response response = null;
 
 		long offset = 0;
@@ -246,7 +268,7 @@ public class IdsService {
 	public String getDatafileIds(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
 			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-					throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
+			throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
 		if (preparedId != null) {
 			return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
 		} else {
@@ -306,8 +328,8 @@ public class IdsService {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getLink(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("datafileId") long datafileId, @FormParam("username") String username)
-					throws BadRequestException, InsufficientPrivilegesException, NotImplementedException,
-					InternalException, NotFoundException, DataNotOnlineException {
+			throws BadRequestException, InsufficientPrivilegesException, NotImplementedException, InternalException,
+			NotFoundException, DataNotOnlineException {
 		return idsBean.getLink(sessionId, datafileId, username, request.getRemoteAddr());
 	}
 
@@ -367,7 +389,7 @@ public class IdsService {
 	public long getSize(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds)
-					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 		return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
@@ -408,7 +430,7 @@ public class IdsService {
 	public String getStatus(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
 			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
 			@QueryParam("datafileIds") String datafileIds)
-					throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 		return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
@@ -423,6 +445,9 @@ public class IdsService {
 	 * Returns true if all the data files are ready to be downloaded. As a side
 	 * effect, if any data files are archived and no restoration has been
 	 * requested then a restoration of those data files will be launched.
+	 * 
+	 * To make this operation fast, if anything is not found on line then
+	 * the rest of the work is done in the background and the status returned. At the end of the call if it fails then the next place
 	 * 
 	 * @summary isPrepared
 	 * 
@@ -540,7 +565,7 @@ public class IdsService {
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
 			@FormParam("zip") boolean zip)
-					throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException {
+			throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException {
 		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip,
 				request.getRemoteAddr());
 	}
@@ -591,9 +616,8 @@ public class IdsService {
 			@QueryParam("datafileFormatId") String datafileFormatId, @QueryParam("datasetId") String datasetId,
 			@QueryParam("description") String description, @QueryParam("doi") String doi,
 			@QueryParam("datafileCreateTime") String datafileCreateTime,
-			@QueryParam("datafileModTime") String datafileModTime)
-					throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
-					NotImplementedException, DataNotOnlineException {
+			@QueryParam("datafileModTime") String datafileModTime) throws BadRequestException, NotFoundException,
+			InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
 		return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description, doi, datafileCreateTime,
 				datafileModTime, false, false, request.getRemoteAddr());
 	}
@@ -723,7 +747,7 @@ public class IdsService {
 	public void reset(@Context HttpServletRequest request, @FormParam("preparedId") String preparedId,
 			@FormParam("sessionId") String sessionId, @FormParam("investigationIds") String investigationIds,
 			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
-					throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
+			throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
 		if (preparedId != null) {
 			idsBean.reset(preparedId, request.getRemoteAddr());
 		} else {
@@ -762,7 +786,7 @@ public class IdsService {
 	public void restore(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds)
-					throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
 		idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
