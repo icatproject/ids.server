@@ -1,6 +1,6 @@
-ids.url=https://smfisher.esc.rl.ac.uk:8181
+ids.url=https://smfisher:8181
 
-glassfish=/home/fisher/pf/glassfish3
+glassfish=/home/fisher/pf/glassfish4
 
 # These credentials must have permission to read and download
 # the dataset and datafiles specified below.
@@ -14,6 +14,3 @@ unauthorizedIcatPassword=guess
 
 # folder, where files should be downloaded to and uploaded from
 updownDir = /home/fisher/icat/updown
-
-# appName will be substititued by maven
-appName = ids.server-${project.version}
