@@ -1,5 +1,3 @@
-ids.url=https://smfisher:8181
-
 glassfish=/home/fisher/pf/glassfish4
 
 # These credentials must have permission to read and download

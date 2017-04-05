@@ -68,13 +68,15 @@ public class Setup {
 
 		setReliability(1.);
 
-		idsUrl = new URL(testProps.getProperty("ids.url") + "/ids");
+		String serverUrl = System.getProperty("serverUrl");
+
+		idsUrl = new URL(serverUrl + "/ids");
 
 		String home = testProps.getProperty("glassfish");
 
 		long time = System.currentTimeMillis();
 		ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py", "src/test/resources/" + runPropertyFile,
-				home);
+				home, serverUrl);
 		System.out.println(sc.getStdout() + " " + sc.getStderr());
 		System.out.println(
 				"Setting up " + runPropertyFile + " took " + (System.currentTimeMillis() - time) / 1000. + "seconds");
