@@ -3,6 +3,7 @@ package org.icatproject.ids.integration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -149,10 +150,12 @@ public class BaseTest {
 
 	protected void logTime(String msg) {
 		long now = System.currentTimeMillis();
-		if (time != 0) {
-			System.out.println(msg + " took " + (now - time) + "ms.");
-		} else {
-			System.out.println(msg);
+		if (msg != null) {
+			if (time != 0) {
+				System.out.println(msg + " took " + (now - time) / 1000. + "s.");
+			} else {
+				System.out.println(msg);
+			}
 		}
 		time = now;
 	}
@@ -268,10 +271,6 @@ public class BaseTest {
 			df2.setLocation(ds1Loc + UUID.randomUUID());
 			df2.setDataset(ds1);
 			writeToFile(df2, "df2 test content very compressible very compressible", key);
-
-			// System.out.println("ds " + ds1.getId() + " holds dfs " +
-			// df1.getId() + " and "
-			// + df2.getId());
 
 			Datafile df3 = new Datafile();
 			df3.setName("df3_" + timestamp);
@@ -641,6 +640,96 @@ public class BaseTest {
 		System.out.println(testingClient.getStatus(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(dfid2), 200));
 
+	}
+
+	protected void isPreparedTest() throws Exception {
+
+		int numDs = 30;
+		int numDf = 30;
+
+		Investigation inv = (Investigation) icatWS.search(sessionId, "Investigation INCLUDE Facility").get(0);
+		String invLoc = inv.getId() + "/";
+		DatasetType dsType = (DatasetType) icatWS.search(sessionId, "DatasetType").get(0);
+		Facility fac = inv.getFacility();
+
+		String key = setup.getKey();
+		boolean twoLevel = setup.isTwoLevel();
+		String storageUnit = setup.getStorageUnit();
+
+		logTime("Starting");
+		DataSelection dsel = new DataSelection();
+		long dsid = 0;
+		for (int i = 0; i < numDs; i++) {
+			Dataset ds = new Dataset();
+			ds.setName("ds1_" + i);
+
+			ds.setLocation(invLoc + ds.getId());
+			ds.setType(dsType);
+			ds.setInvestigation(inv);
+
+			dsid = icatWS.create(sessionId, ds);
+			String dsLoc = invLoc + dsid + "/";
+			ds.setId(dsid);
+			for (int j = 0; j < numDf; j++) {
+
+				Datafile df = new Datafile();
+				df.setName("a/df1_" + j);
+				df.setLocation(dsLoc + UUID.randomUUID());
+
+				df.setDataset(ds);
+				writeToFile(df, "42", key);
+			}
+			dsel.addDataset(dsid);
+			if (twoLevel) {
+				moveDatasetToArchive(storageUnit, ds, dsLoc, fac, inv, key);
+			}
+		}
+		waitForIds(300);
+
+		logTime("Put calls");
+
+		String preparedId = testingClient.prepareData(sessionId, dsel, Flag.ZIP, 200);
+		logTime("Data prepared");
+
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			logTime("Not ready");
+			Thread.sleep(500);
+			logTime(null);
+		}
+		logTime("Prepared");
+
+		testingClient.isPrepared(preparedId, 200);
+		logTime("isPrepared after prepared");
+
+		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
+			int l = getOutput(stream).length;
+			logTime("Read " + l + " bytes");
+		}
+
+		testingClient.archive(sessionId, new DataSelection().addDataset(dsid), 204);
+		waitForIds(300);
+		logTime(null);
+
+		try (InputStream stream = testingClient.getData(preparedId, 0, 404)) {
+			fail("Should have thrown an error");
+		} catch (Exception e) {
+			// Expected
+		}
+
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			logTime("Not ready");
+			Thread.sleep(500);
+			logTime(null);
+		}
+
+		logTime("Prepared");
+		testingClient.isPrepared(preparedId, 200);
+		logTime("isPrepared after prepared");
+
+		try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
+			int l = getOutput(stream).length;
+			logTime("Read " + l + " bytes");
+		}
 	}
 
 }

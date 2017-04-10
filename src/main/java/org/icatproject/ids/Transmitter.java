@@ -2,7 +2,6 @@ package org.icatproject.ids;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.ejb.DependsOn;
 import javax.ejb.Singleton;
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -20,7 +19,6 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 @Singleton
-@DependsOn("LoggingConfigurator")
 public class Transmitter {
 
 	private static Logger logger = LoggerFactory.getLogger(Transmitter.class);

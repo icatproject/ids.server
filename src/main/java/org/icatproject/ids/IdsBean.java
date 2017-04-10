@@ -17,16 +17,23 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -76,6 +83,46 @@ import org.slf4j.LoggerFactory;
 
 @Stateless
 public class IdsBean {
+
+	public class RunPrepDsCheck implements Callable<Void> {
+
+		private Collection<DsInfo> toCheck;
+		private Set<Long> emptyDatasets;
+
+		public RunPrepDsCheck(Collection<DsInfo> toCheck, Set<Long> emptyDatasets) {
+			this.toCheck = toCheck;
+			this.emptyDatasets = emptyDatasets;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			for (DsInfo dsInfo : toCheck) {
+				fsm.checkFailure(dsInfo.getDsId());
+				restoreIfOffline(dsInfo, emptyDatasets);
+			}
+			return null;
+		}
+
+	}
+
+	public class RunPrepDfCheck implements Callable<Void> {
+
+		private SortedSet<DfInfoImpl> toCheck;
+
+		public RunPrepDfCheck(SortedSet<DfInfoImpl> toCheck) {
+			this.toCheck = toCheck;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			for (DfInfoImpl dfInfo : toCheck) {
+				fsm.checkFailure(dfInfo.getDfId());
+				restoreIfOffline(dfInfo);
+			}
+			return null;
+		}
+
+	}
 
 	enum CallType {
 		INFO, PREPARE, READ, WRITE, MIGRATE, LINK
@@ -373,8 +420,8 @@ public class IdsBean {
 		}
 		prepared.zip = pd.getBoolean("zip");
 		prepared.compress = pd.getBoolean("compress");
-		Map<Long, DsInfo> dsInfos = new HashMap<>();
-		Set<DfInfoImpl> dfInfos = new HashSet<>();
+		SortedMap<Long, DsInfo> dsInfos = new TreeMap<>();
+		SortedSet<DfInfoImpl> dfInfos = new TreeSet<>();
 		Set<Long> emptyDatasets = new HashSet<>();
 
 		for (JsonValue itemV : pd.getJsonArray("dfInfo")) {
@@ -459,6 +506,15 @@ public class IdsBean {
 	private boolean twoLevel;
 
 	private Set<CallType> logSet;
+
+	class PreparedStatus {
+		public ReentrantLock lock = new ReentrantLock();
+		public DfInfoImpl fromDfElement;
+		public Future<?> future;
+		public Long fromDsElement;
+	};
+
+	private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 
 	private void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)
 			throws BadRequestException {
@@ -1397,38 +1453,104 @@ public class IdsBean {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
+		PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
+		if (!status.lock.tryLock()) {
+			logger.debug("Lock held for evaluation of isPrepared for preparedId {}", preparedId);
+			return false;
+		}
 		try {
-			if (storageUnit == StorageUnit.DATASET) {
-				for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
-					fsm.checkFailure(dsInfo.getDsId());
-					if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
-						prepared = false;
+			Future<?> future = status.future;
+			if (future != null) {
+				if (future.isDone()) {
+					try {
+						future.get();
+					} catch (ExecutionException e) {
+						throw new InternalException(e.getClass() + " " + e.getMessage());
+					} catch (InterruptedException e) {
+						// Ignore
+					} finally {
+						status.future = null;
 					}
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				for (DfInfoImpl dfInfo : preparedJson.dfInfos) {
-					fsm.checkFailure(dfInfo.getDfId());
-					if (restoreIfOffline(dfInfo)) {
-						prepared = false;
-					}
+				} else {
+					logger.debug("Background process still running for preparedId {}", preparedId);
+					return false;
 				}
 			}
-		} catch (IOException e) {
-			logger.error("I/O error " + e.getMessage() + " isPrepared of " + preparedId);
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
 
-		if (logSet.contains(CallType.INFO)) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
+			try {
+				if (storageUnit == StorageUnit.DATASET) {
+					Collection<DsInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
+							: preparedJson.dsInfos.tailMap(status.fromDsElement).values();
+					logger.debug("Will check online status of {} entries", toCheck.size());
+					for (DsInfo dsInfo : toCheck) {
+						fsm.checkFailure(dsInfo.getDsId());
+						if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
+							prepared = false;
+							status.fromDsElement = dsInfo.getDsId();
+							toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
+							logger.debug("Will check in background status of {} entries", toCheck.size());
+							status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets));
+							break;
+						}
+					}
+					if (prepared) {
+						toCheck = status.fromDsElement == null ? Collections.emptySet()
+								: preparedJson.dsInfos.headMap(status.fromDsElement).values();
+						logger.debug("Will check finally online status of {} entries", toCheck.size());
+						for (DsInfo dsInfo : toCheck) {
+							fsm.checkFailure(dsInfo.getDsId());
+							if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
+								prepared = false;
+							}
+						}
+					}
+				} else if (storageUnit == StorageUnit.DATAFILE) {
+					SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
+							: preparedJson.dfInfos.tailSet(status.fromDfElement);
+					logger.debug("Will check online status of {} entries", toCheck.size());
+					for (DfInfoImpl dfInfo : toCheck) {
+						fsm.checkFailure(dfInfo.getDfId());
+						if (restoreIfOffline(dfInfo)) {
+							prepared = false;
+							status.fromDfElement = dfInfo;
+							toCheck = preparedJson.dfInfos.tailSet(status.fromDfElement);
+							logger.debug("Will check in background status of {} entries", toCheck.size());
+							status.future = threadPool.submit(new RunPrepDfCheck(toCheck));
+							break;
+						}
+					}
+					if (prepared) {
+						toCheck = status.fromDfElement == null ? new TreeSet<>()
+								: preparedJson.dfInfos.headSet(status.fromDfElement);
+						logger.debug("Will check finally online status of {} entries", toCheck.size());
+						for (DfInfoImpl dfInfo : toCheck) {
+							fsm.checkFailure(dfInfo.getDfId());
+							if (restoreIfOffline(dfInfo)) {
+								prepared = false;
+							}
+						}
+					}
+				}
+			} catch (IOException e) {
+				logger.error("I/O error " + e.getMessage() + " isPrepared of " + preparedId);
+				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
-			String body = baos.toString();
-			transmitter.processMessage("isPrepared", ip, body, start);
-		}
 
-		return prepared;
+			if (logSet.contains(CallType.INFO)) {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("preparedId", preparedId);
+					gen.writeEnd();
+				}
+				String body = baos.toString();
+				transmitter.processMessage("isPrepared", ip, body, start);
+			}
+
+			return prepared;
+
+		} finally {
+			status.lock.unlock();
+		}
 
 	}
 

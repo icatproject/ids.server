@@ -2,7 +2,7 @@ package org.icatproject.ids;
 
 import org.icatproject.ids.plugin.DfInfo;
 
-public class DfInfoImpl implements DfInfo {
+public class DfInfoImpl implements DfInfo, Comparable<DfInfoImpl> {
 
 	private String createId;
 
@@ -16,8 +16,7 @@ public class DfInfoImpl implements DfInfo {
 
 	private String modId;
 
-	public DfInfoImpl(long dfId, String dfName, String dfLocation, String createId, String modId,
-			long dsId) {
+	public DfInfoImpl(long dfId, String dfName, String dfLocation, String createId, String modId, long dsId) {
 		this.dfId = dfId;
 		this.dfName = dfName;
 		this.dfLocation = dfLocation;
@@ -74,6 +73,17 @@ public class DfInfoImpl implements DfInfo {
 	@Override
 	public String toString() {
 		return dfLocation;
+	}
+
+	@Override
+	public int compareTo(DfInfoImpl o) {
+		if (dfId > o.getDfId()) {
+			return 1;
+		}
+		if (dfId < o.getDfId()) {
+			return -1;
+		}
+		return 0;
 	}
 
 }

@@ -151,7 +151,7 @@ public class TestingClient {
 				if (entity == null) {
 					fail("No explanation provided");
 				} else {
-					fail(EntityUtils.toString(entity));
+					fail("rc was " + rc + " " + EntityUtils.toString(entity));
 				}
 			} else
 				fail("Expected " + sc.intValue() + " but was " + rc);
