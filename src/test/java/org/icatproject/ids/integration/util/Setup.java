@@ -83,11 +83,12 @@ public class Setup {
 		sc = new ShellCommand("cmp", config.resolve("ids.properties").toString(),
 				"src/test/resources/" + idsPropertyFile);
 		if (sc.getExitValue() == 1) {
-			System.out.println("Moving " + idsPropertyFile + " to " + config);
+			System.out.println("Disable " + appName);
 			sc = new ShellCommand("asadmin", "disable", appName);
 			if (sc.getExitValue() != 0) {
 				System.out.println(sc.getMessage());
 			}
+			System.out.println("Moving " + idsPropertyFile + " to " + config);
 			Files.copy(new File("src/test/resources/" + idsPropertyFile).toPath(), config.resolve("ids.properties"),
 					StandardCopyOption.REPLACE_EXISTING);
 			sc = new ShellCommand("asadmin", "enable", appName);

@@ -1,10 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.icatproject</groupId>
 	<artifactId>ids.server</artifactId>
 	<packaging>war</packaging>
-	<version>1.7.0</version>
+	<version>1.7.1-SNAPSHOT</version>
 	<name>IDS Server</name>
 
 	<properties>
@@ -259,12 +260,16 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.18.1</version>
 				<configuration>
+
 					<excludes>
 						<exclude>
 							**/integration/**/*Test.java
 						</exclude>
 
 					</excludes>
+					<systemPropertyVariables>
+						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 
@@ -392,7 +397,7 @@
 				<artifactId>maven-release-plugin</artifactId>
 				<version>2.5.3</version>
 				<configuration>
-					<tagNameFormat>v@{project.version}</tagNameFormat> 
+					<tagNameFormat>v@{project.version}</tagNameFormat>
 					<arguments>-Dmaven.javadoc.skip=true</arguments>
 				</configuration>
 			</plugin>

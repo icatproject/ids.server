@@ -69,37 +69,28 @@ public class Tidier {
 							StringBuilder sb = new StringBuilder(
 									"SELECT ds FROM Dataset ds, ds.investigation inv, inv.facility fac WHERE");
 							boolean andNeeded = false;
-							andNeeded = addNumericConstraint(sb, "ds.id", dsInfo.getDsId(),
-									andNeeded);
-							andNeeded = addStringConstraint(sb, "ds.location",
-									dsInfo.getDsLocation(), andNeeded);
-							andNeeded = addStringConstraint(sb, "ds.name", dsInfo.getDsName(),
-									andNeeded);
+							andNeeded = addNumericConstraint(sb, "ds.id", dsInfo.getDsId(), andNeeded);
+							andNeeded = addStringConstraint(sb, "ds.location", dsInfo.getDsLocation(), andNeeded);
+							andNeeded = addStringConstraint(sb, "ds.name", dsInfo.getDsName(), andNeeded);
 
-							andNeeded = addNumericConstraint(sb, "inv.id", dsInfo.getInvId(),
-									andNeeded);
-							andNeeded = addStringConstraint(sb, "inv.name", dsInfo.getInvName(),
-									andNeeded);
-							andNeeded = addStringConstraint(sb, "inv.visitId", dsInfo.getVisitId(),
-									andNeeded);
+							andNeeded = addNumericConstraint(sb, "inv.id", dsInfo.getInvId(), andNeeded);
+							andNeeded = addStringConstraint(sb, "inv.name", dsInfo.getInvName(), andNeeded);
+							andNeeded = addStringConstraint(sb, "inv.visitId", dsInfo.getVisitId(), andNeeded);
 
-							andNeeded = addStringConstraint(sb, "fac.name",
-									dsInfo.getFacilityName(), andNeeded);
-							andNeeded = addNumericConstraint(sb, "fac.id", dsInfo.getFacilityId(),
-									andNeeded);
+							andNeeded = addStringConstraint(sb, "fac.name", dsInfo.getFacilityName(), andNeeded);
+							andNeeded = addNumericConstraint(sb, "fac.id", dsInfo.getFacilityId(), andNeeded);
 
 							sb.append(" INCLUDE ds.investigation.facility");
 							try {
 								int low = 0;
 								while (true) {
-									String query = sb.toString() + " LIMIT " + low + ","
-											+ tidyBlockSize;
+									String query = sb.toString() + " LIMIT " + low + "," + tidyBlockSize;
 									List<Object> os = reader.search(query);
 									logger.debug(query + " returns " + os.size() + " datasets");
 									for (Object o : os) {
 										DsInfoImpl dsInfoImpl = new DsInfoImpl((Dataset) o);
-										logger.debug("Requesting archive of " + dsInfoImpl
-												+ " to recover main storage");
+										logger.debug(
+												"Requesting archive of " + dsInfoImpl + " to recover main storage");
 										fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
 									}
 									if (os.size() < tidyBlockSize) {
@@ -107,26 +98,22 @@ public class Tidier {
 									}
 									low += tidyBlockSize;
 								}
-							} catch (InternalException | IcatException_Exception
-									| InsufficientPrivilegesException e) {
+							} catch (InternalException | IcatException_Exception | InsufficientPrivilegesException e) {
 								// Log it and carry on
 								logger.error(e.getClass() + " " + e.getMessage());
 							}
 						}
 
 					} else if (storageUnit == StorageUnit.DATAFILE) {
-						List<DfInfo> dfInfos = mainStorage.getDatafilesToArchive(
-								stopArchivingLevel, startArchivingLevel);
+						List<DfInfo> dfInfos = mainStorage.getDatafilesToArchive(stopArchivingLevel,
+								startArchivingLevel);
 						for (DfInfo dfInfo : dfInfos) {
 							StringBuilder sb = new StringBuilder("SELECT df FROM Datafile df WHERE");
 							boolean andNeeded = false;
 
-							andNeeded = addNumericConstraint(sb, "df.id", dfInfo.getDfId(),
-									andNeeded);
-							andNeeded = addStringConstraint(sb, "df.createId",
-									dfInfo.getCreateId(), andNeeded);
-							andNeeded = addStringConstraint(sb, "df.modId", dfInfo.getModId(),
-									andNeeded);
+							andNeeded = addNumericConstraint(sb, "df.id", dfInfo.getDfId(), andNeeded);
+							andNeeded = addStringConstraint(sb, "df.createId", dfInfo.getCreateId(), andNeeded);
+							andNeeded = addStringConstraint(sb, "df.modId", dfInfo.getModId(), andNeeded);
 							if (key != null) {
 								if (dfInfo.getDfLocation() != null) {
 									if (andNeeded) {
@@ -135,33 +122,29 @@ public class Tidier {
 										sb.append(" ");
 										andNeeded = true;
 									}
-									sb.append("df.location" + " LIKE '" + dfInfo.getDfLocation()
-											+ " %'");
+									sb.append("df.location" + " LIKE '" + dfInfo.getDfLocation() + " %'");
 								}
 							} else {
 								andNeeded = addStringConstraint(sb, "df.location",
 
-								dfInfo.getDfLocation(), andNeeded);
+										dfInfo.getDfLocation(), andNeeded);
 							}
-							andNeeded = addStringConstraint(sb, "df.name", dfInfo.getDfName(),
-									andNeeded);
+							andNeeded = addStringConstraint(sb, "df.name", dfInfo.getDfName(), andNeeded);
 
 							sb.append(" INCLUDE df.dataset");
 							try {
 								int low = 0;
 								while (true) {
-									String query = sb.toString() + " LIMIT " + low + ","
-											+ tidyBlockSize;
+									String query = sb.toString() + " LIMIT " + low + "," + tidyBlockSize;
 									List<Object> os = reader.search(query);
 									logger.debug(query + " returns " + os.size() + " datafiles");
 									for (Object o : os) {
 										Datafile df = (Datafile) o;
-										DfInfoImpl dfInfoImpl = new DfInfoImpl(df.getId(),
-												df.getName(), IdsBean.getLocation(df),
-												df.getCreateId(), df.getModId(), df.getDataset()
-														.getId());
-										logger.debug("Requesting archive of " + dfInfoImpl
-												+ " to recover main storage");
+										DfInfoImpl dfInfoImpl = new DfInfoImpl(df.getId(), df.getName(),
+												IdsBean.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
+												df.getModId(), df.getDataset().getId());
+										logger.debug(
+												"Requesting archive of " + dfInfoImpl + " to recover main storage");
 										fsm.queue(dfInfoImpl, DeferredOp.ARCHIVE);
 									}
 									if (os.size() < tidyBlockSize) {
@@ -169,8 +152,7 @@ public class Tidier {
 									}
 									low += tidyBlockSize;
 								}
-							} catch (InternalException | IcatException_Exception
-									| InsufficientPrivilegesException e) {
+							} catch (InternalException | IcatException_Exception | InsufficientPrivilegesException e) {
 								// Log it and carry on
 								logger.error(e.getClass() + " " + e.getMessage());
 							}
@@ -184,8 +166,7 @@ public class Tidier {
 			}
 		}
 
-		private boolean addStringConstraint(StringBuilder sb, String var, String value,
-				boolean andNeeded) {
+		private boolean addStringConstraint(StringBuilder sb, String var, String value, boolean andNeeded) {
 			if (value != null) {
 				if (andNeeded) {
 					sb.append(" AND ");
@@ -198,8 +179,7 @@ public class Tidier {
 			return andNeeded;
 		}
 
-		private boolean addNumericConstraint(StringBuilder sb, String var, Long value,
-				boolean andNeeded) {
+		private boolean addNumericConstraint(StringBuilder sb, String var, Long value, boolean andNeeded) {
 			if (value != null) {
 				if (andNeeded) {
 					sb.append(" AND ");

@@ -41,6 +41,11 @@ public class BaseTests extends BaseTest {
 	}
 
 	@Test
+	public void bigDataSelectionTest() throws Exception {
+		super.bigDataSelectionTest();
+	}
+
+	@Test
 	public void cloningTest() throws Exception {
 		super.cloningTest();
 	}

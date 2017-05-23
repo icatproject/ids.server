@@ -76,6 +76,7 @@ public class PropertyHandler {
 	private Integer maxEntities;
 	private String jmsTopicConnectionFactory;
 	private Set<CallType> logSet = new HashSet<>();
+	private org.icatproject.icat.client.ICAT restIcat;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -87,6 +88,11 @@ public class PropertyHandler {
 			logger.info("Property file ids.properties loaded");
 
 			icatUrl = ICATGetter.getCleanUrl(props.getString("icat.url"));
+			try {
+				restIcat = new org.icatproject.icat.client.ICAT(icatUrl);
+			} catch (URISyntaxException e) {
+				abort(e.getMessage());
+			}
 
 			preparedCount = props.getPositiveInt("preparedCount");
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
@@ -365,6 +371,10 @@ public class PropertyHandler {
 
 	public ZipMapperInterface getZipMapper() {
 		return zipMapper;
+	}
+
+	public org.icatproject.icat.client.ICAT getRestIcat() {
+		return restIcat;
 	}
 
 }
