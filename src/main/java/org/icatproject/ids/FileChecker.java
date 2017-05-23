@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @Startup
-@DependsOn("LoggingConfigurator")
 public class FileChecker {
 
 	@EJB

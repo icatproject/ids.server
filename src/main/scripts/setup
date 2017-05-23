@@ -9,87 +9,57 @@ def uninstall():
     if app: actions.undeploy(app)
     actions.deleteJMSResource("jms/IDS/log")
 
-actions, arg, props = getActions("ids-setup.properties", [])
+actions, arg, props = getActions("setup.properties", [])
 
-prop_name = "ids.properties"
+prop_name = "run.properties"
 prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
 "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "reader",
 "filesCheck.parallelCount", "linkLifetimeSeconds", "maxIdsInQuery"]
 
 if arg in ["CONFIGURE", "INSTALL"]: actions.configure(prop_name, prop_list) 
 idsProperties = getProperties(prop_name, prop_list)
-log4backXml = idsProperties.get("logback.xml")
+
 
 
 if arg in ["CONFIGURE", "INSTALL"]:
-    if log4backXml: actions.configure(os.path.basename(log4backXml), [], log4backXml)
     actions.checkNoErrors()
 
 if arg == "INSTALL":
+      
+    if not os.path.exists(os.path.expandvars(idsProperties.get("cache.dir"))):
+        abort("Please create directory " + idsProperties.get("cache.dir") + " as specified in run.properties")
     
-    sprops = idsProperties.get("plugin.main.properties")
-    if not sprops: print "You have specified plugin.main.class but not plugin.main.properties - which may be what you want"
-    elif not actions.configFileExists(sprops):
-        abort ("ids.properties defined plugin.main.properties to be " + sprops + " but the file has not been deployed. Have you installed the necessary ids plugins?")
-  
-    if not actions.configFileExists(idsProperties.get("cache.dir")):
-        abort("Please create directory " + idsProperties.get("cache.dir") + " relative to the config directory as specified in ids.properties")
-    
-    if idsProperties.get("plugin.archive.class"):
-        
-        sprops = idsProperties.get("plugin.archive.properties")
-        if not sprops: print "You have specified plugin.archive.class but not plugin.archive.properties - which may be what you want"
-        elif not actions.configFileExists(sprops):
-            abort ("ids.properties defined plugin.archive.properties to be " + sprops + " but the file has not been deployed. Have you installed the necessary ids plugins?")
-               
-        if not idsProperties.get("writeDelaySeconds"): abort("writeDelaySeconds is not set in ids.properties")
-        if not idsProperties.get("startArchivingLevel1024bytes"): abort("startArchivingLevel1024bytes is not set in ids.properties")
-        if not idsProperties.get("stopArchivingLevel1024bytes"): abort("stopArchivingLevel1024bytes is not set in ids.properties")
+    if idsProperties.get("plugin.archive.class"):               
+        if not idsProperties.get("writeDelaySeconds"): abort("writeDelaySeconds is not set in run.properties")
+        if not idsProperties.get("startArchivingLevel1024bytes"): abort("startArchivingLevel1024bytes is not set in run.properties")
+        if not idsProperties.get("stopArchivingLevel1024bytes"): abort("stopArchivingLevel1024bytes is not set in run.properties")
         if not idsProperties.get("tidyBlockSize"): abort("tidyBlockSize is not set in ids.properties")
         
     if int(idsProperties["filesCheck.parallelCount"]):
-        if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in ids.properties")
-        if not idsProperties.get("filesCheck.lastIdFile"): abort("filesCheck.lastIdFile is not set in ids.properties")
-        parent = os.path.dirname(idsProperties["filesCheck.lastIdFile"])
-        if not actions.configFileExists(parent):
-            abort("Please create directory " + parent + " for filesCheck.lastIdFile specified in ids.properties")
-        if not idsProperties.get("filesCheck.errorLog"): abort("filesCheck.errorLog is not set in ids.properties")
-        parent = os.path.dirname(idsProperties["filesCheck.errorLog"])
-        if not actions.configFileExists(parent):
-            abort("Please create directory " + parent + " for filesCheck.errorLog specified in ids.properties")
-        if not idsProperties.get("reader"): abort("reader is not set in ids.properties")
+        if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in run.properties")
+        if not idsProperties.get("filesCheck.lastIdFile"): abort("filesCheck.lastIdFile is not set in run.properties")
+        parent = os.path.dirname(os.path.expandvars(idsProperties["filesCheck.lastIdFile"]))
+        if not os.path.exists(parent):
+            abort("Please create directory " + parent + " for filesCheck.lastIdFile specified in run.properties")
+        if not idsProperties.get("filesCheck.errorLog"): abort("filesCheck.errorLog is not set in run.properties")
+        parent = os.path.dirname(os.path.expandvars(idsProperties["filesCheck.errorLog"]))
+        if not os.path.exists(parent):
+            abort("Please create directory " + parent + " for filesCheck.errorLog specified in run.properties")
+        if not idsProperties.get("reader"): abort("reader is not set in run.properties")
         
-    if  log4backXml:
-        dir, file = os.path.split(log4backXml)
-        if not os.path.exists(file): abort("log4back.xml file " + file + " not found")
-
-    actions.installFile("ids.properties")
-    if log4backXml:
-        dir, file = os.path.split(log4backXml)
-        if dir:
-            actions.installFile(file, dir)
-        else:
-            actions.installFile(file)
-       
     try:
         uninstall()          
         actions.createJMSResource("javax.jms.Topic", "jms/IDS/log")
-          
-        actions.deploy(deploymentorder=120, libraries=props["libraries"].split(), jmsTopicConnectionFactory=idsProperties.get("jms.topicConnectionFactory"))
+        
+        ovfiles = [[prop_name, "WEB-INF/classes"]]
+        if os.path.exists("logback.xml"): ovfiles.append(["logback.xml", "WEB-INF/classes"])
+        actions.deploy(deploymentorder=120, files=ovfiles, libraries=props["libraries"].split(), jmsTopicConnectionFactory=idsProperties.get("jms.topicConnectionFactory"))
                       
     except Exception, e:
         raise
         abort(str(e))
                 
 if arg == "UNINSTALL":
-    actions.removeFile("ids.properties") 
-    if log4backXml:
-        dir, file = os.path.split(log4backXml)
-        if dir:
-            actions.removeFile(file, dir)
-        else:
-            actions.removeFile(file)
-            
     try:
        uninstall()       
     except Exception, e:

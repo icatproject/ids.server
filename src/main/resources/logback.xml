@@ -2,9 +2,9 @@
 
 	<appender name="FILE"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>../logs/ids.log</file>
+		<file>${HOME}/logs/ids.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>../logs/ids.log.%d{yyyy-MM-dd}.%i.zip
+			<fileNamePattern>${HOME}/logs/ids.log.%d{yyyy-MM-dd}.%i.zip
 			</fileNamePattern>
 			<maxHistory>30</maxHistory>
 			<timeBasedFileNamingAndTriggeringPolicy
@@ -14,16 +14,15 @@
 		</rollingPolicy>
 
 		<encoder>
-			<pattern>%date %level [%thread] %C{0} - %msg%n
+			<pattern>%date %level [%thread] %C{0} %L - %msg%n
 			</pattern>
 		</encoder>
 	</appender>
 
-	<root level="INFO">
+	<root level="DEBUG">
 		<appender-ref ref="FILE" />
 	</root>
 
-	<logger name="uk.ac.stfc.storaged" level="TRACE" />
 	<logger name="org.icatproject.ids.FileChecker" level="INFO" />
 
 </configuration>

@@ -151,7 +151,7 @@ public class TestingClient {
 				if (entity == null) {
 					fail("No explanation provided");
 				} else {
-					fail(EntityUtils.toString(entity));
+					fail("rc was " + rc + " " + EntityUtils.toString(entity));
 				}
 			} else
 				fail("Expected " + sc.intValue() + " but was " + rc);
@@ -597,15 +597,15 @@ public class TestingClient {
 
 	public Long put(String sessionId, InputStream inputStream, String name, long datasetId, long datafileFormatId,
 			String description, Integer sc)
-					throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
-					NotImplementedException, DataNotOnlineException, InsufficientStorageException {
+			throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
 		return put(sessionId, inputStream, name, datasetId, datafileFormatId, description, null, null, null, sc);
 	}
 
 	public Long put(String sessionId, InputStream inputStream, String name, long datasetId, long datafileFormatId,
 			String description, String doi, Date datafileCreateTime, Date datafileModTime, Integer sc)
-					throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
-					NotImplementedException, DataNotOnlineException, InsufficientStorageException {
+			throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
 
 		if (inputStream == null) {
 			throw new BadRequestException("Input stream is null");
@@ -653,8 +653,8 @@ public class TestingClient {
 
 	public Long putAsPost(String sessionId, InputStream inputStream, String name, long datasetId, long datafileFormatId,
 			String description, String doi, Date datafileCreateTime, Date datafileModTime, boolean wrap, Integer sc)
-					throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
-					NotImplementedException, DataNotOnlineException, InsufficientStorageException {
+			throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
+			NotImplementedException, DataNotOnlineException, InsufficientStorageException {
 
 		if (inputStream == null) {
 			throw new BadRequestException("Input stream is null");

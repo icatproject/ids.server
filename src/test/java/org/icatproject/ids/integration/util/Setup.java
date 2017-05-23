@@ -9,7 +9,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Properties;
 
@@ -56,7 +55,7 @@ public class Setup {
 	private boolean twoLevel;
 	private String key;
 
-	public Setup(String idsPropertyFile) throws Exception {
+	public Setup(String runPropertyFile) throws Exception {
 
 		// Start by reading the test properties
 		Properties testProps = new Properties();
@@ -69,76 +68,51 @@ public class Setup {
 
 		setReliability(1.);
 
-		idsUrl = new URL(testProps.getProperty("ids.url") + "/ids");
+		String serverUrl = System.getProperty("serverUrl");
 
-		String glassfish = testProps.getProperty("glassfish");
+		idsUrl = new URL(serverUrl + "/ids");
 
-		String appName = testProps.getProperty("appName");
+		String home = testProps.getProperty("glassfish");
 
-		ShellCommand sc = new ShellCommand("asadmin", "get", "property.administrative.domain.name");
-		String domain = sc.getStdout().split("[\r\n]+")[0].split("=")[1];
-		Path config = new File(glassfish).toPath().resolve("glassfish").resolve("domains").resolve(domain)
-				.resolve("config");
+		long time = System.currentTimeMillis();
 
-		sc = new ShellCommand("cmp", config.resolve("ids.properties").toString(),
-				"src/test/resources/" + idsPropertyFile);
-		if (sc.getExitValue() == 1) {
-			System.out.println("Disable " + appName);
-			sc = new ShellCommand("asadmin", "disable", appName);
-			if (sc.getExitValue() != 0) {
-				System.out.println(sc.getMessage());
-			}
-			System.out.println("Moving " + idsPropertyFile + " to " + config);
-			Files.copy(new File("src/test/resources/" + idsPropertyFile).toPath(), config.resolve("ids.properties"),
-					StandardCopyOption.REPLACE_EXISTING);
-			sc = new ShellCommand("asadmin", "enable", appName);
-			if (sc.getExitValue() != 0) {
-				System.out.println(sc.getMessage());
-			} else {
-				System.out.println(sc.getStdout());
-			}
-		} else if (sc.getExitValue() == 2) {
-			System.out.println(sc.getMessage());
-		}
+		ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py", "src/test/resources/" + runPropertyFile,
+				home, serverUrl);
+		System.out.println(sc.getStdout() + " " + sc.getStderr());
+		System.out.println(
+				"Setting up " + runPropertyFile + " took " + (System.currentTimeMillis() - time) / 1000. + "seconds");
 
 		// Having set up the ids.properties file read it find other things
-		CheckedProperties idsProperties = new CheckedProperties();
-		idsProperties.loadFromFile(config.resolve("ids.properties").toString());
-		if (idsProperties.has("key")) {
-			key = idsProperties.getString("key");
+		CheckedProperties runProperties = new CheckedProperties();
+		runProperties.loadFromFile("src/test/install/run.properties");
+		if (runProperties.has("key")) {
+			key = runProperties.getString("key");
 		}
 		updownDir = new File(testProps.getProperty("updownDir")).toPath();
-		icatUrl = idsProperties.getURL("icat.url");
+		icatUrl = runProperties.getURL("icat.url");
 		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
 				testProps.getProperty("authorizedIcatPassword"));
 		forbiddenSessionId = login(testProps.getProperty("unauthorizedIcatUsername"),
 				testProps.getProperty("unauthorizedIcatPassword"));
 
-		// Lookup up the plugin config files and read those to find where they
-		// will store data
-		String mainProps = idsProperties.getString("plugin.main.properties");
-		Properties storageProps = new Properties();
-		storageProps.load(Files.newInputStream(config.resolve(mainProps)));
-		storageDir = new File(storageProps.getProperty("dir")).toPath();
+		storageDir = runProperties.getPath("plugin.main.dir");
 
-		if (idsProperties.has("plugin.archive.properties")) {
-			String archiveProps = idsProperties.getString("plugin.archive.properties");
-			storageProps.load(Files.newInputStream(config.resolve(archiveProps)));
-			storageArchiveDir = new File(storageProps.getProperty("dir")).toPath();
+		if (runProperties.has("plugin.archive.dir")) {
+			storageArchiveDir = runProperties.getPath("plugin.archive.dir");
 		}
 
-		Path cacheDir = new File(idsProperties.getString("cache.dir")).toPath();
+		Path cacheDir = runProperties.getPath("cache.dir");
 		preparedCacheDir = cacheDir.resolve("prepared");
-		twoLevel = idsProperties.has("plugin.archive.class");
+		twoLevel = runProperties.has("plugin.archive.class");
 		if (twoLevel) {
-			String storageUnitString = idsProperties.getString("storageUnit");
+			String storageUnitString = runProperties.getString("storageUnit");
 			if (storageUnitString == null) {
 				throw new Exception("storageUnit not set");
 			}
 			storageUnit = storageUnitString.toUpperCase();
 		}
 
-		errorLog = config.resolve(idsProperties.getString("filesCheck.errorLog"));
+		errorLog = runProperties.getPath("filesCheck.errorLog");
 
 	}
 

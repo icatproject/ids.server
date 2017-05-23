@@ -1,8 +1,8 @@
 package org.icatproject.ids;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.json.Json;
@@ -84,8 +85,8 @@ public class PropertyHandler {
 		CheckedProperties props = new CheckedProperties();
 
 		try {
-			props.loadFromFile("ids.properties");
-			logger.info("Property file ids.properties loaded");
+			props.loadFromResource("run.properties");
+			logger.info("Property file run.properties loaded");
 
 			icatUrl = ICATGetter.getCleanUrl(props.getString("icat.url"));
 			try {
@@ -114,21 +115,30 @@ public class PropertyHandler {
 			try {
 				Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class
 						.forName(props.getString("plugin.zipMapper.class"));
-				zipMapper = klass.newInstance();
+				zipMapper = klass.getConstructor().newInstance();
 				logger.debug("ZipMapper initialised");
-			} catch (Exception e) {
+
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+				abort(e.getClass() + " " + e.getMessage());
+			}
+
+			// Now get simple properties to pass to the plugins
+			Properties simpleProps = new Properties();
+			try (InputStream is = getClass().getClassLoader().getResourceAsStream("run.properties")) {
+				simpleProps.load(is);
+			} catch (IOException e) {
 				abort(e.getClass() + " " + e.getMessage());
 			}
 
 			try {
 				Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
 						.forName(props.getString("plugin.main.class"));
-				mainStorage = klass.getConstructor(File.class).newInstance(props.getFile("plugin.main.properties"));
+				mainStorage = klass.getConstructor(Properties.class).newInstance(simpleProps);
 				logger.debug("mainStorage initialised");
-			} catch (InvocationTargetException e) {
-				Throwable cause = e.getCause();
-				abort(cause.getClass() + " " + cause.getMessage());
-			} catch (Exception e) {
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+				logger.error("Plugin failed...", e);
 				abort(e.getClass() + " " + e.getMessage());
 			}
 
@@ -140,13 +150,12 @@ public class PropertyHandler {
 				try {
 					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
 							.forName(props.getString("plugin.archive.class"));
-					archiveStorage = klass.getConstructor(File.class)
-							.newInstance(props.getFile("plugin.archive.properties"));
+					archiveStorage = klass.getConstructor(Properties.class).newInstance(simpleProps);
 					logger.debug("archiveStorage initialised");
-				} catch (InvocationTargetException e) {
-					Throwable cause = e.getCause();
-					abort(cause.getClass() + " " + cause.getMessage());
-				} catch (Exception e) {
+				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+						| IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+						| SecurityException e) {
+					logger.error("Plugin failed...", e);
 					abort(e.getClass() + " " + e.getMessage());
 				}
 				startArchivingLevel = props.getPositiveLong("startArchivingLevel1024bytes") * 1024;
@@ -255,7 +264,8 @@ public class PropertyHandler {
 			try {
 				icatService = ICATGetter.getService(icatUrl);
 			} catch (IcatException_Exception e) {
-				String msg = "Problem finding ICAT API version " + e.getFaultInfo().getType() + " " + e.getMessage();
+				String msg = "Problem finding ICAT API version at " + icatUrl + ": " + e.getFaultInfo().getType() + " "
+						+ e.getMessage();
 				logger.error(msg);
 				try {
 					Thread.sleep(10000);
@@ -301,10 +311,10 @@ public class PropertyHandler {
 				try (JsonReader parser = Json
 						.createReader(new ByteArrayInputStream(ricat.getProperties().getBytes()))) {
 					maxEntities = parser.readObject().getInt("maxEntities");
-					logger.info("maxEntities from the ICAT.server {} version {} is {}", icatUrl, ricat.getApiVersion(),
+					logger.info("maxEntities from the ICAT.server {} version {} is {}", icatUrl, ricat.getVersion(),
 							maxEntities);
 				} catch (Exception e) {
-					String msg = "Problem finding ICAT API version " + e.getClass() + " " + e.getMessage();
+					String msg = "Problem finding 1 ICAT API version " + e.getClass() + " " + e.getMessage();
 					logger.error(msg);
 					try {
 						Thread.sleep(10000);
@@ -313,7 +323,7 @@ public class PropertyHandler {
 					}
 				}
 			} catch (URISyntaxException e) {
-				String msg = "Problem finding ICAT API version " + e.getClass() + " " + e.getMessage();
+				String msg = "Problem finding 2 ICAT API version " + e.getClass() + " " + e.getMessage();
 				logger.error(msg);
 				throw new IllegalStateException(msg);
 			}

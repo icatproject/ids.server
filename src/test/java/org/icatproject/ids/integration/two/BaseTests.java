@@ -34,12 +34,12 @@ public class BaseTests extends BaseTest {
 	public void getDatafileIdsTest() throws Exception {
 		super.getDatafileIdsTest();
 	}
-	
+
 	@Test
 	public void reliabilityTest() throws Exception {
 		super.reliabilityTest();
 	}
-	
+
 	@Test
 	public void bigDataSelectionTest() throws Exception {
 		super.bigDataSelectionTest();
@@ -50,5 +50,9 @@ public class BaseTests extends BaseTest {
 		super.cloningTest();
 	}
 
+	@Test
+	public void isPreparedTest() throws Exception {
+		super.isPreparedTest();
+	}
 
 }

@@ -50,4 +50,9 @@ public class BaseTests extends BaseTest {
 		super.cloningTest();
 	}
 
+	@Test
+	public void isPreparedTest() throws Exception {
+		super.isPreparedTest();
+	}
+
 }
