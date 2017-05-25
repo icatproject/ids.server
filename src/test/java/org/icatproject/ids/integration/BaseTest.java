@@ -691,7 +691,7 @@ public class BaseTest {
 	protected void isPreparedTest() throws Exception {
 
 		int numDs = 30;
-		int numDf = 30;
+		int numDf = 19;
 
 		Investigation inv = (Investigation) icatWS.search(sessionId, "Investigation INCLUDE Facility").get(0);
 		String invLoc = inv.getId() + "/";
