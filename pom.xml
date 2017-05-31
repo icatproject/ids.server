@@ -80,7 +80,7 @@
 		<dependency>
 			<groupId>org.icatproject</groupId>
 			<artifactId>icat.utils</artifactId>
-			<version>4.16.1-SNAPSHOT</version>
+			<version>4.16.0</version>
 		</dependency>
 
 		<dependency>
@@ -296,7 +296,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.5.5</version>
+				<version>3.0.0</version>
 				<configuration>
 					<descriptors>
 						<descriptor>${project.basedir}/assemble/distribution.xml</descriptor>

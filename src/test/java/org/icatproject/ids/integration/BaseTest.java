@@ -486,7 +486,7 @@ public class BaseTest {
 	}
 
 	protected void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.7."));
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.8."));
 	}
 
 	protected void raceTest() throws Exception {
