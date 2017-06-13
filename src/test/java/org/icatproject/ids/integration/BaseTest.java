@@ -265,6 +265,13 @@ public class BaseTest {
 			ds2.setId(icatWS.create(sessionId, ds2));
 			String ds2Loc = invLoc + ds2.getId() + "/";
 
+			Dataset ds3 = new Dataset();
+			ds3.setName("ds3_" + timestamp);
+			ds3.setLocation(invLoc + ds3.getId());
+			ds3.setType(dsType);
+			ds3.setInvestigation(inv);
+			ds3.setId(icatWS.create(sessionId, ds3));
+
 			Datafile df1 = new Datafile();
 			df1.setName("a/df1_" + timestamp);
 			df1.setLocation(ds1Loc + UUID.randomUUID());
@@ -291,6 +298,7 @@ public class BaseTest {
 
 			datasetIds.add(ds1.getId());
 			datasetIds.add(ds2.getId());
+			datasetIds.add(ds3.getId());
 
 			datafileIds.add(df1.getId());
 			datafileIds.add(df2.getId());
