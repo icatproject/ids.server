@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +31,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import javax.json.Json;
+import javax.json.JsonReader;
+
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
 import org.icatproject.Dataset;
@@ -39,6 +43,7 @@ import org.icatproject.Facility;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
+import org.icatproject.icat.client.ICAT;
 import org.icatproject.icat.client.Session;
 import org.icatproject.ids.ICATGetter;
 import org.icatproject.ids.integration.util.Setup;
@@ -481,7 +486,7 @@ public class BaseTest {
 	}
 
 	protected void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.7."));
+		assertTrue(testingClient.getApiVersion(200).startsWith("1.8."));
 	}
 
 	protected void raceTest() throws Exception {
@@ -554,6 +559,47 @@ public class BaseTest {
 			assertTrue(ids.contains(id));
 		}
 
+	}
+
+	public void bigDataSelectionTest() throws Exception {
+		String icatUrl = testingClient.getIcatUrl(200).toExternalForm();
+		ICAT restIcat = new org.icatproject.icat.client.ICAT(icatUrl);
+		try (JsonReader parser = Json.createReader(new ByteArrayInputStream(restIcat.getProperties().getBytes()))) {
+			assertEquals("maxEntities must have a fixed value in the icat.server for test to be useful", 20,
+					parser.readObject().getInt("maxEntities"));
+		}
+
+		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
+
+		waitForIds();
+		List<Long> idList = new ArrayList<>();
+		for (int i = 0; i < 45; i++) {
+			Long dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
+					"uploaded_file3_" + timestamp + i, datasetIds.get(0), supportedDatafileFormat.getId(),
+					"A rather splendid datafile", 201);
+			idList.add(dfid);
+		}
+		waitForIds();
+		List<Long> idList2 = testingClient.getDatafileIds(sessionId,
+				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(datafileIds.get(0)), 200);
+		assertEquals(47, idList2.size());
+		for (Long id : idList) {
+			assertTrue(idList2.contains(id));
+		}
+
+		DataSelection dsel = new DataSelection();
+		for (int i = 0; i < 30; i++) {
+			dsel.addDatafile(idList.get(i));
+		}
+		idList2 = testingClient.getDatafileIds(sessionId, dsel, 200);
+
+		assertEquals(30, idList2.size());
+		for (int i = 0; i < 30; i++) {
+			assertTrue(idList2.contains(idList.get(i)));
+		}
+
+		idList2 = testingClient.getDatafileIds(sessionId, new DataSelection().addInvestigation(investigationId), 200);
+		assertEquals(49, idList2.size());
 	}
 
 	public void cloningTest() throws Exception {
@@ -644,8 +690,8 @@ public class BaseTest {
 
 	protected void isPreparedTest() throws Exception {
 
-		int numDs = 60;
-		int numDf = 60;
+		int numDs = 30;
+		int numDf = 19;
 
 		Investigation inv = (Investigation) icatWS.search(sessionId, "Investigation INCLUDE Facility").get(0);
 		String invLoc = inv.getId() + "/";

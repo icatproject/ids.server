@@ -14,7 +14,6 @@ import java.util.TimerTask;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.ejb.DependsOn;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -32,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @Startup
-@DependsOn("LoggingConfigurator")
 public class Tidier {
 
 	public class Action extends TimerTask {
@@ -144,8 +142,11 @@ public class Tidier {
 									for (Object o : os) {
 										Datafile df = (Datafile) o;
 										DfInfoImpl dfInfoImpl = new DfInfoImpl(df.getId(), df.getName(),
-												IdsBean.getLocation(df), df.getCreateId(), df.getModId(),
-												df.getDataset().getId());
+
+												IdsBean.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
+												df.getModId(), df.getDataset().getId());
+
+
 										logger.debug(
 												"Requesting archive of " + dfInfoImpl + " to recover main storage");
 										fsm.queue(dfInfoImpl, DeferredOp.ARCHIVE);

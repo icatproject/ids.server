@@ -24,7 +24,7 @@ public class TestICATGetter {
 
 	@Test
 	public void testGetService() throws Exception {
-		ICAT icat = ICATGetter.getService("https://smfisher:8181");
+		ICAT icat = ICATGetter.getService(System.getProperty("serverUrl"));
 		System.out.println(icat.getApiVersion());
 	}
 }

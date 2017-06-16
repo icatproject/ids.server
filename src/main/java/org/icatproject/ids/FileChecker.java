@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @Startup
-@DependsOn("LoggingConfigurator")
 public class FileChecker {
 
 	@EJB
@@ -146,7 +145,7 @@ public class FileChecker {
 				logger.debug("Checking Datafile " + df.getId() + " (" + df.getName() + ")");
 				String location;
 				try {
-					location = IdsBean.getLocation(df);
+					location = IdsBean.getLocation(df.getId(), df.getLocation());
 				} catch (InsufficientPrivilegesException | InternalException e) {
 					report(df, e.getClass() + " " + e.getMessage());
 					return;

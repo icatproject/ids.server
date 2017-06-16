@@ -19,11 +19,10 @@
 			href="${repoUrl}/org/icatproject/ids.server/${project.version}/ids.server-${project.version}-distro.zip">ids.server-${project.version}-distro.zip</a>
 		</li>
 
-		<li>A suitable deployed container (here assumed to be glassfish
-			though tomcat should be sufficient) to support a web application.
-			Testing has been carried out with Glassfish 4.0. <a
+		<li>A suitable deployed container to support a web application.
+			Testing has been carried out with Payara41. <a
 			href="http://icatproject.org/installation/glassfish/">Glassfish
-				installation instructions</a> are available.
+				(payara) installation instructions</a> are available.
 		</li>
 
 		<li>A deployed plugin or plugins for the storage mechanism you
