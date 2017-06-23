@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -663,6 +664,8 @@ public class BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)), 204);
 		waitForIds();
 
+		assertTrue(testingClient.getServiceStatus(sessionId, 200).getFailures().isEmpty());
+
 		setup.setReliability(0.);
 
 		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(dfid1), Flag.NONE,
@@ -674,8 +677,12 @@ public class BaseTest {
 			}
 		} catch (Exception e) {
 			System.out.println(e);
+			assertEquals("Restore failed", e.getMessage());
+			Set<Long> failures = testingClient.getServiceStatus(sessionId, 200).getFailures();
+			assertEquals(1, failures.size());
 			setup.setReliability(1.);
 			testingClient.reset(preparedId, 204);
+			assertTrue(testingClient.getServiceStatus(sessionId, 200).getFailures().isEmpty());
 			while (!testingClient.isPrepared(preparedId, null)) {
 				Thread.sleep(1000);
 			}

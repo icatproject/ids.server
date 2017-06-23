@@ -70,12 +70,13 @@ public class TestingClient {
 		private int lockCount;
 		private Set<Long> lockedDs = new HashSet<>();
 		private Map<String, String> opItems = new HashMap<>();
+		private Set<Long> failures = new HashSet<>();
 
-		public int getLockCount() {
+		int getLockCount() {
 			return lockCount;
 		}
 
-		public Set<Long> getLockedDs() {
+		Set<Long> getLockedDs() {
 			return lockedDs;
 		}
 
@@ -93,6 +94,14 @@ public class TestingClient {
 
 		void storeOpItems(String dsInfo, String request) {
 			opItems.put(dsInfo, request);
+		}
+
+		public Set<Long> getFailures() {
+			return failures;
+		}
+
+		void storeFailure(Long id) {
+			failures.add(id);
 		}
 
 	};
@@ -408,6 +417,10 @@ public class TestingClient {
 						Long dsId = ((JsonNumber) num).longValueExact();
 						serviceStatus.storeLockedDs(dsId);
 					}
+					for (JsonValue num : rootNode.getJsonArray("failures")) {
+						Long id = ((JsonNumber) num).longValueExact();
+						serviceStatus.storeFailure(id);
+					}
 					return serviceStatus;
 				} catch (JsonException e) {
 					throw new InternalException(
@@ -492,7 +505,6 @@ public class TestingClient {
 
 	private URIBuilder getUriBuilder(String path) {
 		return new URIBuilder(idsUri).setPath(basePath + "/" + path);
-
 	}
 
 	public boolean isPrepared(String preparedId, Integer sc)
