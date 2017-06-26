@@ -39,6 +39,16 @@ public class BaseTests extends BaseTest {
 	public void reliabilityTest() throws Exception {
 		super.reliabilityTest();
 	}
+	
+	@Test
+	public void reliabilityTest2() throws Exception {
+		super.reliabilityTest2();
+	}
+	
+	@Test
+	public void reliabilityTest3() throws Exception {
+		super.reliabilityTest3();
+	}
 
 	@Test
 	public void bigDataSelectionTest() throws Exception {

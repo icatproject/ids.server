@@ -703,6 +703,70 @@ public class BaseTest {
 
 	}
 
+	protected void reliabilityTest2() throws Exception {
+		DataSelection dsel = new DataSelection().addDatafile(datafileIds.get(0));
+		testingClient.archive(sessionId, dsel, 204);
+		waitForIds();
+
+		setup.setReliability(0.);
+		String preparedId = testingClient.prepareData(sessionId, dsel, Flag.NONE, 200);
+
+		try {
+			while (!testingClient.isPrepared(preparedId, null)) {
+				Thread.sleep(1000);
+			}
+			fail("Should throw an error");
+		} catch (Exception e) {
+			assertEquals("Restore failed", e.getMessage());
+		}
+
+		setup.setReliability(1.);
+		preparedId = testingClient.prepareData(sessionId, dsel, Flag.NONE, 200);
+		while (!testingClient.isPrepared(preparedId, null)) {
+			Thread.sleep(1000);
+		}
+
+		preparedId = testingClient.prepareData(sessionId, dsel, Flag.NONE, 200);
+		while (!testingClient.isPrepared(preparedId, null)) {
+			Thread.sleep(1000);
+		}
+
+	}
+
+	protected void reliabilityTest3() throws Exception {
+		DataSelection dsel = new DataSelection().addDatafile(datafileIds.get(0));
+		testingClient.archive(sessionId, dsel, 204);
+		waitForIds();
+
+		setup.setReliability(0.);
+		testingClient.restore(sessionId, dsel, 204);
+
+		try {
+			while (testingClient.getStatus(sessionId, dsel, null) != Status.ONLINE) {
+				Thread.sleep(1000);
+			}
+			fail("Should throw an error");
+		} catch (Exception e) {
+			assertEquals("Restore failed", e.getMessage());
+		}
+
+		setup.setReliability(1.);
+		testingClient.restore(sessionId, dsel, 204);
+		try {
+			while (testingClient.getStatus(sessionId, dsel, null) != Status.ONLINE) {
+				Thread.sleep(1000);
+			}
+		} catch (Exception e) {
+			assertEquals("Restore failed", e.getMessage());
+		}
+
+		testingClient.reset(sessionId, dsel, 204);
+		testingClient.restore(sessionId, dsel, 204);
+		while (testingClient.getStatus(sessionId, dsel, null) != Status.ONLINE) {
+			Thread.sleep(1000);
+		}
+	}
+
 	protected void isPreparedTest() throws Exception {
 
 		int numDs = 30;

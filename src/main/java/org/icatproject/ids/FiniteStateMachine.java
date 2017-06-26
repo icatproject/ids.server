@@ -643,11 +643,15 @@ public class FiniteStateMachine {
 	}
 
 	public void recordSuccess(Long id) {
-		failures.remove(id);
+		if (failures.remove(id)) {
+			logger.debug("Marking {} OK", id);
+		}
 	}
 
 	public void recordFailure(Long id) {
-		failures.add(id);
+		if (failures.add(id)) {
+			logger.debug("Marking {} as failure", id);
+		}
 	}
 
 	public void checkFailure(Long id) throws InternalException {

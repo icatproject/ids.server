@@ -842,4 +842,26 @@ public class TestingClient {
 		}
 	}
 
+	public void reset(String sessionId, DataSelection data, int sc) throws InternalException, BadRequestException,
+			ParseException, InsufficientPrivilegesException, NotImplementedException, NotFoundException {
+		URI uri = getUri(getUriBuilder("reset"));
+		List<NameValuePair> formparams = new ArrayList<>();
+		formparams.add(new BasicNameValuePair("sessionId", sessionId));
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+		}
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpEntity entity = new UrlEncodedFormEntity(formparams);
+			HttpPost httpPost = new HttpPost(uri);
+			httpPost.setEntity(entity);
+			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				expectNothing(response, sc);
+			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
 }
