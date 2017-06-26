@@ -75,7 +75,6 @@ public class DfRestorer implements Runnable {
 			}
 		} catch (IOException e) {
 			for (DfInfo dfInfo : dfInfos) {
-				fsm.recordFailure(dfInfo.getDfId());
 				logger.error("Restore of " + dfInfo + " failed " + e.getClass() + " " + e.getMessage());
 				fsm.removeFromChanging(dfInfo);
 			}
