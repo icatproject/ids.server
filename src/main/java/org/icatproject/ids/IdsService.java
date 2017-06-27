@@ -446,8 +446,9 @@ public class IdsService {
 	 * effect, if any data files are archived and no restoration has been
 	 * requested then a restoration of those data files will be launched.
 	 * 
-	 * To make this operation fast, if anything is not found on line then
-	 * the rest of the work is done in the background and the status returned. At the end of the call if it fails then the next place
+	 * To make this operation fast, if anything is not found on line then the
+	 * rest of the work is done in the background and the status returned. At
+	 * the end of the call if it fails then the next place
 	 * 
 	 * @summary isPrepared
 	 * 
@@ -720,6 +721,9 @@ public class IdsService {
 	 * If secondary storage is in use restores may fail and cause a flag to be
 	 * set so that isPrepared and getStatus calls will throw an exception. This
 	 * call clears the flag.
+	 * 
+	 * You must either specify a preparedId or a sessionId. If preparedId is
+	 * specified then investigationIds, datasetIds and datafileIds are not used.
 	 * 
 	 * @summary reset
 	 * @param preparedId

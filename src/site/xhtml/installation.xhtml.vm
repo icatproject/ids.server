@@ -20,7 +20,7 @@
 		</li>
 
 		<li>A suitable deployed container to support a web application.
-			Testing has been carried out with Payara41. <a
+			Testing has been carried out with Payara41 and Glassfish 4.0.<a
 			href="http://icatproject.org/installation/glassfish/">Glassfish
 				(payara) installation instructions</a> are available.
 		</li>
