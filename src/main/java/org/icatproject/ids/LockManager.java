@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.PostConstruct;
-import javax.ejb.DependsOn;
 import javax.ejb.Singleton;
 
 import org.slf4j.Logger;
@@ -15,7 +14,6 @@ import org.icatproject.ids.plugin.DsInfo;
 
 
 @Singleton
-@DependsOn("LoggingConfigurator")
 public class LockManager {
 
 	public enum LockType {
