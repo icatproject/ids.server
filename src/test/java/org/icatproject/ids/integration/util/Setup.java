@@ -75,6 +75,7 @@ public class Setup {
 		String home = testProps.getProperty("glassfish");
 
 		long time = System.currentTimeMillis();
+
 		ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py", "src/test/resources/" + runPropertyFile,
 				home, serverUrl);
 		System.out.println(sc.getStdout() + " " + sc.getStderr());

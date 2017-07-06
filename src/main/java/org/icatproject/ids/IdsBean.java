@@ -332,19 +332,19 @@ public class IdsBean {
 		}
 	}
 
-	public static String getLocation(Datafile df) throws InsufficientPrivilegesException, InternalException {
-		String location = df.getLocation();
+	public static String getLocation(long dfid, String location)
+			throws InsufficientPrivilegesException, InternalException {
 		if (location == null) {
 			throw new InsufficientPrivilegesException("location null");
 		}
 		if (key == null) {
 			return location;
 		} else {
-			return getLocationFromDigest(df.getId(), location, key);
+			return getLocationFromDigest(dfid, location, key);
 		}
 	}
 
-	static String getLocationFromDigest(Long id, String locationWithHash, String key)
+	static String getLocationFromDigest(long id, String locationWithHash, String key)
 			throws InternalException, InsufficientPrivilegesException {
 		int i = locationWithHash.lastIndexOf(' ');
 		try {
@@ -1059,7 +1059,7 @@ public class IdsBean {
 			}
 		}
 
-		String location = getLocation(datafile);
+		String location = getLocation(datafile.getId(), datafile.getLocation());
 
 		try (Lock lock = lockManager.lock(datafile.getDataset().getId(), LockType.SHARED)) {
 			if (storageUnit == StorageUnit.DATASET) {
@@ -1453,7 +1453,14 @@ public class IdsBean {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
-		PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
+		// TODO Uncomment next line and delete subsequent five lines
+        // PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
+		PreparedStatus nps = new PreparedStatus();
+		PreparedStatus status = preparedStatusMap.putIfAbsent(preparedId, nps);
+		if (status == null) {
+			status = preparedStatusMap.get(preparedId);
+		}
+
 		if (!status.lock.tryLock()) {
 			logger.debug("Lock held for evaluation of isPrepared for preparedId {}", preparedId);
 			return false;
@@ -1985,7 +1992,7 @@ public class IdsBean {
 					Datafile df = null;
 					try {
 						df = (Datafile) reader.get("Datafile ds INCLUDE ds.dataset", dfid);
-						String location = getLocation(df);
+						String location = getLocation(df.getId(), df.getLocation());
 						DfInfoImpl dfInfo = new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(),
 								df.getModId(), df.getDataset().getId());
 						fsm.queue(dfInfo, DeferredOp.WRITE);

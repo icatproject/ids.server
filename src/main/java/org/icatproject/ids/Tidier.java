@@ -142,8 +142,11 @@ public class Tidier {
 									for (Object o : os) {
 										Datafile df = (Datafile) o;
 										DfInfoImpl dfInfoImpl = new DfInfoImpl(df.getId(), df.getName(),
-												IdsBean.getLocation(df), df.getCreateId(), df.getModId(),
-												df.getDataset().getId());
+
+												IdsBean.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
+												df.getModId(), df.getDataset().getId());
+
+
 										logger.debug(
 												"Requesting archive of " + dfInfoImpl + " to recover main storage");
 										fsm.queue(dfInfoImpl, DeferredOp.ARCHIVE);

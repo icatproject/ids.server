@@ -77,7 +77,7 @@ public class DsRestorer implements Runnable {
 					.getDatafiles();
 			Map<String, String> nameToLocalMap = new HashMap<>(datafiles.size());
 			for (Datafile datafile : datafiles) {
-				nameToLocalMap.put(datafile.getName(), IdsBean.getLocation(datafile));
+				nameToLocalMap.put(datafile.getName(), IdsBean.getLocation(datafile.getId(), datafile.getLocation()));
 				size += datafile.getFileSize();
 				n++;
 			}
