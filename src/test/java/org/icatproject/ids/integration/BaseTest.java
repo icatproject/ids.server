@@ -360,7 +360,7 @@ public class BaseTest {
 		assertTrue(found);
 	}
 
-	private void writeToFile(Datafile df, String content, String key)
+	protected void writeToFile(Datafile df, String content, String key)
 			throws IOException, IcatException_Exception, NoSuchAlgorithmException {
 		Path path = setup.getStorageDir().resolve(df.getLocation());
 		Files.createDirectories(path.getParent());
