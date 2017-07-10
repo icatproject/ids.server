@@ -447,8 +447,10 @@ public class IdsService {
 	 * requested then a restoration of those data files will be launched.
 	 * 
 	 * To make this operation fast, if anything is not found on line then the
-	 * rest of the work is done in the background and the status returned. At
-	 * the end of the call if it fails then the next place
+	 * rest of the work is done in the background and the status returned. At a
+	 * subsequent call it will restart from where it failed and if it gets to
+	 * the end successfully will then go through all those it did not look at
+	 * because it did not start at the beginning.
 	 * 
 	 * @summary isPrepared
 	 * 
