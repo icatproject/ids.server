@@ -52,7 +52,7 @@ class SizedDataSource(object):
 # there is at least a chance to hit this time window with trying to
 # start the DsWriter.
 
-numfiles = 800
+numfiles = 600
 allfiles = DataSelection()
 
 for i in range(numfiles):
@@ -66,7 +66,7 @@ client.ids.put(SizedDataSource(1*KiB), "file%05d.dat" % numfiles,
 # Step 2: Wait some time, but need to take into account that also the
 # preparation of the delete of so many files takes some time.
 
-sleep(27)
+sleep(44)
 
 # Step 3: Delete the files.
 
