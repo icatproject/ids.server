@@ -7,6 +7,7 @@ process causing it to fail.
 
 from time import sleep
 from random import getrandbits
+from distutils.version import StrictVersion as Version
 import icat
 import icat.config
 from icat.ids import DataSelection
@@ -15,8 +16,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 #logging.getLogger('suds.client').setLevel(logging.DEBUG)
 
-conf = icat.config.Config(ids="mandatory").getconfig()
-client = icat.Client(conf.url, **conf.client_kwargs)
+config = icat.config.Config(ids="mandatory")
+if Version(icat.__version__) < '0.13':
+    conf = config.getconfig()
+    client = icat.Client(conf.url, **conf.client_kwargs)
+else:
+    client, conf = config.getconfig()
 client.login(conf.auth, conf.credentials)
 
 investigation = client.assertedSearch("Investigation [name='12100409-ST']")[0]

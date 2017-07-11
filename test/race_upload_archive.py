@@ -12,6 +12,7 @@ synchronizing and timing.
 from threading import Thread
 from time import sleep
 from random import getrandbits
+from distutils.version import StrictVersion as Version
 import icat
 import icat.config
 from icat.ids import DataSelection
@@ -20,8 +21,17 @@ import logging
 logging.basicConfig(level=logging.INFO)
 #logging.getLogger('suds.client').setLevel(logging.DEBUG)
 
-conf = icat.config.Config(ids="mandatory").getconfig()
-client = icat.Client(conf.url, **conf.client_kwargs)
+config = icat.config.Config(ids="mandatory")
+if Version(icat.__version__) < '0.13':
+    conf = config.getconfig()
+    client = icat.Client(conf.url, **conf.client_kwargs)
+    client_kwargs = conf.client_kwargs
+elif Version(icat.__version__) >= '0.13.1':
+    client, conf = config.getconfig()
+    client_kwargs = config.client_kwargs
+else:
+    raise RuntimeError("incompatible python-icat version %s." 
+                       % icat.__version__)
 client.login(conf.auth, conf.credentials)
 
 # Time to wait after sending the archive request before finishing
@@ -86,7 +96,7 @@ class SlowDataSource(object):
 # separate local client in each thread.  All these clients share the
 # same session id.
 def upload(n, data):
-    lclient = icat.Client(conf.url, **conf.client_kwargs)
+    lclient = icat.Client(conf.url, **client_kwargs)
     lclient.sessionId = client.sessionId
     fname = "file%02d.dat" % n
     lclient.ids.put(data, fname, dataset.id, datafileFormat.id)
@@ -94,7 +104,7 @@ def upload(n, data):
 
 
 def archive():
-    lclient = icat.Client(conf.url, **conf.client_kwargs)
+    lclient = icat.Client(conf.url, **client_kwargs)
     lclient.sessionId = client.sessionId
     lclient.ids.archive(DataSelection([dataset]))
     lclient.sessionId = None
