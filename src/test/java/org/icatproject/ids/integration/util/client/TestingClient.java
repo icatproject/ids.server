@@ -505,7 +505,6 @@ public class TestingClient {
 
 	private URIBuilder getUriBuilder(String path) {
 		return new URIBuilder(idsUri).setPath(basePath + "/" + path);
-
 	}
 
 	public boolean isPrepared(String preparedId, Integer sc)
