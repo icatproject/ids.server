@@ -236,7 +236,7 @@ public class FiniteStateMachine {
 
 	private Map<DsInfo, Long> writeTimes = new HashMap<>();
 
-	private Map<Long, String> failures = new ConcurrentHashMap<>();
+	private Set<Long> failures = ConcurrentHashMap.newKeySet();
 
 	@PreDestroy
 	private void exit() {
@@ -323,6 +323,7 @@ public class FiniteStateMachine {
 				gen.writeStartArray("opsQueue").writeEnd();
 				gen.write("lockCount", 0);
 				gen.writeStartArray("lockedIds").writeEnd();
+				gen.writeStartArray("failures").writeEnd();
 				gen.writeEnd(); // end Object()
 			}
 		} else if (storageUnit == StorageUnit.DATASET) {
@@ -358,6 +359,12 @@ public class FiniteStateMachine {
 				}
 				gen.writeEnd(); // end Array("lockedDs")
 
+				gen.writeStartArray("failures");
+				for (Long failure : failures) {
+					gen.write(failure);
+				}
+				gen.writeEnd(); // end Array("failures")
+
 				gen.writeEnd(); // end Object()
 			}
 		} else if (storageUnit == StorageUnit.DATAFILE) {
@@ -390,6 +397,12 @@ public class FiniteStateMachine {
 					gen.write(dsId);
 				}
 				gen.writeEnd(); // end Array("lockedDs")
+
+				gen.writeStartArray("failures");
+				for (Long failure : failures) {
+					gen.write(failure);
+				}
+				gen.writeEnd(); // end Array("failures")
 
 				gen.writeEnd(); // end Object()
 			}
@@ -630,17 +643,20 @@ public class FiniteStateMachine {
 	}
 
 	public void recordSuccess(Long id) {
-		failures.remove(id);
+		if (failures.remove(id)) {
+			logger.debug("Marking {} OK", id);
+		}
 	}
 
-	public void recordFailure(Long id, String msg) {
-		failures.put(id, msg);
+	public void recordFailure(Long id) {
+		if (failures.add(id)) {
+			logger.debug("Marking {} as failure", id);
+		}
 	}
 
 	public void checkFailure(Long id) throws InternalException {
-		String msg = failures.get(id);
-		if (msg != null) {
-			throw new InternalException("Restore failed " + msg);
+		if (failures.contains(id)) {
+			throw new InternalException("Restore failed");
 		}
 	}
 
