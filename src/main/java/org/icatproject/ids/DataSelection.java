@@ -206,8 +206,8 @@ public class DataSelection {
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dsid = tup.getJsonNumber(0).longValueExact();
-					dsInfos.put(dsid, new DsInfoImpl(dsid, tup.getString(1), tup.getString(2), invid, invName, visitId,
-							facilityId, facilityName));
+					dsInfos.put(dsid, new DsInfoImpl(dsid, tup.getString(1), tup.getString(2, null), invid, invName,
+							visitId, facilityId, facilityName));
 
 					query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 							+ dsid;
@@ -250,7 +250,7 @@ public class DataSelection {
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dfid = tup.getJsonNumber(0).longValueExact();
-					String location = IdsBean.getLocation(dfid, tup.getString(2));
+					String location = IdsBean.getLocation(dfid, tup.getString(2, null));
 					dfInfos.add(
 							new DfInfoImpl(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
 				}
