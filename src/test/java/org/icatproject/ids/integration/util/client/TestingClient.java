@@ -70,12 +70,13 @@ public class TestingClient {
 		private int lockCount;
 		private Set<Long> lockedDs = new HashSet<>();
 		private Map<String, String> opItems = new HashMap<>();
+		private Set<Long> failures = new HashSet<>();
 
-		public int getLockCount() {
+		int getLockCount() {
 			return lockCount;
 		}
 
-		public Set<Long> getLockedDs() {
+		Set<Long> getLockedDs() {
 			return lockedDs;
 		}
 
@@ -93,6 +94,14 @@ public class TestingClient {
 
 		void storeOpItems(String dsInfo, String request) {
 			opItems.put(dsInfo, request);
+		}
+
+		public Set<Long> getFailures() {
+			return failures;
+		}
+
+		void storeFailure(Long id) {
+			failures.add(id);
 		}
 
 	};
@@ -407,6 +416,10 @@ public class TestingClient {
 					for (JsonValue num : rootNode.getJsonArray("lockedIds")) {
 						Long dsId = ((JsonNumber) num).longValueExact();
 						serviceStatus.storeLockedDs(dsId);
+					}
+					for (JsonValue num : rootNode.getJsonArray("failures")) {
+						Long id = ((JsonNumber) num).longValueExact();
+						serviceStatus.storeFailure(id);
 					}
 					return serviceStatus;
 				} catch (JsonException e) {
@@ -816,6 +829,28 @@ public class TestingClient {
 		List<NameValuePair> formparams = new ArrayList<>();
 		formparams.add(new BasicNameValuePair("preparedId", preparedId));
 
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpEntity entity = new UrlEncodedFormEntity(formparams);
+			HttpPost httpPost = new HttpPost(uri);
+			httpPost.setEntity(entity);
+			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				expectNothing(response, sc);
+			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public void reset(String sessionId, DataSelection data, int sc) throws InternalException, BadRequestException,
+			ParseException, InsufficientPrivilegesException, NotImplementedException, NotFoundException {
+		URI uri = getUri(getUriBuilder("reset"));
+		List<NameValuePair> formparams = new ArrayList<>();
+		formparams.add(new BasicNameValuePair("sessionId", sessionId));
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+		}
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
 			HttpEntity entity = new UrlEncodedFormEntity(formparams);
 			HttpPost httpPost = new HttpPost(uri);
