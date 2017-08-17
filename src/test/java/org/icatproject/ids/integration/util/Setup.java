@@ -63,7 +63,7 @@ public class Setup {
 		try {
 			testProps.load(is);
 		} catch (Exception e) {
-			System.out.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
+			System.err.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
 		}
 
 		setReliability(1.);
@@ -72,7 +72,10 @@ public class Setup {
 
 		idsUrl = new URL(serverUrl + "/ids");
 
-		String home = testProps.getProperty("glassfish");
+		String home = System.getProperty("containerHome");
+		if (home == null) {
+			System.err.println("containerHome is not defined as a system property");
+		}
 
 		long time = System.currentTimeMillis();
 
@@ -88,7 +91,7 @@ public class Setup {
 		if (runProperties.has("key")) {
 			key = runProperties.getString("key");
 		}
-		updownDir = new File(testProps.getProperty("updownDir")).toPath();
+		updownDir = new File(new File(System.getProperty("user.home")), testProps.getProperty("updownDir")).toPath();
 		icatUrl = runProperties.getURL("icat.url");
 		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
 				testProps.getProperty("authorizedIcatPassword"));
