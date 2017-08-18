@@ -196,7 +196,8 @@ public class FileCheckerTest extends BaseTest {
 			Thread.sleep(10);
 		}
 		for (String line : Files.readAllLines(errorLog, Charset.defaultCharset())) {
-			lines.add(line.substring(21));
+			int n = line.indexOf(": ") + 2;
+			lines.add(line.substring(n));
 		}
 		assertEquals(1, lines.size());
 		String msg = new ArrayList<String>(lines).get(0);
