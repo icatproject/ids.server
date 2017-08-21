@@ -74,7 +74,7 @@ public class WriteTest extends BaseTest {
 		df.setDataset(ds);
 		writeToFile(df, "some really boring datafile test content", setup.getKey());
 
-		Long dsId = dsId;
+		Long dsId = ds.getId();
 		Path dirOnFastStorage = getDirOnFastStorage(dsId);
 		Path dirOnArchiveStorage = getFileOnArchiveStorage(dsId);
 		DataSelection selection = new DataSelection().addDataset(dsId);
