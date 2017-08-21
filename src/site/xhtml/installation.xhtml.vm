@@ -20,16 +20,16 @@
 		</li>
 
 		<li>A suitable deployed container to support a web application.
-			Testing has been carried out with Payara41. <a
+			Testing has been carried out with Payara41 and Glassfish 4.0.<a
 			href="http://icatproject.org/installation/glassfish/">Glassfish
 				(payara) installation instructions</a> are available.
 		</li>
 
 		<li>A deployed plugin or plugins for the storage mechanism you
-			wish to use. Please see <a href="/mvn/site/ids/plugin">plugin</a> to
-			see the interface you must implement. You might also like to look at
-			the <a href="/mvn/site/ids/storage_file">file storage plugin</a> as
-			an example.
+			wish to use. Please see <a href="/site/ids/plugin">plugin</a> to see
+			the interface you must implement. You might also like to look at the
+			<a href="/site/ids/storage_file">file storage plugin</a> as an
+			example.
 		</li>
 
 		<li>Python (version 2.4 to 2.7) installed on the server.</li>
@@ -47,7 +47,7 @@
 		<li>Check that it works.</li>
 	</ol>
 
-	<h2>The ids-setup.properties file</h2>
+	<h2>The setup.properties file</h2>
 
 	<dl>
 		<dt>container</dt>
@@ -68,7 +68,17 @@
 			http connections will be allowed.</dd>
 	</dl>
 
-	<h2>The ids.properties file</h2>
+	<h2>The run.properties file</h2>
+
+	All the property values are passed to the plugin(s). A plugin is only
+	expected to look at properties defined for its use. It is recommended
+	that such properties have names starting
+	<code>plugin.main.</code>
+	or
+	<code>plugin.archive</code>
+	. to make sure that they don't clash with any current or future
+	run.properties of the ids.server. To find the names of these properties
+	please consult the documentation for your plugin(s).
 
 	<h3>General Properties</h3>
 
@@ -90,9 +100,6 @@
 		<dd>The class name of the main storage plugin. The class must be
 			deployed in the lib/applibs directory of your domain and must be
 			packaged with all it dependencies.</dd>
-
-		<dt>plugin.main.properties</dt>
-		<dd>Optional property file for the main storage plugin.</dd>
 
 		<dt>cache.dir</dt>
 		<dd>The location (absolute or relative to the config directory of
@@ -168,9 +175,6 @@
 		<dd>The class name of the archive storage plugin. The class must
 			be deployed in the lib/applibs directory of your domain and must be
 			packaged with all it dependencies.</dd>
-
-		<dt>plugin.archive.properties</dt>
-		<dd>Optional property file for the archive storage plugin.</dd>
 
 		<dt>writeDelaySeconds</dt>
 		<dd>The amount of time to wait before writing to archive storage.

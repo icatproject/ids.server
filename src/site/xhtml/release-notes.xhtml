@@ -6,6 +6,13 @@
 
 	<h1>IDS Server Release Notes</h1>
 
+	<h2>1.8.1</h2>
+	<p>Bug fix release</p>
+	<ul>
+		<li>Tests are now independent of locale.</li>
+		<li>Glassfish 4.0 is no longer supported</li>
+	</ul>
+
 	<h2>1.8.0</h2>
 	<p>Bug fix release - with new style deployment</p>
 	<ul>
@@ -19,6 +26,13 @@
 		<li>Ensure that Tidier action runs at high priority.</li>
 		<li>Plugins need a slightly different interface - hence the move
 			to 1.8.0</li>
+		<li>File checker for Datasets no longer generates an error for an
+			empty Dataset</li>
+		<li>Add list of failed restores to the information returned by
+			getServiceStatus.</li>
+		<li>Avoid marking files as unavailable when unsure</li>
+		<li>The prepareData call resets flags marking previous restore
+			failures.</li>
 	</ul>
 
 

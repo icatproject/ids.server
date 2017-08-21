@@ -20,7 +20,6 @@ import java.util.zip.ZipInputStream;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.ejb.DependsOn;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -76,67 +75,71 @@ public class FileChecker {
 			if (twoLevel) {
 				Dataset ds = (Dataset) eb;
 				logger.info("Checking Dataset " + ds.getId() + " (" + ds.getName() + ")");
-				String dfName = null;
+				List<Datafile> dfs = ds.getDatafiles();
+				if (!dfs.isEmpty()) {
+					String dfName = null;
 
-				DsInfo dsInfo;
-				try {
-					dsInfo = new DsInfoImpl(ds);
-				} catch (InsufficientPrivilegesException e) {
-					report(ds, dfName, "Reports: " + e.getClass().getSimpleName() + " " + e.getMessage());
-					return;
-				}
-				Map<String, CrcAndLength> crcAndLength = new HashMap<>();
-				Path tPath = null;
-				try {
-					tPath = Files.createTempFile(null, null);
-					archiveStorage.get(dsInfo, tPath);
-					try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tPath))) {
-						for (Datafile df : ds.getDatafiles()) {
-							crcAndLength.put(df.getName(), new CrcAndLength(df));
-						}
-						ZipEntry ze = zis.getNextEntry();
-						while (ze != null) {
-							dfName = zipMapper.getFileName(ze.getName());
-							CRC32 crc = new CRC32();
-							byte[] bytes = new byte[1024];
-							int length;
-							long n = 0;
-							while ((length = zis.read(bytes)) >= 0) {
-								crc.update(bytes, 0, length);
-								n += length;
-							}
-
-							CrcAndLength cl = crcAndLength.get(dfName);
-							if (cl == null) {
-								report(ds, dfName, "not found in map");
-							} else if (cl.fileSize == null) {
-								report(ds, dfName, "file size null");
-							} else if (cl.fileSize != n) {
-								report(ds, dfName, "file size wrong");
-							} else if (cl.checksum == null) {
-								report(ds, dfName, "checksum null");
-							} else if (!cl.checksum.equals(Long.toHexString(crc.getValue()))) {
-								report(ds, dfName, "checksum wrong");
-							}
-
-							crcAndLength.remove(dfName);
-							ze = zis.getNextEntry();
-						}
-						if (!crcAndLength.isEmpty()) {
-							report(ds, null, "zip file incomplete");
-						}
+					DsInfo dsInfo;
+					try {
+						dsInfo = new DsInfoImpl(ds);
+					} catch (InsufficientPrivilegesException e) {
+						report(ds, dfName, "Reports: " + e.getClass().getSimpleName() + " " + e.getMessage());
+						return;
 					}
-				} catch (IOException e) {
-					report(ds, dfName, e.getClass().getName() + (e.getMessage() != null ? " " + e.getMessage() : ""));
-				} catch (Throwable e) {
-					e.printStackTrace();
-					logger.error("Throwable " + e.getClass() + " " + e.getMessage());
-				} finally {
-					if (tPath != null) {
-						try {
-							Files.deleteIfExists(tPath);
-						} catch (IOException e) {
-							// Ignore
+					Map<String, CrcAndLength> crcAndLength = new HashMap<>();
+					Path tPath = null;
+					try {
+						tPath = Files.createTempFile(null, null);
+						archiveStorage.get(dsInfo, tPath);
+						try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tPath))) {
+							for (Datafile df : dfs) {
+								crcAndLength.put(df.getName(), new CrcAndLength(df));
+							}
+							ZipEntry ze = zis.getNextEntry();
+							while (ze != null) {
+								dfName = zipMapper.getFileName(ze.getName());
+								CRC32 crc = new CRC32();
+								byte[] bytes = new byte[1024];
+								int length;
+								long n = 0;
+								while ((length = zis.read(bytes)) >= 0) {
+									crc.update(bytes, 0, length);
+									n += length;
+								}
+
+								CrcAndLength cl = crcAndLength.get(dfName);
+								if (cl == null) {
+									report(ds, dfName, "not found in map");
+								} else if (cl.fileSize == null) {
+									report(ds, dfName, "file size null");
+								} else if (cl.fileSize != n) {
+									report(ds, dfName, "file size wrong");
+								} else if (cl.checksum == null) {
+									report(ds, dfName, "checksum null");
+								} else if (!cl.checksum.equals(Long.toHexString(crc.getValue()))) {
+									report(ds, dfName, "checksum wrong");
+								}
+
+								crcAndLength.remove(dfName);
+								ze = zis.getNextEntry();
+							}
+							if (!crcAndLength.isEmpty()) {
+								report(ds, null, "zip file incomplete");
+							}
+						}
+					} catch (IOException e) {
+						report(ds, dfName,
+								e.getClass().getName() + (e.getMessage() != null ? " " + e.getMessage() : ""));
+					} catch (Throwable e) {
+						e.printStackTrace();
+						logger.error("Throwable " + e.getClass() + " " + e.getMessage());
+					} finally {
+						if (tPath != null) {
+							try {
+								Files.deleteIfExists(tPath);
+							} catch (IOException e) {
+								// Ignore
+							}
 						}
 					}
 				}

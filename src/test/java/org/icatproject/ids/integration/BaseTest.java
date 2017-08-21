@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.UUID;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -265,6 +266,13 @@ public class BaseTest {
 			ds2.setId(icatWS.create(sessionId, ds2));
 			String ds2Loc = invLoc + ds2.getId() + "/";
 
+			Dataset ds3 = new Dataset();
+			ds3.setName("ds3_" + timestamp);
+			ds3.setLocation(invLoc + ds3.getId());
+			ds3.setType(dsType);
+			ds3.setInvestigation(inv);
+			ds3.setId(icatWS.create(sessionId, ds3));
+
 			Datafile df1 = new Datafile();
 			df1.setName("a/df1_" + timestamp);
 			df1.setLocation(ds1Loc + UUID.randomUUID());
@@ -291,6 +299,7 @@ public class BaseTest {
 
 			datasetIds.add(ds1.getId());
 			datasetIds.add(ds2.getId());
+			datasetIds.add(ds3.getId());
 
 			datafileIds.add(df1.getId());
 			datafileIds.add(df2.getId());
@@ -655,6 +664,8 @@ public class BaseTest {
 				new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)), 204);
 		waitForIds();
 
+		assertTrue(testingClient.getServiceStatus(sessionId, 200).getFailures().isEmpty());
+
 		setup.setReliability(0.);
 
 		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(dfid1), Flag.NONE,
@@ -666,8 +677,12 @@ public class BaseTest {
 			}
 		} catch (Exception e) {
 			System.out.println(e);
+			assertEquals("Restore failed", e.getMessage());
+			Set<Long> failures = testingClient.getServiceStatus(sessionId, 200).getFailures();
+			assertEquals(1, failures.size());
 			setup.setReliability(1.);
 			testingClient.reset(preparedId, 204);
+			assertTrue(testingClient.getServiceStatus(sessionId, 200).getFailures().isEmpty());
 			while (!testingClient.isPrepared(preparedId, null)) {
 				Thread.sleep(1000);
 			}
@@ -686,6 +701,70 @@ public class BaseTest {
 		System.out.println(testingClient.getStatus(sessionId,
 				new DataSelection().addDataset(datasetIds.get(0)).addDatafile(dfid2), 200));
 
+	}
+
+	protected void reliabilityTest2() throws Exception {
+		DataSelection dsel = new DataSelection().addDatafile(datafileIds.get(0));
+		testingClient.archive(sessionId, dsel, 204);
+		waitForIds();
+
+		setup.setReliability(0.);
+		String preparedId = testingClient.prepareData(sessionId, dsel, Flag.NONE, 200);
+
+		try {
+			while (!testingClient.isPrepared(preparedId, null)) {
+				Thread.sleep(1000);
+			}
+			fail("Should throw an error");
+		} catch (Exception e) {
+			assertEquals("Restore failed", e.getMessage());
+		}
+
+		setup.setReliability(1.);
+		preparedId = testingClient.prepareData(sessionId, dsel, Flag.NONE, 200);
+		while (!testingClient.isPrepared(preparedId, null)) {
+			Thread.sleep(1000);
+		}
+
+		preparedId = testingClient.prepareData(sessionId, dsel, Flag.NONE, 200);
+		while (!testingClient.isPrepared(preparedId, null)) {
+			Thread.sleep(1000);
+		}
+
+	}
+
+	protected void reliabilityTest3() throws Exception {
+		DataSelection dsel = new DataSelection().addDatafile(datafileIds.get(0));
+		testingClient.archive(sessionId, dsel, 204);
+		waitForIds();
+
+		setup.setReliability(0.);
+		testingClient.restore(sessionId, dsel, 204);
+
+		try {
+			while (testingClient.getStatus(sessionId, dsel, null) != Status.ONLINE) {
+				Thread.sleep(1000);
+			}
+			fail("Should throw an error");
+		} catch (Exception e) {
+			assertEquals("Restore failed", e.getMessage());
+		}
+
+		setup.setReliability(1.);
+		testingClient.restore(sessionId, dsel, 204);
+		try {
+			while (testingClient.getStatus(sessionId, dsel, null) != Status.ONLINE) {
+				Thread.sleep(1000);
+			}
+		} catch (Exception e) {
+			assertEquals("Restore failed", e.getMessage());
+		}
+
+		testingClient.reset(sessionId, dsel, 204);
+		testingClient.restore(sessionId, dsel, 204);
+		while (testingClient.getStatus(sessionId, dsel, null) != Status.ONLINE) {
+			Thread.sleep(1000);
+		}
 	}
 
 	protected void isPreparedTest() throws Exception {
