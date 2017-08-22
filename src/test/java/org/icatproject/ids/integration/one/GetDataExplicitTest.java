@@ -50,6 +50,7 @@ public class GetDataExplicitTest extends BaseTest {
 				testingClient.getSize(sessionId, new DataSelection().addInvestigation(investigationId), 200));
 		assertEquals(208L, testingClient.getSize(sessionId,
 				new DataSelection().addInvestigation(investigationId).addDatafiles(datafileIds), 200));
+		assertEquals(0L, testingClient.getSize(sessionId, new DataSelection().addDataset(datasetIds.get(2)), 200));
 	}
 
 	@Test(expected = NotFoundException.class)

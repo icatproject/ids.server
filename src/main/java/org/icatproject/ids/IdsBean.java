@@ -1453,13 +1453,7 @@ public class IdsBean {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
-		// TODO Uncomment next line and delete subsequent five lines
-        // PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
-		PreparedStatus nps = new PreparedStatus();
-		PreparedStatus status = preparedStatusMap.putIfAbsent(preparedId, nps);
-		if (status == null) {
-			status = preparedStatusMap.get(preparedId);
-		}
+		PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
 
 		if (!status.lock.tryLock()) {
 			logger.debug("Lock held for evaluation of isPrepared for preparedId {}", preparedId);
@@ -1599,9 +1593,15 @@ public class IdsBean {
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
 		if (storageUnit == StorageUnit.DATASET) {
+			for (DsInfo dsInfo : dsInfos.values()) {
+				fsm.recordSuccess(dsInfo.getDsId());
+			}
 			threadPool.submit(new RestoreDsTask(dsInfos.values(), emptyDs));
 
 		} else if (storageUnit == StorageUnit.DATAFILE) {
+			for (DfInfo dfInfo : dfInfos) {
+				fsm.recordSuccess(dfInfo.getDfId());
+			}
 			threadPool.submit(new RestoreDfTask(dfInfos));
 		}
 

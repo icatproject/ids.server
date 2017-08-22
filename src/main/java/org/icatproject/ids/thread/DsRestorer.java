@@ -109,9 +109,8 @@ public class DsRestorer implements Runnable {
 			fsm.recordSuccess(dsInfo.getDsId());
 			logger.debug("Restore of " + dsInfo + " completed");
 		} catch (Exception e) {
-			String msg = e.getClass() + " " + e.getMessage();
-			fsm.recordFailure(dsInfo.getDsId(), msg);
-			logger.error("Restore of " + dsInfo + " failed due to " + msg);
+			fsm.recordFailure(dsInfo.getDsId());
+			logger.error("Restore of " + dsInfo + " failed due to " + e.getClass() + " " + e.getMessage());
 		} finally {
 			fsm.removeFromChanging(dsInfo);
 			lock.release();

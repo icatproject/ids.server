@@ -43,9 +43,8 @@ public class FileCheckerTest extends BaseTest {
 
 		Long dfid = 0L;
 		for (int i = 0; i < 3; i++) {
-			dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
-					"uploaded_file_" + i, datasetIds.get(0), supportedDatafileFormat.getId(),
-					"A rather splendid datafile", 201);
+			dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file_" + i,
+					datasetIds.get(0), supportedDatafileFormat.getId(), "A rather splendid datafile", 201);
 		}
 
 		Datafile df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", dfid);
@@ -89,14 +88,14 @@ public class FileCheckerTest extends BaseTest {
 
 	}
 
-	private void checkHas(String type, Long id, String message) throws IOException,
-			InterruptedException {
+	private void checkHas(String type, Long id, String message) throws IOException, InterruptedException {
 		Set<String> lines = new HashSet<String>();
 		while (!Files.exists(errorLog)) {
 			Thread.sleep(10);
 		}
 		for (String line : Files.readAllLines(errorLog, Charset.defaultCharset())) {
-			lines.add(line.substring(22));
+			int n = line.indexOf(": ") + 2;
+			lines.add(line.substring(n));
 		}
 		assertEquals(1, lines.size());
 		String msg = new ArrayList<String>(lines).get(0);

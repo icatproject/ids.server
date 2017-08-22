@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import org.icatproject.ids.plugin.DsInfo;
 
-
 @Singleton
 public class LockManager {
 
@@ -20,6 +19,7 @@ public class LockManager {
 		SHARED, EXCLUSIVE
 	}
 
+	@SuppressWarnings("serial")
 	public class AlreadyLockedException extends Exception {
 		public AlreadyLockedException() {
 			super("Resource is already locked.");
@@ -30,6 +30,7 @@ public class LockManager {
 		public final Long id;
 		public final LockType type;
 		public final int count;
+
 		LockInfo(LockEntry le) {
 			this.id = le.id;
 			this.type = le.type;
@@ -41,15 +42,18 @@ public class LockManager {
 		final Long id;
 		final LockType type;
 		int count;
+
 		LockEntry(Long id, LockType type) {
 			this.id = id;
 			this.type = type;
 			this.count = 0;
 			lockMap.put(id, this);
 		}
+
 		void inc() {
 			count += 1;
 		}
+
 		void dec() {
 			assert count > 0;
 			count -= 1;
@@ -64,6 +68,7 @@ public class LockManager {
 	 */
 	public abstract class Lock implements AutoCloseable {
 		public abstract void release();
+
 		public void close() {
 			release();
 		}
@@ -72,10 +77,12 @@ public class LockManager {
 	private class SingleLock extends Lock {
 		private final Long id;
 		private boolean isValid;
+
 		SingleLock(Long id) {
 			this.id = id;
 			this.isValid = true;
 		}
+
 		public void release() {
 			synchronized (lockMap) {
 				if (isValid) {
@@ -89,21 +96,23 @@ public class LockManager {
 
 	private class LockCollection extends Lock {
 		private ArrayList<Lock> locks;
+
 		LockCollection() {
 			locks = new ArrayList<>();
 		}
+
 		void add(Lock l) {
 			locks.add(l);
 		}
+
 		public void release() {
-			for (Lock l: locks) {
+			for (Lock l : locks) {
 				l.release();
 			}
 		}
 	}
 
-	private static Logger logger 
-		= LoggerFactory.getLogger(LockManager.class);
+	private static Logger logger = LoggerFactory.getLogger(LockManager.class);
 	private Map<Long, LockEntry> lockMap = new HashMap<>();
 
 	@PostConstruct
@@ -111,16 +120,13 @@ public class LockManager {
 		logger.debug("LockManager initialized.");
 	}
 
-	public Lock lock(Long id, LockType type) 
-		throws AlreadyLockedException {
+	public Lock lock(Long id, LockType type) throws AlreadyLockedException {
 		synchronized (lockMap) {
 			LockEntry le = lockMap.get(id);
 			if (le == null) {
 				le = new LockEntry(id, type);
-			}
-			else {
-				if (type == LockType.EXCLUSIVE || 
-				    le.type == LockType.EXCLUSIVE) {
+			} else {
+				if (type == LockType.EXCLUSIVE || le.type == LockType.EXCLUSIVE) {
 					throw new AlreadyLockedException();
 				}
 			}
@@ -130,18 +136,16 @@ public class LockManager {
 		}
 	}
 
-	public Lock lock(DsInfo ds, LockType type) 
-		throws AlreadyLockedException {
+	public Lock lock(DsInfo ds, LockType type) throws AlreadyLockedException {
 		Long id = ds.getDsId();
 		assert id != null;
 		return lock(id, type);
 	}
 
-	public Lock lock(Collection<DsInfo> datasets, LockType type) 
-		throws AlreadyLockedException {
+	public Lock lock(Collection<DsInfo> datasets, LockType type) throws AlreadyLockedException {
 		LockCollection locks = new LockCollection();
 		try {
-			for (DsInfo ds: datasets) {
+			for (DsInfo ds : datasets) {
 				locks.add(lock(ds, type));
 			}
 		} catch (AlreadyLockedException e) {
@@ -153,9 +157,8 @@ public class LockManager {
 
 	public Collection<LockInfo> getLockInfo() {
 		Collection<LockInfo> lockInfo = new ArrayList<>();
-		Collection<LockEntry> lockEntries;
 		synchronized (lockMap) {
-			for (LockEntry le: lockMap.values()) {
+			for (LockEntry le : lockMap.values()) {
 				lockInfo.add(new LockInfo(le));
 			}
 			return lockInfo;
@@ -163,7 +166,3 @@ public class LockManager {
 	}
 
 }
-
-// Local Variables:
-// c-basic-offset: 8
-// End:

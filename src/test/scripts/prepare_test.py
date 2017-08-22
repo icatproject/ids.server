@@ -40,6 +40,8 @@ with open('src/test/install/setup.properties', 'w') as f:
 with open("src/test/install/run.properties.example", "w") as f:
     pass
 
+for f in glob.glob('src/test/install/*.war'): os.remove(f)
+
 shutil.copy(glob.glob('target/ids.server-*.war')[0] , 'src/test/install/')
 shutil.copy('src/main/scripts/setup', 'src/test/install/')
 z = ZipFile(glob.glob("target/ids.server-*-distro.zip")[0])
