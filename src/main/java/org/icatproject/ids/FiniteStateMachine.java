@@ -22,11 +22,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.ejb.DependsOn;
 import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+import org.icatproject.ids.LockManager.AlreadyLockedException;
+import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.LockManager.LockInfo;
+import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
@@ -41,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@DependsOn({ "LockManager" })
 public class FiniteStateMachine {
 
 	private class DfProcessQueue extends TimerTask {
@@ -56,35 +62,79 @@ public class FiniteStateMachine {
 						List<DfInfo> archives = new ArrayList<>();
 						List<DfInfo> restores = new ArrayList<>();
 						List<DfInfo> deletes = new ArrayList<>();
+						Map<Long, Lock> writeLocks = new HashMap<>();
+						Map<Long, Lock> archiveLocks = new HashMap<>();
+						Map<Long, Lock> restoreLocks = new HashMap<>();
+						Map<Long, Lock> deleteLocks = new HashMap<>();
 
 						Map<DfInfoImpl, RequestedState> newOps = new HashMap<>();
 						final Iterator<Entry<DfInfoImpl, RequestedState>> it = deferredDfOpsQueue.entrySet().iterator();
 						while (it.hasNext()) {
 							Entry<DfInfoImpl, RequestedState> opEntry = it.next();
 							DfInfoImpl dfInfo = opEntry.getKey();
+							Long dsId = dfInfo.getDsId();
 							if (!dfChanging.containsKey(dfInfo)) {
-								it.remove();
 								final RequestedState state = opEntry.getValue();
 								logger.debug(dfInfo + " " + state);
 								if (state == RequestedState.WRITE_REQUESTED) {
+									if (!writeLocks.containsKey(dsId)) {
+										try {
+											writeLocks.put(dsId, lockManager.lock(dsId, LockType.SHARED));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									writes.add(dfInfo);
 								} else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+									if (!writeLocks.containsKey(dsId)) {
+										try {
+											writeLocks.put(dsId, lockManager.lock(dsId, LockType.SHARED));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, RequestedState.WRITE_REQUESTED);
 									writes.add(dfInfo);
 									newOps.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
 								} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-									long dsId = dfInfo.getDsId();
-									if (isLocked(dsId, QueryLockType.ARCHIVE)) {
-										logger.debug("Archive of " + dfInfo + " skipped because getData in progress");
-										continue;
+									if (!archiveLocks.containsKey(dsId)) {
+										try {
+											archiveLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
 									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									archives.add(dfInfo);
 								} else if (state == RequestedState.RESTORE_REQUESTED) {
+									if (!restoreLocks.containsKey(dsId)) {
+										try {
+											restoreLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									restores.add(dfInfo);
 								} else if (state == RequestedState.DELETE_REQUESTED) {
+									if (!deleteLocks.containsKey(dsId)) {
+										try {
+											deleteLocks.put(dsId, lockManager.lock(dsId, LockType.EXCLUSIVE));
+										} catch (AlreadyLockedException e) {
+											logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+											continue;
+										}
+									}
+									it.remove();
 									dfChanging.put(dfInfo, state);
 									deletes.add(dfInfo);
 								} else {
@@ -99,22 +149,22 @@ public class FiniteStateMachine {
 						}
 						if (!writes.isEmpty()) {
 							logger.debug("Launch thread to process " + writes.size() + " writes");
-							Thread w = new Thread(new DfWriter(writes, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfWriter(writes, propertyHandler, FiniteStateMachine.this, writeLocks.values()));
 							w.start();
 						}
 						if (!archives.isEmpty()) {
 							logger.debug("Launch thread to process " + archives.size() + " archives");
-							Thread w = new Thread(new DfArchiver(archives, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfArchiver(archives, propertyHandler, FiniteStateMachine.this, archiveLocks.values()));
 							w.start();
 						}
 						if (!restores.isEmpty()) {
 							logger.debug("Launch thread to process " + restores.size() + " restores");
-							Thread w = new Thread(new DfRestorer(restores, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfRestorer(restores, propertyHandler, FiniteStateMachine.this, restoreLocks.values()));
 							w.start();
 						}
 						if (!deletes.isEmpty()) {
 							logger.debug("Launch thread to process " + deletes.size() + " deletes");
-							Thread w = new Thread(new DfDeleter(deletes, propertyHandler, FiniteStateMachine.this));
+							Thread w = new Thread(new DfDeleter(deletes, propertyHandler, FiniteStateMachine.this, deleteLocks.values()));
 							w.start();
 						}
 					}
@@ -144,36 +194,47 @@ public class FiniteStateMachine {
 							if (state == RequestedState.WRITE_REQUESTED
 									|| state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
 								if (now > writeTimes.get(dsInfo)) {
-									logger.debug("Will process " + dsInfo + " with " + state);
-									writeTimes.remove(dsInfo);
-									dsChanging.put(dsInfo, RequestedState.WRITE_REQUESTED);
-									it.remove();
-									final Thread w = new Thread(
-											new DsWriter(dsInfo, propertyHandler, FiniteStateMachine.this, reader));
-									w.start();
-									if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
-										newOps.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
+									try {
+										Lock lock = lockManager.lock(dsInfo, LockType.SHARED);
+										logger.debug("Will process " + dsInfo + " with " + state);
+										writeTimes.remove(dsInfo);
+										dsChanging.put(dsInfo, RequestedState.WRITE_REQUESTED);
+										it.remove();
+										final Thread w = new Thread(
+													    new DsWriter(dsInfo, propertyHandler, FiniteStateMachine.this, reader, lock));
+										w.start();
+										if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
+											newOps.put(dsInfo, RequestedState.ARCHIVE_REQUESTED);
+										}
+									} catch (AlreadyLockedException e) {
+										logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
 									}
 								}
 							} else if (state == RequestedState.ARCHIVE_REQUESTED) {
-								it.remove();
-								long dsId = dsInfo.getDsId();
-								if (isLocked(dsId, QueryLockType.ARCHIVE)) {
-									logger.debug("Archive of " + dsInfo + " skipped because getData in progress");
-									continue;
+								try {
+									Lock lock = lockManager.lock(dsInfo, LockType.EXCLUSIVE);
+									it.remove();
+									long dsId = dsInfo.getDsId();
+									logger.debug("Will process " + dsInfo + " with " + state);
+									dsChanging.put(dsInfo, state);
+									final Thread w = new Thread(
+												    new DsArchiver(dsInfo, propertyHandler, FiniteStateMachine.this, lock));
+									w.start();
+								} catch (AlreadyLockedException e) {
+									logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
 								}
-								logger.debug("Will process " + dsInfo + " with " + state);
-								dsChanging.put(dsInfo, state);
-								final Thread w = new Thread(
-										new DsArchiver(dsInfo, propertyHandler, FiniteStateMachine.this));
-								w.start();
 							} else if (state == RequestedState.RESTORE_REQUESTED) {
-								logger.debug("Will process " + dsInfo + " with " + state);
-								dsChanging.put(dsInfo, state);
-								it.remove();
-								final Thread w = new Thread(
-										new DsRestorer(dsInfo, propertyHandler, FiniteStateMachine.this, reader));
-								w.start();
+								try {
+									Lock lock = lockManager.lock(dsInfo, LockType.EXCLUSIVE);
+									logger.debug("Will process " + dsInfo + " with " + state);
+									dsChanging.put(dsInfo, state);
+									it.remove();
+									final Thread w = new Thread(
+												    new DsRestorer(dsInfo, propertyHandler, FiniteStateMachine.this, reader, lock));
+									w.start();
+								} catch (AlreadyLockedException e) {
+									logger.debug("Could not acquire lock on " + dsInfo + ", hold back process with " + state);
+								}
 							}
 						}
 					}
@@ -192,14 +253,6 @@ public class FiniteStateMachine {
 		ARCHIVE_REQUESTED, DELETE_REQUESTED, RESTORE_REQUESTED, WRITE_REQUESTED, WRITE_THEN_ARCHIVE_REQUESTED
 	}
 
-	public enum SetLockType {
-		ARCHIVE, ARCHIVE_AND_DELETE
-	}
-
-	public enum QueryLockType {
-		ARCHIVE, DELETE
-	}
-
 	private static Logger logger = LoggerFactory.getLogger(FiniteStateMachine.class);
 
 	private long archiveWriteDelayMillis;
@@ -212,9 +265,6 @@ public class FiniteStateMachine {
 
 	private Map<DsInfo, RequestedState> dsChanging = new HashMap<>();
 
-	private Map<String, Set<Long>> deleteLocks = new HashMap<>();
-	private Map<String, Set<Long>> archiveLocks = new HashMap<>();
-
 	private Path markerDir;
 	private long processQueueIntervalMillis;
 
@@ -222,9 +272,10 @@ public class FiniteStateMachine {
 	@EJB
 	IcatReader reader;
 
-	private StorageUnit storageUnit;
+	@EJB
+	private LockManager lockManager;
 
-	private boolean synchLocksOnDataset;
+	private StorageUnit storageUnit;
 
 	private Timer timer = new Timer("FSM Timer");
 
@@ -318,65 +369,28 @@ public class FiniteStateMachine {
 
 	public String getServiceStatus() throws InternalException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		if (storageUnit == null) {
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			if (storageUnit == null) {
 				gen.writeStartArray("opsQueue").writeEnd();
-				gen.write("lockCount", 0);
-				gen.writeStartArray("lockedIds").writeEnd();
-				gen.writeStartArray("failures").writeEnd();
-				gen.writeEnd(); // end Object()
-			}
-		} else if (storageUnit == StorageUnit.DATASET) {
-			Map<DsInfo, RequestedState> union;
-			Collection<Set<Long>> locksContentsClone;
-			synchronized (deferredDsOpsQueue) {
-				union = new HashMap<>(dsChanging);
-				union.putAll(deferredDsOpsQueue);
-				locksContentsClone = new HashSet<>(archiveLocks.values());
-				locksContentsClone.addAll(deleteLocks.values());
-			}
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+			} else if (storageUnit == StorageUnit.DATASET) {
+				Map<DsInfo, RequestedState> union;
+				synchronized (deferredDsOpsQueue) {
+					union = new HashMap<>(dsChanging);
+					union.putAll(deferredDsOpsQueue);
+				}
 				gen.writeStartArray("opsQueue");
 				for (Entry<DsInfo, RequestedState> entry : union.entrySet()) {
 					DsInfo item = entry.getKey();
-
 					gen.writeStartObject().write("data", item.toString()).write("request", entry.getValue().name())
 							.writeEnd();
-
 				}
 				gen.writeEnd(); // end Array("opsQueue")
-
-				gen.write("lockCount", locksContentsClone.size());
-
-				Set<Long> lockedDs = new HashSet<>();
-
-				for (Set<Long> entry : locksContentsClone) {
-					lockedDs.addAll(entry);
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				Map<DfInfo, RequestedState> union;
+				synchronized (deferredDfOpsQueue) {
+					union = new HashMap<>(dfChanging);
+					union.putAll(deferredDfOpsQueue);
 				}
-				gen.writeStartArray("lockedIds");
-				for (Long dsId : lockedDs) {
-					gen.write(dsId);
-				}
-				gen.writeEnd(); // end Array("lockedDs")
-
-				gen.writeStartArray("failures");
-				for (Long failure : failures) {
-					gen.write(failure);
-				}
-				gen.writeEnd(); // end Array("failures")
-
-				gen.writeEnd(); // end Object()
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			Map<DfInfo, RequestedState> union;
-			Collection<Set<Long>> locksContentsClone;
-			synchronized (deferredDfOpsQueue) {
-				union = new HashMap<>(dfChanging);
-				union.putAll(deferredDfOpsQueue);
-				locksContentsClone = new HashSet<>(archiveLocks.values());
-				locksContentsClone.addAll(deleteLocks.values());
-			}
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
 				gen.writeStartArray("opsQueue");
 				for (Entry<DfInfo, RequestedState> entry : union.entrySet()) {
 					DfInfo item = entry.getKey();
@@ -384,31 +398,25 @@ public class FiniteStateMachine {
 							.writeEnd();
 				}
 				gen.writeEnd(); // end Array("opsQueue")
-
-				gen.write("lockCount", locksContentsClone.size());
-
-				Set<Long> lockedDs = new HashSet<>();
-
-				for (Set<Long> entry : locksContentsClone) {
-					lockedDs.addAll(entry);
-				}
-				gen.writeStartArray("lockedIds");
-				for (Long dsId : lockedDs) {
-					gen.write(dsId);
-				}
-				gen.writeEnd(); // end Array("lockedDs")
-
-				gen.writeStartArray("failures");
-				for (Long failure : failures) {
-					gen.write(failure);
-				}
-				gen.writeEnd(); // end Array("failures")
-
-				gen.writeEnd(); // end Object()
 			}
+
+			Collection<LockInfo> lockInfo = lockManager.getLockInfo();
+			gen.write("lockCount", lockInfo.size());
+			gen.writeStartArray("locks");
+			for (LockInfo li : lockInfo) {
+				gen.writeStartObject().write("id", li.id).write("type", li.type.name()).write("count", li.count).writeEnd();
+			}
+			gen.writeEnd(); // end Array("locks")
+
+			gen.writeStartArray("failures");
+			for (Long failure : failures) {
+				gen.write(failure);
+			}
+			gen.writeEnd(); // end Array("failures")
+
+			gen.writeEnd(); // end Object()
 		}
 		return baos.toString();
-
 	}
 
 	@PostConstruct
@@ -421,68 +429,15 @@ public class FiniteStateMachine {
 			if (storageUnit == StorageUnit.DATASET) {
 				timer.schedule(new DsProcessQueue(), processQueueIntervalMillis);
 				logger.info("DsProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
-				synchLocksOnDataset = true;
 			} else if (storageUnit == StorageUnit.DATAFILE) {
 				timer.schedule(new DfProcessQueue(), processQueueIntervalMillis);
 				logger.info("DfProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
-				synchLocksOnDataset = false;
-			} else {
-				synchLocksOnDataset = true;
 			}
 			markerDir = propertyHandler.getCacheDir().resolve("marker");
 			Files.createDirectories(markerDir);
 		} catch (IOException e) {
 			throw new RuntimeException("FiniteStateMachine reports " + e.getClass() + " " + e.getMessage());
 		}
-	}
-
-	public boolean isLocked(long dsId, QueryLockType lockType) {
-		if (synchLocksOnDataset) {
-			synchronized (deferredDsOpsQueue) {
-				return locked(dsId, lockType);
-			}
-		} else {
-			synchronized (deferredDfOpsQueue) {
-				return locked(dsId, lockType);
-			}
-		}
-	}
-
-	public String lock(Set<Long> set, SetLockType lockType) {
-		String lockId = UUID.randomUUID().toString();
-		if (synchLocksOnDataset) {
-			synchronized (deferredDsOpsQueue) {
-				archiveLocks.put(lockId, set);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.put(lockId, set);
-				}
-			}
-		} else {
-			synchronized (deferredDfOpsQueue) {
-				archiveLocks.put(lockId, set);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.put(lockId, set);
-				}
-			}
-		}
-		return lockId;
-	}
-
-	private boolean locked(long dsId, QueryLockType lockType) {
-		if (lockType == QueryLockType.ARCHIVE) {
-			for (Set<Long> lock : archiveLocks.values()) {
-				if (lock.contains(dsId)) {
-					return true;
-				}
-			}
-		} else if (lockType == QueryLockType.DELETE) {
-			for (Set<Long> lock : deleteLocks.values()) {
-				if (lock.contains(dsId)) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	public void queue(DfInfoImpl dfInfo, DeferredOp deferredOp) throws InternalException {
@@ -621,24 +576,6 @@ public class FiniteStateMachine {
 		if (logger.isDebugEnabled()) {
 			final Date d = new Date(writeTimes.get(dsInfo));
 			logger.debug("Requesting delay of writing of dataset " + dsInfo + " till " + d);
-		}
-	}
-
-	public void unlock(String lockId, SetLockType lockType) {
-		if (synchLocksOnDataset) {
-			synchronized (deferredDsOpsQueue) {
-				archiveLocks.remove(lockId);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.remove(lockId);
-				}
-			}
-		} else {
-			synchronized (deferredDfOpsQueue) {
-				archiveLocks.remove(lockId);
-				if (lockType == SetLockType.ARCHIVE_AND_DELETE) {
-					deleteLocks.remove(lockId);
-				}
-			}
 		}
 	}
 

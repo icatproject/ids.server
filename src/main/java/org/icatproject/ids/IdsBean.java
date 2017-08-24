@@ -61,7 +61,9 @@ import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.DataSelection.Returns;
-import org.icatproject.ids.FiniteStateMachine.SetLockType;
+import org.icatproject.ids.LockManager.AlreadyLockedException;
+import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.IdsException;
@@ -175,7 +177,7 @@ public class IdsBean {
 		private long offset;
 		private boolean zip;
 		private Map<Long, DsInfo> dsInfos;
-		private String lockId;
+		private Lock lock;
 		private boolean compress;
 		private Set<DfInfoImpl> dfInfos;
 		private String ip;
@@ -183,12 +185,12 @@ public class IdsBean {
 		private Long transferId;
 
 		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
-				String lockId, Long transferId, String ip, long start) {
+				Lock lock, Long transferId, String ip, long start) {
 			this.offset = offset;
 			this.zip = zip;
 			this.dsInfos = dsInfos;
 			this.dfInfos = dfInfos;
-			this.lockId = lockId;
+			this.lock = lock;
 			this.compress = compress;
 			this.transferId = transferId;
 			this.ip = ip;
@@ -265,7 +267,7 @@ public class IdsBean {
 				logger.error("Failed to stream " + transfer + " due to " + e.getMessage());
 				throw e;
 			} finally {
-				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
+				lock.release();
 			}
 		}
 
@@ -471,6 +473,9 @@ public class IdsBean {
 	@EJB
 	private FiniteStateMachine fsm;
 
+	@EJB
+	private LockManager lockManager;
+
 	private ICAT icat;
 
 	private Path linkDir;
@@ -580,7 +585,7 @@ public class IdsBean {
 		}
 	}
 
-	private void checkDatafilesPresent(Set<? extends DfInfo> dfInfos, String lockId)
+	private void checkDatafilesPresent(Set<? extends DfInfo> dfInfos)
 			throws NotFoundException, InternalException {
 		/* Check that datafiles have not been deleted before locking */
 		int n = 0;
@@ -593,13 +598,11 @@ public class IdsBean {
 			if (++n == maxIdsInQuery) {
 				try {
 					if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
-						fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 						throw new NotFoundException("One of the data files requested has been deleted");
 					}
 					n = 0;
 					sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
 				} catch (IcatException_Exception e) {
-					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 					throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
 				}
 			}
@@ -607,19 +610,17 @@ public class IdsBean {
 		if (n != 0) {
 			try {
 				if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
-					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 					throw new NotFoundException("One of the datafiles requested has been deleted");
 				}
 			} catch (IcatException_Exception e) {
-				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
 				throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
 			}
 		}
 
 	}
 
-	private void checkOnlineAndFreeLockOnFailure(Collection<DsInfo> dsInfos, Set<Long> emptyDatasets,
-			Set<DfInfoImpl> dfInfos, String lockId, SetLockType lockType)
+	private void checkOnline(Collection<DsInfo> dsInfos, Set<Long> emptyDatasets,
+			Set<DfInfoImpl> dfInfos)
 			throws InternalException, DataNotOnlineException {
 		try {
 			if (storageUnit == StorageUnit.DATASET) {
@@ -630,7 +631,6 @@ public class IdsBean {
 					}
 				}
 				if (maybeOffline) {
-					fsm.unlock(lockId, lockType);
 					throw new DataNotOnlineException(
 							"Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
 				}
@@ -643,13 +643,11 @@ public class IdsBean {
 
 				}
 				if (maybeOffline) {
-					fsm.unlock(lockId, lockType);
 					throw new DataNotOnlineException(
 							"Before getting a datafile, it must be restored, restoration requested automatically");
 				}
 			}
 		} catch (IOException e) {
-			fsm.unlock(lockId, lockType);
 			logger.error("I/O error " + e.getMessage() + " checking online");
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
@@ -678,28 +676,9 @@ public class IdsBean {
 		Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		String lockId = null;
-		if (storageUnit == StorageUnit.DATASET) {
-			/*
-			 * Lock the datasets to prevent archiving of the datasets. It is
-			 * important that they be unlocked again.
-			 */
-			Set<Long> dsIds = new HashSet<>();
-			for (DsInfo dsInfo : dsInfos) {
-				dsIds.add(dsInfo.getDsId());
-			}
-			lockId = fsm.lock(dsIds, FiniteStateMachine.SetLockType.ARCHIVE);
-			checkOnlineAndFreeLockOnFailure(dsInfos, dataSelection.getEmptyDatasets(), dfInfos, lockId,
-					FiniteStateMachine.SetLockType.ARCHIVE);
-		}
-
-		try {
-			for (DsInfo dsInfo : dsInfos) {
-				logger.debug("DS " + dsInfo.getDsId() + " " + dsInfo);
-				if (fsm.isLocked(dsInfo.getDsId(), FiniteStateMachine.QueryLockType.DELETE)) {
-					throw new BadRequestException(
-							"Dataset " + dsInfo + " (or a part of it) is currently being streamed to a user");
-				}
+		try (Lock lock = lockManager.lock(dsInfos, LockType.EXCLUSIVE)) {
+			if (storageUnit == StorageUnit.DATASET) {
+				checkOnline(dsInfos, dataSelection.getEmptyDatasets(), dfInfos);
 			}
 
 			/* Now delete from ICAT */
@@ -756,10 +735,9 @@ public class IdsBean {
 				}
 			}
 
-		} finally {
-			if (lockId != null) {
-				fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);
-			}
+		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, delete failed");
+			throw new DataNotOnlineException("Data is busy");
 		}
 
 		if (logSet.contains(CallType.WRITE)) {
@@ -805,57 +783,59 @@ public class IdsBean {
 		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
 		Set<Long> emptyDatasets = prepared.emptyDatasets;
 
-		/*
-		 * Lock the datasets which prevents deletion of datafiles within the
-		 * dataset and archiving of the datasets. It is important that they be
-		 * unlocked again.
-		 */
-		final String lockId = fsm.lock(dsInfos.keySet(), FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
+		Lock lock = null;
+		try {
+			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
 
-		if (twoLevel) {
-			checkOnlineAndFreeLockOnFailure(dsInfos.values(), emptyDatasets, dfInfos, lockId,
-					FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
-		}
-
-		checkDatafilesPresent(dfInfos, lockId);
-
-		/* Construct the name to include in the headers */
-		String name;
-		if (outname == null) {
-			if (zip) {
-				name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
-			} else {
-				name = dfInfos.iterator().next().getDfName();
+			if (twoLevel) {
+				checkOnline(dsInfos.values(), emptyDatasets, dfInfos);
 			}
-		} else {
-			if (zip) {
-				String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
-				if ("zip".equals(ext)) {
-					name = outname;
+			checkDatafilesPresent(dfInfos);
+
+			/* Construct the name to include in the headers */
+			String name;
+			if (outname == null) {
+				if (zip) {
+					name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
 				} else {
-					name = outname + ".zip";
+					name = dfInfos.iterator().next().getDfName();
 				}
 			} else {
-				name = outname;
+				if (zip) {
+					String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
+					if ("zip".equals(ext)) {
+						name = outname;
+					} else {
+						name = outname + ".zip";
+					}
+				} else {
+					name = outname;
+				}
 			}
-		}
 
-		Long transferId = null;
-		if (logSet.contains(CallType.READ)) {
-			transferId = atomicLong.getAndIncrement();
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("transferId", transferId);
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
+			Long transferId = null;
+			if (logSet.contains(CallType.READ)) {
+				transferId = atomicLong.getAndIncrement();
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("transferId", transferId);
+					gen.write("preparedId", preparedId);
+					gen.writeEnd();
+				}
+				transmitter.processMessage("getDataStart", ip, baos.toString(), time);
 			}
-			transmitter.processMessage("getDataStart", ip, baos.toString(), time);
-		}
 
-		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-				.entity(new SO(dsInfos, dfInfos, offset, zip, compress, lockId, transferId, ip, time))
-				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
-				.build();
+			return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
+					.entity(new SO(dsInfos, dfInfos, offset, zip, compress, lock, transferId, ip, time))
+					.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
+					.build();
+		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, getData failed");
+			throw new DataNotOnlineException("Data is busy");
+		} catch (IdsException e) {
+			lock.release();
+			throw e;
+		}
 	}
 
 	public Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
@@ -878,66 +858,67 @@ public class IdsBean {
 		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		/*
-		 * Lock the datasets which prevents deletion of datafiles within the
-		 * dataset and archiving of the datasets. It is important that they be
-		 * unlocked again.
-		 */
+		Lock lock = null;
+		try {
+			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
 
-		final String lockId = fsm.lock(dsInfos.keySet(), FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
-
-		if (twoLevel) {
-			checkOnlineAndFreeLockOnFailure(dsInfos.values(), dataSelection.getEmptyDatasets(), dfInfos, lockId,
-					FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
-		}
-
-		checkDatafilesPresent(dfInfos, lockId);
-
-		final boolean finalZip = zip ? true : dataSelection.mustZip();
-
-		/* Construct the name to include in the headers */
-		String name;
-		if (outname == null) {
-			if (finalZip) {
-				name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
-			} else {
-				name = dataSelection.getDfInfo().iterator().next().getDfName();
+			if (twoLevel) {
+				checkOnline(dsInfos.values(), dataSelection.getEmptyDatasets(), dfInfos);
 			}
-		} else {
-			if (finalZip) {
-				String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
-				if ("zip".equals(ext)) {
-					name = outname;
+			checkDatafilesPresent(dfInfos);
+
+			final boolean finalZip = zip ? true : dataSelection.mustZip();
+
+			/* Construct the name to include in the headers */
+			String name;
+			if (outname == null) {
+				if (finalZip) {
+					name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
 				} else {
-					name = outname + ".zip";
+					name = dataSelection.getDfInfo().iterator().next().getDfName();
 				}
 			} else {
-				name = outname;
-			}
-		}
-
-		Long transferId = null;
-		if (logSet.contains(CallType.READ)) {
-			try {
-				transferId = atomicLong.getAndIncrement();
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("transferId", transferId);
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
+				if (finalZip) {
+					String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
+					if ("zip".equals(ext)) {
+						name = outname;
+					} else {
+						name = outname + ".zip";
+					}
+				} else {
+					name = outname;
 				}
-				transmitter.processMessage("getDataStart", ip, baos.toString(), start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
 			}
-		}
 
-		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-				.entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lockId,
-						transferId, ip, start))
-				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
-				.build();
+			Long transferId = null;
+			if (logSet.contains(CallType.READ)) {
+				try {
+					transferId = atomicLong.getAndIncrement();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+						gen.write("transferId", transferId);
+						gen.write("userName", icat.getUserName(sessionId));
+						addIds(gen, investigationIds, datasetIds, datafileIds);
+						gen.writeEnd();
+					}
+					transmitter.processMessage("getDataStart", ip, baos.toString(), start);
+				} catch (IcatException_Exception e) {
+					logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+				}
+			}
+
+			return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
+					.entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lock,
+							transferId, ip, start))
+					.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
+					.build();
+		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, getData failed");
+			throw new DataNotOnlineException("Data is busy");
+		} catch (IdsException e) {
+			lock.release();
+			throw e;
+		}
 	}
 
 	public String getDatafileIds(String preparedId, String ip)
@@ -1080,7 +1061,7 @@ public class IdsBean {
 
 		String location = getLocation(datafile.getId(), datafile.getLocation());
 
-		try {
+		try (Lock lock = lockManager.lock(datafile.getDataset().getId(), LockType.SHARED)) {
 			if (storageUnit == StorageUnit.DATASET) {
 				DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
 				Set<Long> mt = Collections.emptySet();
@@ -1096,12 +1077,7 @@ public class IdsBean {
 							"Before linking a datafile, it has to be restored, restoration requested automatically");
 				}
 			}
-		} catch (IOException e) {
-			logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
 
-		try {
 			Path target = mainStorage.getPath(location, datafile.getCreateId(), datafile.getModId());
 			ShellCommand sc = new ShellCommand("setfacl", "-m", "user:" + username + ":r", target.toString());
 			if (sc.getExitValue() != 0) {
@@ -1126,6 +1102,9 @@ public class IdsBean {
 			}
 
 			return link.toString();
+		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, getLink failed");
+			throw new DataNotOnlineException("Data is busy");
 		} catch (IOException e) {
 			logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
 			throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -1736,41 +1715,31 @@ public class IdsBean {
 			}
 
 			DsInfo dsInfo = new DsInfoImpl(ds);
-			String lockId = null;
-			if (storageUnit == StorageUnit.DATASET) {
-				/*
-				 * Lock the datasets to prevent archiving of the datasets. It is
-				 * important that they be unlocked again.
-				 */
-				Set<Long> dsIds = new HashSet<>();
-				dsIds.add(datasetId);
-				lockId = fsm.lock(dsIds, FiniteStateMachine.SetLockType.ARCHIVE);
-				Set<DfInfoImpl> dfInfos = Collections.emptySet();
-				Set<Long> emptyDatasets = new HashSet<>();
-				try {
-					List<Object> counts = icat.search(sessionId,
-							"COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
-					if ((Long) counts.get(0) == 0) {
-						emptyDatasets.add(dsInfo.getDsId());
+			try (Lock lock = lockManager.lock(dsInfo, LockType.SHARED)) {
+				if (storageUnit == StorageUnit.DATASET) {
+					Set<DfInfoImpl> dfInfos = Collections.emptySet();
+					Set<Long> emptyDatasets = new HashSet<>();
+					try {
+						List<Object> counts = icat.search(sessionId,
+								"COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
+						if ((Long) counts.get(0) == 0) {
+							emptyDatasets.add(dsInfo.getDsId());
+						}
+					} catch (IcatException_Exception e) {
+						IcatExceptionType type = e.getFaultInfo().getType();
+						if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
+							throw new InsufficientPrivilegesException(e.getMessage());
+						}
+						if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
+							throw new NotFoundException(e.getMessage());
+						}
+						throw new InternalException(type + " " + e.getMessage());
 					}
-				} catch (IcatException_Exception e) {
-					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);
-					IcatExceptionType type = e.getFaultInfo().getType();
-					if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
-						throw new InsufficientPrivilegesException(e.getMessage());
-					}
-					if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-						throw new NotFoundException(e.getMessage());
-					}
-					throw new InternalException(type + " " + e.getMessage());
+					Set<DsInfo> dsInfos = new HashSet<>();
+					dsInfos.add(dsInfo);
+					checkOnline(dsInfos, emptyDatasets, dfInfos);
 				}
-				Set<DsInfo> dsInfos = new HashSet<>();
-				dsInfos.add(dsInfo);
-				checkOnlineAndFreeLockOnFailure(dsInfos, emptyDatasets, dfInfos, lockId,
-						FiniteStateMachine.SetLockType.ARCHIVE);
-			}
 
-			try {
 				CRC32 crc = new CRC32();
 				CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
 				String location = mainStorage.put(dsInfo, name, is);
@@ -1831,14 +1800,13 @@ public class IdsBean {
 
 				return Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build();
 
+			} catch (AlreadyLockedException e) {
+				logger.debug("Could not acquire lock, put failed");
+				throw new DataNotOnlineException("Data is busy");
 			} catch (IOException e) {
 				logger.error("I/O exception " + e.getMessage() + " putting " + name + " to Dataset with id "
 						+ datasetIdString);
 				throw new InternalException(e.getClass() + " " + e.getMessage());
-			} finally {
-				if (lockId != null) {
-					fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE);
-				}
 			}
 		} catch (IdsException e) {
 
