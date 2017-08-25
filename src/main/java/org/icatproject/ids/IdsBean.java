@@ -2098,14 +2098,7 @@ public class IdsBean {
 		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		/*
-		 * Lock the datasets which prevents deletion of datafiles within the
-		 * dataset and archiving of the datasets. It is important that they be
-		 * unlocked again.
-		 */
-
-		final String lockId = fsm.lock(dsInfos.keySet(), FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
-		try {
+		try (Lock lock = lockManager.lock(dsInfos.values(), LockType.SHARED)) {
 			if (twoLevel) {
 				try {
 					boolean maybeOffline = false;
@@ -2143,8 +2136,9 @@ public class IdsBean {
 					fsm.queue(dfInfo, DeferredOp.WRITE);
 				}
 			}
-		} finally {
-			fsm.unlock(lockId, FiniteStateMachine.SetLockType.ARCHIVE_AND_DELETE);
+		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, write failed");
+			throw new DataNotOnlineException("Data is busy");
 		}
 
 		if (logSet.contains(CallType.MIGRATE)) {
