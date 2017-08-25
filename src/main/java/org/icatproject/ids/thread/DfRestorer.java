@@ -1,11 +1,13 @@
 package org.icatproject.ids.thread;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
@@ -23,12 +25,13 @@ public class DfRestorer implements Runnable {
 	private MainStorageInterface mainStorageInterface;
 	private ArchiveStorageInterface archiveStorageInterface;
 	private FiniteStateMachine fsm;
-
 	private List<DfInfo> dfInfos;
+	private Collection<Lock> locks;
 
-	public DfRestorer(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+	public DfRestorer(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
 		this.dfInfos = dfInfos;
 		this.fsm = fsm;
+		this.locks = locks;
 
 		mainStorageInterface = propertyHandler.getMainStorage();
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
@@ -78,7 +81,9 @@ public class DfRestorer implements Runnable {
 				logger.error("Restore of " + dfInfo + " failed " + e.getClass() + " " + e.getMessage());
 				fsm.removeFromChanging(dfInfo);
 			}
-			return;
+		}
+		for (Lock l: locks) {
+			l.release();
 		}
 
 	}

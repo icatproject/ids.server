@@ -1,8 +1,10 @@
 package org.icatproject.ids.thread;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
@@ -17,14 +19,14 @@ public class DfDeleter implements Runnable {
 	private final static Logger logger = LoggerFactory.getLogger(DfDeleter.class);
 
 	private FiniteStateMachine fsm;
-
 	private ArchiveStorageInterface archiveStorageInterface;
-
 	private List<DfInfo> dfInfos;
+	private Collection<Lock> locks;
 
-	public DfDeleter(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+	public DfDeleter(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
 		this.dfInfos = dfInfos;
 		this.fsm = fsm;
+		this.locks = locks;
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 	}
 
@@ -41,6 +43,8 @@ public class DfDeleter implements Runnable {
 				fsm.removeFromChanging(dfInfo);
 			}
 		}
-
+		for (Lock l: locks) {
+			l.release();
+		}
 	}
 }

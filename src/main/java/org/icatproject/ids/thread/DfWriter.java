@@ -3,9 +3,11 @@ package org.icatproject.ids.thread;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 
 import org.icatproject.ids.FiniteStateMachine;
+import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
@@ -23,14 +25,14 @@ public class DfWriter implements Runnable {
 	private FiniteStateMachine fsm;
 	private MainStorageInterface mainStorageInterface;
 	private ArchiveStorageInterface archiveStorageInterface;
-
 	private Path markerDir;
-
 	private List<DfInfo> dfInfos;
+	private Collection<Lock> locks;
 
-	public DfWriter(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm) {
+	public DfWriter(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
 		this.dfInfos = dfInfos;
 		this.fsm = fsm;
+		this.locks = locks;
 		mainStorageInterface = propertyHandler.getMainStorage();
 		archiveStorageInterface = propertyHandler.getArchiveStorage();
 		markerDir = propertyHandler.getCacheDir().resolve("marker");
@@ -52,6 +54,8 @@ public class DfWriter implements Runnable {
 				fsm.removeFromChanging(dfInfo);
 			}
 		}
-
+		for (Lock l: locks) {
+			l.release();
+		}
 	}
 }
