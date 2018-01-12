@@ -394,6 +394,7 @@
 						<serverUrl>${serverUrl}</serverUrl>
 						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
 						<containerHome>${containerHome}</containerHome>
+						<testHome>${testHome}</testHome>
 					</systemPropertyVariables>
 				</configuration>
 				<executions>

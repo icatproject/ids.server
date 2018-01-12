@@ -58,7 +58,12 @@ public class Setup {
 
 	public Setup(String runPropertyFile) throws Exception {
 
-		home = Paths.get(System.getProperty("user.home"));
+		// Test home directory
+		String testHome = System.getProperty("testHome");
+		if (testHome == null) {
+			testHome = System.getProperty("user.home");
+		}
+		home = Paths.get(testHome);
 
 		// Start by reading the test properties
 		Properties testProps = new Properties();
