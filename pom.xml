@@ -325,51 +325,6 @@
 			</plugin>
 
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.4.0</version>
-				<executions>
-					<execution>
-						<id>Undeploy from glassfish</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>asadmin</executable>
-							<arguments>
-								<argument>undeploy</argument>
-								<argument>ids.server-${project.version}</argument>
-							</arguments>
-							<successCodes>
-								<code>0</code>
-								<code>1</code>
-							</successCodes>
-						</configuration>
-					</execution>
-					<execution>
-						<id>Deploy to glassfish</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>asadmin</executable>
-							<arguments>
-								<argument>deploy</argument>
-								<argument>--deploymentorder</argument>
-								<argument>120</argument>
-								<argument>--libraries</argument>
-								<argument>${storage.plugin}</argument>
-								<argument>target/ids.server-${project.version}.war</argument>
-							</arguments>
-						</configuration>
-					</execution>
-				</executions>
-
-			</plugin>
-
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-site-plugin</artifactId>
 				<version>3.5.1</version>
