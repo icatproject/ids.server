@@ -83,7 +83,7 @@ public class Setup {
 		long time = System.currentTimeMillis();
 
 		ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py", "src/test/resources/" + runPropertyFile,
-				containerHome, serverUrl);
+				home.toString(), containerHome, serverUrl);
 		System.out.println(sc.getStdout() + " " + sc.getStderr());
 		System.out.println(
 				"Setting up " + runPropertyFile + " took " + (System.currentTimeMillis() - time) / 1000. + "seconds");
