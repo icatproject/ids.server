@@ -2,6 +2,7 @@
 from __future__ import print_function
 import sys
 import os
+from string import Template
 import tempfile
 from filecmp import cmp
 import glob
@@ -17,11 +18,16 @@ home = sys.argv[2]
 containerHome = sys.argv[3]
 icaturl = sys.argv[4]
 
+subst = dict(os.environ)
+subst['HOME'] = home
+
 try:
     tmpf = tempfile.NamedTemporaryFile(delete=False)
     name = tmpf.name
-    shutil.copy(propFile, name)
-    with open(name, "at") as f:
+    with open(name, "wt") as f:
+        with open(propFile, "rt") as s:
+            t = Template(s.read()).substitute(subst)
+            print(t, end="", file=f)
         print("icat.url = %s" % icaturl, file=f)
         print("testHome = %s" % home, file=f)
     if (os.path.exists("src/test/install/run.properties") and 
@@ -51,6 +57,11 @@ shutil.copy("src/main/scripts/setup", "src/test/install/")
 with ZipFile(glob.glob("target/ids.server-*-distro.zip")[0]) as z:
     with open("src/test/install/setup_utils.py", "wb") as f:
         f.write(z.read("ids.server/setup_utils.py"))
+
+with open("src/main/resources/logback.xml", "rt") as s:
+    with open("src/test/install/logback.xml", "wt") as f:
+        t = Template(s.read()).substitute(subst)
+        print(t, end="", file=f)
 
 p = subprocess.Popen(["./setup", "install"], cwd="src/test/install")
 p.wait()
