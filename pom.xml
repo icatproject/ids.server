@@ -11,7 +11,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<repoUrl>https://repo.icatproject.org/repo</repoUrl>
-		<storage.plugin>ids.storage_test-1.0.0-SNAPSHOT.jar</storage.plugin>
 		<project.scm.id>github</project.scm.id>
 	</properties>
 
