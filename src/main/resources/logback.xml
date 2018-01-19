@@ -14,12 +14,12 @@
 		</rollingPolicy>
 
 		<encoder>
-			<pattern>%date %level [%thread] %C{0} %L - %msg%n
+			<pattern>%date %level [%thread] %C{0} - %msg%n
 			</pattern>
 		</encoder>
 	</appender>
 
-	<root level="DEBUG">
+	<root level="INFO">
 		<appender-ref ref="FILE" />
 	</root>
 
