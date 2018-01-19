@@ -335,7 +335,7 @@ public class IdsBean {
 	public static String getLocation(long dfid, String location)
 			throws InsufficientPrivilegesException, InternalException {
 		if (location == null) {
-			throw new InsufficientPrivilegesException("location null");
+			throw new InternalException("location is null");
 		}
 		if (key == null) {
 			return location;
