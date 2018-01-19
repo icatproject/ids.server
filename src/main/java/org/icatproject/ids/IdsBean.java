@@ -1058,6 +1058,9 @@ public class IdsBean {
 				throw new BadRequestException(e.getMessage());
 			}
 		}
+		if (datafile.getLocation() == null) {
+			throw new NotFoundException("Datafile not found");
+		}
 
 		String location = getLocation(datafile.getId(), datafile.getLocation());
 
