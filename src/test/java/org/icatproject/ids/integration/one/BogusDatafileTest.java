@@ -63,7 +63,6 @@ public class BogusDatafileTest extends BaseTest {
 		datafileIds.add(dfb3.getId());
 	}
 
-	@Ignore("Test fails due to Issue #63")
 	@Test
 	public void getEmptyDataset() throws Exception {
 
@@ -75,7 +74,6 @@ public class BogusDatafileTest extends BaseTest {
 
 	}
 
-	@Ignore("Test fails due to Issue #63")
 	@Test
 	public void getNonEmptyDataset() throws Exception {
 
@@ -87,7 +85,6 @@ public class BogusDatafileTest extends BaseTest {
 
 	}
 
-	@Ignore("Test fails due to Issue #63")
 	@Test(expected = NotFoundException.class)
 	public void getBogusFile() throws Exception {
 
