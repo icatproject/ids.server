@@ -145,6 +145,8 @@ public class FiniteStateMachine {
 						if (!newOps.isEmpty()) {
 							deferredDfOpsQueue.putAll(newOps);
 							logger.debug("Adding {} operations to be scheduled next time round", newOps.size());
+						}
+						if (!deferredDfOpsQueue.isEmpty()) {
 							writeTime = 0L;
 						}
 						if (!writes.isEmpty()) {
