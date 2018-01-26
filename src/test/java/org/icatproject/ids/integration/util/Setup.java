@@ -33,6 +33,7 @@ public class Setup {
 	private String goodSessionId = null;
 	private String forbiddenSessionId = null;
 
+	private Path home;
 	private Path storageArchiveDir;
 	private Path storageDir;
 	private Path preparedCacheDir;
@@ -57,6 +58,13 @@ public class Setup {
 
 	public Setup(String runPropertyFile) throws Exception {
 
+		// Test home directory
+		String testHome = System.getProperty("testHome");
+		if (testHome == null) {
+			testHome = System.getProperty("user.home");
+		}
+		home = Paths.get(testHome);
+
 		// Start by reading the test properties
 		Properties testProps = new Properties();
 		InputStream is = Setup.class.getClassLoader().getResourceAsStream("test.properties");
@@ -72,15 +80,15 @@ public class Setup {
 
 		idsUrl = new URL(serverUrl + "/ids");
 
-		String home = System.getProperty("containerHome");
-		if (home == null) {
+		String containerHome = System.getProperty("containerHome");
+		if (containerHome == null) {
 			System.err.println("containerHome is not defined as a system property");
 		}
 
 		long time = System.currentTimeMillis();
 
 		ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py", "src/test/resources/" + runPropertyFile,
-				home, serverUrl);
+				home.toString(), containerHome, serverUrl);
 		System.out.println(sc.getStdout() + " " + sc.getStderr());
 		System.out.println(
 				"Setting up " + runPropertyFile + " took " + (System.currentTimeMillis() - time) / 1000. + "seconds");
@@ -91,7 +99,7 @@ public class Setup {
 		if (runProperties.has("key")) {
 			key = runProperties.getString("key");
 		}
-		updownDir = new File(new File(System.getProperty("user.home")), testProps.getProperty("updownDir")).toPath();
+		updownDir = home.resolve(testProps.getProperty("updownDir"));
 		icatUrl = runProperties.getURL("icat.url");
 		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
 				testProps.getProperty("authorizedIcatPassword"));
@@ -120,7 +128,7 @@ public class Setup {
 	}
 
 	public void setReliability(double d) throws IOException {
-		Path p = Paths.get(System.getProperty("user.home"), "reliability");
+		Path p = home.resolve("reliability");
 		try (BufferedWriter out = Files.newBufferedWriter(p)) {
 			out.write(d + "\n");
 		}
