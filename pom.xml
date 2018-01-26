@@ -11,7 +11,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<repoUrl>https://repo.icatproject.org/repo</repoUrl>
-		<storage.plugin>ids.storage_test-1.0.0-SNAPSHOT.jar</storage.plugin>
 		<project.scm.id>github</project.scm.id>
 	</properties>
 
@@ -330,38 +329,16 @@
 				<version>1.4.0</version>
 				<executions>
 					<execution>
-						<id>Undeploy from glassfish</id>
+						<id>Force install for first test</id>
 						<phase>pre-integration-test</phase>
 						<goals>
 							<goal>exec</goal>
 						</goals>
 						<configuration>
-							<executable>asadmin</executable>
+							<executable>rm</executable>
 							<arguments>
-								<argument>undeploy</argument>
-								<argument>ids.server-${project.version}</argument>
-							</arguments>
-							<successCodes>
-								<code>0</code>
-								<code>1</code>
-							</successCodes>
-						</configuration>
-					</execution>
-					<execution>
-						<id>Deploy to glassfish</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>asadmin</executable>
-							<arguments>
-								<argument>deploy</argument>
-								<argument>--deploymentorder</argument>
-								<argument>120</argument>
-								<argument>--libraries</argument>
-								<argument>${storage.plugin}</argument>
-								<argument>target/ids.server-${project.version}.war</argument>
+								<argument>-f</argument>
+								<argument>src/test/install/run.properties</argument>
 							</arguments>
 						</configuration>
 					</execution>
@@ -394,6 +371,7 @@
 						<serverUrl>${serverUrl}</serverUrl>
 						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
 						<containerHome>${containerHome}</containerHome>
+						<testHome>${testHome}</testHome>
 					</systemPropertyVariables>
 				</configuration>
 				<executions>
