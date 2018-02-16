@@ -19,7 +19,7 @@ public class DeleteTest extends BaseTest {
 
 	@Test(expected = DataNotOnlineException.class)
 	public void deleteFromUnrestoredDataset() throws Exception {
-		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 404);
+		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 503);
 	}
 
 	@Test

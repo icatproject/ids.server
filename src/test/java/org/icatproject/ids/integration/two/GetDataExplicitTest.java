@@ -64,7 +64,7 @@ public class GetDataExplicitTest extends BaseTest {
 	public void correctBehaviourTest() throws Exception {
 
 		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds), Flag.NONE,
-				0, 404)) {
+				0, 503)) {
 			fail("Should have thrown exception");
 		} catch (IdsException e) {
 			assertEquals(DataNotOnlineException.class, e.getClass());
@@ -123,7 +123,7 @@ public class GetDataExplicitTest extends BaseTest {
 	public void gettingDatafileAndDatasetShouldRestoreBothDatasetsTest() throws Exception {
 
 		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(2))
-				.addDataset(datasetIds.get(0)), Flag.NONE, 0, 404)) {
+				.addDataset(datasetIds.get(0)), Flag.NONE, 0, 503)) {
 			fail("Should throw exception");
 		} catch (DataNotOnlineException e) {
 			// All is well

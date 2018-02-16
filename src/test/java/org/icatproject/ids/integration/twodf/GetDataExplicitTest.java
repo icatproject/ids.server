@@ -64,7 +64,7 @@ public class GetDataExplicitTest extends BaseTest {
 	public void correctBehaviourTest() throws Exception {
 
 		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds), Flag.NONE,
-				0, 404)) {
+				0, 503)) {
 
 			fail("Should have thrown exception");
 		} catch (IdsException e) {
@@ -87,7 +87,7 @@ public class GetDataExplicitTest extends BaseTest {
 	public void gettingDatafileDoesNotRestoreItsDatasetTest() throws Exception {
 
 		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(2)),
-				Flag.NONE, 0, 404)) {
+				Flag.NONE, 0, 503)) {
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
@@ -95,7 +95,7 @@ public class GetDataExplicitTest extends BaseTest {
 
 		waitForIds();
 		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(3)),
-				Flag.NONE, 0, 404)) {
+				Flag.NONE, 0, 503)) {
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
@@ -107,7 +107,7 @@ public class GetDataExplicitTest extends BaseTest {
 	public void gettingDatasetUsesCacheTest() throws Exception {
 
 		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
-				Flag.NONE, 0, 404)) {
+				Flag.NONE, 0, 503)) {
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
@@ -126,7 +126,7 @@ public class GetDataExplicitTest extends BaseTest {
 	public void gettingDatafileAndDatasetShouldNotRestoreBothDatasetsTest() throws Exception {
 
 		try (InputStream z = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(2))
-				.addDataset(datasetIds.get(0)), Flag.NONE, 0, 404)) {
+				.addDataset(datasetIds.get(0)), Flag.NONE, 0, 503)) {
 			fail("Should throw exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
@@ -134,7 +134,7 @@ public class GetDataExplicitTest extends BaseTest {
 
 		waitForIds();
 		try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatasets(datasetIds),
-				Flag.NONE, 0, 404)) {
+				Flag.NONE, 0, 503)) {
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well
