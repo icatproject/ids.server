@@ -6,13 +6,17 @@
 
 	<h1>IDS Server Release Notes</h1>
 
-	<h2>1.8.1</h2>
-	<p>Bug fix release</p>
+	<h2>1.9.0</h2>
+	<p>Add a new Write API call and review the internal locking</p>
 	<ul>
+		<li>Add a new Write API call the triggers write to
+			archive storage.  (PR #67)</li>
+		<li>Review of the internal locking mechanism which
+			fixes various race conditions.  (PR #59)</li>
 		<li>Ignore Datafiles having the location attribute not set.  (Issue #63)</li>
 		<li>Add a configuration option "testHome" to be set in
 			settings.xml.  Files are created relative to
-			this directory when running the tests.</li>
+			this directory when running the tests.  (Issue #75)</li>
 		<li>Tests are now independent of locale.</li>
 		<li>Glassfish 4.0 is no longer supported</li>
 	</ul>
