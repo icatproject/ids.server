@@ -485,7 +485,7 @@ public class BaseTest {
 
 	}
 
-	static String getLocationFromDigest(Long id, String locationWithHash) {
+	protected String getLocationFromDigest(Long id, String locationWithHash) {
 		int i = locationWithHash.lastIndexOf(' ');
 		return locationWithHash.substring(0, i);
 	}

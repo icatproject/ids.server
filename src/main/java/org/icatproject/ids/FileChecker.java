@@ -75,8 +75,13 @@ public class FileChecker {
 			if (twoLevel) {
 				Dataset ds = (Dataset) eb;
 				logger.info("Checking Dataset " + ds.getId() + " (" + ds.getName() + ")");
-				List<Datafile> dfs = ds.getDatafiles();
-				if (!dfs.isEmpty()) {
+				Map<String, CrcAndLength> crcAndLength = new HashMap<>();
+				for (Datafile df : ds.getDatafiles()) {
+					if (df.getLocation() != null) {
+						crcAndLength.put(df.getName(), new CrcAndLength(df));
+					}
+				}
+				if (!crcAndLength.isEmpty()) {
 					String dfName = null;
 
 					DsInfo dsInfo;
@@ -86,15 +91,11 @@ public class FileChecker {
 						report(ds, dfName, "Reports: " + e.getClass().getSimpleName() + " " + e.getMessage());
 						return;
 					}
-					Map<String, CrcAndLength> crcAndLength = new HashMap<>();
 					Path tPath = null;
 					try {
 						tPath = Files.createTempFile(null, null);
 						archiveStorage.get(dsInfo, tPath);
 						try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tPath))) {
-							for (Datafile df : dfs) {
-								crcAndLength.put(df.getName(), new CrcAndLength(df));
-							}
 							ZipEntry ze = zis.getNextEntry();
 							while (ze != null) {
 								dfName = zipMapper.getFileName(ze.getName());
@@ -231,10 +232,10 @@ public class FileChecker {
 					}
 				} else {
 					if (maxId != null) {
-						query = "SELECT df FROM Datafile df WHERE df.id > " + maxId + " ORDER BY df.id LIMIT 0, "
+						query = "SELECT df FROM Datafile df WHERE df.id > " + maxId + " AND df.location IS NOT NULL ORDER BY df.id LIMIT 0, "
 								+ filesCheckParallelCount;
 					} else {
-						query = "SELECT df FROM Datafile df ORDER BY df.id LIMIT 0, " + filesCheckParallelCount;
+						query = "SELECT df FROM Datafile df WHERE df.location IS NOT NULL ORDER BY df.id LIMIT 0, " + filesCheckParallelCount;
 					}
 				}
 				List<Object> os = reader.search(query);

@@ -77,6 +77,9 @@ public class DsRestorer implements Runnable {
 					.getDatafiles();
 			Map<String, String> nameToLocalMap = new HashMap<>(datafiles.size());
 			for (Datafile datafile : datafiles) {
+				if (datafile.getLocation() == null) {
+					continue;
+				}
 				nameToLocalMap.put(datafile.getName(), IdsBean.getLocation(datafile.getId(), datafile.getLocation()));
 				size += datafile.getFileSize();
 				n++;
@@ -97,11 +100,7 @@ public class DsRestorer implements Runnable {
 			while (ze != null) {
 				String dfName = zipMapper.getFileName(ze.getName());
 				String location = nameToLocalMap.get(dfName);
-				if (location == null) {
-					logger.error("Unable to store " + dfName + " into " + dsInfo + " as no location found");
-				} else {
-					mainStorageInterface.put(zis, location);
-				}
+				mainStorageInterface.put(zis, location);
 				ze = zis.getNextEntry();
 			}
 			zis.close();

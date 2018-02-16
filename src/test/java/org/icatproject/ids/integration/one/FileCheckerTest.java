@@ -81,11 +81,6 @@ public class FileCheckerTest extends BaseTest {
 		Files.deleteIfExists(errorLog);
 		checkHas("Datafile", dfid, "Zoo\" does not contain hash.");
 
-		df.setLocation(null);
-		icatWS.update(sessionId, df);
-		Files.deleteIfExists(errorLog);
-		checkHas("Datafile", dfid, "location null");
-
 	}
 
 	private void checkHas(String type, Long id, String message) throws IOException, InterruptedException {

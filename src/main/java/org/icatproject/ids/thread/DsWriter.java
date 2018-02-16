@@ -69,6 +69,9 @@ public class DsWriter implements Runnable {
 				ZipOutputStream zos = new ZipOutputStream(
 						Files.newOutputStream(datasetCachePath, StandardOpenOption.CREATE));
 				for (Datafile datafile : datafiles) {
+					if (datafile.getLocation() == null) {
+						continue;
+					}
 					String location = IdsBean.getLocation(datafile.getId(), datafile.getLocation());
 					InputStream is = null;
 					try {

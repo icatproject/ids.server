@@ -335,7 +335,7 @@ public class IdsBean {
 	public static String getLocation(long dfid, String location)
 			throws InsufficientPrivilegesException, InternalException {
 		if (location == null) {
-			throw new InsufficientPrivilegesException("location null");
+			throw new InternalException("location is null");
 		}
 		if (key == null) {
 			return location;
@@ -1058,6 +1058,9 @@ public class IdsBean {
 				throw new BadRequestException(e.getMessage());
 			}
 		}
+		if (datafile.getLocation() == null) {
+			throw new NotFoundException("Datafile not found");
+		}
 
 		String location = getLocation(datafile.getId(), datafile.getLocation());
 
@@ -1173,7 +1176,10 @@ public class IdsBean {
 			if (size == 0) {
 				try {
 					if (dfids.size() != 0) {
-						icat.get(sessionId, "Datafile", dfids.get(0));
+						Datafile datafile = (Datafile) icat.get(sessionId, "Datafile", dfids.get(0));
+						if (datafile.getLocation() == null) {
+							throw new NotFoundException("Datafile not found");
+						}
 					}
 					if (dsids.size() != 0) {
 						icat.get(sessionId, "Dataset", dsids.get(0));
@@ -1252,7 +1258,7 @@ public class IdsBean {
 	}
 
 	private long getSizeFor(String sessionId, StringBuilder sb) throws InternalException {
-		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE df.id IN (" + sb.toString() + ")";
+		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE df.id IN (" + sb.toString() + ") AND df.location IS NOT NULL";
 		try {
 			return (Long) icat.search(sessionId, query).get(0);
 		} catch (IcatException_Exception e) {
@@ -1263,7 +1269,7 @@ public class IdsBean {
 	}
 
 	private long evalSizeFor(String sessionId, String where, StringBuilder sb) throws InternalException {
-		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE " + where + " IN (" + sb.toString() + ")";
+		String query = "SELECT SUM(df.fileSize) from Datafile df WHERE " + where + " IN (" + sb.toString() + ") AND df.location IS NOT NULL";
 		logger.debug("icat query for size: {}", query);
 		try {
 			return (Long) icat.search(sessionId, query).get(0);

@@ -109,7 +109,7 @@ public class DataSelection {
 			for (Long dfid : dfids) {
 				List<Object> dss = icat.search(sessionId,
 						"SELECT ds FROM Dataset ds JOIN ds.datafiles df WHERE df.id = " + dfid
-								+ " INCLUDE ds.investigation.facility");
+								+ " AND df.location IS NOT NULL INCLUDE ds.investigation.facility");
 				if (dss.size() == 1) {
 					Dataset ds = (Dataset) dss.get(0);
 					long dsid = ds.getId();
@@ -130,7 +130,7 @@ public class DataSelection {
 				Dataset ds = (Dataset) icat.get(sessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
 				dsInfos.put(dsid, new DsInfoImpl(ds));
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
-						+ dsid;
+						+ dsid + " AND df.location IS NOT NULL";
 				JsonArray result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
 						.readArray().getJsonArray(0);
 				if (result.getJsonNumber(2).longValueExact() == 0) { // Count 0
@@ -210,7 +210,7 @@ public class DataSelection {
 							visitId, facilityId, facilityName));
 
 					query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
-							+ dsid;
+							+ dsid + " AND df.location IS NOT NULL";
 					result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
 							.readArray().getJsonArray(0);
 					if (result.getJsonNumber(2).longValueExact() == 0) {
@@ -245,7 +245,7 @@ public class DataSelection {
 		if (count != 0) {
 			if (count <= maxEntities) {
 				String query = "SELECT df.id, df.name, df.location, df.createId, df.modId FROM Datafile df WHERE df.dataset.id = "
-						+ dsid + " AND df.id BETWEEN " + min + " AND " + max;
+						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + max;
 				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
@@ -257,12 +257,12 @@ public class DataSelection {
 			} else {
 				long half = (min + max) / 2;
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
-						+ dsid + " AND df.id BETWEEN " + min + " AND " + half;
+						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + half;
 				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDfs(dsid, result);
 				query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = " + dsid
-						+ " AND df.id BETWEEN " + (half + 1) + " AND " + max;
+						+ " AND df.location IS NOT NULL AND df.id BETWEEN " + (half + 1) + " AND " + max;
 				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDfs(dsid, result);
