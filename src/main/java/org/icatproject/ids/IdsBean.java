@@ -2078,4 +2078,81 @@ public class IdsBean {
 		}
 		return maybeOffline;
 	}
+
+	public void write(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
+			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException, 
+			       DataNotOnlineException {
+
+		long start = System.currentTimeMillis();
+
+		// Log and validate
+		logger.info("New webservice request: write " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
+				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+
+		validateUUID("sessionId", sessionId);
+
+		final DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+				datafileIds, Returns.DATASETS_AND_DATAFILES);
+
+		// Do it
+		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+
+		try (Lock lock = lockManager.lock(dsInfos.values(), LockType.SHARED)) {
+			if (twoLevel) {
+				try {
+					boolean maybeOffline = false;
+					if (storageUnit == StorageUnit.DATASET) {
+						for (DsInfo dsInfo : dsInfos.values()) {
+							if (fsm.getDsMaybeOffline().contains(dsInfo) ||
+							    (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) && 
+							     !mainStorage.exists(dsInfo))) {
+								maybeOffline = true;
+							}
+						}
+					} else if (storageUnit == StorageUnit.DATAFILE) {
+						for (DfInfoImpl dfInfo : dfInfos) {
+							if (fsm.getDfMaybeOffline().contains(dfInfo) || 
+							    !mainStorage.exists(dfInfo.getDfLocation())) {
+								maybeOffline = true;
+							}
+						}
+					}
+					if (maybeOffline) {
+						throw new DataNotOnlineException("Requested data is not online, write request refused");
+					}
+				} catch (IOException e) {
+					logger.error("I/O error " + e.getMessage() + " checking online");
+					throw new InternalException(e.getClass() + " " + e.getMessage());
+				}
+			}
+
+			if (storageUnit == StorageUnit.DATASET) {
+				for (DsInfo dsInfo : dsInfos.values()) {
+					fsm.queue(dsInfo, DeferredOp.WRITE);
+				}
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				for (DfInfoImpl dfInfo : dfInfos) {
+					fsm.queue(dfInfo, DeferredOp.WRITE);
+				}
+			}
+		} catch (AlreadyLockedException e) {
+			logger.debug("Could not acquire lock, write failed");
+			throw new DataNotOnlineException("Data is busy");
+		}
+
+		if (logSet.contains(CallType.MIGRATE)) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+					gen.write("userName", icat.getUserName(sessionId));
+					addIds(gen, investigationIds, datasetIds, datafileIds);
+					gen.writeEnd();
+				}
+				transmitter.processMessage("write", ip, baos.toString(), start);
+			} catch (IcatException_Exception e) {
+				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			}
+		}
+	}
 }

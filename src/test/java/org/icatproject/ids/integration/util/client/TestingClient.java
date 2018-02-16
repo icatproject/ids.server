@@ -864,4 +864,27 @@ public class TestingClient {
 		}
 	}
 
+	public void write(String sessionId, DataSelection data, Integer sc) throws NotImplementedException,
+			BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException,
+			DataNotOnlineException {
+
+		URI uri = getUri(getUriBuilder("write"));
+		List<NameValuePair> formparams = new ArrayList<>();
+		formparams.add(new BasicNameValuePair("sessionId", sessionId));
+		for (Entry<String, String> entry : data.getParameters().entrySet()) {
+			formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+		}
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpPost httpPost = new HttpPost(uri);
+			httpPost.setEntity(new UrlEncodedFormEntity(formparams));
+			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+				expectNothing(response, sc);
+			} catch (InsufficientStorageException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
 }
