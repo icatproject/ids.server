@@ -34,7 +34,7 @@ public class PutTest extends BaseTest {
 	public void putToUnrestoredDataset() throws Exception {
 
 		testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file1_"
-				+ timestamp, datasetIds.get(0), supportedDatafileFormat.getId(), null, 404);
+				+ timestamp, datasetIds.get(0), supportedDatafileFormat.getId(), null, 503);
 	}
 
 	@Test

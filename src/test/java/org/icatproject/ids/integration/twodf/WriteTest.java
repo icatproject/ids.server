@@ -98,7 +98,7 @@ public class WriteTest extends BaseTest {
 		testingClient.archive(sessionId, selection, 204);
 		waitForIds();
 		checkAbsent(dirOnFastStorage);
-		testingClient.write(sessionId, selection, 404);
+		testingClient.write(sessionId, selection, 503);
 	}
 
 	@Test(expected = BadRequestException.class)

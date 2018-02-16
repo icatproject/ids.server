@@ -26,7 +26,7 @@ public class LinkTest extends BaseTest {
 
 		String username = System.getProperty("user.name");
 		try {
-			testingClient.getLink(sessionId, datafileIds.get(0), username, 404);
+			testingClient.getLink(sessionId, datafileIds.get(0), username, 503);
 			fail("Should have thrown an exception");
 		} catch (DataNotOnlineException e) {
 			// All is well

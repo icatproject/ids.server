@@ -6,7 +6,7 @@ import java.net.HttpURLConnection;
 public class DataNotOnlineException extends IdsException {
 
 	public DataNotOnlineException(String msg) {
-		super(HttpURLConnection.HTTP_NOT_FOUND, msg);
+		super(HttpURLConnection.HTTP_UNAVAILABLE, msg);
 	}
 
 }
