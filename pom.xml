@@ -200,15 +200,8 @@
 							<httpStatusCode>
 								<httpCode>404</httpCode>
 								<document>explicit:
-									org.icatproject.ids.exceptions.DataNotOnlineException</document>
-								<defaultMessage>Data not online or not found.</defaultMessage>
-							</httpStatusCode>
-
-							<httpStatusCode>
-								<httpCode>404</httpCode>
-								<document>explicit:
 									org.icatproject.ids.exceptions.NotFoundException</document>
-								<defaultMessage>Data not online or not found.</defaultMessage>
+								<defaultMessage>Data not found.</defaultMessage>
 							</httpStatusCode>
 
 							<httpStatusCode>
@@ -237,6 +230,13 @@
 								<document>explicit:
 									org.icatproject.ids.exceptions.NotImplementedException</document>
 								<defaultMessage>Not implemented.</defaultMessage>
+							</httpStatusCode>
+
+							<httpStatusCode>
+								<httpCode>503</httpCode>
+								<document>explicit:
+									org.icatproject.ids.exceptions.DataNotOnlineException</document>
+								<defaultMessage>Data not online.</defaultMessage>
 							</httpStatusCode>
 						</httpStatusCodes>
 					</restModel>
