@@ -31,7 +31,7 @@
 
 	<scm>
 		<connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
-		<developerConnection>scm:git:https://github.com/icatproject/ids.server.git</developerConnection>
+		<developerConnection>scm:git:git@github.com:icatproject/ids.server.git</developerConnection>
 		<url>https://github.com/icatproject/ids.server</url>
 		<tag>v1.8.0</tag>
 	</scm>
