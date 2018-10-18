@@ -35,24 +35,27 @@ public class DfArchiver implements Runnable {
 
 	@Override
 	public void run() {
-		for (DfInfo dfInfo : dfInfos) {
-			try {
-				if (Files.exists(markerDir.resolve(Long.toString(dfInfo.getDfId())))) {
-					logger.error("Archive of " + dfInfo
-							+ " not carried out because a write to secondary storage operation failed previously");
-				} else {
-					String dfLocation = dfInfo.getDfLocation();
-					mainStorageInterface.delete(dfLocation, dfInfo.getCreateId(), dfInfo.getModId());
-					logger.debug("Archive of " + dfInfo + " completed");
+		try {
+			for (DfInfo dfInfo : dfInfos) {
+				try {
+					if (Files.exists(markerDir.resolve(Long.toString(dfInfo.getDfId())))) {
+						logger.error("Archive of " + dfInfo
+								+ " not carried out because a write to secondary storage operation failed previously");
+					} else {
+						String dfLocation = dfInfo.getDfLocation();
+						mainStorageInterface.delete(dfLocation, dfInfo.getCreateId(), dfInfo.getModId());
+						logger.debug("Archive of " + dfInfo + " completed");
+					}
+				} catch (Exception e) {
+					logger.error("Archive of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+				} finally {
+					fsm.removeFromChanging(dfInfo);
 				}
-			} catch (Exception e) {
-				logger.error("Archive of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
-			} finally {
-				fsm.removeFromChanging(dfInfo);
 			}
-		}
-		for (Lock l: locks) {
-			l.release();
+		} finally {
+			for (Lock l: locks) {
+				l.release();
+			}
 		}
 	}
 }
