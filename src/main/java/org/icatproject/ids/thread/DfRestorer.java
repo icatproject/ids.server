@@ -67,19 +67,14 @@ public class DfRestorer implements Runnable {
 
 			Set<DfInfo> failures = archiveStorageInterface.restore(mainStorageInterface, dfInfos);
 			for (DfInfo dfInfo : dfInfos) {
-				try {
-					if (failures.contains(dfInfo)) {
-						fsm.recordFailure(dfInfo.getDfId());
-						logger.error("Restore of " + dfInfo + " failed");
-					} else {
-						fsm.recordSuccess(dfInfo.getDfId());
-						logger.debug("Restore of " + dfInfo + " completed");
-					}
-				} catch (Exception e) {
-					logger.error("Restore of " + dfInfo + " failed " + e.getClass() + " " + e.getMessage());
-				} finally {
-					fsm.removeFromChanging(dfInfo);
+				if (failures.contains(dfInfo)) {
+					fsm.recordFailure(dfInfo.getDfId());
+					logger.error("Restore of " + dfInfo + " failed");
+				} else {
+					fsm.recordSuccess(dfInfo.getDfId());
+					logger.debug("Restore of " + dfInfo + " completed");
 				}
+				fsm.removeFromChanging(dfInfo);
 			}
 		} catch (Exception e) {
 			for (DfInfo dfInfo : dfInfos) {
