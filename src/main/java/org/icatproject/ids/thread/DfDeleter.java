@@ -32,19 +32,22 @@ public class DfDeleter implements Runnable {
 
 	@Override
 	public void run() {
-		for (DfInfo dfInfo : dfInfos) {
-			try {
-				String dfLocation = dfInfo.getDfLocation();
-				archiveStorageInterface.delete(dfLocation);
-				logger.debug("Delete of " + dfInfo + " completed");
-			} catch (Exception e) {
-				logger.error("Delete of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
-			} finally {
-				fsm.removeFromChanging(dfInfo);
+		try {
+			for (DfInfo dfInfo : dfInfos) {
+				try {
+					String dfLocation = dfInfo.getDfLocation();
+					archiveStorageInterface.delete(dfLocation);
+					logger.debug("Delete of " + dfInfo + " completed");
+				} catch (Exception e) {
+					logger.error("Delete of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+				} finally {
+					fsm.removeFromChanging(dfInfo);
+				}
 			}
-		}
-		for (Lock l: locks) {
-			l.release();
+		} finally {
+			for (Lock l: locks) {
+				l.release();
+			}
 		}
 	}
 }

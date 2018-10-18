@@ -45,26 +45,26 @@ public class DfRestorer implements Runnable {
 	 */
 	@Override
 	public void run() {
-		/*
-		 * This code avoids unnecessary calls to restore files. It will not
-		 * generally remove anything from the list of files to restore as
-		 * pointless restores are normally filtered out earlier.
-		 */
-		Iterator<DfInfo> iter = dfInfos.iterator();
-		while (iter.hasNext()) {
-			DfInfo dfInfo = iter.next();
-			try {
-				if (mainStorageInterface.exists(dfInfo.getDfLocation())) {
-					iter.remove();
-					fsm.removeFromChanging(dfInfo);
-				}
-			} catch (IOException e) {
-				logger.error("Check on existence of {} failed with {} {}", dfInfo.getDfLocation(), e.getClass(),
-						e.getMessage());
-			}
-		}
-
 		try {
+			/*
+			 * This code avoids unnecessary calls to restore files. It will not
+			 * generally remove anything from the list of files to restore as
+			 * pointless restores are normally filtered out earlier.
+			 */
+			Iterator<DfInfo> iter = dfInfos.iterator();
+			while (iter.hasNext()) {
+				DfInfo dfInfo = iter.next();
+				try {
+					if (mainStorageInterface.exists(dfInfo.getDfLocation())) {
+						iter.remove();
+						fsm.removeFromChanging(dfInfo);
+					}
+				} catch (IOException e) {
+					logger.error("Check on existence of {} failed with {} {}", dfInfo.getDfLocation(), e.getClass(),
+							e.getMessage());
+				}
+			}
+
 			Set<DfInfo> failures = archiveStorageInterface.restore(mainStorageInterface, dfInfos);
 			for (DfInfo dfInfo : dfInfos) {
 				if (failures.contains(dfInfo)) {
@@ -76,15 +76,15 @@ public class DfRestorer implements Runnable {
 				}
 				fsm.removeFromChanging(dfInfo);
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			for (DfInfo dfInfo : dfInfos) {
 				logger.error("Restore of " + dfInfo + " failed " + e.getClass() + " " + e.getMessage());
 				fsm.removeFromChanging(dfInfo);
 			}
+		} finally {
+			for (Lock l: locks) {
+				l.release();
+			}
 		}
-		for (Lock l: locks) {
-			l.release();
-		}
-
 	}
 }
