@@ -84,7 +84,7 @@
 		<dependency>
 			<groupId>org.icatproject</groupId>
 			<artifactId>ids.plugin</artifactId>
-			<version>1.3.2-SNAPSHOT</version>
+			<version>1.4.1-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

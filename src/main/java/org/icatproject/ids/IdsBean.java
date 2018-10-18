@@ -2160,6 +2160,9 @@ public class IdsBean {
 		} catch (AlreadyLockedException e) {
 			logger.debug("Could not acquire lock, write failed");
 			throw new DataNotOnlineException("Data is busy");
+		} catch (IOException e) {
+			logger.error("I/O error " + e.getMessage() + " writing");
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
 		if (logSet.contains(CallType.MIGRATE)) {
