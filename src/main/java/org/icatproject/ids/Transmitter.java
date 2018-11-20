@@ -38,7 +38,7 @@ public class Transmitter {
 					.lookup(propertyHandler.getJmsTopicConnectionFactory());
 			topicConnection = topicConnectionFactory.createTopicConnection();
 			topic = (Topic) ic.lookup("jms/IDS/log");
-			logger.info("Transmitter created");
+			logger.info("Notification Transmitter created");
 		} catch (JMSException | NamingException e) {
 			logger.error(fatal, "Problem with JMS " + e);
 			throw new IllegalStateException(e.getMessage());
@@ -52,7 +52,7 @@ public class Transmitter {
 			if (topicConnection != null) {
 				topicConnection.close();
 			}
-			logger.info("Transmitter closing down");
+			logger.info("Notification Transmitter closing down");
 		} catch (JMSException e) {
 			throw new IllegalStateException(e.getMessage());
 		}
