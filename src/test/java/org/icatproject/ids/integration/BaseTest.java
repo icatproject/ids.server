@@ -293,7 +293,7 @@ public class BaseTest {
 
 			Datafile df4 = new Datafile();
 			df4.setName("df4_" + timestamp);
-			df4.setLocation(ds2Loc + UUID.randomUUID());
+			df4.setLocation(ds2Loc + "Person's file");
 			df4.setDataset(ds2);
 			writeToFile(df4, "df4 test content very compressible very compressible", key);
 
