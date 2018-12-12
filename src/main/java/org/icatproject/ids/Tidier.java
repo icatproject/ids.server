@@ -172,7 +172,7 @@ public class Tidier {
 
 	}
 
-	private final static Logger logger = LoggerFactory.getLogger(Tidier.class);;
+	private final static Logger logger = LoggerFactory.getLogger(Tidier.class);
 
 	static boolean addStringConstraint(StringBuilder sb, String var, String value, boolean andNeeded) {
 		if (value != null) {
