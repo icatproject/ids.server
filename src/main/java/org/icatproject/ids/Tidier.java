@@ -170,35 +170,35 @@ public class Tidier {
 			}
 		}
 
-		private boolean addStringConstraint(StringBuilder sb, String var, String value, boolean andNeeded) {
-			if (value != null) {
-				if (andNeeded) {
-					sb.append(" AND ");
-				} else {
-					sb.append(" ");
-					andNeeded = true;
-				}
-				sb.append(var + " = '" + value + "'");
-			}
-			return andNeeded;
-		}
-
-		private boolean addNumericConstraint(StringBuilder sb, String var, Long value, boolean andNeeded) {
-			if (value != null) {
-				if (andNeeded) {
-					sb.append(" AND ");
-				} else {
-					sb.append(" ");
-					andNeeded = true;
-				}
-				sb.append(var + " = " + value);
-			}
-			return andNeeded;
-		}
-
 	}
 
 	private final static Logger logger = LoggerFactory.getLogger(Tidier.class);;
+
+	static boolean addStringConstraint(StringBuilder sb, String var, String value, boolean andNeeded) {
+		if (value != null) {
+			if (andNeeded) {
+				sb.append(" AND ");
+			} else {
+				sb.append(" ");
+				andNeeded = true;
+			}
+			sb.append(var + " = '" + value.replaceAll("'", "''") + "'");
+		}
+		return andNeeded;
+	}
+
+	static boolean addNumericConstraint(StringBuilder sb, String var, Long value, boolean andNeeded) {
+		if (value != null) {
+			if (andNeeded) {
+				sb.append(" AND ");
+			} else {
+				sb.append(" ");
+				andNeeded = true;
+			}
+			sb.append(var + " = " + value);
+		}
+		return andNeeded;
+	}
 
 	static void cleanPreparedDir(Path preparedDir, int preparedCount) throws IOException {
 

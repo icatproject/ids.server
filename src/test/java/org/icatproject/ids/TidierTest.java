@@ -2,6 +2,7 @@ package org.icatproject.ids;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
@@ -82,4 +83,22 @@ public class TidierTest {
 		assertFalse(Files.exists(pf));
 	}
 
+	@Test
+	public void testAddStringConstraint() throws Exception {
+		StringBuilder sb1 = new StringBuilder();
+		boolean andNeeded = Tidier.addStringConstraint(sb1, "df.location", "/path/to/normal/file", false);
+		assertEquals(" df.location = '/path/to/normal/file'", sb1.toString());
+
+		/* Fix error where a file path contains an apostrophe */
+		StringBuilder sb2 = new StringBuilder();
+		andNeeded = Tidier.addStringConstraint(sb2, "df.location", "/path/to/Person's Files/myscript.py", false);
+		assertEquals(" df.location = '/path/to/Person''s Files/myscript.py'", sb2.toString());
+	}
+
+	@Test
+	public void testAddNumericConstraint() throws Exception {
+		StringBuilder sb3 = new StringBuilder();
+		boolean andNeeded = Tidier.addNumericConstraint(sb3, "df.id", 12345L, false);
+		assertEquals(" df.id = 12345", sb3.toString());
+	}
 }

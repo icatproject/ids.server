@@ -711,7 +711,7 @@ public class IdsBean {
 				String location = dfInfo.getDfLocation();
 				try {
 					if ((long) reader
-							.search("SELECT COUNT(df) FROM Datafile df WHERE df.location LIKE '" + location + "%'")
+							.search("SELECT COUNT(df) FROM Datafile df WHERE df.location LIKE '" + location.replaceAll("'", "''") + "%'")
 							.get(0) == 0) {
 						if (mainStorage.exists(location)) {
 							logger.debug("Delete physical file " + location + " from main storage");
