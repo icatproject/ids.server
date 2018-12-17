@@ -62,13 +62,8 @@ public class DsRestorer implements Runnable {
 			 * generally do anything as pointless restores are normally filtered
 			 * out earlier.
 			 */
-			try {
-				if (mainStorageInterface.exists(dsInfo)) {
-					return;
-				}
-			} catch (IOException e) {
-				logger.error("Check on existence of {} failed with {} {}", dsInfo.getDsLocation(), e.getClass(),
-						e.getMessage());
+			if (mainStorageInterface.exists(dsInfo)) {
+				return;
 			}
 
 			long size = 0;

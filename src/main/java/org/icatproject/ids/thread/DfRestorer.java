@@ -54,14 +54,9 @@ public class DfRestorer implements Runnable {
 			Iterator<DfInfo> iter = dfInfos.iterator();
 			while (iter.hasNext()) {
 				DfInfo dfInfo = iter.next();
-				try {
-					if (mainStorageInterface.exists(dfInfo.getDfLocation())) {
-						iter.remove();
-						fsm.removeFromChanging(dfInfo);
-					}
-				} catch (IOException e) {
-					logger.error("Check on existence of {} failed with {} {}", dfInfo.getDfLocation(), e.getClass(),
-							e.getMessage());
+				if (mainStorageInterface.exists(dfInfo.getDfLocation())) {
+					iter.remove();
+					fsm.removeFromChanging(dfInfo);
 				}
 			}
 
