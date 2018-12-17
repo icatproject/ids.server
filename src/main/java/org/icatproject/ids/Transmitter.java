@@ -28,10 +28,6 @@ public class Transmitter {
 
 	private TopicConnection topicConnection;
 
-	private Session jmsSession;
-
-	private MessageProducer jmsProducer;
-
 	@PostConstruct
 	private void init() {
 
@@ -42,9 +38,7 @@ public class Transmitter {
 					.lookup(propertyHandler.getJmsTopicConnectionFactory());
 			topicConnection = topicConnectionFactory.createTopicConnection();
 			topic = (Topic) ic.lookup("jms/IDS/log");
-			jmsSession = topicConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-			jmsProducer = jmsSession.createProducer(topic);
-			logger.info("Transmitter created");
+			logger.info("Notification Transmitter created");
 		} catch (JMSException | NamingException e) {
 			logger.error(fatal, "Problem with JMS " + e);
 			throw new IllegalStateException(e.getMessage());
@@ -55,25 +49,23 @@ public class Transmitter {
 	@PreDestroy()
 	private void exit() {
 		try {
-			if (jmsSession != null) {
-				jmsSession.close();
-			}
 			if (topicConnection != null) {
 				topicConnection.close();
 			}
-			logger.info("Transmitter closing down");
+			logger.info("Notification Transmitter closing down");
 		} catch (JMSException e) {
 			throw new IllegalStateException(e.getMessage());
 		}
 	}
 
 	public void processMessage(String operation, String ip, String body, long startMillis) {
-		try {
+		try (Session jmsSession = topicConnection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
 			TextMessage jmsg = jmsSession.createTextMessage(body);
 			jmsg.setStringProperty("operation", operation);
 			jmsg.setStringProperty("ip", ip);
 			jmsg.setLongProperty("millis", System.currentTimeMillis() - startMillis);
 			jmsg.setLongProperty("start", startMillis);
+			MessageProducer jmsProducer = jmsSession.createProducer(topic);
 			jmsProducer.send(jmsg);
 			logger.debug("Sent jms message " + operation + " " + ip);
 		} catch (JMSException e) {

@@ -7,10 +7,14 @@
 	<h1>IDS Server Release Notes</h1>
 
 	<h2>1.9.1</h2>
-	<p>Bugfix - not yet released!</p>
+	<p>Bug fix release</p>
 	<ul>
 		<li>Fix uncaught exception in DfRestorer can cause restoration to stall
 			until IDS is restarted.  (Issue #87)</li>
+		<li>Fix once again JMS Session not closed if an exception is thrown (Issue #85).
+			The previous fix from 1.9.0 was not thread safe.</li>
+		<li>Fix: must escape single quote character in datafile location values when
+			building JPQL queries (Issue #92).</li>
 	</ul>
 
 	<h2>1.9.0</h2>
