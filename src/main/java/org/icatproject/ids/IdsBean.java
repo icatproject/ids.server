@@ -1723,7 +1723,12 @@ public class IdsBean {
 
 				CRC32 crc = new CRC32();
 				CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
-				String location = mainStorage.put(dsInfo, name, is);
+				String location;
+				try {
+					location = mainStorage.put(dsInfo, name, is);
+				} catch (IllegalArgumentException e) {
+					throw new BadRequestException("Illegal filename or dataset: " + e.getMessage());
+				}
 				is.close();
 				long checksum = crc.getValue();
 				long size = is.getSize();
