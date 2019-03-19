@@ -139,11 +139,7 @@ public class IdsBean {
 		@Override
 		public Void call() throws Exception {
 			for (DfInfoImpl dfInfo : dfInfos) {
-				try {
-					restoreIfOffline(dfInfo);
-				} catch (IOException e) {
-					logger.error("I/O error " + e.getMessage() + " for " + dfInfo);
-				}
+				restoreIfOffline(dfInfo);
 			}
 			return null;
 		}
@@ -162,11 +158,7 @@ public class IdsBean {
 		@Override
 		public Void call() throws Exception {
 			for (DsInfo dsInfo : dsInfos) {
-				try {
-					restoreIfOffline(dsInfo, emptyDs);
-				} catch (IOException e) {
-					logger.error("I/O error " + e.getMessage() + " for " + dsInfo);
-				}
+				restoreIfOffline(dsInfo, emptyDs);
 			}
 			return null;
 		}
@@ -622,36 +614,29 @@ public class IdsBean {
 	private void checkOnline(Collection<DsInfo> dsInfos, Set<Long> emptyDatasets,
 			Set<DfInfoImpl> dfInfos)
 			throws InternalException, DataNotOnlineException {
-		try {
-			if (storageUnit == StorageUnit.DATASET) {
-				boolean maybeOffline = false;
-				for (DsInfo dsInfo : dsInfos) {
-					if (restoreIfOffline(dsInfo, emptyDatasets)) {
-						maybeOffline = true;
-					}
-				}
-				if (maybeOffline) {
-					throw new DataNotOnlineException(
-							"Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				boolean maybeOffline = false;
-				for (DfInfoImpl dfInfo : dfInfos) {
-					if (restoreIfOffline(dfInfo)) {
-						maybeOffline = true;
-					}
-
-				}
-				if (maybeOffline) {
-					throw new DataNotOnlineException(
-							"Before getting a datafile, it must be restored, restoration requested automatically");
+		if (storageUnit == StorageUnit.DATASET) {
+			boolean maybeOffline = false;
+			for (DsInfo dsInfo : dsInfos) {
+				if (restoreIfOffline(dsInfo, emptyDatasets)) {
+					maybeOffline = true;
 				}
 			}
-		} catch (IOException e) {
-			logger.error("I/O error " + e.getMessage() + " checking online");
-			throw new InternalException(e.getClass() + " " + e.getMessage());
+			if (maybeOffline) {
+				throw new DataNotOnlineException(
+						"Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
+			}
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			boolean maybeOffline = false;
+			for (DfInfoImpl dfInfo : dfInfos) {
+				if (restoreIfOffline(dfInfo)) {
+					maybeOffline = true;
+				}
+			}
+			if (maybeOffline) {
+				throw new DataNotOnlineException(
+						"Before getting a datafile, it must be restored, restoration requested automatically");
+			}
 		}
-
 	}
 
 	public void delete(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
@@ -1303,53 +1288,48 @@ public class IdsBean {
 		// Do it
 		Status status = Status.ONLINE;
 
-		try {
-			if (storageUnit == StorageUnit.DATASET) {
-				DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
-						datafileIds, Returns.DATASETS);
-				Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+		if (storageUnit == StorageUnit.DATASET) {
+			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+					datafileIds, Returns.DATASETS);
+			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 
-				Set<DsInfo> restoring = fsm.getDsRestoring();
-				Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
-				Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
-				for (DsInfo dsInfo : dsInfos.values()) {
-					fsm.checkFailure(dsInfo.getDsId());
-					if (restoring.contains(dsInfo)) {
-						status = Status.RESTORING;
-					} else if (maybeOffline.contains(dsInfo)) {
-						status = Status.ARCHIVED;
-						break;
-					} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-						status = Status.ARCHIVED;
-						break;
-					}
+			Set<DsInfo> restoring = fsm.getDsRestoring();
+			Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
+			Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
+			for (DsInfo dsInfo : dsInfos.values()) {
+				fsm.checkFailure(dsInfo.getDsId());
+				if (restoring.contains(dsInfo)) {
+					status = Status.RESTORING;
+				} else if (maybeOffline.contains(dsInfo)) {
+					status = Status.ARCHIVED;
+					break;
+				} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+					status = Status.ARCHIVED;
+					break;
 				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
-						datafileIds, Returns.DATAFILES);
-				Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-
-				Set<DfInfo> restoring = fsm.getDfRestoring();
-				Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
-				for (DfInfo dfInfo : dfInfos) {
-					fsm.checkFailure(dfInfo.getDfId());
-					if (restoring.contains(dfInfo)) {
-						status = Status.RESTORING;
-					} else if (maybeOffline.contains(dfInfo)) {
-						status = Status.ARCHIVED;
-						break;
-					} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-						status = Status.ARCHIVED;
-						break;
-					}
-				}
-			} else {
-				// Throw exception if selection does not exist
-				new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 			}
-		} catch (IOException e) {
-			logger.error("I/O Exception " + e.getMessage() + " thrown");
-			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
+					datafileIds, Returns.DATAFILES);
+			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+
+			Set<DfInfo> restoring = fsm.getDfRestoring();
+			Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
+			for (DfInfo dfInfo : dfInfos) {
+				fsm.checkFailure(dfInfo.getDfId());
+				if (restoring.contains(dfInfo)) {
+					status = Status.RESTORING;
+				} else if (maybeOffline.contains(dfInfo)) {
+					status = Status.ARCHIVED;
+					break;
+				} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
+					status = Status.ARCHIVED;
+					break;
+				}
+			}
+		} else {
+			// Throw exception if selection does not exist
+			new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 		}
 
 		logger.debug("Status is " + status.name());
@@ -1484,63 +1464,58 @@ public class IdsBean {
 				}
 			}
 
-			try {
-				if (storageUnit == StorageUnit.DATASET) {
-					Collection<DsInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
-							: preparedJson.dsInfos.tailMap(status.fromDsElement).values();
-					logger.debug("Will check online status of {} entries", toCheck.size());
+			if (storageUnit == StorageUnit.DATASET) {
+				Collection<DsInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
+						: preparedJson.dsInfos.tailMap(status.fromDsElement).values();
+				logger.debug("Will check online status of {} entries", toCheck.size());
+				for (DsInfo dsInfo : toCheck) {
+					fsm.checkFailure(dsInfo.getDsId());
+					if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
+						prepared = false;
+						status.fromDsElement = dsInfo.getDsId();
+						toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
+						logger.debug("Will check in background status of {} entries", toCheck.size());
+						status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets));
+						break;
+					}
+				}
+				if (prepared) {
+					toCheck = status.fromDsElement == null ? Collections.emptySet()
+							: preparedJson.dsInfos.headMap(status.fromDsElement).values();
+					logger.debug("Will check finally online status of {} entries", toCheck.size());
 					for (DsInfo dsInfo : toCheck) {
 						fsm.checkFailure(dsInfo.getDsId());
 						if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
 							prepared = false;
-							status.fromDsElement = dsInfo.getDsId();
-							toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
-							logger.debug("Will check in background status of {} entries", toCheck.size());
-							status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets));
-							break;
 						}
 					}
-					if (prepared) {
-						toCheck = status.fromDsElement == null ? Collections.emptySet()
-								: preparedJson.dsInfos.headMap(status.fromDsElement).values();
-						logger.debug("Will check finally online status of {} entries", toCheck.size());
-						for (DsInfo dsInfo : toCheck) {
-							fsm.checkFailure(dsInfo.getDsId());
-							if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
-								prepared = false;
-							}
-						}
+				}
+			} else if (storageUnit == StorageUnit.DATAFILE) {
+				SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
+						: preparedJson.dfInfos.tailSet(status.fromDfElement);
+				logger.debug("Will check online status of {} entries", toCheck.size());
+				for (DfInfoImpl dfInfo : toCheck) {
+					fsm.checkFailure(dfInfo.getDfId());
+					if (restoreIfOffline(dfInfo)) {
+						prepared = false;
+						status.fromDfElement = dfInfo;
+						toCheck = preparedJson.dfInfos.tailSet(status.fromDfElement);
+						logger.debug("Will check in background status of {} entries", toCheck.size());
+						status.future = threadPool.submit(new RunPrepDfCheck(toCheck));
+						break;
 					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
-							: preparedJson.dfInfos.tailSet(status.fromDfElement);
-					logger.debug("Will check online status of {} entries", toCheck.size());
+				}
+				if (prepared) {
+					toCheck = status.fromDfElement == null ? new TreeSet<>()
+							: preparedJson.dfInfos.headSet(status.fromDfElement);
+					logger.debug("Will check finally online status of {} entries", toCheck.size());
 					for (DfInfoImpl dfInfo : toCheck) {
 						fsm.checkFailure(dfInfo.getDfId());
 						if (restoreIfOffline(dfInfo)) {
 							prepared = false;
-							status.fromDfElement = dfInfo;
-							toCheck = preparedJson.dfInfos.tailSet(status.fromDfElement);
-							logger.debug("Will check in background status of {} entries", toCheck.size());
-							status.future = threadPool.submit(new RunPrepDfCheck(toCheck));
-							break;
-						}
-					}
-					if (prepared) {
-						toCheck = status.fromDfElement == null ? new TreeSet<>()
-								: preparedJson.dfInfos.headSet(status.fromDfElement);
-						logger.debug("Will check finally online status of {} entries", toCheck.size());
-						for (DfInfoImpl dfInfo : toCheck) {
-							fsm.checkFailure(dfInfo.getDfId());
-							if (restoreIfOffline(dfInfo)) {
-								prepared = false;
-							}
 						}
 					}
 				}
-			} catch (IOException e) {
-				logger.error("I/O error " + e.getMessage() + " isPrepared of " + preparedId);
-				throw new InternalException(e.getClass() + " " + e.getMessage());
 			}
 
 			if (logSet.contains(CallType.INFO)) {
@@ -1748,7 +1723,12 @@ public class IdsBean {
 
 				CRC32 crc = new CRC32();
 				CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
-				String location = mainStorage.put(dsInfo, name, is);
+				String location;
+				try {
+					location = mainStorage.put(dsInfo, name, is);
+				} catch (IllegalArgumentException e) {
+					throw new BadRequestException("Illegal filename or dataset: " + e.getMessage());
+				}
 				is.close();
 				long checksum = crc.getValue();
 				long size = is.getSize();
@@ -2063,7 +2043,7 @@ public class IdsBean {
 		}
 	}
 
-	private boolean restoreIfOffline(DfInfoImpl dfInfo) throws InternalException, IOException {
+	private boolean restoreIfOffline(DfInfoImpl dfInfo) throws InternalException {
 		boolean maybeOffline = false;
 		if (fsm.getDfMaybeOffline().contains(dfInfo)) {
 			maybeOffline = true;
@@ -2074,7 +2054,7 @@ public class IdsBean {
 		return maybeOffline;
 	}
 
-	private boolean restoreIfOffline(DsInfo dsInfo, Set<Long> emptyDatasets) throws InternalException, IOException {
+	private boolean restoreIfOffline(DsInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
 		boolean maybeOffline = false;
 		if (fsm.getDsMaybeOffline().contains(dsInfo)) {
 			maybeOffline = true;
@@ -2106,30 +2086,25 @@ public class IdsBean {
 
 		try (Lock lock = lockManager.lock(dsInfos.values(), LockType.SHARED)) {
 			if (twoLevel) {
-				try {
-					boolean maybeOffline = false;
-					if (storageUnit == StorageUnit.DATASET) {
-						for (DsInfo dsInfo : dsInfos.values()) {
-							if (fsm.getDsMaybeOffline().contains(dsInfo) ||
-							    (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) && 
-							     !mainStorage.exists(dsInfo))) {
-								maybeOffline = true;
-							}
-						}
-					} else if (storageUnit == StorageUnit.DATAFILE) {
-						for (DfInfoImpl dfInfo : dfInfos) {
-							if (fsm.getDfMaybeOffline().contains(dfInfo) || 
-							    !mainStorage.exists(dfInfo.getDfLocation())) {
-								maybeOffline = true;
-							}
+				boolean maybeOffline = false;
+				if (storageUnit == StorageUnit.DATASET) {
+					for (DsInfo dsInfo : dsInfos.values()) {
+						if (fsm.getDsMaybeOffline().contains(dsInfo) ||
+						    (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) && 
+						     !mainStorage.exists(dsInfo))) {
+							maybeOffline = true;
 						}
 					}
-					if (maybeOffline) {
-						throw new DataNotOnlineException("Requested data is not online, write request refused");
+				} else if (storageUnit == StorageUnit.DATAFILE) {
+					for (DfInfoImpl dfInfo : dfInfos) {
+						if (fsm.getDfMaybeOffline().contains(dfInfo) || 
+						    !mainStorage.exists(dfInfo.getDfLocation())) {
+							maybeOffline = true;
+						}
 					}
-				} catch (IOException e) {
-					logger.error("I/O error " + e.getMessage() + " checking online");
-					throw new InternalException(e.getClass() + " " + e.getMessage());
+				}
+				if (maybeOffline) {
+					throw new DataNotOnlineException("Requested data is not online, write request refused");
 				}
 			}
 
