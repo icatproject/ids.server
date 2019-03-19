@@ -18,7 +18,8 @@ maxIdsInQuery = 1000
 # Properties for archive storage
 plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage
 plugin.archive.dir = ${HOME}/ids/archive/
-writeDelaySeconds = 60
+delayDatasetWritesSeconds = 60
+delayDatafileOperationsSeconds = 60
 startArchivingLevel1024bytes = 5000000
 stopArchivingLevel1024bytes =  4000000
 storageUnit = dataset

@@ -55,8 +55,8 @@ public class FiniteStateMachine {
 		public void run() {
 			try {
 				synchronized (deferredDfOpsQueue) {
-					if (writeTime != null && System.currentTimeMillis() > writeTime && !deferredDfOpsQueue.isEmpty()) {
-						writeTime = null;
+					if (processOpsTime != null && System.currentTimeMillis() > processOpsTime && !deferredDfOpsQueue.isEmpty()) {
+						processOpsTime = null;
 						logger.debug("deferredDfOpsQueue has " + deferredDfOpsQueue.size() + " entries");
 						List<DfInfo> writes = new ArrayList<>();
 						List<DfInfo> archives = new ArrayList<>();
@@ -147,7 +147,7 @@ public class FiniteStateMachine {
 							logger.debug("Adding {} operations to be scheduled next time round", newOps.size());
 						}
 						if (!deferredDfOpsQueue.isEmpty()) {
-							writeTime = 0L;
+							processOpsTime = 0L;
 						}
 						if (!writes.isEmpty()) {
 							logger.debug("Launch thread to process " + writes.size() + " writes");
@@ -257,7 +257,11 @@ public class FiniteStateMachine {
 
 	private static Logger logger = LoggerFactory.getLogger(FiniteStateMachine.class);
 
-	private long archiveWriteDelayMillis;
+	/*
+	 * Note that the veriable processOpsDelayMillis is used to either delay all deferred
+	 * datafile operations or to delay dataset writes, depending on the setting of storageUnit.
+	 */
+	private long processOpsDelayMillis;
 
 	private Map<DfInfoImpl, RequestedState> deferredDfOpsQueue = new HashMap<>();
 
@@ -281,11 +285,7 @@ public class FiniteStateMachine {
 
 	private Timer timer = new Timer("FSM Timer");
 
-	/*
-	 * Note that the variable writeTime has been abused and now also delays
-	 * restore operations TODO
-	 */
-	private Long writeTime;
+	private Long processOpsTime;
 
 	private Map<DsInfo, Long> writeTimes = new HashMap<>();
 
@@ -425,13 +425,14 @@ public class FiniteStateMachine {
 	private void init() {
 		try {
 			propertyHandler = PropertyHandler.getInstance();
-			archiveWriteDelayMillis = propertyHandler.getWriteDelaySeconds() * 1000L;
 			processQueueIntervalMillis = propertyHandler.getProcessQueueIntervalSeconds() * 1000L;
 			storageUnit = propertyHandler.getStorageUnit();
 			if (storageUnit == StorageUnit.DATASET) {
+				processOpsDelayMillis = propertyHandler.getDelayDatasetWrites() * 1000L;
 				timer.schedule(new DsProcessQueue(), processQueueIntervalMillis);
 				logger.info("DsProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
 			} else if (storageUnit == StorageUnit.DATAFILE) {
+				processOpsDelayMillis = propertyHandler.getDelayDatafileOperations() * 1000L;
 				timer.schedule(new DfProcessQueue(), processQueueIntervalMillis);
 				logger.info("DfProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
 			}
@@ -447,9 +448,9 @@ public class FiniteStateMachine {
 
 		synchronized (deferredDfOpsQueue) {
 
-			if (writeTime == null) {
-				writeTime = System.currentTimeMillis() + archiveWriteDelayMillis;
-				final Date d = new Date(writeTime);
+			if (processOpsTime == null) {
+				processOpsTime = System.currentTimeMillis() + processOpsDelayMillis;
+				final Date d = new Date(processOpsTime);
 				logger.debug("Requesting delay operations till " + d);
 			}
 
@@ -574,7 +575,7 @@ public class FiniteStateMachine {
 	}
 
 	private void setDelay(DsInfo dsInfo) {
-		writeTimes.put(dsInfo, System.currentTimeMillis() + archiveWriteDelayMillis);
+		writeTimes.put(dsInfo, System.currentTimeMillis() + processOpsDelayMillis);
 		if (logger.isDebugEnabled()) {
 			final Date d = new Date(writeTimes.get(dsInfo));
 			logger.debug("Requesting delay of writing of dataset " + dsInfo + " till " + d);
