@@ -118,6 +118,10 @@ public class DsRestorer implements Runnable {
 		} catch (Exception e) {
 			fsm.recordFailure(dsInfo.getDsId());
 			logger.error("Restore of " + dsInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+			try {
+				mainStorageInterface.delete(dsInfo);
+			} catch (IOException e2) {
+			}
 		} finally {
 			fsm.removeFromChanging(dsInfo);
 			lock.release();
