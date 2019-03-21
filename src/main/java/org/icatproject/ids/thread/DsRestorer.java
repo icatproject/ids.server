@@ -109,6 +109,9 @@ public class DsRestorer implements Runnable {
 				seen.add(dfName);
 			}
 			zis.close();
+			if (!seen.equals(nameToLocalMap.keySet())) {
+			    throw new RuntimeException("Corrupt archive for " + dsInfo + ": missing entries");
+			}
 			Files.delete(datasetCachePath);
 			fsm.recordSuccess(dsInfo.getDsId());
 			logger.debug("Restore of " + dsInfo + " completed");
