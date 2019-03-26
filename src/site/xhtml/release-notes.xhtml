@@ -14,6 +14,9 @@
 			plugin may implement this call to acquire a file system lock.  This would
 			then allow safe concurrent access to main storage for other processes.
 			(Issue #80)</li>
+		<li>Add new configuration properties delayDatasetWritesSeconds and
+			delayDatafileOperationsSeconds, replacing writeDelaySeconds.  Deprecate
+			writeDelaySeconds.  (Issue #94)</li>
 		<li>Require ids.plugin 1.5.0.</li>
 	</ul>
 

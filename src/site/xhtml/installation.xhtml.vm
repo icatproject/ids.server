@@ -176,10 +176,17 @@
 			be deployed in the lib/applibs directory of your domain and must be
 			packaged with all it dependencies.</dd>
 
-		<dt>writeDelaySeconds</dt>
-		<dd>The amount of time to wait before writing to archive storage.
+		<dt>delayDatasetWritesSeconds</dt>
+		<dd>The amount of time to wait before writing a dataset archive storage.
 			This exists to allow enough time for all the datafiles to be added to
-			a dataset before it is zipped and written.</dd>
+			a dataset before it is zipped and written.  This property is only
+			used if storageUnit is set to dataset, see below.</dd>
+
+		<dt>delayDatafileOperationsSeconds</dt>
+		<dd>The amount of time to wait before processing any deferred operations for
+			datafiles.  Operations are collected during this period of time and
+			processed at once in combined threads.  This property is only
+			used if storageUnit is set to datafile, see below.</dd>
 
 		<dt>startArchivingLevel1024bytes</dt>
 		<dd>If the space used in main storage exceeds this then datasets

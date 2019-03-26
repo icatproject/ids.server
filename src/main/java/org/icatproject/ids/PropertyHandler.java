@@ -68,7 +68,8 @@ public class PropertyHandler {
 	private long startArchivingLevel;
 	private long stopArchivingLevel;
 	private StorageUnit storageUnit;
-	private long writeDelaySeconds;
+	private long delayDatasetWrites;
+	private long delayDatafileOperations;
 	private ZipMapperInterface zipMapper;
 	private int tidyBlockSize;
 	private String key;
@@ -145,8 +146,6 @@ public class PropertyHandler {
 			if (!props.has("plugin.archive.class")) {
 				logger.info("Property plugin.archive.class not set, single storage enabled.");
 			} else {
-				writeDelaySeconds = props.getPositiveLong("writeDelaySeconds");
-
 				try {
 					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
 							.forName(props.getString("plugin.archive.class"));
@@ -173,6 +172,23 @@ public class PropertyHandler {
 						vs.add(s.name());
 					}
 					abort("storageUnit value " + props.getString("storageUnit") + " must be taken from " + vs);
+				}
+				if (storageUnit == StorageUnit.DATASET) {
+					if (!props.has("delayDatasetWritesSeconds") && props.has("writeDelaySeconds")) {
+						// compatibility mode
+						logger.warn("writeDelaySeconds is deprecated, please use delayDatasetWritesSeconds instead");
+						delayDatasetWrites = props.getPositiveLong("writeDelaySeconds");
+					} else {
+						delayDatasetWrites = props.getPositiveLong("delayDatasetWritesSeconds");
+					}
+				} else if (storageUnit == StorageUnit.DATAFILE) {
+					if (!props.has("delayDatafileOperationsSeconds") && props.has("writeDelaySeconds")) {
+						// compatibility mode
+						logger.warn("writeDelaySeconds is deprecated, please use delayDatafileOperationsSeconds instead");
+						delayDatafileOperations = props.getPositiveLong("writeDelaySeconds");
+					} else {
+						delayDatafileOperations = props.getPositiveLong("delayDatafileOperationsSeconds");
+					}
 				}
 				tidyBlockSize = props.getPositiveInt("tidyBlockSize");
 			}
@@ -375,8 +391,12 @@ public class PropertyHandler {
 		return tidyBlockSize;
 	}
 
-	public long getWriteDelaySeconds() {
-		return writeDelaySeconds;
+	public long getDelayDatasetWrites() {
+		return delayDatasetWrites;
+	}
+
+	public long getDelayDatafileOperations() {
+		return delayDatafileOperations;
 	}
 
 	public ZipMapperInterface getZipMapper() {
