@@ -61,7 +61,6 @@ import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.DataSelection.Returns;
-import org.icatproject.ids.LockManager.AlreadyLockedException;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -71,6 +70,7 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
@@ -723,6 +723,9 @@ public class IdsBean {
 		} catch (AlreadyLockedException e) {
 			logger.debug("Could not acquire lock, delete failed");
 			throw new DataNotOnlineException("Data is busy");
+		} catch (IOException e) {
+			logger.error("I/O error " + e.getMessage());
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
 		if (logSet.contains(CallType.WRITE)) {
@@ -817,6 +820,12 @@ public class IdsBean {
 		} catch (AlreadyLockedException e) {
 			logger.debug("Could not acquire lock, getData failed");
 			throw new DataNotOnlineException("Data is busy");
+		} catch (IOException e) {
+			if (lock != null) {
+				lock.release();
+			}
+			logger.error("I/O error " + e.getMessage());
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		} catch (IdsException e) {
 			lock.release();
 			throw e;
@@ -900,6 +909,12 @@ public class IdsBean {
 		} catch (AlreadyLockedException e) {
 			logger.debug("Could not acquire lock, getData failed");
 			throw new DataNotOnlineException("Data is busy");
+		} catch (IOException e) {
+			if (lock != null) {
+				lock.release();
+			}
+			logger.error("I/O error " + e.getMessage());
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		} catch (IdsException e) {
 			lock.release();
 			throw e;
@@ -1048,10 +1063,10 @@ public class IdsBean {
 		}
 
 		String location = getLocation(datafile.getId(), datafile.getLocation());
+		DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
 
-		try (Lock lock = lockManager.lock(datafile.getDataset().getId(), LockType.SHARED)) {
+		try (Lock lock = lockManager.lock(dsInfo, LockType.SHARED)) {
 			if (storageUnit == StorageUnit.DATASET) {
-				DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
 				Set<Long> mt = Collections.emptySet();
 				if (restoreIfOffline(dsInfo, mt)) {
 					throw new DataNotOnlineException(
@@ -2120,6 +2135,9 @@ public class IdsBean {
 		} catch (AlreadyLockedException e) {
 			logger.debug("Could not acquire lock, write failed");
 			throw new DataNotOnlineException("Data is busy");
+		} catch (IOException e) {
+			logger.error("I/O error " + e.getMessage() + " writing");
+			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
 		if (logSet.contains(CallType.MIGRATE)) {
