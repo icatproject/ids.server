@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -92,19 +94,34 @@ public class DsRestorer implements Runnable {
 					+ " files of total size " + size);
 			ZipInputStream zis = new ZipInputStream(Files.newInputStream(datasetCachePath));
 			ZipEntry ze = zis.getNextEntry();
+			Set<String> seen = new HashSet<>();
 			while (ze != null) {
 				String dfName = zipMapper.getFileName(ze.getName());
+				if (seen.contains(dfName)) {
+					throw new RuntimeException("Corrupt archive for " + dsInfo + ": duplicate entry " + dfName);
+				}
 				String location = nameToLocalMap.get(dfName);
+				if (location == null) {
+					throw new RuntimeException("Corrupt archive for " + dsInfo + ": spurious entry " + dfName);
+				}
 				mainStorageInterface.put(zis, location);
 				ze = zis.getNextEntry();
+				seen.add(dfName);
 			}
 			zis.close();
+			if (!seen.equals(nameToLocalMap.keySet())) {
+			    throw new RuntimeException("Corrupt archive for " + dsInfo + ": missing entries");
+			}
 			Files.delete(datasetCachePath);
 			fsm.recordSuccess(dsInfo.getDsId());
 			logger.debug("Restore of " + dsInfo + " completed");
 		} catch (Exception e) {
 			fsm.recordFailure(dsInfo.getDsId());
 			logger.error("Restore of " + dsInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+			try {
+				mainStorageInterface.delete(dsInfo);
+			} catch (IOException e2) {
+			}
 		} finally {
 			fsm.removeFromChanging(dsInfo);
 			lock.release();
