@@ -72,7 +72,7 @@
 		<dependency>
 			<groupId>org.icatproject</groupId>
 			<artifactId>icat.client</artifactId>
-			<version>4.8.0</version>
+			<version>4.10.0</version>
 		</dependency>
 
 		<dependency>
