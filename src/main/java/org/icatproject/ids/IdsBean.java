@@ -2104,16 +2104,14 @@ public class IdsBean {
 				boolean maybeOffline = false;
 				if (storageUnit == StorageUnit.DATASET) {
 					for (DsInfo dsInfo : dsInfos.values()) {
-						if (fsm.getDsMaybeOffline().contains(dsInfo) ||
-						    (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) && 
-						     !mainStorage.exists(dsInfo))) {
+						if (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) && 
+						    !mainStorage.exists(dsInfo)) {
 							maybeOffline = true;
 						}
 					}
 				} else if (storageUnit == StorageUnit.DATAFILE) {
 					for (DfInfoImpl dfInfo : dfInfos) {
-						if (fsm.getDfMaybeOffline().contains(dfInfo) || 
-						    !mainStorage.exists(dfInfo.getDfLocation())) {
+						if (!mainStorage.exists(dfInfo.getDfLocation())) {
 							maybeOffline = true;
 						}
 					}
