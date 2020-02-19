@@ -462,6 +462,8 @@ public class IdsBean {
 
 	private DatatypeFactory datatypeFactory;
 
+	private boolean enableWrite;
+
 	@EJB
 	private FiniteStateMachine fsm;
 
@@ -1388,6 +1390,7 @@ public class IdsBean {
 
 				rootUserNames = propertyHandler.getRootUserNames();
 				readOnly = propertyHandler.getReadOnly();
+				enableWrite = propertyHandler.getEnableWrite();
 
 				icat = propertyHandler.getIcatService();
 
@@ -2081,14 +2084,18 @@ public class IdsBean {
 	}
 
 	public void write(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException, 
-			       DataNotOnlineException {
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException, 
+			       NotFoundException, DataNotOnlineException {
 
 		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: write " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
 				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+
+		if (!enableWrite) {
+			throw new NotImplementedException("This operation has been configured to be unavailable");
+		}
 
 		validateUUID("sessionId", sessionId);
 
