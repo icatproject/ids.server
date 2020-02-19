@@ -69,6 +69,7 @@ public class IdsService {
 	 * @param datafileIds
 	 *            If present, a comma separated list of datafile id values.
 	 * 
+	 * @throws NotImplementedException
 	 * @throws BadRequestException
 	 * @throws InsufficientPrivilegesException
 	 * @throws InternalException
@@ -82,7 +83,8 @@ public class IdsService {
 	public void archive(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
+			       NotFoundException {
 		idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
@@ -779,6 +781,7 @@ public class IdsService {
 	 * @param datafileIds
 	 *            If present, a comma separated list of datafile id values.
 	 *
+	 * @throws NotImplementedException
 	 * @throws BadRequestException
 	 * @throws InsufficientPrivilegesException
 	 * @throws InternalException
@@ -792,7 +795,8 @@ public class IdsService {
 	public void restore(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
 			@FormParam("datafileIds") String datafileIds)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
+			       NotFoundException {
 		idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
 	}
 
