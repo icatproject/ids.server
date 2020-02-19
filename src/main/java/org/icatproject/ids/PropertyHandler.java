@@ -49,6 +49,7 @@ public class PropertyHandler {
 
 	private ArchiveStorageInterface archiveStorage;
 	private Path cacheDir;
+	private boolean enableWrite;
 	private Path filesCheckErrorLog;
 	private int filesCheckGapMillis;
 	private Path filesCheckLastIdFile;
@@ -106,6 +107,11 @@ public class PropertyHandler {
 			}
 
 			readOnly = props.getBoolean("readOnly", false);
+			if (props.has("enableWrite")) {
+				enableWrite = props.getBoolean("enableWrite");
+			} else {
+				enableWrite = ! readOnly;
+			}
 
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
 
@@ -255,6 +261,10 @@ public class PropertyHandler {
 
 	public Path getCacheDir() {
 		return cacheDir;
+	}
+
+	public boolean getEnableWrite() {
+		return enableWrite;
 	}
 
 	public Path getFilesCheckErrorLog() {
