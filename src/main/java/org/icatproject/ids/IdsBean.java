@@ -1345,6 +1345,79 @@ public class IdsBean {
 		}
 	}
 
+	public String getStatus(String preparedId, String ip)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		long start = System.currentTimeMillis();
+
+		// Log and validate
+		logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
+		validateUUID("preparedId", preparedId);
+
+		// Do it
+		Prepared prepared;
+		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
+			prepared = unpack(stream);
+		} catch (NoSuchFileException e) {
+			throw new NotFoundException("The preparedId " + preparedId + " is not known");
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
+		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
+		Set<Long> emptyDatasets = prepared.emptyDatasets;
+
+		Status status = Status.ONLINE;
+
+		if (storageUnit == StorageUnit.DATASET) {
+			Set<DsInfo> restoring = fsm.getDsRestoring();
+			Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
+			for (DsInfo dsInfo : dsInfos.values()) {
+				fsm.checkFailure(dsInfo.getDsId());
+				if (restoring.contains(dsInfo)) {
+					status = Status.RESTORING;
+				} else if (maybeOffline.contains(dsInfo)) {
+					status = Status.ARCHIVED;
+					break;
+				} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+					status = Status.ARCHIVED;
+					break;
+				}
+			}
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			Set<DfInfo> restoring = fsm.getDfRestoring();
+			Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
+			for (DfInfo dfInfo : dfInfos) {
+				fsm.checkFailure(dfInfo.getDfId());
+				if (restoring.contains(dfInfo)) {
+					status = Status.RESTORING;
+				} else if (maybeOffline.contains(dfInfo)) {
+					status = Status.ARCHIVED;
+					break;
+				} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
+					status = Status.ARCHIVED;
+					break;
+				}
+			}
+		}
+
+		logger.debug("Status is " + status.name());
+
+		if (logSet.contains(CallType.INFO)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("preparedId", preparedId);
+				gen.writeEnd();
+			}
+			String body = baos.toString();
+			transmitter.processMessage("getStatus", ip, body, start);
+		}
+
+		return status.name();
+
+	}
+
 	public String getStatus(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 

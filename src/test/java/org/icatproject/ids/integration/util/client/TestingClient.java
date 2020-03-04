@@ -503,6 +503,27 @@ public class TestingClient {
 
 	}
 
+	public Status getStatus(String preparedId, Integer sc) throws BadRequestException,
+			NotFoundException, InsufficientPrivilegesException, InternalException, NotImplementedException {
+
+		URIBuilder uriBuilder = getUriBuilder("getStatus");
+		uriBuilder.setParameter("preparedId", preparedId);
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return Status.valueOf(getString(response, sc));
+			} catch (InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+	}
+
 	private String getString(CloseableHttpResponse response, Integer sc) throws InternalException, BadRequestException,
 			DataNotOnlineException, ParseException, InsufficientPrivilegesException, NotImplementedException,
 			InsufficientStorageException, NotFoundException, IOException {

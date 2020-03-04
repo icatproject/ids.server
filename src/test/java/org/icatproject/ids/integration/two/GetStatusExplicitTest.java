@@ -54,6 +54,22 @@ public class GetStatusExplicitTest extends BaseTest {
 	}
 
 	@Test
+	public void getStatusPreparedIdTest() throws Exception {
+		DataSelection selection = new DataSelection().addDatafile(datafileIds.get(0));
+		String preparedId = testingClient.prepareData(sessionId, selection, Flag.NONE, 200);
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			Thread.sleep(1000);
+		}
+		assertEquals(testingClient.getStatus(preparedId, 200), Status.ONLINE);
+		testingClient.archive(sessionId, selection, 204);
+		waitForIds();
+		assertEquals(testingClient.getStatus(preparedId, 200), Status.ARCHIVED);
+		// verify that getStatus() as opposed to isPrepared() does not implicitly trigger a restore.
+		waitForIds();
+		assertEquals(testingClient.getStatus(preparedId, 200), Status.ARCHIVED);
+	}
+
+	@Test
 	public void restoringDatafileRestoresItsDatasetTest() throws Exception {
 		String preparedId = testingClient.prepareData(sessionId,
 				new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE, 200);
