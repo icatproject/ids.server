@@ -458,6 +458,25 @@ public class TestingClient {
 		}
 	}
 
+	public long getSize(String preparedId, int sc) throws BadRequestException, NotFoundException,
+			InsufficientPrivilegesException, InternalException, NotImplementedException {
+
+		URIBuilder uriBuilder = getUriBuilder("getSize");
+		uriBuilder.setParameter("preparedId", preparedId);
+		URI uri = getUri(uriBuilder);
+
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return Long.parseLong(getString(response, sc));
+			} catch (IOException | InsufficientStorageException | DataNotOnlineException e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
 	public Status getStatus(String sessionId, DataSelection data, Integer sc) throws BadRequestException,
 			NotFoundException, InsufficientPrivilegesException, InternalException, NotImplementedException {
 

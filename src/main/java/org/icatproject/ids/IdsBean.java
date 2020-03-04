@@ -1155,6 +1155,69 @@ public class IdsBean {
 		return fsm.getServiceStatus();
 	}
 
+	public long getSize(String preparedId, String ip)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		long start = System.currentTimeMillis();
+
+		// Log and validate
+		logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
+		validateUUID("preparedId", preparedId);
+
+		// Do it
+		Prepared prepared;
+		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
+			prepared = unpack(stream);
+		} catch (NoSuchFileException e) {
+			throw new NotFoundException("The preparedId " + preparedId + " is not known");
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
+
+		// Note that the "fast computation for the simple case" (see the other getSize() implementation) is not
+		// available when calling getSize() with a preparedId.
+		logger.debug("Slow computation for normal case");
+		String sessionId;
+		try {
+			sessionId = reader.getSessionId();
+		} catch (IcatException_Exception e) {
+			throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+		}
+		long size = 0;
+
+		StringBuilder sb = new StringBuilder();
+		int n = 0;
+		for (DfInfoImpl df : dfInfos) {
+			if (sb.length() != 0) {
+				sb.append(',');
+			}
+			sb.append(df.getDfId());
+			if (n++ == 500) {
+				size += getSizeFor(sessionId, sb);
+				sb = new StringBuilder();
+				n = 0;
+			}
+		}
+		if (n > 0) {
+			size += getSizeFor(sessionId, sb);
+		}
+
+		if (logSet.contains(CallType.INFO)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+				gen.write("preparedId", preparedId);
+				gen.writeEnd();
+			}
+			String body = baos.toString();
+			transmitter.processMessage("getSize", ip, body, start);
+		}
+
+		return size;
+	}
+
+
 	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 

@@ -364,6 +364,8 @@ public class IdsService {
 	 * 
 	 * @summary getSize
 	 * 
+	 * @param preparedId
+	 *            A valid preparedId returned by a call to prepareData
 	 * @param sessionId
 	 *            A sessionId returned by a call to the icat server.
 	 * @param investigationIds
@@ -386,11 +388,15 @@ public class IdsService {
 	@GET
 	@Path("getSize")
 	@Produces(MediaType.TEXT_PLAIN)
-	public long getSize(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafileIds)
+	public long getSize(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
+			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-		return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+		if (preparedId != null) {
+			return idsBean.getSize(preparedId, request.getRemoteAddr());
+		} else {
+			return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+		}
 	}
 
 	/**
