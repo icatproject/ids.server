@@ -206,6 +206,12 @@
 		<dd>The number of datafiles or datasets to get back in one call
 			for archive request when space on main storage is low.</dd>
 
+		<dt>enableWrite</dt>
+		<dd>Optional. If true, the write call will be enabled, if false, it will be
+			disabled. If not set, the readOnly flag will take control and the
+			write call will be disabled if readOnly is true and enabled if
+			not.</dd>
+
 	</dl>
 
 
