@@ -536,7 +536,8 @@ public class IdsBean {
 	}
 
 	public void archive(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+	    throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
+		   NotFoundException {
 
 		long start = System.currentTimeMillis();
 
@@ -561,6 +562,8 @@ public class IdsBean {
 			for (DfInfoImpl dfInfo : dfInfos) {
 				fsm.queue(dfInfo, DeferredOp.ARCHIVE);
 			}
+		} else {
+			throw new NotImplementedException("This operation is unavailable for single level storage");
 		}
 
 		if (logSet.contains(CallType.MIGRATE)) {
@@ -2019,7 +2022,8 @@ public class IdsBean {
 	}
 
 	public void restore(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
+		throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
+		       NotFoundException {
 
 		long start = System.currentTimeMillis();
 
@@ -2044,6 +2048,8 @@ public class IdsBean {
 			for (DfInfoImpl dfInfo : dfInfos) {
 				fsm.queue(dfInfo, DeferredOp.RESTORE);
 			}
+		} else {
+			throw new NotImplementedException("This operation is unavailable for single level storage");
 		}
 
 		if (logSet.contains(CallType.MIGRATE)) {
@@ -2136,6 +2142,8 @@ public class IdsBean {
 				for (DfInfoImpl dfInfo : dfInfos) {
 					fsm.queue(dfInfo, DeferredOp.WRITE);
 				}
+			} else {
+				throw new NotImplementedException("This operation is unavailable for single level storage");
 			}
 		} catch (AlreadyLockedException e) {
 			logger.debug("Could not acquire lock, write failed");
