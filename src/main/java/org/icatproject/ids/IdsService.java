@@ -366,6 +366,8 @@ public class IdsService {
 	 * 
 	 * @summary getSize
 	 * 
+	 * @param preparedId
+	 *            A valid preparedId returned by a call to prepareData
 	 * @param sessionId
 	 *            A sessionId returned by a call to the icat server.
 	 * @param investigationIds
@@ -388,11 +390,15 @@ public class IdsService {
 	@GET
 	@Path("getSize")
 	@Produces(MediaType.TEXT_PLAIN)
-	public long getSize(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafileIds)
+	public long getSize(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
+			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-		return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+		if (preparedId != null) {
+			return idsBean.getSize(preparedId, request.getRemoteAddr());
+		} else {
+			return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+		}
 	}
 
 	/**
@@ -401,6 +407,8 @@ public class IdsService {
 	 * 
 	 * @summary getStatus
 	 * 
+	 * @param preparedId
+	 *            A valid preparedId returned by a call to prepareData
 	 * @param sessionId
 	 *            A sessionId returned by a call to the icat server. If the
 	 *            sessionId is omitted or null the ids reader account will be
@@ -429,11 +437,15 @@ public class IdsService {
 	@GET
 	@Path("getStatus")
 	@Produces(MediaType.TEXT_PLAIN)
-	public String getStatus(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
-			@QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
-			@QueryParam("datafileIds") String datafileIds)
+	public String getStatus(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
+			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-		return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+		if (preparedId != null) {
+			return idsBean.getStatus(preparedId, request.getRemoteAddr());
+		} else {
+			return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+		}
 	}
 
 	@PostConstruct

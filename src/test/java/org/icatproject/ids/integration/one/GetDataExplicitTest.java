@@ -43,6 +43,26 @@ public class GetDataExplicitTest extends BaseTest {
 	}
 
 	@Test
+	public void getSizePreparedId() throws Exception {
+		Datafile df = null;
+		Long size = 0L;
+		try {
+			df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", datafileIds.get(0));
+			size = df.getFileSize();
+			df.setFileSize(size + 1);
+			icatWS.update(sessionId, df);
+			DataSelection selection = new DataSelection().addDatafiles(datafileIds);
+			String preparedId = testingClient.prepareData(sessionId, selection, Flag.NONE, 200);
+			assertEquals(209L, testingClient.getSize(preparedId, 200));
+		} finally {
+			if (df != null) {
+				df.setFileSize(size);
+				icatWS.update(sessionId, df);
+			}
+		}
+	}
+
+	@Test
 	public void getSizes1() throws Exception {
 		assertEquals(208L, testingClient.getSize(sessionId, new DataSelection().addDatafiles(datafileIds), 200));
 		assertEquals(208L, testingClient.getSize(sessionId, new DataSelection().addDatasets(datasetIds), 200));

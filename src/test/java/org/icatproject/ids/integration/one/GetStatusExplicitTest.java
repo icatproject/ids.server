@@ -1,5 +1,7 @@
 package org.icatproject.ids.integration.one;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
 
 import org.icatproject.ids.integration.BaseTest;
@@ -8,6 +10,7 @@ import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.NotFoundException;
+import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,6 +63,16 @@ public class GetStatusExplicitTest extends BaseTest {
 			System.out.println("*" + status + "*");
 		} while (status != Status.ONLINE);
 
+	}
+
+	@Test
+	public void getStatusPreparedIdTest() throws Exception {
+		DataSelection selection = new DataSelection().addDatafile(datafileIds.get(0));
+		String preparedId = testingClient.prepareData(sessionId, selection, Flag.NONE, 200);
+		while (!testingClient.isPrepared(preparedId, 200)) {
+			Thread.sleep(1000);
+		}
+		assertEquals(testingClient.getStatus(preparedId, 200), Status.ONLINE);
 	}
 
 }
