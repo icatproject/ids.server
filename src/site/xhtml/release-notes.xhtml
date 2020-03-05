@@ -6,64 +6,60 @@
 
 	<h1>IDS Server Release Notes</h1>
 
-	<h2>Not yet released</h2>
+	<h2>1.11.0</h2>
 	<ul>
 		<li>#104, #110: Extend getStatus() and getSize() to accept a preparedID.</li>
-		<li>Add an optional configuration option enableWrite.</li>
-		<li>The API calls archive, restore, and write throw NotImplementedException in the
-			case of single level storage.</li>
-		<li>Bump dependency on commons-fileupload to version 1.3.3.</li>
+		<li>#105, #106: Add an optional configuration option enableWrite.</li>
+		<li>#108: The API calls archive, restore, and write throw NotImplementedException in
+			the case of single level storage.</li>
+		<li>#103: Bump dependency on commons-fileupload to version 1.3.3.</li>
 	</ul>
 
 	<h2>1.10.1</h2>
 	<p>Bug fix release</p>
 	<ul>
-		<li>Fix write call fails with DataNotOnlineError if an ARCHIVE request is pending.
-			(Issue #101)</li>
+		<li>#101: Fix write call fails with DataNotOnlineError if an ARCHIVE request is
+			pending.</li>
 		<li>Documentation fixes.</li>
 	</ul>
 
 	<h2>1.10.0</h2>
 	<p>Add file system locking in the storage plugin</p>
 	<ul>
-		<li>Call mainStorage.lock(DsInfo, boolean) whenever a dataset is locked internally.
-			This call has been added to MainStorageInterface ids.plugin 1.5.0.  The
-			plugin may implement this call to acquire a file system lock.  This would
-			then allow safe concurrent access to main storage for other processes.
-			(Issue #80)</li>
-		<li>Add new configuration properties delayDatasetWritesSeconds and
+		<li>#80: Call mainStorage.lock(DsInfo, boolean) whenever a dataset is locked
+			internally.  This call has been added to MainStorageInterface ids.plugin
+			1.5.0.  The plugin may implement this call to acquire a file system lock.
+			This would then allow safe concurrent access to main storage for other
+			processes.</li>
+		<li>#94: Add new configuration properties delayDatasetWritesSeconds and
 			delayDatafileOperationsSeconds, replacing writeDelaySeconds.  Deprecate
-			writeDelaySeconds.  (Issue #94)</li>
-		<li>Error handling in DsRestorer in the case of a corrupt ZIP archive
-			(Issue #96).</li>
+			writeDelaySeconds.</li>
+		<li>#96: Error handling in DsRestorer in the case of a corrupt ZIP archive.</li>
 		<li>Require ids.plugin 1.5.0.</li>
 	</ul>
 
 	<h2>1.9.1</h2>
 	<p>Bug fix release</p>
 	<ul>
-		<li>Fix uncaught exception in DfRestorer can cause restoration to stall
-			until IDS is restarted.  (Issue #87)</li>
-		<li>Fix once again JMS Session not closed if an exception is thrown (Issue #85).
-			The previous fix from 1.9.0 was not thread safe.</li>
-		<li>Fix: must escape single quote character in datafile location values when
-			building JPQL queries (Issue #92).</li>
+		<li>#87: Fix uncaught exception in DfRestorer can cause restoration to stall until
+			IDS is restarted.</li>
+		<li>#85: Fix once again JMS Session not closed if an exception is thrown.  The
+			previous fix from 1.9.0 was not thread safe.</li>
+		<li>#92: Fix: must escape single quote character in datafile location values when
+			building JPQL queries.</li>
 	</ul>
 
 	<h2>1.9.0</h2>
 	<p>Add a new Write API call and review the internal locking</p>
 	<ul>
-		<li>Add a new Write API call that triggers write to
-			archive storage.  (PR #67)</li>
-		<li>Review of the internal locking mechanism which
-			fixes various race conditions.  (PR #59)</li>
-		<li>Ignore Datafiles having the location attribute not set.  (Issue #63)</li>
-		<li>Change the HTTP status returned on DataNotOnlineException to 503.
-			(Issue #84)</li>
-		<li>Fix JMS Session not closed if an exception is thrown.  (Issue #85)</li>
-		<li>Add a configuration option "testHome" to be set in
-			settings.xml.  Files are created relative to
-			this directory when running the tests.  (Issue #75)</li>
+		<li>#67: Add a new Write API call that triggers write to archive storage.</li>
+		<li>#59: Review of the internal locking mechanism which fixes various race
+			conditions.</li>
+		<li>#63: Ignore Datafiles having the location attribute not set.</li>
+		<li>#84: Change the HTTP status returned on DataNotOnlineException to 503.</li>
+		<li>#85: Fix JMS Session not closed if an exception is thrown.</li>
+		<li>#75: Add a configuration option "testHome" to be set in settings.xml.  Files are
+			created relative to this directory when running the tests.</li>
 		<li>Tests are now independent of locale.</li>
 		<li>Glassfish 4.0 is no longer supported</li>
 	</ul>
