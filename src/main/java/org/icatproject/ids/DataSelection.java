@@ -28,6 +28,12 @@ import org.icatproject.ids.plugin.DsInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class to convert 3 comma separated strings containing Investigation, 
+ * Dataset and Datafile IDs into a Map of DsInfo objects and a Set of
+ * DfInfo objects, containing all the fields required to perform many
+ * of the core IDS operations.
+ */
 public class DataSelection {
 
 	private final static Logger logger = LoggerFactory.getLogger(DataSelection.class);
