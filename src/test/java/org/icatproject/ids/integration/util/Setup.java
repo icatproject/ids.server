@@ -11,6 +11,7 @@ import java.util.Properties;
 
 import org.icatproject.ICAT;
 import org.icatproject.ids.ICATGetter;
+import org.icatproject.ids.TestUtils;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.ShellCommand;
 
@@ -95,10 +96,9 @@ public class Setup {
 		}
 		updownDir = home.resolve(testProps.getProperty("updownDir"));
 		icatUrl = runProperties.getURL("icat.url");
-		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
-				testProps.getProperty("authorizedIcatPassword"));
-		forbiddenSessionId = login(testProps.getProperty("unauthorizedIcatUsername"),
-				testProps.getProperty("unauthorizedIcatPassword"));
+		ICAT icat = ICATGetter.getService(icatUrl.toString());
+		rootSessionId = TestUtils.login(icat, testProps.getProperty("login.root"));
+		forbiddenSessionId = TestUtils.login(icat, testProps.getProperty("login.unauthorized"));
 
 		storageDir = runProperties.getPath("plugin.main.dir");
 
