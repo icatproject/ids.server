@@ -30,8 +30,60 @@ import org.slf4j.LoggerFactory;
 
 public class DataSelection {
 
-	private static final org.icatproject.icat.client.ICAT restIcat = PropertyHandler.getInstance().getRestIcat();
 	private final static Logger logger = LoggerFactory.getLogger(DataSelection.class);
+
+	private ICAT icat;
+	private org.icatproject.icat.client.ICAT restIcat;
+	private String userSessionId;
+	private Session userRestSession;
+	private Session restSessionToUse;
+	private int maxEntities;
+	private List<Long> invids;
+	private List<Long> dsids;
+	private List<Long> dfids;
+	private Map<Long, DsInfo> dsInfos;
+	private Set<DfInfoImpl> dfInfos;
+	private Set<Long> emptyDatasets;
+	private boolean dsWanted;
+	private boolean dfWanted;
+
+
+	public enum Returns {
+		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
+	}
+
+	public DataSelection(PropertyHandler propertyHandler, IcatReader icatReader, String userSessionId, 
+			String investigationIds, String datasetIds, String datafileIds,	Returns returns)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		dfids = getValidIds("datafileIds", datafileIds);
+		dsids = getValidIds("datasetIds", datasetIds);
+		invids = getValidIds("investigationIds", investigationIds);
+		dfWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATAFILES;
+		dsWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATASETS;
+
+		this.icat = propertyHandler.getIcatService();
+		this.restIcat = propertyHandler.getRestIcat();
+		maxEntities = propertyHandler.getMaxEntities();
+		this.userSessionId = userSessionId;
+		userRestSession = restIcat.getSession(userSessionId);
+		// by default use the user's REST ICAT session
+		restSessionToUse = userRestSession;
+		try {
+			logger.debug("useReaderForPerformance = {}", propertyHandler.getUseReaderForPerformance());
+			logger.debug("isAvailablePublicStepDatasetToDatafile = {}", icatReader.isAvailablePublicStepDatasetToDatafile());
+			if (propertyHandler.getUseReaderForPerformance() && icatReader.isAvailablePublicStepDatasetToDatafile()) {
+				// if these two criteria are met, use a REST session for the reader account 
+				// where possible to improve performance due to the final database queries being simpler
+				restSessionToUse = restIcat.getSession(icatReader.getSessionId());
+			}
+		} catch (IcatException_Exception e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+		logger.debug("dfids: {} dsids: {} invids: {}", dfids, dsids, invids);
+		resolveDatasetIds();
+	}
 
 	/**
 	 * Checks to see if the investigation, dataset or datafile id list is a
@@ -56,45 +108,6 @@ public class DataSelection {
 			}
 		}
 		return result;
-	}
-
-	private Map<Long, DsInfo> dsInfos;
-	private ICAT icat;
-	private String sessionId;
-	private boolean dfWanted;
-	private List<Long> dfids;
-	private List<Long> dsids;
-	private List<Long> invids;
-	private Set<DfInfoImpl> dfInfos;
-	private Set<Long> emptyDatasets;
-	private boolean dsWanted;
-	private Session restSession;
-
-	public static int maxEntities = PropertyHandler.getInstance().getMaxEntities();
-
-	public enum Returns {
-		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
-	}
-
-	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			Returns returns)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		this.icat = icat;
-		this.sessionId = sessionId;
-		dfids = getValidIds("datafileIds", datafileIds);
-		dsids = getValidIds("datasetIds", datasetIds);
-		invids = getValidIds("investigationIds", investigationIds);
-		dfWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATAFILES;
-		dsWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATASETS;
-		restSession = restIcat.getSession(sessionId);
-		logger.debug("dfids: {} dsids: {} invids: {}", dfids, dsids, invids);
-		resolveDatasetIds();
-
-	}
-
-	public Map<Long, DsInfo> getDsInfo() {
-		return dsInfos;
 	}
 
 	private void resolveDatasetIds()
@@ -268,7 +281,10 @@ public class DataSelection {
 				manyDfs(dsid, result);
 			}
 		}
+	}
 
+	public Map<Long, DsInfo> getDsInfo() {
+		return dsInfos;
 	}
 
 	public Set<DfInfoImpl> getDfInfo() {
