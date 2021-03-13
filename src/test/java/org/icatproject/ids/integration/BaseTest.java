@@ -115,7 +115,7 @@ public class BaseTest {
 	@Before
 	public void before() throws Exception {
 		testingClient = new TestingClient(setup.getIdsUrl());
-		sessionId = setup.getGoodSessionId();
+		sessionId = setup.getRootSessionId();
 		waitForIds();
 		populateStorage(setup.isTwoLevel(), setup.getStorageUnit(), setup.getKey());
 	}

@@ -25,7 +25,7 @@ public class Setup {
 	private URL icatUrl = null;
 	private URL idsUrl = null;
 
-	private String goodSessionId = null;
+	private String rootSessionId = null;
 	private String forbiddenSessionId = null;
 
 	private Path home;
@@ -132,8 +132,8 @@ public class Setup {
 		return forbiddenSessionId;
 	}
 
-	public String getGoodSessionId() {
-		return goodSessionId;
+	public String getRootSessionId() {
+		return rootSessionId;
 	}
 
 	public URL getIdsUrl() {
