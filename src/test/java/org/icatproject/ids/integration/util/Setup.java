@@ -1,21 +1,15 @@
 package org.icatproject.ids.integration.util;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Properties;
 
 import org.icatproject.ICAT;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.Login.Credentials;
-import org.icatproject.Login.Credentials.Entry;
 import org.icatproject.ids.ICATGetter;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.ShellCommand;
@@ -132,25 +126,6 @@ public class Setup {
 		try (BufferedWriter out = Files.newBufferedWriter(p)) {
 			out.write(d + "\n");
 		}
-	}
-
-	public String login(String username, String password) throws IcatException_Exception, MalformedURLException {
-		ICAT icat = ICATGetter.getService(icatUrl.toString());
-
-		Credentials credentials = new Credentials();
-		List<Entry> entries = credentials.getEntry();
-
-		Entry u = new Entry();
-		u.setKey("username");
-		u.setValue(username);
-		entries.add(u);
-
-		Entry p = new Entry();
-		p.setKey("password");
-		p.setValue(password);
-		entries.add(p);
-		String sessionId = icat.login("db", credentials);
-		return sessionId;
 	}
 
 	public String getForbiddenSessionId() {
