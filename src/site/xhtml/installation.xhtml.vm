@@ -164,6 +164,13 @@
 			directory. The file ids.logback.xml.example may be renamed to
 			ids.logback.xml to get started.</dd>
 
+		<dt>useReaderForPerformance</dt>
+		<dd>Optional. If true allows the IDS to make use of the reader account
+			to improve query performance. Use of this option will always be
+			subject to an additional check that the user would be otherwise
+			allowed to perform the query, for example, that a PublicStep exists
+			and access to the parent entity is allowed.</dd>
+
 	</dl>
 
 	<h3>Properties for archive storage</h3>
