@@ -139,12 +139,15 @@ public class DataSelection {
 					throw new NotFoundException("Datafile " + dfid);
 				}
 			}
+
 			for (Long dsid : dsids) {
 				Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
 				dsInfos.put(dsid, new DsInfoImpl(ds));
+				// dataset access for the user has been checked so the REST session for the 
+				// reader account can be used if the IDS setting to allow this is enabled
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL";
-				JsonArray result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
+				JsonArray result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes()))
 						.readArray().getJsonArray(0);
 				if (result.getJsonNumber(2).longValueExact() == 0) { // Count 0
 					emptyDatasets.add(dsid);
@@ -251,6 +254,8 @@ public class DataSelection {
 
 	private void manyDfs(long dsid, JsonArray result)
 			throws IcatException, InsufficientPrivilegesException, InternalException {
+		// dataset access for the user has been checked so the REST session for the 
+		// reader account can be used if the IDS setting to allow this is enabled
 		long min = result.getJsonNumber(0).longValueExact();
 		long max = result.getJsonNumber(1).longValueExact();
 		long count = result.getJsonNumber(2).longValueExact();
@@ -259,7 +264,7 @@ public class DataSelection {
 			if (count <= maxEntities) {
 				String query = "SELECT df.id, df.name, df.location, df.createId, df.modId FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes())).readArray();
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dfid = tup.getJsonNumber(0).longValueExact();
@@ -271,12 +276,12 @@ public class DataSelection {
 				long half = (min + max) / 2;
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + half;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
+				result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDfs(dsid, result);
 				query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = " + dsid
 						+ " AND df.location IS NOT NULL AND df.id BETWEEN " + (half + 1) + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
+				result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDfs(dsid, result);
 			}
