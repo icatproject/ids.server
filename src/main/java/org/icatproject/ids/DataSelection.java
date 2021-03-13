@@ -120,7 +120,7 @@ public class DataSelection {
 
 		try {
 			for (Long dfid : dfids) {
-				List<Object> dss = icat.search(sessionId,
+				List<Object> dss = icat.search(userSessionId,
 						"SELECT ds FROM Dataset ds JOIN ds.datafiles df WHERE df.id = " + dfid
 								+ " AND df.location IS NOT NULL INCLUDE ds.investigation.facility");
 				if (dss.size() == 1) {
@@ -128,19 +128,19 @@ public class DataSelection {
 					long dsid = ds.getId();
 					dsInfos.put(dsid, new DsInfoImpl(ds));
 					if (dfWanted) {
-						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
+						Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
 						String location = IdsBean.getLocation(dfid, df.getLocation());
 						dfInfos.add(
 								new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
 					}
 				} else {
 					// Next line may reveal a permissions problem
-					icat.get(sessionId, "Datafile", dfid);
+					icat.get(userSessionId, "Datafile", dfid);
 					throw new NotFoundException("Datafile " + dfid);
 				}
 			}
 			for (Long dsid : dsids) {
-				Dataset ds = (Dataset) icat.get(sessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
+				Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
 				dsInfos.put(dsid, new DsInfoImpl(ds));
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL";
@@ -156,7 +156,7 @@ public class DataSelection {
 			for (Long invid : invids) {
 				String query = "SELECT min(ds.id), max(ds.id), count(ds.id) FROM Dataset ds WHERE ds.investigation.id = "
 						+ invid;
-				JsonArray result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
+				JsonArray result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes()))
 						.readArray().getJsonArray(0);
 				manyDss(invid, result);
 
@@ -203,7 +203,7 @@ public class DataSelection {
 			if (count <= maxEntities) {
 				String query = "SELECT inv.name, inv.visitId, inv.facility.id,  inv.facility.name FROM Investigation inv WHERE inv.id = "
 						+ invid;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray();
 				if (result.size() == 0) {
 					return;
 				}
@@ -215,7 +215,7 @@ public class DataSelection {
 
 				query = "SELECT ds.id, ds.name, ds.location FROM Dataset ds WHERE ds.investigation.id = " + invid
 						+ " AND ds.id BETWEEN " + min + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray();
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dsid = tup.getJsonNumber(0).longValueExact();
@@ -224,7 +224,7 @@ public class DataSelection {
 
 					query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 							+ dsid + " AND df.location IS NOT NULL";
-					result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
+					result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes()))
 							.readArray().getJsonArray(0);
 					if (result.getJsonNumber(2).longValueExact() == 0) {
 						emptyDatasets.add(dsid);
@@ -237,11 +237,11 @@ public class DataSelection {
 				long half = (min + max) / 2;
 				String query = "SELECT min(ds.id), max(ds.id), count(ds.id) FROM Dataset ds WHERE ds.investigation.id = "
 						+ invid + " AND ds.id BETWEEN " + min + " AND " + half;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray();
 				manyDss(invid, result);
 				query = "SELECT min(ds.id), max(ds.id), count(ds.id) FROM Dataset ds WHERE ds.investigation.id = "
 						+ invid + " AND ds.id BETWEEN " + half + 1 + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDss(invid, result);
 			}
