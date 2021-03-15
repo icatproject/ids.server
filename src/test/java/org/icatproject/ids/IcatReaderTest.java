@@ -24,9 +24,11 @@ import org.icatproject.UserGroup;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class IcatReaderTest {
 
     @Mock
@@ -55,7 +57,6 @@ public class IcatReaderTest {
     }
 
     private void setupPropertyHandler() {
-        MockitoAnnotations.initMocks(this);
         when(mockedPropertyHandler.getIcatService()).thenReturn(icatService);
         when(mockedPropertyHandler.getReader()).thenReturn(readerCreds);
     }

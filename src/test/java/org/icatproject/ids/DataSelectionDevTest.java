@@ -19,8 +19,9 @@ import org.icatproject.icat.client.IcatException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond 
@@ -43,7 +44,8 @@ import org.mockito.MockitoAnnotations;
  * reader login details, and define the lists of investigation, dataset and 
  * datafile IDs which the defined user has access to.
  */
-public class DataSelectionDevTest {
+@RunWith(MockitoJUnitRunner.class)
+ public class DataSelectionDevTest {
 
     @Mock
     private PropertyHandler mockedPropertyHandler;
@@ -90,7 +92,6 @@ public class DataSelectionDevTest {
             throws URISyntaxException, IcatException_Exception, IcatException {
         JsonReader parser = Json.createReader(new ByteArrayInputStream(restIcat.getProperties().getBytes()));
         maxEntities = parser.readObject().getInt("maxEntities");
-        MockitoAnnotations.initMocks(this);
         when(mockedPropertyHandler.getMaxEntities()).thenReturn(maxEntities);
         when(mockedPropertyHandler.getIcatService()).thenReturn(icatService);
         when(mockedPropertyHandler.getRestIcat()).thenReturn(restIcat);
