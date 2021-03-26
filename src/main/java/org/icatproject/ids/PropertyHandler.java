@@ -71,6 +71,7 @@ public class PropertyHandler {
 	private StorageUnit storageUnit;
 	private long delayDatasetWrites;
 	private long delayDatafileOperations;
+	private boolean allowRestoreFailures;
 	private ZipMapperInterface zipMapper;
 	private int tidyBlockSize;
 	private String key;
@@ -244,6 +245,8 @@ public class PropertyHandler {
 				logger.info("'log.list' entry not present so no JMS call logging will be performed");
 			}
 
+			allowRestoreFailures = props.getBoolean("allowRestoreFailures", false);
+
 		} catch (CheckedPropertyException e) {
 			abort(e.getMessage());
 		}
@@ -415,6 +418,10 @@ public class PropertyHandler {
 
 	public org.icatproject.icat.client.ICAT getRestIcat() {
 		return restIcat;
+	}
+
+	public boolean getAllowRestoreFailures() {
+		return allowRestoreFailures;
 	}
 
 }
