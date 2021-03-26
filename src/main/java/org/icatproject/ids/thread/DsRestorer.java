@@ -45,6 +45,8 @@ public class DsRestorer implements Runnable {
 	private ZipMapperInterface zipMapper;
 	private Lock lock;
 
+	private boolean allowRestoreFailures;
+
 	public DsRestorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
 		this.dsInfo = dsInfo;
 		this.fsm = fsm;
@@ -54,6 +56,7 @@ public class DsRestorer implements Runnable {
 		datasetCache = propertyHandler.getCacheDir().resolve("dataset");
 		this.reader = reader;
 		this.lock = lock;
+		this.allowRestoreFailures = propertyHandler.getAllowRestoreFailures();
 	}
 
 	@Override
@@ -98,19 +101,20 @@ public class DsRestorer implements Runnable {
 			while (ze != null) {
 				String dfName = zipMapper.getFileName(ze.getName());
 				if (seen.contains(dfName)) {
-					throw new RuntimeException("Corrupt archive for " + dsInfo + ": duplicate entry " + dfName);
+					logWarningOrThrowException("Corrupt archive for " + dsInfo + ": duplicate entry " + dfName);
 				}
 				String location = nameToLocalMap.get(dfName);
 				if (location == null) {
-					throw new RuntimeException("Corrupt archive for " + dsInfo + ": spurious entry " + dfName);
+					logWarningOrThrowException("Corrupt archive for " + dsInfo + ": spurious entry " + dfName);
+				} else {
+					mainStorageInterface.put(zis, location);
 				}
-				mainStorageInterface.put(zis, location);
 				ze = zis.getNextEntry();
 				seen.add(dfName);
 			}
 			zis.close();
 			if (!seen.equals(nameToLocalMap.keySet())) {
-			    throw new RuntimeException("Corrupt archive for " + dsInfo + ": missing entries");
+			    logWarningOrThrowException("Corrupt archive for " + dsInfo + ": missing entries");
 			}
 			Files.delete(datasetCachePath);
 			fsm.recordSuccess(dsInfo.getDsId());
@@ -127,4 +131,13 @@ public class DsRestorer implements Runnable {
 			lock.release();
 		}
 	}
+
+	private void logWarningOrThrowException(String message) {
+        if (allowRestoreFailures) {
+            logger.warn(message);
+        } else {
+            throw new RuntimeException(message);
+        }
+    }
+
 }

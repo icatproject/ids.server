@@ -88,17 +88,22 @@ public class IdsBean {
 
 		private Collection<DsInfo> toCheck;
 		private Set<Long> emptyDatasets;
+		private PreparedStatus preparedStatus;
 
-		public RunPrepDsCheck(Collection<DsInfo> toCheck, Set<Long> emptyDatasets) {
+		public RunPrepDsCheck(Collection<DsInfo> toCheck, Set<Long> emptyDatasets, PreparedStatus preparedStatus) {
 			this.toCheck = toCheck;
 			this.emptyDatasets = emptyDatasets;
+			this.preparedStatus = preparedStatus;
 		}
 
 		@Override
 		public Void call() throws Exception {
 			for (DsInfo dsInfo : toCheck) {
-				fsm.checkFailure(dsInfo.getDsId());
-				restoreIfOffline(dsInfo, emptyDatasets);
+				if (fsm.checkFailure(dsInfo.getDsId())) {
+					preparedStatus.failedRestores.add(dsInfo.getDsId());
+				} else {
+					restoreIfOffline(dsInfo, emptyDatasets);
+				}
 			}
 			return null;
 		}
@@ -108,17 +113,22 @@ public class IdsBean {
 	public class RunPrepDfCheck implements Callable<Void> {
 
 		private SortedSet<DfInfoImpl> toCheck;
+		private PreparedStatus preparedStatus;
 
-		public RunPrepDfCheck(SortedSet<DfInfoImpl> toCheck) {
+		public RunPrepDfCheck(SortedSet<DfInfoImpl> toCheck, PreparedStatus preparedStatus) {
 			this.toCheck = toCheck;
+			this.preparedStatus = preparedStatus;
 		}
 
 		@Override
 		public Void call() throws Exception {
 			for (DfInfoImpl dfInfo : toCheck) {
-				fsm.checkFailure(dfInfo.getDfId());
-				restoreIfOffline(dfInfo);
-			}
+			    if (fsm.checkFailure(dfInfo.getDfId())) {
+					preparedStatus.failedRestores.add(dfInfo.getDfId());
+				 } else {
+					 restoreIfOffline(dfInfo);
+				 }
+			 }
 			return null;
 		}
 
@@ -506,6 +516,7 @@ public class IdsBean {
 		public DfInfoImpl fromDfElement;
 		public Future<?> future;
 		public Long fromDsElement;
+		public Set<Long> failedRestores = new HashSet<>();
 	};
 
 	private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
@@ -1367,43 +1378,7 @@ public class IdsBean {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
-		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
-		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
-		Set<Long> emptyDatasets = prepared.emptyDatasets;
-
-		Status status = Status.ONLINE;
-
-		if (storageUnit == StorageUnit.DATASET) {
-			Set<DsInfo> restoring = fsm.getDsRestoring();
-			Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.checkFailure(dsInfo.getDsId());
-				if (restoring.contains(dsInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			Set<DfInfo> restoring = fsm.getDfRestoring();
-			Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
-			for (DfInfo dfInfo : dfInfos) {
-				fsm.checkFailure(dfInfo.getDfId());
-				if (restoring.contains(dfInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dfInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
-		}
+		Status status = calculateStatus(prepared.dsInfos, prepared.emptyDatasets, prepared.dfInfos);
 
 		logger.debug("Status is " + status.name());
 
@@ -1441,52 +1416,14 @@ public class IdsBean {
 			validateUUID("sessionId", sessionId);
 		}
 
-		// Do it
-		Status status = Status.ONLINE;
-
+		DataSelection dataSelection = null;
 		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
-					datafileIds, Returns.DATASETS);
-			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-
-			Set<DsInfo> restoring = fsm.getDsRestoring();
-			Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
-			Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.checkFailure(dsInfo.getDsId());
-				if (restoring.contains(dsInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
+			dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds,
-					datafileIds, Returns.DATAFILES);
-			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-
-			Set<DfInfo> restoring = fsm.getDfRestoring();
-			Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
-			for (DfInfo dfInfo : dfInfos) {
-				fsm.checkFailure(dfInfo.getDfId());
-				if (restoring.contains(dfInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dfInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
-		} else {
-			// Throw exception if selection does not exist
-			new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS);
+			dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
 		}
+
+		Status status = calculateStatus(dataSelection.getDsInfo(), dataSelection.getEmptyDatasets(), dataSelection.getDfInfo());
 
 		logger.debug("Status is " + status.name());
 
@@ -1509,6 +1446,68 @@ public class IdsBean {
 
 		return status.name();
 
+	}
+
+	/**
+	 * Work out the overall status of the specified dataset or datafile restores.
+	 * Either dsInfos and emptyDatasets will be populated for StorageUnit.DATASET
+	 * or dfInfos for StorageUnit.DATAFILE.
+	 * 
+	 * @param dsInfos a map of DsInfo objects keyed on Dataset ID
+	 * @param emptyDatasets a list of Dataset IDs where the Dataset contains no Datafiles
+	 * @param dfInfos a set of DfInfo objects
+	 * @return the overall status of the restore: ONLINE, RESTORING or ARCHIVED
+	 * @throws InternalException if allowRestoreFailures is not set then any DsInfo/DfInfo
+	 * 							 that fails the checkFailure call will throw an exception. 
+	 * 							 If allowRestoreFailures is set then an exception will 
+	 * 							 only be thrown if all DsInfo/DfInfos fail the check.
+	 */
+	private Status calculateStatus(Map<Long, DsInfo> dsInfos, Set<Long> emptyDatasets, Set<DfInfoImpl> dfInfos) throws InternalException {
+		Status status = Status.ONLINE;
+
+		Set<Long> failedRestoreIds = new HashSet<>();
+		int numItemsRequested = 0;
+
+		if (storageUnit == StorageUnit.DATASET) {
+			Set<DsInfo> restoring = fsm.getDsRestoring();
+			Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
+            numItemsRequested = dsInfos.size();
+			for (DsInfo dsInfo : dsInfos.values()) {
+                if (fsm.checkFailure(dsInfo.getDsId())) {
+                    failedRestoreIds.add(dsInfo.getDsId());
+                } else if (restoring.contains(dsInfo)) {
+					status = Status.RESTORING;
+				} else if (maybeOffline.contains(dsInfo)) {
+					return Status.ARCHIVED;
+				} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+					return Status.ARCHIVED;
+				}
+			}
+		} else if (storageUnit == StorageUnit.DATAFILE) {
+			Set<DfInfo> restoring = fsm.getDfRestoring();
+			Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
+			numItemsRequested = dfInfos.size();
+			for (DfInfo dfInfo : dfInfos) {
+                if (fsm.checkFailure(dfInfo.getDfId())) {
+                    failedRestoreIds.add(dfInfo.getDfId());
+                } else if (restoring.contains(dfInfo)) {
+					status = Status.RESTORING;
+				} else if (maybeOffline.contains(dfInfo)) {
+					return Status.ARCHIVED;
+				} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
+					return Status.ARCHIVED;
+				}
+			}
+		}
+
+		if (failedRestoreIds.size() == numItemsRequested) {
+		    // All datasets/datafiles failed to restore.
+            // Even with allowRestoreFailures set to true an exception needs to be thrown.
+            throw new InternalException("Restore failed for all requested " +
+                    storageUnit.name() + "s");
+        }
+
+		return status;
 	}
 
 	@PostConstruct
@@ -1621,18 +1620,21 @@ public class IdsBean {
 				}
 			}
 
+			int numItemsRequested = 0;
 			if (storageUnit == StorageUnit.DATASET) {
+			    numItemsRequested = preparedJson.dsInfos.size();
 				Collection<DsInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
 						: preparedJson.dsInfos.tailMap(status.fromDsElement).values();
 				logger.debug("Will check online status of {} entries", toCheck.size());
 				for (DsInfo dsInfo : toCheck) {
-					fsm.checkFailure(dsInfo.getDsId());
-					if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
+					if (fsm.checkFailure(dsInfo.getDsId())) {
+						status.failedRestores.add(dsInfo.getDsId());
+					} else if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
 						prepared = false;
 						status.fromDsElement = dsInfo.getDsId();
 						toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
 						logger.debug("Will check in background status of {} entries", toCheck.size());
-						status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets));
+						status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets, status));
 						break;
 					}
 				}
@@ -1641,24 +1643,27 @@ public class IdsBean {
 							: preparedJson.dsInfos.headMap(status.fromDsElement).values();
 					logger.debug("Will check finally online status of {} entries", toCheck.size());
 					for (DsInfo dsInfo : toCheck) {
-						fsm.checkFailure(dsInfo.getDsId());
-						if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
+						if (fsm.checkFailure(dsInfo.getDsId())) {
+							status.failedRestores.add(dsInfo.getDsId());
+						} else if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
 							prepared = false;
 						}
 					}
 				}
 			} else if (storageUnit == StorageUnit.DATAFILE) {
+                numItemsRequested = preparedJson.dfInfos.size();
 				SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
 						: preparedJson.dfInfos.tailSet(status.fromDfElement);
 				logger.debug("Will check online status of {} entries", toCheck.size());
 				for (DfInfoImpl dfInfo : toCheck) {
-					fsm.checkFailure(dfInfo.getDfId());
-					if (restoreIfOffline(dfInfo)) {
+					if (fsm.checkFailure(dfInfo.getDfId())) {
+						status.failedRestores.add(dfInfo.getDfId());
+					} else if (restoreIfOffline(dfInfo)) {
 						prepared = false;
 						status.fromDfElement = dfInfo;
 						toCheck = preparedJson.dfInfos.tailSet(status.fromDfElement);
 						logger.debug("Will check in background status of {} entries", toCheck.size());
-						status.future = threadPool.submit(new RunPrepDfCheck(toCheck));
+						status.future = threadPool.submit(new RunPrepDfCheck(toCheck, status));
 						break;
 					}
 				}
@@ -1667,13 +1672,19 @@ public class IdsBean {
 							: preparedJson.dfInfos.headSet(status.fromDfElement);
 					logger.debug("Will check finally online status of {} entries", toCheck.size());
 					for (DfInfoImpl dfInfo : toCheck) {
-						fsm.checkFailure(dfInfo.getDfId());
-						if (restoreIfOffline(dfInfo)) {
+						if (fsm.checkFailure(dfInfo.getDfId())) {
+							status.failedRestores.add(dfInfo.getDfId());
+						} else if (restoreIfOffline(dfInfo)) {
 							prepared = false;
 						}
 					}
 				}
 			}
+
+			if (status.failedRestores.size() == numItemsRequested) {
+                throw new InternalException("Restore failed for all requested "
+                        + storageUnit.name() + "s");
+            }
 
 			if (logSet.contains(CallType.INFO)) {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();

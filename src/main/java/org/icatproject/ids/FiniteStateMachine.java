@@ -624,10 +624,27 @@ public class FiniteStateMachine {
 		}
 	}
 
-	public void checkFailure(Long id) throws InternalException {
+	/**
+	 * Check whether the Dataset/Datafile ID (depending on the StorageUnit set)
+	 * is in the list of IDs that failed to restore. The behaviour then depends 
+	 * on whether the property allowRestoreFailures is set. 
+	 * 
+	 * @param id a Dataset or Datafile ID
+	 * @return true if the ID is found in the list of failures and 
+	 *         allowRestoreFailures is set, false if the ID is not found
+	 * @throws InternalException if the ID is found in the list of failures
+	 *                           and allowRestoreFailures is not set
+	 */
+	public boolean checkFailure(Long id) throws InternalException {
 		if (failures.contains(id)) {
-			throw new InternalException("Restore failed");
-		}
-	}
+			if (propertyHandler.getAllowRestoreFailures()) {
+				return true;
+			} else {
+				throw new InternalException("Restore failed for " +
+						propertyHandler.getStorageUnit().name() + " " + id);
+			}
+	 	}
+	 	return false;
+ 	}
 
 }
