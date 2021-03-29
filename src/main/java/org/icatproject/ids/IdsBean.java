@@ -1453,9 +1453,10 @@ public class IdsBean {
 	}
 
 	/**
-	 * Work out the overall status of the specified dataset or datafile restores.
-	 * Either dsInfos and emptyDatasets will be populated for StorageUnit.DATASET
-	 * or dfInfos for StorageUnit.DATAFILE.
+	 * Work out the overall status of the specified dataset or datafiles.
+	 * Note that for single level storage all items are assumed to be ONLINE.
+	 * For two level storage, either dsInfos and emptyDatasets will be populated 
+	 * for StorageUnit.DATASET or dfInfos for StorageUnit.DATAFILE.
 	 * 
 	 * @param dsInfos a map of DsInfo objects keyed on Dataset ID
 	 * @param emptyDatasets a list of Dataset IDs where the Dataset contains no Datafiles
