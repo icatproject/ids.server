@@ -1470,6 +1470,12 @@ public class IdsBean {
 	private Status calculateStatus(Map<Long, DsInfo> dsInfos, Set<Long> emptyDatasets, Set<DfInfoImpl> dfInfos) throws InternalException {
 		Status status = Status.ONLINE;
 
+		if (storageUnit == null) {
+			// single level storage
+			// (assume all items ONLINE) 
+			return status;
+		}
+
 		Set<Long> failedRestoreIds = new HashSet<>();
 		int numItemsRequested = 0;
 
