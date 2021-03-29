@@ -1503,8 +1503,7 @@ public class IdsBean {
 		if (failedRestoreIds.size() == numItemsRequested) {
 		    // All datasets/datafiles failed to restore.
             // Even with allowRestoreFailures set to true an exception needs to be thrown.
-            throw new InternalException("Restore failed for all requested " +
-                    storageUnit.name() + "s");
+			throw new InternalException("Restore failed");
         }
 
 		return status;
@@ -1682,8 +1681,7 @@ public class IdsBean {
 			}
 
 			if (status.failedRestores.size() == numItemsRequested) {
-                throw new InternalException("Restore failed for all requested "
-                        + storageUnit.name() + "s");
+				throw new InternalException("Restore failed");
             }
 
 			if (logSet.contains(CallType.INFO)) {

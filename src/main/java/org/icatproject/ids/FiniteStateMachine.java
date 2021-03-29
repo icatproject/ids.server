@@ -640,8 +640,7 @@ public class FiniteStateMachine {
 			if (propertyHandler.getAllowRestoreFailures()) {
 				return true;
 			} else {
-				throw new InternalException("Restore failed for " +
-						propertyHandler.getStorageUnit().name() + " " + id);
+				throw new InternalException("Restore failed");
 			}
 	 	}
 	 	return false;
