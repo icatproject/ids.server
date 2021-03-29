@@ -1421,6 +1421,10 @@ public class IdsBean {
 			dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 		} else if (storageUnit == StorageUnit.DATAFILE) {
 			dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
+		} else {
+			// (required for single level storage)
+			// throw exception if selection does not exist
+			dataSelection = new DataSelection(icat, sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 		}
 
 		Status status = calculateStatus(dataSelection.getDsInfo(), dataSelection.getEmptyDatasets(), dataSelection.getDfInfo());
