@@ -1500,7 +1500,7 @@ public class IdsBean {
 			}
 		}
 
-		if (failedRestoreIds.size() == numItemsRequested) {
+		if (!failedRestoreIds.isEmpty() && failedRestoreIds.size() == numItemsRequested) {
 		    // All datasets/datafiles failed to restore.
             // Even with allowRestoreFailures set to true an exception needs to be thrown.
 			throw new InternalException("Restore failed");
@@ -1680,7 +1680,7 @@ public class IdsBean {
 				}
 			}
 
-			if (status.failedRestores.size() == numItemsRequested) {
+			if (!status.failedRestores.isEmpty() && status.failedRestores.size() == numItemsRequested) {
 				throw new InternalException("Restore failed");
             }
 
