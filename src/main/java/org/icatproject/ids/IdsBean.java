@@ -213,6 +213,7 @@ public class IdsBean {
 						zos.setLevel(0); // Otherwise use default compression
 					}
 
+					List<String> missingFiles = new ArrayList<>();
 					for (DfInfoImpl dfInfo : dfInfos) {
 						logger.debug("Adding " + dfInfo + " to zip");
 						transfer = dfInfo;
@@ -220,19 +221,39 @@ public class IdsBean {
 						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
 						InputStream stream = null;
 						try {
-							zos.putNextEntry(new ZipEntry(entryName));
 							stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(), dfInfo.getModId());
+							zos.putNextEntry(new ZipEntry(entryName));
 							int length;
 							while ((length = stream.read(bytes)) >= 0) {
 								zos.write(bytes, 0, length);
 							}
+							zos.closeEntry();
 						} catch (ZipException e) {
 							logger.debug("Skipped duplicate");
+						} catch (IOException e) {
+							if (propertyHandler.getAllowRestoreFailures()) {
+								logger.warn("Skipping missing file in zip: {}", entryName);
+								missingFiles.add(entryName);
+							} else {
+								throw e;
+							}
 						}
-						zos.closeEntry();
 						if (stream != null) {
 							stream.close();
 						}
+					}
+					if (propertyHandler.getAllowRestoreFailures() && !missingFiles.isEmpty()) {
+						// add a file to the zip file listing the missing files
+						StringBuilder sb = new StringBuilder();
+						sb.append("The following files were not found:").append("\n");
+						for (String filename : missingFiles) {
+							sb.append(filename).append("\n");
+						}
+						byte[] data = sb.toString().getBytes();
+						ZipEntry e = new ZipEntry(propertyHandler.getMissingFilesZipEntryName());
+						zos.putNextEntry(e);
+						zos.write(data, 0, data.length);
+						zos.closeEntry();
 					}
 					zos.close();
 				} else {
