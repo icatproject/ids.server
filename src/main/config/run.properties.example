@@ -14,6 +14,8 @@ sizeCheckIntervalSeconds = 60
 reader = db username root password password
 !readOnly = true
 maxIdsInQuery = 1000
+!allowRestoreFailures = true
+!missingFilesZipEntryName = path/to/FILENAME.txt
 
 # Properties for archive storage
 plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage
