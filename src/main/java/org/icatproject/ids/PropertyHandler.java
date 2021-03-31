@@ -72,6 +72,7 @@ public class PropertyHandler {
 	private long delayDatasetWrites;
 	private long delayDatafileOperations;
 	private boolean allowRestoreFailures;
+	private String missingFilesZipEntryName;
 	private ZipMapperInterface zipMapper;
 	private int tidyBlockSize;
 	private String key;
@@ -246,6 +247,7 @@ public class PropertyHandler {
 			}
 
 			allowRestoreFailures = props.getBoolean("allowRestoreFailures", false);
+			missingFilesZipEntryName = props.getString("missingFilesZipEntryName", "MISSING_FILES.txt");
 
 		} catch (CheckedPropertyException e) {
 			abort(e.getMessage());
@@ -422,6 +424,10 @@ public class PropertyHandler {
 
 	public boolean getAllowRestoreFailures() {
 		return allowRestoreFailures;
+	}
+
+	public String getMissingFilesZipEntryName() {
+		return missingFilesZipEntryName;
 	}
 
 }
