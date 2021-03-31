@@ -174,7 +174,7 @@ public class IdsBean {
 		}
 	}
 
-	private class SO implements StreamingOutput {
+	class SO implements StreamingOutput {
 
 		private long offset;
 		private boolean zip;
