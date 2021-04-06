@@ -77,10 +77,9 @@ public class DataSelection {
 		restSessionToUse = userRestSession;
 		try {
 			logger.debug("useReaderForPerformance = {}", propertyHandler.getUseReaderForPerformance());
-			logger.debug("isAvailablePublicStepDatasetToDatafile = {}", icatReader.isAvailablePublicStepDatasetToDatafile());
-			if (propertyHandler.getUseReaderForPerformance() && icatReader.isAvailablePublicStepDatasetToDatafile()) {
-				// if these two criteria are met, use a REST session for the reader account 
-				// where possible to improve performance due to the final database queries being simpler
+			if (propertyHandler.getUseReaderForPerformance()) {
+				// if this is set, use a REST session for the reader account where possible
+				// to improve performance due to the final database queries being simpler
 				restSessionToUse = restIcat.getSession(icatReader.getSessionId());
 			}
 		} catch (IcatException_Exception e) {

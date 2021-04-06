@@ -23,9 +23,6 @@ public class IcatReader {
 
 	private final static Logger logger = LoggerFactory.getLogger(IcatReader.class);
 
-	// use Boolean class to be able to check for null (not yet set)
-	private Boolean isAvailablePublicStepDatasetToDatafile;
-
 	private PropertyHandler propertyHandler;
 
 	// required for injection when other constructors exist
@@ -107,33 +104,6 @@ public class IcatReader {
 				throw e;
 			}
 		}
-	}
-
-	/**
-	 * Check whether a PublicStep is defined from a Dataset to its Datafiles
-	 * meaning that if a user can read a Dataset then they also have access
-	 * to all of the Datafiles within it.
-	 * 
-	 * @return true if the PublicStep exists
-	 * @throws IcatException_Exception if there is a problem querying ICAT
-	 */
-	public boolean isAvailablePublicStepDatasetToDatafile() throws IcatException_Exception {
-		if (isAvailablePublicStepDatasetToDatafile == null) {
-			String query = "SELECT ps from PublicStep ps WHERE ps.origin='Dataset' AND ps.field='datafiles'";
-			try {
-				// if one result is returned then the PublicStep exists
-				isAvailablePublicStepDatasetToDatafile = search(query).size() == 1;
-			} catch (IcatException_Exception e) {
-				if (e.getFaultInfo().getType().equals(IcatExceptionType.SESSION)) {
-					// login and try again
-					login();
-					isAvailablePublicStepDatasetToDatafile = search(query).size() == 1;
-				} else {
-					throw e;
-				}
-			}
-		}
-		return isAvailablePublicStepDatasetToDatafile;
 	}
 
 }
