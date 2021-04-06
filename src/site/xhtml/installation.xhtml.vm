@@ -166,10 +166,13 @@
 
 		<dt>useReaderForPerformance</dt>
 		<dd>Optional. If true allows the IDS to make use of the reader account
-			to improve query performance. Use of this option will always be
-			subject to an additional check that the user would be otherwise
-			allowed to perform the query, for example, that a PublicStep exists
-			and access to the parent entity is allowed.</dd>
+			to improve query performance. Note that this bypasses some
+			access permission checks. It essentially has the effect of
+			allowing any user access to datafiles if that user has access
+			permission to the dataset the datafiles belong to. This is
+			similar to an implicit PublicStep from Dataset to Datafile.  Do
+			not set this flag unless you would be happy to also create this
+			PublicStep in your ICAT!</dd>
 
 	</dl>
 
