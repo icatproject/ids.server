@@ -1,6 +1,5 @@
 --
--- Add the test users accounts needed by ids.server tests.
---
+-- Add the test user accounts needed by ids.server tests.
 --
 
 INSERT INTO PASSWD VALUES ('notroot','password');
