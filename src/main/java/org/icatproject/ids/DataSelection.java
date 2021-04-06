@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class to convert 3 comma separated strings containing Investigation, 
+ * Class to convert 3 comma separated strings containing Investigation,
  * Dataset and Datafile IDs into a Map of DsInfo objects and a Set of
  * DfInfo objects, containing all the fields required to perform many
  * of the core IDS operations.
@@ -58,7 +58,7 @@ public class DataSelection {
 		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
 	}
 
-	public DataSelection(PropertyHandler propertyHandler, IcatReader icatReader, String userSessionId, 
+	public DataSelection(PropertyHandler propertyHandler, IcatReader icatReader, String userSessionId,
 			String investigationIds, String datasetIds, String datafileIds,	Returns returns)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 
@@ -77,10 +77,9 @@ public class DataSelection {
 		restSessionToUse = userRestSession;
 		try {
 			logger.debug("useReaderForPerformance = {}", propertyHandler.getUseReaderForPerformance());
-			logger.debug("isAvailablePublicStepDatasetToDatafile = {}", icatReader.isAvailablePublicStepDatasetToDatafile());
-			if (propertyHandler.getUseReaderForPerformance() && icatReader.isAvailablePublicStepDatasetToDatafile()) {
-				// if these two criteria are met, use a REST session for the reader account 
-				// where possible to improve performance due to the final database queries being simpler
+			if (propertyHandler.getUseReaderForPerformance()) {
+				// if this is set, use a REST session for the reader account where possible
+				// to improve performance due to the final database queries being simpler
 				restSessionToUse = restIcat.getSession(icatReader.getSessionId());
 			}
 		} catch (IcatException_Exception e) {
@@ -149,7 +148,7 @@ public class DataSelection {
 			for (Long dsid : dsids) {
 				Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
 				dsInfos.put(dsid, new DsInfoImpl(ds));
-				// dataset access for the user has been checked so the REST session for the 
+				// dataset access for the user has been checked so the REST session for the
 				// reader account can be used if the IDS setting to allow this is enabled
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL";
@@ -260,7 +259,7 @@ public class DataSelection {
 
 	private void manyDfs(long dsid, JsonArray result)
 			throws IcatException, InsufficientPrivilegesException, InternalException {
-		// dataset access for the user has been checked so the REST session for the 
+		// dataset access for the user has been checked so the REST session for the
 		// reader account can be used if the IDS setting to allow this is enabled
 		long min = result.getJsonNumber(0).longValueExact();
 		long max = result.getJsonNumber(1).longValueExact();

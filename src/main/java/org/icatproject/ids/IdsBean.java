@@ -549,14 +549,14 @@ public class IdsBean {
 
 		// Do it
 		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 			for (DsInfo dsInfo : dsInfos.values()) {
 				fsm.queue(dsInfo, DeferredOp.ARCHIVE);
 			}
 		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
 			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 			for (DfInfoImpl dfInfo : dfInfos) {
@@ -659,7 +659,7 @@ public class IdsBean {
 
 		IdsBean.validateUUID("sessionId", sessionId);
 
-		DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+		DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
@@ -850,7 +850,7 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
@@ -987,7 +987,7 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 				investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
 
 		// Do it
@@ -1261,7 +1261,7 @@ public class IdsBean {
 			}
 		} else {
 			logger.debug("Slow computation for normal case");
-			final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+			final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 			StringBuilder sb = new StringBuilder();
@@ -1445,7 +1445,7 @@ public class IdsBean {
 		Status status = Status.ONLINE;
 
 		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 
@@ -1465,7 +1465,7 @@ public class IdsBean {
 				}
 			}
 		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
 			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
@@ -1485,7 +1485,7 @@ public class IdsBean {
 			}
 		} else {
 			// Throw exception if selection does not exist
-			new DataSelection(propertyHandler, reader, sessionId, 
+			new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 		}
 
@@ -1721,7 +1721,7 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
@@ -2079,7 +2079,7 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
@@ -2172,14 +2172,14 @@ public class IdsBean {
 
 		// Do it
 		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
 			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 			for (DsInfo dsInfo : dsInfos.values()) {
 				fsm.queue(dsInfo, DeferredOp.RESTORE);
 			}
 		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 					investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
 			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 			for (DfInfoImpl dfInfo : dfInfos) {
@@ -2242,7 +2242,7 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId, 
+		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		// Do it
