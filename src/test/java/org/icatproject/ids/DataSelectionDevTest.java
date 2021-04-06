@@ -24,24 +24,24 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 /**
- * This test was created to fix issue #115 and was run against the Diamond 
+ * This test was created to fix issue #115 and was run against the Diamond
  * pre-production ICAT using specifically selected usernames of users known
  * to have access to a lot of data.
- * 
+ *
  * As well as monitoring the time taken to create the DataSelection, detailed
- * monitoring of the eclipselink SQL logging was done to confirm that the 
+ * monitoring of the eclipselink SQL logging was done to confirm that the
  * changes were having the desired effect at the database level.
- * 
- * It would be extremely difficult to recreate an equivalent setup on a test 
+ *
+ * It would be extremely difficult to recreate an equivalent setup on a test
  * ICAT in order to perform repeatable tests so this has not been attempted.
  * However, this test was invaluable for testing during development and may
  * prove useful in the future, so has been added to the test suite even if it
  * remains Ignored.
- * 
- * The test runs from a small set of properties defined in  
+ *
+ * The test runs from a small set of properties defined in
  * DataSelectionDevTest.properties. These need to be configured to point at the
- * desired ICAT (not the one used by the integration tests), define user and 
- * reader login details, and define the lists of investigation, dataset and 
+ * desired ICAT (not the one used by the integration tests), define user and
+ * reader login details, and define the lists of investigation, dataset and
  * datafile IDs which the defined user has access to.
  */
 @RunWith(MockitoJUnitRunner.class)
@@ -103,7 +103,7 @@ import org.mockito.junit.MockitoJUnitRunner;
     @Test
     public void testCreateDataSelection() throws Exception {
         long startMs = System.currentTimeMillis();
-        DataSelection dataSelection = new DataSelection(mockedPropertyHandler, icatReader, userSessionId, 
+        DataSelection dataSelection = new DataSelection(mockedPropertyHandler, icatReader, userSessionId,
                 investigationIds, datasetIds, datafileIds, DataSelection.Returns.DATASETS_AND_DATAFILES);
         System.out.println("Creating DataSelection took " + (System.currentTimeMillis()-startMs) + " ms");
         System.out.println("DsInfo size: " + dataSelection.getDsInfo().size());
