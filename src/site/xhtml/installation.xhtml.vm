@@ -164,6 +164,16 @@
 			directory. The file ids.logback.xml.example may be renamed to
 			ids.logback.xml to get started.</dd>
 
+		<dt>useReaderForPerformance</dt>
+		<dd>Optional. If true allows the IDS to make use of the reader account
+			to improve query performance. Note that this bypasses some
+			access permission checks. It essentially has the effect of
+			allowing any user access to datafiles if that user has access
+			permission to the dataset the datafiles belong to. This is
+			similar to an implicit PublicStep from Dataset to Datafile.  Do
+			not set this flag unless you would be happy to also create this
+			PublicStep in your ICAT!</dd>
+
 	</dl>
 
 	<h3>Properties for archive storage</h3>

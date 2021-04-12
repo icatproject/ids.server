@@ -28,10 +28,67 @@ import org.icatproject.ids.plugin.DsInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class to convert 3 comma separated strings containing Investigation,
+ * Dataset and Datafile IDs into a Map of DsInfo objects and a Set of
+ * DfInfo objects, containing all the fields required to perform many
+ * of the core IDS operations.
+ */
 public class DataSelection {
 
-	private static final org.icatproject.icat.client.ICAT restIcat = PropertyHandler.getInstance().getRestIcat();
 	private final static Logger logger = LoggerFactory.getLogger(DataSelection.class);
+
+	private ICAT icat;
+	private org.icatproject.icat.client.ICAT restIcat;
+	private String userSessionId;
+	private Session userRestSession;
+	private Session restSessionToUse;
+	private int maxEntities;
+	private List<Long> invids;
+	private List<Long> dsids;
+	private List<Long> dfids;
+	private Map<Long, DsInfo> dsInfos;
+	private Set<DfInfoImpl> dfInfos;
+	private Set<Long> emptyDatasets;
+	private boolean dsWanted;
+	private boolean dfWanted;
+
+
+	public enum Returns {
+		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
+	}
+
+	public DataSelection(PropertyHandler propertyHandler, IcatReader icatReader, String userSessionId,
+			String investigationIds, String datasetIds, String datafileIds,	Returns returns)
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+
+		dfids = getValidIds("datafileIds", datafileIds);
+		dsids = getValidIds("datasetIds", datasetIds);
+		invids = getValidIds("investigationIds", investigationIds);
+		dfWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATAFILES;
+		dsWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATASETS;
+
+		this.icat = propertyHandler.getIcatService();
+		this.restIcat = propertyHandler.getRestIcat();
+		maxEntities = propertyHandler.getMaxEntities();
+		this.userSessionId = userSessionId;
+		userRestSession = restIcat.getSession(userSessionId);
+		// by default use the user's REST ICAT session
+		restSessionToUse = userRestSession;
+		try {
+			logger.debug("useReaderForPerformance = {}", propertyHandler.getUseReaderForPerformance());
+			if (propertyHandler.getUseReaderForPerformance()) {
+				// if this is set, use a REST session for the reader account where possible
+				// to improve performance due to the final database queries being simpler
+				restSessionToUse = restIcat.getSession(icatReader.getSessionId());
+			}
+		} catch (IcatException_Exception e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+
+		logger.debug("dfids: {} dsids: {} invids: {}", dfids, dsids, invids);
+		resolveDatasetIds();
+	}
 
 	/**
 	 * Checks to see if the investigation, dataset or datafile id list is a
@@ -58,45 +115,6 @@ public class DataSelection {
 		return result;
 	}
 
-	private Map<Long, DsInfo> dsInfos;
-	private ICAT icat;
-	private String sessionId;
-	private boolean dfWanted;
-	private List<Long> dfids;
-	private List<Long> dsids;
-	private List<Long> invids;
-	private Set<DfInfoImpl> dfInfos;
-	private Set<Long> emptyDatasets;
-	private boolean dsWanted;
-	private Session restSession;
-
-	public static int maxEntities = PropertyHandler.getInstance().getMaxEntities();
-
-	public enum Returns {
-		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
-	}
-
-	public DataSelection(ICAT icat, String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			Returns returns)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		this.icat = icat;
-		this.sessionId = sessionId;
-		dfids = getValidIds("datafileIds", datafileIds);
-		dsids = getValidIds("datasetIds", datasetIds);
-		invids = getValidIds("investigationIds", investigationIds);
-		dfWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATAFILES;
-		dsWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATASETS;
-		restSession = restIcat.getSession(sessionId);
-		logger.debug("dfids: {} dsids: {} invids: {}", dfids, dsids, invids);
-		resolveDatasetIds();
-
-	}
-
-	public Map<Long, DsInfo> getDsInfo() {
-		return dsInfos;
-	}
-
 	private void resolveDatasetIds()
 			throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
 		dsInfos = new HashMap<>();
@@ -107,7 +125,7 @@ public class DataSelection {
 
 		try {
 			for (Long dfid : dfids) {
-				List<Object> dss = icat.search(sessionId,
+				List<Object> dss = icat.search(userSessionId,
 						"SELECT ds FROM Dataset ds JOIN ds.datafiles df WHERE df.id = " + dfid
 								+ " AND df.location IS NOT NULL INCLUDE ds.investigation.facility");
 				if (dss.size() == 1) {
@@ -115,23 +133,26 @@ public class DataSelection {
 					long dsid = ds.getId();
 					dsInfos.put(dsid, new DsInfoImpl(ds));
 					if (dfWanted) {
-						Datafile df = (Datafile) icat.get(sessionId, "Datafile", dfid);
+						Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
 						String location = IdsBean.getLocation(dfid, df.getLocation());
 						dfInfos.add(
 								new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
 					}
 				} else {
 					// Next line may reveal a permissions problem
-					icat.get(sessionId, "Datafile", dfid);
+					icat.get(userSessionId, "Datafile", dfid);
 					throw new NotFoundException("Datafile " + dfid);
 				}
 			}
+
 			for (Long dsid : dsids) {
-				Dataset ds = (Dataset) icat.get(sessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
+				Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
 				dsInfos.put(dsid, new DsInfoImpl(ds));
+				// dataset access for the user has been checked so the REST session for the
+				// reader account can be used if the IDS setting to allow this is enabled
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL";
-				JsonArray result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
+				JsonArray result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes()))
 						.readArray().getJsonArray(0);
 				if (result.getJsonNumber(2).longValueExact() == 0) { // Count 0
 					emptyDatasets.add(dsid);
@@ -143,7 +164,7 @@ public class DataSelection {
 			for (Long invid : invids) {
 				String query = "SELECT min(ds.id), max(ds.id), count(ds.id) FROM Dataset ds WHERE ds.investigation.id = "
 						+ invid;
-				JsonArray result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
+				JsonArray result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes()))
 						.readArray().getJsonArray(0);
 				manyDss(invid, result);
 
@@ -190,7 +211,7 @@ public class DataSelection {
 			if (count <= maxEntities) {
 				String query = "SELECT inv.name, inv.visitId, inv.facility.id,  inv.facility.name FROM Investigation inv WHERE inv.id = "
 						+ invid;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray();
 				if (result.size() == 0) {
 					return;
 				}
@@ -202,7 +223,7 @@ public class DataSelection {
 
 				query = "SELECT ds.id, ds.name, ds.location FROM Dataset ds WHERE ds.investigation.id = " + invid
 						+ " AND ds.id BETWEEN " + min + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray();
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dsid = tup.getJsonNumber(0).longValueExact();
@@ -211,7 +232,7 @@ public class DataSelection {
 
 					query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 							+ dsid + " AND df.location IS NOT NULL";
-					result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes()))
+					result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes()))
 							.readArray().getJsonArray(0);
 					if (result.getJsonNumber(2).longValueExact() == 0) {
 						emptyDatasets.add(dsid);
@@ -224,11 +245,11 @@ public class DataSelection {
 				long half = (min + max) / 2;
 				String query = "SELECT min(ds.id), max(ds.id), count(ds.id) FROM Dataset ds WHERE ds.investigation.id = "
 						+ invid + " AND ds.id BETWEEN " + min + " AND " + half;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray();
 				manyDss(invid, result);
 				query = "SELECT min(ds.id), max(ds.id), count(ds.id) FROM Dataset ds WHERE ds.investigation.id = "
 						+ invid + " AND ds.id BETWEEN " + half + 1 + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
+				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDss(invid, result);
 			}
@@ -238,6 +259,8 @@ public class DataSelection {
 
 	private void manyDfs(long dsid, JsonArray result)
 			throws IcatException, InsufficientPrivilegesException, InternalException {
+		// dataset access for the user has been checked so the REST session for the
+		// reader account can be used if the IDS setting to allow this is enabled
 		long min = result.getJsonNumber(0).longValueExact();
 		long max = result.getJsonNumber(1).longValueExact();
 		long count = result.getJsonNumber(2).longValueExact();
@@ -246,7 +269,7 @@ public class DataSelection {
 			if (count <= maxEntities) {
 				String query = "SELECT df.id, df.name, df.location, df.createId, df.modId FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray();
+				result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes())).readArray();
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dfid = tup.getJsonNumber(0).longValueExact();
@@ -258,17 +281,20 @@ public class DataSelection {
 				long half = (min + max) / 2;
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + half;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
+				result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDfs(dsid, result);
 				query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = " + dsid
 						+ " AND df.location IS NOT NULL AND df.id BETWEEN " + (half + 1) + " AND " + max;
-				result = Json.createReader(new ByteArrayInputStream(restSession.search(query).getBytes())).readArray()
+				result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes())).readArray()
 						.getJsonArray(0);
 				manyDfs(dsid, result);
 			}
 		}
+	}
 
+	public Map<Long, DsInfo> getDsInfo() {
+		return dsInfos;
 	}
 
 	public Set<DfInfoImpl> getDfInfo() {

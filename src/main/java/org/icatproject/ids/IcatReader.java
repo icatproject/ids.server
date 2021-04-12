@@ -23,6 +23,19 @@ public class IcatReader {
 
 	private final static Logger logger = LoggerFactory.getLogger(IcatReader.class);
 
+	private PropertyHandler propertyHandler;
+
+	// required for injection when other constructors exist
+	public IcatReader() {
+
+	}
+
+	// primarily required for testing to make it possible to use a mocked PropertyHandler
+	public IcatReader(PropertyHandler propertyHandler) {
+		this.propertyHandler = propertyHandler;
+		init();
+	}
+
 	@PostConstruct
 	private void init() {
 		try {
@@ -34,7 +47,9 @@ public class IcatReader {
 	}
 
 	private void login() throws IcatException_Exception {
-		PropertyHandler propertyHandler = PropertyHandler.getInstance();
+		if (propertyHandler == null) {
+			propertyHandler = PropertyHandler.getInstance();
+		}
 		icat = propertyHandler.getIcatService();
 		List<String> creds = propertyHandler.getReader();
 		if (creds != null) {

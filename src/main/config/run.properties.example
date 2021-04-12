@@ -14,6 +14,10 @@ sizeCheckIntervalSeconds = 60
 reader = db username root password password
 !readOnly = true
 maxIdsInQuery = 1000
+# Note that useReaderForPerformance has implications on access
+# permissions.  Read the installation instructions before enabling
+# this!
+!useReaderForPerformance = true
 
 # Properties for archive storage
 plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage

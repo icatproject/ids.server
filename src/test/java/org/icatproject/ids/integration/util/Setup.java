@@ -1,22 +1,17 @@
 package org.icatproject.ids.integration.util;
 
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Properties;
 
 import org.icatproject.ICAT;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.Login.Credentials;
-import org.icatproject.Login.Credentials.Entry;
 import org.icatproject.ids.ICATGetter;
+import org.icatproject.ids.TestUtils;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.ShellCommand;
 
@@ -30,7 +25,7 @@ public class Setup {
 	private URL icatUrl = null;
 	private URL idsUrl = null;
 
-	private String goodSessionId = null;
+	private String rootSessionId = null;
 	private String forbiddenSessionId = null;
 
 	private Path home;
@@ -101,10 +96,9 @@ public class Setup {
 		}
 		updownDir = home.resolve(testProps.getProperty("updownDir"));
 		icatUrl = runProperties.getURL("icat.url");
-		goodSessionId = login(testProps.getProperty("authorizedIcatUsername"),
-				testProps.getProperty("authorizedIcatPassword"));
-		forbiddenSessionId = login(testProps.getProperty("unauthorizedIcatUsername"),
-				testProps.getProperty("unauthorizedIcatPassword"));
+		ICAT icat = ICATGetter.getService(icatUrl.toString());
+		rootSessionId = TestUtils.login(icat, testProps.getProperty("login.root"));
+		forbiddenSessionId = TestUtils.login(icat, testProps.getProperty("login.unauthorized"));
 
 		storageDir = runProperties.getPath("plugin.main.dir");
 
@@ -134,31 +128,12 @@ public class Setup {
 		}
 	}
 
-	public String login(String username, String password) throws IcatException_Exception, MalformedURLException {
-		ICAT icat = ICATGetter.getService(icatUrl.toString());
-
-		Credentials credentials = new Credentials();
-		List<Entry> entries = credentials.getEntry();
-
-		Entry u = new Entry();
-		u.setKey("username");
-		u.setValue(username);
-		entries.add(u);
-
-		Entry p = new Entry();
-		p.setKey("password");
-		p.setValue(password);
-		entries.add(p);
-		String sessionId = icat.login("db", credentials);
-		return sessionId;
-	}
-
 	public String getForbiddenSessionId() {
 		return forbiddenSessionId;
 	}
 
-	public String getGoodSessionId() {
-		return goodSessionId;
+	public String getRootSessionId() {
+		return rootSessionId;
 	}
 
 	public URL getIdsUrl() {

@@ -80,6 +80,7 @@ public class PropertyHandler {
 	private String jmsTopicConnectionFactory;
 	private Set<CallType> logSet = new HashSet<>();
 	private org.icatproject.icat.client.ICAT restIcat;
+	private boolean useReaderForPerformance;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -243,6 +244,8 @@ public class PropertyHandler {
 			} else {
 				logger.info("'log.list' entry not present so no JMS call logging will be performed");
 			}
+
+			useReaderForPerformance = props.getBoolean("useReaderForPerformance", false);
 
 		} catch (CheckedPropertyException e) {
 			abort(e.getMessage());
@@ -417,4 +420,7 @@ public class PropertyHandler {
 		return restIcat;
 	}
 
+	public boolean getUseReaderForPerformance() {
+		return useReaderForPerformance;
+	}
 }
