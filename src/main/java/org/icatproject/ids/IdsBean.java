@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -21,9 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -44,10 +41,6 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -354,96 +347,6 @@ public class IdsBean {
 		}
 	}
 
-	static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DsInfo> dsInfos,
-			Set<DfInfoImpl> dfInfos, Set<Long> emptyDatasets) {
-		JsonGenerator gen = Json.createGenerator(stream);
-		gen.writeStartObject();
-		gen.write("zip", zip);
-		gen.write("compress", compress);
-
-		gen.writeStartArray("dsInfo");
-		for (DsInfo dsInfo : dsInfos.values()) {
-			logger.debug("dsInfo " + dsInfo);
-			gen.writeStartObject().write("dsId", dsInfo.getDsId())
-
-					.write("dsName", dsInfo.getDsName()).write("facilityId", dsInfo.getFacilityId())
-					.write("facilityName", dsInfo.getFacilityName()).write("invId", dsInfo.getInvId())
-					.write("invName", dsInfo.getInvName()).write("visitId", dsInfo.getVisitId());
-			if (dsInfo.getDsLocation() != null) {
-				gen.write("dsLocation", dsInfo.getDsLocation());
-			} else {
-				gen.writeNull("dsLocation");
-			}
-			gen.writeEnd();
-		}
-		gen.writeEnd();
-
-		gen.writeStartArray("dfInfo");
-		for (DfInfoImpl dfInfo : dfInfos) {
-			DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-			gen.writeStartObject().write("dsId", dsInfo.getDsId()).write("dfId", dfInfo.getDfId())
-					.write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
-					.write("modId", dfInfo.getModId());
-			if (dfInfo.getDfLocation() != null) {
-				gen.write("dfLocation", dfInfo.getDfLocation());
-			} else {
-				gen.writeNull("dfLocation");
-			}
-			gen.writeEnd();
-
-		}
-		gen.writeEnd();
-
-		gen.writeStartArray("emptyDs");
-		for (Long emptyDs : emptyDatasets) {
-			gen.write(emptyDs);
-		}
-		gen.writeEnd();
-
-		gen.writeEnd().close();
-
-	}
-
-	static Prepared unpack(InputStream stream) throws InternalException {
-		Prepared prepared = new Prepared();
-		JsonObject pd;
-		try (JsonReader jsonReader = Json.createReader(stream)) {
-			pd = jsonReader.readObject();
-		}
-		prepared.zip = pd.getBoolean("zip");
-		prepared.compress = pd.getBoolean("compress");
-		SortedMap<Long, DsInfo> dsInfos = new TreeMap<>();
-		SortedSet<DfInfoImpl> dfInfos = new TreeSet<>();
-		Set<Long> emptyDatasets = new HashSet<>();
-
-		for (JsonValue itemV : pd.getJsonArray("dfInfo")) {
-			JsonObject item = (JsonObject) itemV;
-			String dfLocation = item.isNull("dfLocation") ? null : item.getString("dfLocation");
-			dfInfos.add(new DfInfoImpl(item.getJsonNumber("dfId").longValueExact(), item.getString("dfName"),
-					dfLocation, item.getString("createId"), item.getString("modId"),
-					item.getJsonNumber("dsId").longValueExact()));
-
-		}
-		prepared.dfInfos = dfInfos;
-
-		for (JsonValue itemV : pd.getJsonArray("dsInfo")) {
-			JsonObject item = (JsonObject) itemV;
-			long dsId = item.getJsonNumber("dsId").longValueExact();
-			String dsLocation = item.isNull("dsLocation") ? null : item.getString("dsLocation");
-			dsInfos.put(dsId, new DsInfoImpl(dsId, item.getString("dsName"), dsLocation,
-					item.getJsonNumber("invId").longValueExact(), item.getString("invName"), item.getString("visitId"),
-					item.getJsonNumber("facilityId").longValueExact(), item.getString("facilityName")));
-		}
-		prepared.dsInfos = dsInfos;
-
-		for (JsonValue itemV : pd.getJsonArray("emptyDs")) {
-			emptyDatasets.add(((JsonNumber) itemV).longValueExact());
-		}
-		prepared.emptyDatasets = emptyDatasets;
-
-		return prepared;
-	}
-
 	public static void validateUUID(String thing, String id) throws BadRequestException {
 		if (id == null || !uuidRegExp.matcher(id).matches())
 			throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
@@ -481,6 +384,8 @@ public class IdsBean {
 	private Path markerDir;
 
 	private Path preparedDir;
+
+	private PreparedFilesManager preparedFilesManager;
 
 	private PropertyHandler propertyHandler;
 
@@ -761,14 +666,7 @@ public class IdsBean {
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		final boolean zip = prepared.zip;
 		final boolean compress = prepared.compress;
@@ -937,14 +835,7 @@ public class IdsBean {
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		final boolean zip = prepared.zip;
 		final boolean compress = prepared.compress;
@@ -1168,14 +1059,7 @@ public class IdsBean {
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
 
@@ -1358,14 +1242,7 @@ public class IdsBean {
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
 		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
@@ -1525,6 +1402,7 @@ public class IdsBean {
 				datatypeFactory = DatatypeFactory.newInstance();
 				preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 				Files.createDirectories(preparedDir);
+				preparedFilesManager = new PreparedFilesManager(preparedDir);
 				linkDir = propertyHandler.getCacheDir().resolve("link");
 				Files.createDirectories(linkDir);
 
@@ -1586,16 +1464,9 @@ public class IdsBean {
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		boolean prepared = true;
+		boolean isPrepared = true;
 
-		Prepared preparedJson;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			preparedJson = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
 
@@ -1623,54 +1494,54 @@ public class IdsBean {
 			}
 
 			if (storageUnit == StorageUnit.DATASET) {
-				Collection<DsInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
-						: preparedJson.dsInfos.tailMap(status.fromDsElement).values();
+				Collection<DsInfo> toCheck = status.fromDsElement == null ? prepared.dsInfos.values()
+						: prepared.dsInfos.tailMap(status.fromDsElement).values();
 				logger.debug("Will check online status of {} entries", toCheck.size());
 				for (DsInfo dsInfo : toCheck) {
 					fsm.checkFailure(dsInfo.getDsId());
-					if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
-						prepared = false;
+					if (restoreIfOffline(dsInfo, prepared.emptyDatasets)) {
+						isPrepared = false;
 						status.fromDsElement = dsInfo.getDsId();
-						toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
+						toCheck = prepared.dsInfos.tailMap(status.fromDsElement).values();
 						logger.debug("Will check in background status of {} entries", toCheck.size());
-						status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets));
+						status.future = threadPool.submit(new RunPrepDsCheck(toCheck, prepared.emptyDatasets));
 						break;
 					}
 				}
-				if (prepared) {
+				if (isPrepared) {
 					toCheck = status.fromDsElement == null ? Collections.emptySet()
-							: preparedJson.dsInfos.headMap(status.fromDsElement).values();
+							: prepared.dsInfos.headMap(status.fromDsElement).values();
 					logger.debug("Will check finally online status of {} entries", toCheck.size());
 					for (DsInfo dsInfo : toCheck) {
 						fsm.checkFailure(dsInfo.getDsId());
-						if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
-							prepared = false;
+						if (restoreIfOffline(dsInfo, prepared.emptyDatasets)) {
+							isPrepared = false;
 						}
 					}
 				}
 			} else if (storageUnit == StorageUnit.DATAFILE) {
-				SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
-						: preparedJson.dfInfos.tailSet(status.fromDfElement);
+				SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? prepared.dfInfos
+						: prepared.dfInfos.tailSet(status.fromDfElement);
 				logger.debug("Will check online status of {} entries", toCheck.size());
 				for (DfInfoImpl dfInfo : toCheck) {
 					fsm.checkFailure(dfInfo.getDfId());
 					if (restoreIfOffline(dfInfo)) {
-						prepared = false;
+						isPrepared = false;
 						status.fromDfElement = dfInfo;
-						toCheck = preparedJson.dfInfos.tailSet(status.fromDfElement);
+						toCheck = prepared.dfInfos.tailSet(status.fromDfElement);
 						logger.debug("Will check in background status of {} entries", toCheck.size());
 						status.future = threadPool.submit(new RunPrepDfCheck(toCheck));
 						break;
 					}
 				}
-				if (prepared) {
+				if (isPrepared) {
 					toCheck = status.fromDfElement == null ? new TreeSet<>()
-							: preparedJson.dfInfos.headSet(status.fromDfElement);
+							: prepared.dfInfos.headSet(status.fromDfElement);
 					logger.debug("Will check finally online status of {} entries", toCheck.size());
 					for (DfInfoImpl dfInfo : toCheck) {
 						fsm.checkFailure(dfInfo.getDfId());
 						if (restoreIfOffline(dfInfo)) {
-							prepared = false;
+							isPrepared = false;
 						}
 					}
 				}
@@ -1686,7 +1557,7 @@ public class IdsBean {
 				transmitter.processMessage("isPrepared", ip, body, start);
 			}
 
-			return prepared;
+			return isPrepared;
 
 		} finally {
 			status.lock.unlock();
@@ -1748,14 +1619,9 @@ public class IdsBean {
 			zip = true;
 		}
 
-		logger.debug("Writing to " + preparedDir.resolve(preparedId));
-		try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(preparedDir.resolve(preparedId)))) {
-			pack(stream, zip, compress, dsInfos, dfInfos, emptyDs);
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		preparedFilesManager.pack(preparedId, zip, compress, dsInfos, dfInfos, emptyDs);
 
-		logger.debug("preparedId is " + preparedId);
+		logger.debug("preparedId is {}", preparedId);
 
 		if (logSet.contains(CallType.PREPARE)) {
 			try {
@@ -2039,21 +1905,14 @@ public class IdsBean {
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Prepared preparedJson;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			preparedJson = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		if (storageUnit == StorageUnit.DATASET) {
-			for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
+			for (DsInfo dsInfo : prepared.dsInfos.values()) {
 				fsm.recordSuccess(dsInfo.getDsId());
 			}
 		} else if (storageUnit == StorageUnit.DATAFILE) {
-			for (DfInfoImpl dfInfo : preparedJson.dfInfos) {
+			for (DfInfoImpl dfInfo : prepared.dfInfos) {
 				fsm.recordSuccess(dfInfo.getDfId());
 			}
 		}

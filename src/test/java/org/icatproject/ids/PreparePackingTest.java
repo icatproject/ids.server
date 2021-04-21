@@ -6,11 +6,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,6 +22,11 @@ public class PreparePackingTest {
 
 	@Test
 	public void packAndUnpack() throws Exception {
+		Path preparedDir = Paths.get(System.getProperty("java.io.tmpdir")).resolve("prepared");
+		Files.createDirectories(preparedDir);
+		PreparedFilesManager preparedFilesManager = new PreparedFilesManager(preparedDir);
+		String preparedId = this.getClass().getSimpleName() + "-" + System.currentTimeMillis();
+
 		boolean zip = true;
 		boolean compress = false;
 		Map<Long, DsInfo> dsInfos = new HashMap<>();
@@ -46,13 +49,9 @@ public class PreparePackingTest {
 
 		emptyDatasets.add(dsid2);
 
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try (OutputStream stream = new BufferedOutputStream(baos)) {
-			IdsBean.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets);
-		}
-		System.out.println(baos.toString());
-		InputStream stream = new ByteArrayInputStream(baos.toByteArray());
-		Prepared prepared = IdsBean.unpack(stream);
+		preparedFilesManager.pack(preparedId, zip, compress, dsInfos, dfInfos, emptyDatasets);
+
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 		assertTrue(prepared.zip);
 		assertFalse(prepared.compress);
 		for (DfInfoImpl dfInfo : prepared.dfInfos) {
