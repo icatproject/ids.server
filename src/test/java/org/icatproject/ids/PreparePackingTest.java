@@ -91,5 +91,8 @@ public class PreparePackingTest {
 		}
 		assertEquals(1, prepared.emptyDatasets.size());
 		assertEquals((Long) dsid2, prepared.emptyDatasets.iterator().next());
+
+		// tidy up
+		preparedFilesManager.deletePreparedFile(preparedId);
 	}
 }
