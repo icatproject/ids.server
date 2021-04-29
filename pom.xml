@@ -1,16 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.icatproject</groupId>
-	<artifactId>ids.server</artifactId>
+	<groupId>uk.ac.rl.esc</groupId>
+	<artifactId>dls-ids-server</artifactId>
 	<packaging>war</packaging>
-	<version>1.12.0-SNAPSHOT</version>
-	<name>IDS Server</name>
+	<version>2.0.0-SNAPSHOT</version>
+	<name>DLS IDS Server</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<repoUrl>https://repo.icatproject.org/repo</repoUrl>
+		<gitUrl>https://github.com/ral-facilities/dls-ids-server</gitUrl>
+		<repoUrl>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases</repoUrl>
 		<project.scm.id>github</project.scm.id>
 	</properties>
 
@@ -34,14 +35,14 @@
 	</pluginRepositories>
 
 	<scm>
-		<connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
-		<developerConnection>scm:git:git@github.com:icatproject/ids.server.git</developerConnection>
-		<url>https://github.com/icatproject/ids.server</url>
-		<tag>v1.9.1</tag>
+		<connection>scm:git:${gitUrl}.git</connection>
+		<developerConnection>scm:git:${gitUrl}.git</developerConnection>
+		<url>${gitUrl}</url>
+		<tag>v${project.version}</tag>
 	</scm>
 
 	<issueManagement>
-		<url>https://github.com/icatproject/ids.server/issues</url>
+		<url>${gitUrl}/issues</url>
 		<system>GitHub</system>
 	</issueManagement>
 
@@ -53,23 +54,27 @@
 	</licenses>
 
 	<organization>
-		<name>The ICAT Collaboration</name>
-		<url>http://www.icatproject.org</url>
+		<name>UKRI/STFC</name>
+		<url>https://stfc.ukri.org/</url>
 	</organization>
 
 	<distributionManagement>
-		<downloadUrl>https://repo.icatproject.org/repo</downloadUrl>
+		<downloadUrl>http://nexus.esc.rl.ac.uk:8081/nexus</downloadUrl>
 		<site>
-			<id>repo.icatproject.org</id>
-			<url>dav:https://repo.icatproject.org/site/ids/server/${project.version}</url>
+			<id>nexus.esc.rl.ac.uk</id>
+			<url>dav:http://nexus.esc.rl.ac.uk:8081/nexus/content/sites/site/storaged-ids-server/${project.version}</url>
 		</site>
 		<repository>
-			<id>repo.icatproject.org</id>
-			<url>dav:https://repo.icatproject.org/repo</url>
+			<id>nexus.esc.rl.ac.uk</id>
+			<url>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases</url>
 		</repository>
+		<snapshotRepository>
+			<id>nexus.esc.rl.ac.uk</id>
+			<url>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
 	</distributionManagement>
 
-	<description>ICAT Data Service to provide a uniform interface to data.</description>
+	<description>ICAT Data Service specifically to work as part of the Diamond ICAT stack.</description>
 
 	<dependencies>
 
