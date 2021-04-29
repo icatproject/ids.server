@@ -41,6 +41,10 @@ public class PreparedFilesManager {
 	private static Logger logger = LoggerFactory.getLogger(PreparedFilesManager.class);
     private Path preparedDir;
 
+    public PreparedFilesManager() {
+        preparedDir = PropertyHandler.getInstance().getCacheDir().resolve(Constants.PREPARED_DIR_NAME);
+    }
+
     public PreparedFilesManager(Path preparedDir) {
         this.preparedDir = preparedDir;
     }
@@ -149,5 +153,14 @@ public class PreparedFilesManager {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 	}
+
+    public void deletePreparedFile(String preparedId) {
+        boolean deleted = preparedDir.resolve(preparedId).toFile().delete();
+        if (deleted) {
+            logger.debug("Deleted prepared file for preparedId {}", preparedId);
+        } else {
+            logger.debug("No prepared file found to delete for preparedId {}", preparedId);
+        }
+    }
 
 }
