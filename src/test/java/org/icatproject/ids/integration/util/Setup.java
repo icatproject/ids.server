@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.icatproject.ICAT;
+import org.icatproject.ids.Constants;
 import org.icatproject.ids.ICATGetter;
 import org.icatproject.ids.TestUtils;
 import org.icatproject.utils.CheckedProperties;
@@ -107,7 +108,7 @@ public class Setup {
 		}
 
 		Path cacheDir = runProperties.getPath("cache.dir");
-		preparedCacheDir = cacheDir.resolve("prepared");
+		preparedCacheDir = cacheDir.resolve(Constants.PREPARED_DIR_NAME);
 		twoLevel = runProperties.has("plugin.archive.class");
 		if (twoLevel) {
 			String storageUnitString = runProperties.getString("storageUnit");
