@@ -23,10 +23,13 @@ import org.icatproject.ids.IdsBean.CallType;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.ids.storage.ArchiveStorageInterfaceDLS;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.stfc.storaged.ArchiveSDStorage;
 
 /*
  * Load the properties specified in the properties file ids.properties.
@@ -47,7 +50,8 @@ public class PropertyHandler {
 		return logger;
 	}
 
-	private ArchiveStorageInterface archiveStorage;
+	private Properties simpleProps;
+
 	private Path cacheDir;
 	private boolean enableWrite;
 	private Path filesCheckErrorLog;
@@ -58,6 +62,7 @@ public class PropertyHandler {
 	private long linkLifetimeMillis;
 
 	private MainStorageInterface mainStorage;
+	private Class<ArchiveStorageInterfaceDLS> archiveStorageClass;
 
 	private int preparedCount;
 
@@ -132,7 +137,7 @@ public class PropertyHandler {
 			}
 
 			// Now get simple properties to pass to the plugins
-			Properties simpleProps = new Properties();
+			simpleProps = new Properties();
 			try (InputStream is = getClass().getClassLoader().getResourceAsStream("run.properties")) {
 				simpleProps.load(is);
 			} catch (IOException e) {
@@ -150,18 +155,21 @@ public class PropertyHandler {
 				abort(e.getClass() + " " + e.getMessage());
 			}
 
+			// ensure plugin.archive.class is set and it is possible to initialise an instance of it
+			// note that the test instance created here is no longer used once the check is complete
 			if (!props.has("plugin.archive.class")) {
-				logger.info("Property plugin.archive.class not set, single storage enabled.");
+				String message = "Property plugin.archive.class must be set in run.properties";
+				logger.error(message);
+				abort(message);
 			} else {
 				try {
-					Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
-							.forName(props.getString("plugin.archive.class"));
-					archiveStorage = klass.getConstructor(Properties.class).newInstance(simpleProps);
-					logger.debug("archiveStorage initialised");
+					archiveStorageClass = (Class<ArchiveStorageInterfaceDLS>)Class.forName(props.getString("plugin.archive.class"));
+					ArchiveStorageInterfaceDLS archiveStorage = archiveStorageClass.getConstructor(Properties.class).newInstance(simpleProps);
+					logger.debug("Test instance of ArchiveStorageInterfaceDLS successfully initialised");
 				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 						| IllegalArgumentException | InvocationTargetException | NoSuchMethodException
-						| SecurityException e) {
-					logger.error("Plugin failed...", e);
+						| SecurityException | ClassCastException e) {
+					logger.error("Failed to create test instance of ArchiveStorageInterfaceDLS", e);
 					abort(e.getClass() + " " + e.getMessage());
 				}
 				startArchivingLevel = props.getPositiveLong("startArchivingLevel1024bytes") * 1024;
@@ -258,8 +266,14 @@ public class PropertyHandler {
 		throw new IllegalStateException(msg);
 	}
 
+	// TODO: remove this method as a new ArchiveStorageInterfaceDLS will now
+	// be created in each restorer thread rather than one being shared
 	public ArchiveStorageInterface getArchiveStorage() {
-		return archiveStorage;
+		return null;
+	}
+
+	public Class<ArchiveStorageInterfaceDLS> getArchiveStorageClass() {
+		return archiveStorageClass;
 	}
 
 	public Path getCacheDir() {
@@ -358,6 +372,10 @@ public class PropertyHandler {
 			}
 		}
 		return maxEntities;
+	}
+
+	public Properties getSimpleProperties() {
+		return simpleProps;
 	}
 
 	public int getMaxIdsInQuery() {
