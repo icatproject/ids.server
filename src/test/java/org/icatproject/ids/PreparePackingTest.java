@@ -22,7 +22,7 @@ public class PreparePackingTest {
 
 	@Test
 	public void packAndUnpack() throws Exception {
-		Path preparedDir = Paths.get(System.getProperty("java.io.tmpdir")).resolve("prepared");
+		Path preparedDir = Paths.get(System.getProperty("java.io.tmpdir")).resolve(Constants.PREPARED_DIR_NAME);
 		Files.createDirectories(preparedDir);
 		PreparedFilesManager preparedFilesManager = new PreparedFilesManager(preparedDir);
 		String preparedId = this.getClass().getSimpleName() + "-" + System.currentTimeMillis();
