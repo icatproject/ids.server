@@ -1400,9 +1400,13 @@ public class IdsBean {
 				archiveStorage = propertyHandler.getArchiveStorage();
 				twoLevel = archiveStorage != null;
 				datatypeFactory = DatatypeFactory.newInstance();
-				preparedDir = propertyHandler.getCacheDir().resolve("prepared");
+				preparedDir = propertyHandler.getCacheDir().resolve(Constants.PREPARED_DIR_NAME);
 				Files.createDirectories(preparedDir);
 				preparedFilesManager = new PreparedFilesManager(preparedDir);
+				Path completedDir = propertyHandler.getCacheDir().resolve(Constants.COMPLETED_DIR_NAME);
+				Files.createDirectories(completedDir);
+				Path failedFilesDir = propertyHandler.getCacheDir().resolve(Constants.FAILED_DIR_NAME);
+				Files.createDirectories(failedFilesDir);
 				linkDir = propertyHandler.getCacheDir().resolve("link");
 				Files.createDirectories(linkDir);
 
