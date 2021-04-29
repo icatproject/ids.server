@@ -261,7 +261,7 @@ public class Tidier {
 			PropertyHandler propertyHandler = PropertyHandler.getInstance();
 			sizeCheckIntervalMillis = propertyHandler.getSizeCheckIntervalMillis();
 			preparedCount = propertyHandler.getPreparedCount();
-			preparedDir = propertyHandler.getCacheDir().resolve("prepared");
+			preparedDir = propertyHandler.getCacheDir().resolve(Constants.PREPARED_DIR_NAME);
 			Files.createDirectories(preparedDir);
 			linkDir = propertyHandler.getCacheDir().resolve("link");
 			Files.createDirectories(linkDir);
