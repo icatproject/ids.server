@@ -86,7 +86,7 @@ public class DataSelection {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
-		logger.debug("dfids: {} dsids: {} invids: {}", dfids, dsids, invids);
+		logger.debug("dfids: {} dsids: {} invids: {}", new Object[] {dfids, dsids, invids});
 		resolveDatasetIds();
 	}
 
@@ -206,7 +206,7 @@ public class DataSelection {
 		long min = result.getJsonNumber(0).longValueExact();
 		long max = result.getJsonNumber(1).longValueExact();
 		long count = result.getJsonNumber(2).longValueExact();
-		logger.debug("manyDss min: {} max: {} count: {}", min, max, count);
+		logger.debug("manyDss min: {} max: {} count: {}", new Object[] {min, max, count});
 		if (count != 0) {
 			if (count <= maxEntities) {
 				String query = "SELECT inv.name, inv.visitId, inv.facility.id,  inv.facility.name FROM Investigation inv WHERE inv.id = "
@@ -264,7 +264,7 @@ public class DataSelection {
 		long min = result.getJsonNumber(0).longValueExact();
 		long max = result.getJsonNumber(1).longValueExact();
 		long count = result.getJsonNumber(2).longValueExact();
-		logger.debug("manyDfs min: {} max: {} count: {}", min, max, count);
+		logger.debug("manyDfs min: {} max: {} count: {}", new Object[] {min, max, count});
 		if (count != 0) {
 			if (count <= maxEntities) {
 				String query = "SELECT df.id, df.name, df.location, df.createId, df.modId FROM Datafile df WHERE df.dataset.id = "
