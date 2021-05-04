@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * All threads are kept in a Map keyed on the prepared ID where the entries
  * are a list of Threads that are working on that prepared ID.
  * 
- * Allowing for a list of Threads per preparedId gives options to limit the
+ * Allowing for a list of Threads per preparedId makes it possible to limit the
  * maximum number of files per restore thread, either to avoid excessively
  * large requests or to create multiple parallel Threads for potentially
  * increased performance. These need to be worked out from the performance 
@@ -37,27 +37,70 @@ public class RestorerThreadManager {
 
     private Map<String, List<RestorerThread>> restorerThreadMap = new ConcurrentHashMap<>();
 
+
+    /**
+     * Submit a list of DatafileInfo objects corresponding to the files that 
+     * have been requested for restoration from Archive Storage. Firstly the 
+     * Main Storage cache is checked to remove any files that are already 
+     * available, then if the number of files exceeds the limit per restore 
+     * request then the request is split into multiple requests that are all
+     * below the allowed limit.
+     * 
+     * @param preparedId the prepared ID relating to the restore request
+     * @param dfInfosToRestore the list of DatafileInfo objects to restore
+     */
+    public void submitFilesForRestore(String preparedId, List<DfInfo> dfInfosToRestore) {
+        logger.debug("{} files submitted for restore with preparedId {}", dfInfosToRestore.size(), preparedId);
+        removeFilesAlreadyOnCache(dfInfosToRestore);
+        logger.debug("{} files will be restored for preparedId {}", dfInfosToRestore.size(), preparedId);
+        int maxFilesPerRequest = propertyHandler.getMaxRestoresPerThread();
+        int numFilesToRestore = dfInfosToRestore.size();
+        int numThreads = (numFilesToRestore/maxFilesPerRequest);
+        if (numFilesToRestore%maxFilesPerRequest != 0) {
+            numThreads += 1;
+        }
+        logger.debug("{} restore thread will be created for preparedId {}", numThreads, preparedId);
+        int filesPerRequest = ((numFilesToRestore-1)/numThreads) + 1;
+        logger.debug("The max number of files per restore thread for preparedId {} will be {}", preparedId, filesPerRequest);
+
+        int fromIndex = 0;
+        for (int threadCount=1; threadCount<=numThreads; threadCount++) {
+            int toIndex = fromIndex + filesPerRequest;
+            if (toIndex > numFilesToRestore) {
+                toIndex = numFilesToRestore;
+            }
+            List<DfInfo> subList = dfInfosToRestore.subList(fromIndex, toIndex);
+            createRestorerThread(preparedId, subList, false);
+            fromIndex = toIndex;
+        }
+    }
+
     /**
      * Create a thread to restore the given list of files from Archive Storage.
-     * Firstly the list is checked to remove any files that are already on Main
-     * Storage. Then a thread is started to carry out the restore and it is put
-     * into a Map containing Lists of Threads working on each preparedId.
+     * A thread is started to carry out the restore and it is put into a Map 
+     * containing Lists of Threads working on each preparedId.
      * 
-     * TODO: make this method create multiple threads to limit the number of 
-     * files that can be requested from Archive Storage in each request.
+     * Note that, in general, this method should not be called directly from 
+     * other classes, but the submitFilesForRestore method should be used 
+     * instead as this ensures that the maxRestoresPerThread limit is being
+     * used. However, in some cases it may be more efficient to call this
+     * method directly.
      * 
-     * @param preparedId
-     * @param dfInfosToRestore
+     * @param preparedId the prepared ID that this request relates to
+     * @param dfInfosToRestore the list of DatafileInfo objects to restore
+     * @param checkCache whether to check if the files are already on the cache
      */
-    public void createRestorerThread(String preparedId, List<DfInfo> dfInfosToRestore) {
-        List<DfInfo> dfInfosNeedingRestore = getDfInfosNeedingRestore(dfInfosToRestore);
-        if (!dfInfosNeedingRestore.isEmpty()) {
+    public void createRestorerThread(String preparedId, List<DfInfo> dfInfosToRestore, boolean checkCache) {
+        if (checkCache) {
+            removeFilesAlreadyOnCache(dfInfosToRestore);
+        }
+        if (!dfInfosToRestore.isEmpty()) {
             // delete a completed file if it exists
             CompletedRestoresManager completedRestoresManager = 
                     new CompletedRestoresManager(propertyHandler.getCacheDir());
             completedRestoresManager.deleteCompletedFile(preparedId);
             // start up a thread to process the restore
-            RestorerThread restorerThread = new RestorerThread(this, preparedId, dfInfosNeedingRestore);
+            RestorerThread restorerThread = new RestorerThread(this, preparedId, dfInfosToRestore);
             List<RestorerThread> restorerThreads = restorerThreadMap.get(preparedId);
             if (restorerThreads == null) {
                 // create a new list and add it to the map
@@ -74,11 +117,15 @@ public class RestorerThreadManager {
      * main storage (IDS cache) to see which already exist and therefore don't 
      * need to be requested from archive storage (StorageD/tape).
      * 
+     * Remove all of the DfInfo objects corresponding to files already on the 
+     * cache from the list to be restored.
+     * 
+     * Note that the list passed in (by reference) is modified and there is no
+     * return value.
+     * 
      * @param dfInfosToRestore the list of DataFileInfos requested
-     * @return a potentially shorter list having removed any that were found to
-     *         already be on main storage
      */
-    private List<DfInfo> getDfInfosNeedingRestore(List<DfInfo> dfInfosToRestore) {
+    private void removeFilesAlreadyOnCache(List<DfInfo> dfInfosToRestore) {
         List<DfInfo> dfInfosOnMainStorage = new ArrayList<>();
         for (DfInfo dfInfo : dfInfosToRestore) {
             if (propertyHandler.getMainStorage().exists(dfInfo.getDfLocation())) {
@@ -88,7 +135,6 @@ public class RestorerThreadManager {
         logger.debug("Found {}/{} files requested already on main storage", 
                 dfInfosOnMainStorage.size(), dfInfosToRestore.size());
         dfInfosToRestore.removeAll(dfInfosOnMainStorage);
-        return dfInfosToRestore;
     }
 
     /**
