@@ -1,20 +1,32 @@
 package org.icatproject.ids;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.storage.ArchiveStorageDummy;
 import org.icatproject.ids.thread.RestorerThreadManager;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import uk.ac.stfc.storaged.DfInfoWithLocation;
 
 public class RestorerThreadManagerTest {
 
@@ -66,6 +78,36 @@ public class RestorerThreadManagerTest {
         archiveStorageDummy = new ArchiveStorageDummy(null);
     }
 
+    @Before
+    public void setup() throws Exception {
+        Files.createDirectories(pluginMainDirPath);
+        Files.createDirectories(cacheDirPath);
+        Files.createDirectories(cacheDirPath.resolve(Constants.COMPLETED_DIR_NAME));
+        Files.createDirectories(cacheDirPath.resolve(Constants.FAILED_DIR_NAME));
+    }
+
+    @Test
+    public void testMultiThreadedRestore() throws Exception {
+        RestorerThreadManager restorerThreadManager = new RestorerThreadManager();
+        // request 44 files: with maxRestoresPerThread set to 10 this should
+        // result in 4 threads restoring 9 files and 1 restoring 8 files
+        // (check logging output to confirm this, if required)
+        List<DfInfo> dfInfos1 = archiveStorageDummy.createDfInfosList(0, 44);
+        String preparedId = "preparedId1";
+        restorerThreadManager.submitFilesForRestore(preparedId, dfInfos1);
+        int numFilesRemaining = dfInfos1.size();
+        while (numFilesRemaining > 0) {
+            Thread.sleep(1000);
+            numFilesRemaining = restorerThreadManager.getTotalNumFilesRemaining(preparedId);
+        }
+        // just wait a few secs to get any further reporting from threads
+        Thread.sleep(5000);
+        // check all the files were restored to main storage
+        TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos1);
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile(preparedId));
+    }
+
     @Test
     public void testMultiThreadedRestoreIncludingFailure() throws Exception {
         // set a system property to cause the first of the threads to be 
@@ -73,17 +115,16 @@ public class RestorerThreadManagerTest {
         System.setProperty(ArchiveStorageDummy.RESTORE_FAIL_PROPERTY, "true");
 
         RestorerThreadManager restorerThreadManager = new RestorerThreadManager();
-        // with the lists below this test takes about 30 seconds
         List<DfInfo> dfInfos1 = archiveStorageDummy.createDfInfosList(0, 5);
         List<DfInfo> dfInfos2 = archiveStorageDummy.createDfInfosList(5, 12);
         List<DfInfo> dfInfos3 = archiveStorageDummy.createDfInfosList(12, 30);
         List<DfInfo> dfInfos4 = archiveStorageDummy.createDfInfosList(30, 60);
         List<DfInfo> dfInfos5 = archiveStorageDummy.createDfInfosList(60, 90);
-        restorerThreadManager.createRestorerThread("preparedId1", dfInfos1);
-        restorerThreadManager.createRestorerThread("preparedId2", dfInfos2);
-        restorerThreadManager.createRestorerThread("preparedId3", dfInfos3);
-        restorerThreadManager.createRestorerThread("preparedId4", dfInfos4);
-        restorerThreadManager.createRestorerThread("preparedId5", dfInfos5);
+        restorerThreadManager.createRestorerThread("preparedId1", dfInfos1, false);
+        restorerThreadManager.createRestorerThread("preparedId2", dfInfos2, false);
+        restorerThreadManager.createRestorerThread("preparedId3", dfInfos3, false);
+        restorerThreadManager.createRestorerThread("preparedId4", dfInfos4, false);
+        restorerThreadManager.createRestorerThread("preparedId5", dfInfos5, false);
         int numFilesRemaining = dfInfos1.size() + dfInfos2.size() + dfInfos3.size() + dfInfos4.size() + dfInfos5.size();
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
@@ -107,7 +148,122 @@ public class RestorerThreadManagerTest {
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos3);
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos4);
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos5);
-        System.out.println("Finishing testMultiThreadedRestoreIncludingFailure");
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile("preparedId1"));
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile("preparedId2"));
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile("preparedId3"));
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile("preparedId4"));
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile("preparedId5"));
+    }
+
+    @Test
+    public void testRestoreFilesSomeAlreadyOnCache() throws Exception {
+        // restore the first 10 files from the dummy archive storage list
+        RestorerThreadManager restorerThreadManager = new RestorerThreadManager();
+        List<DfInfo> dfInfos1 = archiveStorageDummy.createDfInfosList(0, 10);
+        restorerThreadManager.submitFilesForRestore("preparedId1", dfInfos1);
+        int numFilesRemaining = dfInfos1.size();
+        while (numFilesRemaining > 0) {
+            Thread.sleep(1000);
+            numFilesRemaining = restorerThreadManager.getTotalNumFilesRemaining("preparedId1");
+            System.out.println("preparedId1 numFilesRemaining: " + numFilesRemaining + " (" + System.currentTimeMillis() + ")");
+        }
+        // just wait a few secs to get any further reporting from threads
+        Thread.sleep(5000);
+        // check all the files were restored to main storage
+        TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos1);
+
+        // restore the first 20 files from the dummy archive storage list
+        // the first 10 of these should already be on the cache so will not be restored again
+        List<DfInfo> dfInfos2 = archiveStorageDummy.createDfInfosList(0, 20);
+        restorerThreadManager.submitFilesForRestore("preparedId2", dfInfos2);
+        numFilesRemaining = dfInfos2.size();
+        while (numFilesRemaining > 0) {
+            Thread.sleep(1000);
+            numFilesRemaining = restorerThreadManager.getTotalNumFilesRemaining("preparedId2");
+            System.out.println("preparedId2 numFilesRemaining: " + numFilesRemaining + " (" + System.currentTimeMillis() + ")");
+        }
+        // just wait a few secs to get any further reporting from threads
+        Thread.sleep(5000);
+        // check all the files were restored to main storage
+        TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos2);
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile("preparedId1"));
+        assertTrue("Problem with completed file and/or failed files", 
+                checkForCompletedFileAndEmptyFailedFile("preparedId2"));
+    }
+
+    @Test
+    public void testMultiThreadedRestoreMultipleMissingFiles() throws Exception {
+        // create a list of files to request with non-existent files at the 
+        // start and at the end such that the list will get split into two
+        // threads with some non-existent files in each
+        List<DfInfo> dfInfosToRestore = new ArrayList<>();
+
+        Set<String> nonExistentFiles1 = new HashSet<>();
+        nonExistentFiles1.add("/non/existent/file3.txt");
+        nonExistentFiles1.add("/non/existent/file1.txt");
+        nonExistentFiles1.add("/non/existent/file2.txt");
+        for (String filePath : nonExistentFiles1) {
+            dfInfosToRestore.add(new DfInfoWithLocation(Paths.get(filePath)));
+        }
+
+        List<DfInfo> dfInfosExistingFiles = archiveStorageDummy.createDfInfosList(0, 10);
+        dfInfosToRestore.addAll(dfInfosExistingFiles); 
+
+        Set<String> nonExistentFiles2 = new HashSet<>();
+        nonExistentFiles2.add("/another/non/existent/file5.txt");
+        nonExistentFiles2.add("/another/non/existent/file4.txt");
+        for (String filePath : nonExistentFiles2) {
+            dfInfosToRestore.add(new DfInfoWithLocation(Paths.get(filePath)));
+        }
+
+        String preparedId = "preparedId1";
+        RestorerThreadManager restorerThreadManager = new RestorerThreadManager();
+        restorerThreadManager.submitFilesForRestore(preparedId, dfInfosToRestore);
+        int numFilesRemaining = dfInfosToRestore.size();
+        while (numFilesRemaining > 0) {
+            Thread.sleep(1000);
+            numFilesRemaining = restorerThreadManager.getTotalNumFilesRemaining(preparedId);
+            System.out.println(preparedId + " numFilesRemaining: " + numFilesRemaining + " (" + System.currentTimeMillis() + ")");
+        }
+        // just wait a few secs to get any further reporting from threads
+        Thread.sleep(5000);
+
+        Set<String> expectedFailedFilesSet = new TreeSet<>();
+        expectedFailedFilesSet.addAll(nonExistentFiles1);
+        expectedFailedFilesSet.addAll(nonExistentFiles2);
+
+        // check a completed file has been created
+        CompletedRestoresManager completedRestoresManager = new CompletedRestoresManager(cacheDirPath);
+        assertTrue("No completed file found", completedRestoresManager.checkCompletedFileExists(preparedId));
+        // check the failed file contains the entries we expect in the correct order
+        FailedFilesManager failedFilesManager = new FailedFilesManager(cacheDirPath);
+        Set<String> actualfailedFilesSet = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
+        assertEquals("Returned Set of failed files was different from expected", 
+            expectedFailedFilesSet.toString(), actualfailedFilesSet.toString());
+
+        TestUtils.checkFilesOnMainStorage(mainStorage, dfInfosExistingFiles);
+    }
+
+    private boolean checkForCompletedFileAndEmptyFailedFile(String preparedId) throws IOException {
+        CompletedRestoresManager completedRestoresManager = new CompletedRestoresManager(cacheDirPath);
+        boolean completedFileExists = completedRestoresManager.checkCompletedFileExists(preparedId);
+        System.out.println("Found completed file for " + preparedId + " : " + completedFileExists);
+        FailedFilesManager failedFilesManager = new FailedFilesManager(cacheDirPath);
+        Set<String> failedFiles = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
+        System.out.println("Failed files for " + preparedId + " contains " + failedFiles.size() + " entries");
+        return completedFileExists && failedFiles.size()==0;
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        TestUtils.recursivelyDeleteDirectory(pluginMainDirPath);
+        TestUtils.recursivelyDeleteDirectory(cacheDirPath);
     }
 
     @AfterClass
