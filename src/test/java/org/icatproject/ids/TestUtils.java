@@ -46,10 +46,12 @@ public class TestUtils {
      * @throws IOException
      */
     public static void recursivelyDeleteDirectory(Path dirToDelete) throws IOException {
-        Files.walk(dirToDelete)
-            .map(Path::toFile)
-            .sorted((o1, o2) -> -o1.compareTo(o2))
-            .forEach(File::delete);
+        if (dirToDelete.toFile().exists()) {
+            Files.walk(dirToDelete)
+                .map(Path::toFile)
+                .sorted((o1, o2) -> -o1.compareTo(o2))
+                .forEach(File::delete);
+        }
     }
 
     /**
