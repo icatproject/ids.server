@@ -59,7 +59,7 @@ public class RestorerThread extends Thread {
             // connection problem so resubmit the request to try again
             // resubmit the list of DfInfos to try again in another thread
             logger.error("IOException for preparedId ID " + preparedId + ". Recreating restorer thread.", e);
-            restorerThreadManager.createRestorerThread(preparedId, dfInfosToRestore);
+            restorerThreadManager.createRestorerThread(preparedId, dfInfosToRestore, true);
         }
         restorerThreadManager.removeThreadFromMap(preparedId, this);
         logger.debug("RestorerThread finishing for preparedId {}", preparedId);
