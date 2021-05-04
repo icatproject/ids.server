@@ -13,8 +13,12 @@ import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestUtils {
+
+	private static Logger logger = LoggerFactory.getLogger(TestUtils.class);
 
     /**
      * Do an ICAT login and get the session ID using a list of credentials of
@@ -70,6 +74,7 @@ public class TestUtils {
                 throw new IOException("File " + filePath + " not found on Main Storage");
             }
         }
+        logger.debug("All {} files were found on Main Storage", dfInfos.size());
     }
 
 }
