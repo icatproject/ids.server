@@ -78,6 +78,7 @@ public class PropertyHandler {
 	private long delayDatafileOperations;
 	private ZipMapperInterface zipMapper;
 	private int tidyBlockSize;
+	private int maxRestoresPerThread;
 	private String key;
 	private int maxIdsInQuery;
 	private String icatUrl;
@@ -206,6 +207,7 @@ public class PropertyHandler {
 					}
 				}
 				tidyBlockSize = props.getPositiveInt("tidyBlockSize");
+				maxRestoresPerThread = props.getPositiveInt("maxRestoresPerThread");
 			}
 
 			try {
@@ -441,4 +443,8 @@ public class PropertyHandler {
 	public boolean getUseReaderForPerformance() {
 		return useReaderForPerformance;
 	}
+
+    public int getMaxRestoresPerThread() {
+        return maxRestoresPerThread;
+    }
 }

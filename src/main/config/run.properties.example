@@ -28,6 +28,7 @@ startArchivingLevel1024bytes = 5000000
 stopArchivingLevel1024bytes =  4000000
 storageUnit = dataset
 tidyBlockSize = 500
+maxRestoresPerThread = 100000
 !enableWrite = true
 
 # File checking properties

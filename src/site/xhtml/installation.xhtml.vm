@@ -216,6 +216,11 @@
 		<dd>The number of datafiles or datasets to get back in one call
 			for archive request when space on main storage is low.</dd>
 
+		<dt>maxRestoresPerThread</dt>
+		<dd>The maximum number of files that should be requested from Archive
+			Storage in one go. Requests that exceed this limit will be split up
+			into multiple smaller requests that are below this threshold.</dd>
+
 		<dt>enableWrite</dt>
 		<dd>Optional. If true, the write call will be enabled, if false, it will be
 			disabled. If not set, the readOnly flag will take control and the
