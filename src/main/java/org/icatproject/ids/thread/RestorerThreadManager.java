@@ -53,30 +53,41 @@ public class RestorerThreadManager {
      * 
      * @param preparedId the prepared ID relating to the restore request
      * @param dfInfosToRestore the list of DatafileInfo objects to restore
+     * @param checkCache whether to check if the files are already on the cache
      */
-    public void submitFilesForRestore(String preparedId, List<DfInfo> dfInfosToRestore) {
+    public void submitFilesForRestore(String preparedId, List<DfInfo> dfInfosToRestore, boolean checkCache) {
         logger.debug("{} files submitted for restore with preparedId {}", dfInfosToRestore.size(), preparedId);
-        removeFilesAlreadyOnCache(dfInfosToRestore);
-        logger.debug("{} files will be restored for preparedId {}", dfInfosToRestore.size(), preparedId);
-        int maxFilesPerRequest = propertyHandler.getMaxRestoresPerThread();
-        int numFilesToRestore = dfInfosToRestore.size();
-        int numThreads = (numFilesToRestore/maxFilesPerRequest);
-        if (numFilesToRestore%maxFilesPerRequest != 0) {
-            numThreads += 1;
+        if (checkCache) {
+            removeFilesAlreadyOnCache(dfInfosToRestore);
         }
-        logger.debug("{} restore thread will be created for preparedId {}", numThreads, preparedId);
-        int filesPerRequest = ((numFilesToRestore-1)/numThreads) + 1;
-        logger.debug("The max number of files per restore thread for preparedId {} will be {}", preparedId, filesPerRequest);
-
-        int fromIndex = 0;
-        for (int threadCount=1; threadCount<=numThreads; threadCount++) {
-            int toIndex = fromIndex + filesPerRequest;
-            if (toIndex > numFilesToRestore) {
-                toIndex = numFilesToRestore;
+        if (dfInfosToRestore.isEmpty()) {
+            logger.debug("All files are already on cache for preparedId {}", preparedId);
+            // write a completed file
+            CompletedRestoresManager completedRestoresManager = 
+                    new CompletedRestoresManager(propertyHandler.getCacheDir());
+            completedRestoresManager.createCompletedFile(preparedId);
+        } else {
+            logger.debug("{} files will be restored for preparedId {}", dfInfosToRestore.size(), preparedId);
+            int maxFilesPerRequest = propertyHandler.getMaxRestoresPerThread();
+            int numFilesToRestore = dfInfosToRestore.size();
+            int numThreads = (numFilesToRestore/maxFilesPerRequest);
+            if (numFilesToRestore%maxFilesPerRequest != 0) {
+                numThreads += 1;
             }
-            List<DfInfo> subList = dfInfosToRestore.subList(fromIndex, toIndex);
-            createRestorerThread(preparedId, subList, false);
-            fromIndex = toIndex;
+            logger.debug("{} restore thread will be created for preparedId {}", numThreads, preparedId);
+            int filesPerRequest = ((numFilesToRestore-1)/numThreads) + 1;
+            logger.debug("The max number of files per restore thread for preparedId {} will be {}", preparedId, filesPerRequest);
+
+            int fromIndex = 0;
+            for (int threadCount=1; threadCount<=numThreads; threadCount++) {
+                int toIndex = fromIndex + filesPerRequest;
+                if (toIndex > numFilesToRestore) {
+                    toIndex = numFilesToRestore;
+                }
+                List<DfInfo> subList = dfInfosToRestore.subList(fromIndex, toIndex);
+                createRestorerThread(preparedId, subList, false);
+                fromIndex = toIndex;
+            }
         }
     }
 
