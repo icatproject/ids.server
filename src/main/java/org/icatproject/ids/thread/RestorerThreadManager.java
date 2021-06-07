@@ -32,11 +32,16 @@ public class RestorerThreadManager {
 
 	private static Logger logger = LoggerFactory.getLogger(RestorerThreadManager.class);
 
-    private PropertyHandler propertyHandler = PropertyHandler.getInstance();
-    private RestoreFileCountManager restoreFileCountManager = RestoreFileCountManager.getInstance();
+    private PropertyHandler propertyHandler;
+    private RestoreFileCountManager restoreFileCountManager;
+    private Map<String, List<RestorerThread>> restorerThreadMap;
 
-    private Map<String, List<RestorerThread>> restorerThreadMap = new ConcurrentHashMap<>();
 
+    public RestorerThreadManager() {
+        propertyHandler = PropertyHandler.getInstance();
+        restoreFileCountManager = RestoreFileCountManager.getInstance();
+        restorerThreadMap = new ConcurrentHashMap<>();
+    }
 
     /**
      * Submit a list of DatafileInfo objects corresponding to the files that 
