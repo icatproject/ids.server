@@ -78,8 +78,7 @@ public class PreparedFilesManager {
 
             gen.writeStartArray("dfInfo");
             for (DfInfoImpl dfInfo : dfInfos) {
-                DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-                gen.writeStartObject().write("dsId", dsInfo.getDsId()).write("dfId", dfInfo.getDfId())
+                gen.writeStartObject().write("dsId", dfInfo.getDsId()).write("dfId", dfInfo.getDfId())
                         .write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
                         .write("modId", dfInfo.getModId());
                 if (dfInfo.getDfLocation() != null) {
