@@ -203,6 +203,7 @@ public class IdsService {
 	 * @throws InternalException
 	 * @throws InsufficientPrivilegesException
 	 * @throws DataNotOnlineException
+	 * @throws NotImplementedException
 	 * 
 	 * @statuscode 200 To indicate success
 	 */
@@ -214,7 +215,7 @@ public class IdsService {
 			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds,
 			@QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
 			@QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
+			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 		Response response = null;
 
 		long offset = 0;
@@ -261,6 +262,7 @@ public class IdsService {
 	 * @throws InternalException
 	 * @throws NotFoundException
 	 * @throws InsufficientPrivilegesException
+	 * @throws NotImplementedException
 	 * 
 	 * @statuscode 200 To indicate success
 	 */
@@ -270,7 +272,7 @@ public class IdsService {
 	public String getDatafileIds(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
 			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-			throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
+			throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 		if (preparedId != null) {
 			return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
 		} else {
@@ -431,6 +433,7 @@ public class IdsService {
 	 * @throws NotFoundException
 	 * @throws InsufficientPrivilegesException
 	 * @throws InternalException
+	 * @throws NotImplementedException
 	 * 
 	 * @statuscode 200 To indicate success
 	 */
@@ -440,7 +443,7 @@ public class IdsService {
 	public String getStatus(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
 			@QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
 			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, NotImplementedException {
 		if (preparedId != null) {
 			return idsBean.getStatus(preparedId, request.getRemoteAddr());
 		} else {
@@ -759,6 +762,7 @@ public class IdsService {
 	 * @throws NotFoundException
 	 * @throws InternalException
 	 * @throws InsufficientPrivilegesException
+	 * @throws NotImplementedException
 	 * 
 	 * @statuscode 200 To indicate success
 	 */
@@ -767,7 +771,7 @@ public class IdsService {
 	public void reset(@Context HttpServletRequest request, @FormParam("preparedId") String preparedId,
 			@FormParam("sessionId") String sessionId, @FormParam("investigationIds") String investigationIds,
 			@FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
-			throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
+			throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 		if (preparedId != null) {
 			idsBean.reset(preparedId, request.getRemoteAddr());
 		} else {
