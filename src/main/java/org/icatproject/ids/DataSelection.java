@@ -196,8 +196,10 @@ public class DataSelection {
 		 * the flag is respected
 		 */
 		if (!dsWanted) {
-			dsInfos = null;
-			emptyDatasets = null;
+			// use empty Map and Set for now as null values
+			// cannot currently be written to the prepared file
+			dsInfos = new HashMap<>();
+			emptyDatasets = new HashSet<>();
 		}
 	}
 
