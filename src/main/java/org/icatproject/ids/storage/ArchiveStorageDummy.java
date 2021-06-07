@@ -33,7 +33,25 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
     public static String RESTORE_FAIL_PROPERTY = "ArchiveStorageDummy-FAIL";
     private boolean restoreShouldFail = false;
 
+    // parameters that affect how quickly dummy files are created
+    private int timeReductionFactor = 100;   // for the tests to run faster!
+    private int maxMsPerFile = 1000;         // ditto!
+    // private int timeReductionFactor = 10;    // for more realistic/human followable output
+    // private int maxMsPerFile = 10000;        // ditto
+
     public ArchiveStorageDummy(Properties props) throws InstantiationException {
+        if (props != null) {
+            String timeReductionFactorKey = "plugin.archive.dummy.timeReductionFactor";
+            if (props.containsKey(timeReductionFactorKey)) {
+                timeReductionFactor = Integer.parseInt(props.getProperty(timeReductionFactorKey));
+            }
+            String maxMsPerFileKey = "plugin.archive.dummy.maxMsPerFile";
+            if (props.containsKey(maxMsPerFileKey)) {
+                maxMsPerFile = Integer.parseInt(props.getProperty(maxMsPerFileKey));
+            }
+        }
+        logger.debug("timeReductionFactor = {}, maxMsPerFile = {}", timeReductionFactor, maxMsPerFile);
+
         String dummyFileListingFilename = "payara5_file_listing_with_sizes.txt";
         InputStream inputStream = ArchiveStorageDummy.class.getClassLoader().getResourceAsStream(dummyFileListingFilename);
         if (inputStream != null) {
@@ -150,11 +168,7 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
      * @param fileSize the size of the file in bytes
      * @return the number of milliseconds to wait for the file
      */
-    private static int calculateDummyTimeToGetFile(int fileSize) {
-        // int timeReductionFactor = 10;    // for more realistic/human followable output
-        // int maxMsPerFile = 10000;        // ditto
-        int timeReductionFactor = 100;   // for the tests to run faster!
-        int maxMsPerFile = 1000;         // ditto!
+    private int calculateDummyTimeToGetFile(int fileSize) {
         int timeMs = fileSize/timeReductionFactor;
         if (timeMs > maxMsPerFile) {
             timeMs = maxMsPerFile;
