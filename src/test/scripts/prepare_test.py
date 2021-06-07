@@ -67,5 +67,12 @@ with open("src/main/resources/logback.xml", "rt") as s:
         t = Template(s.read()).substitute(subst)
         print(t, end="", file=f)
 
-p = subprocess.Popen(["./setup", "install"], cwd="src/test/install")
-p.wait()
+p = subprocess.Popen(["./setup", "-vvv", "install"], cwd="src/test/install", 
+    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#p.wait()
+out, err = p.communicate()
+print("./setup install stdout: " + out)
+print("./setup install stderr: " + err)
+rc = p.returncode
+if rc != 0:
+    sys.exit(rc)
