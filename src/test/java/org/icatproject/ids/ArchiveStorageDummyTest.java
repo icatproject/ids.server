@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.storage.ArchiveStorageDummy;
@@ -31,7 +32,7 @@ public class ArchiveStorageDummyTest {
         props.setProperty("plugin.main.dir", pluginMainDirPath.toString());
         MainSDStorage mainStorage = new MainSDStorage(props);
         List<DfInfo> dfInfos = archiveStorageDummy.createDfInfosList(0, 10);
-        Set<DfInfo> failedFiles = archiveStorageDummy.restore(mainStorage, dfInfos);
+        Set<DfInfo> failedFiles = archiveStorageDummy.restore(mainStorage, dfInfos, new AtomicBoolean(false));
         assertEquals(0, failedFiles.size());
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos);
         TestUtils.recursivelyDeleteDirectory(pluginMainDirPath);
@@ -56,7 +57,7 @@ public class ArchiveStorageDummyTest {
         for (String filePath : nonExistentFiles) {
             dfInfosToRequest.add(new DfInfoWithLocation(Paths.get(filePath)));
         }
-        Set<DfInfo> failedFiles = archiveStorageDummy.restore(mainStorage, dfInfosToRequest);
+        Set<DfInfo> failedFiles = archiveStorageDummy.restore(mainStorage, dfInfosToRequest, new AtomicBoolean(false));
         Set<String> failedFilesSet = new HashSet<>();
         for (DfInfo dfInfo : failedFiles) {
             failedFilesSet.add(dfInfo.getDfLocation());
