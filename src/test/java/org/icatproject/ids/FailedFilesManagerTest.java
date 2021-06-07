@@ -1,10 +1,12 @@
 package org.icatproject.ids;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -62,6 +64,16 @@ public class FailedFilesManagerTest {
         assertEquals("Set of failed file paths were not as expected", expectedFilepathSet.toString(), sortedFailedFilepathsSet.toString());
         failedFilesManager.deleteFailedFile(preparedId);
     }
+
+    @Test
+    public void testCreateEmptyFailedFilesFile() throws Exception {
+        String preparedId = "preparedId3";
+        failedFilesManager.writeToFailedEntriesFile(preparedId, Collections.emptySet());
+        Set<String> sortedFailedFilepathsSet = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
+        assertTrue("An empty set of files was expected", sortedFailedFilepathsSet.isEmpty());
+        failedFilesManager.deleteFailedFile(preparedId);
+    }
+
 
     @AfterClass
     public static void tearDownClass() throws Exception {
