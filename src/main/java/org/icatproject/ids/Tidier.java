@@ -92,14 +92,14 @@ public class Tidier {
 										DsInfoImpl dsInfoImpl = new DsInfoImpl((Dataset) o);
 										logger.debug(
 												"Requesting archive of " + dsInfoImpl + " to recover main storage");
-										fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
+//										fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
 									}
 									if (os.size() < tidyBlockSize) {
 										break;
 									}
 									low += tidyBlockSize;
 								}
-							} catch (InternalException | IcatException_Exception | InsufficientPrivilegesException e) {
+							} catch (/*InternalException | */ IcatException_Exception | InsufficientPrivilegesException e) {
 								// Log it and carry on
 								logger.error(e.getClass() + " " + e.getMessage());
 							}
@@ -149,7 +149,7 @@ public class Tidier {
 
 										logger.debug(
 												"Requesting archive of " + dfInfoImpl + " to recover main storage");
-										fsm.queue(dfInfoImpl, DeferredOp.ARCHIVE);
+//										fsm.queue(dfInfoImpl, DeferredOp.ARCHIVE);
 									}
 									if (os.size() < tidyBlockSize) {
 										break;
@@ -224,8 +224,8 @@ public class Tidier {
 		}
 	}
 
-	@EJB
-	private FiniteStateMachine fsm;
+	// @EJB
+	// private FiniteStateMachine fsm;
 
 	private Path linkDir;
 	private long linkLifetimeMillis;
