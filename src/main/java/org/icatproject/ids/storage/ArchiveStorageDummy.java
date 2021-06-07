@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
@@ -94,7 +96,7 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
     }
 
     @Override
-    public Set<DfInfo> restore(MainStorageInterface mainStorageInterface, List<DfInfo> dfInfos) throws IOException {
+    public Set<DfInfo> restore(MainStorageInterface mainStorageInterface, List<DfInfo> dfInfos, AtomicBoolean stopRestoring) throws IOException {
         int numFilesRequested = dfInfos.size();
         logger.info("Requesting files from Dummy Archive Storage: {}", numFilesRequested);
         numFilesRemaining = numFilesRequested;
@@ -132,6 +134,13 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
             if (restoredFileCount == restoreToFailOn) {
                 throw new IOException("Test exception causing restore to fail");
             }
+            // check whether the stop flag has been set
+            if (stopRestoring.get()) {
+                // if it is then this is a safe place to exit
+                logger.info("Stopping restore with {}/{} files still to be restored from Dummy Archive Storage", 
+                        numFilesRemaining, numFilesRequested);
+                return Collections.emptySet();
+            }
         }
         logger.info("{}/{} files were successfully restored from Dummy Archive Storage", restoredFileCount, numFilesRequested);
         // getting the remaining dfInfos from the dfInfoFromLocation map
@@ -144,7 +153,7 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
             }
         }
         return dfInfosNotFound;
-}
+    }
 
     @Override
     public int getNumFilesRemaining() {

@@ -9,12 +9,14 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -140,7 +142,7 @@ public class ArchiveSDStorageDLS implements ArchiveStorageInterfaceDLS {
     }
 
     @Override
-    public Set<DfInfo> restore(MainStorageInterface mainStorageInterface, List<DfInfo> dfInfos) throws IOException {
+    public Set<DfInfo> restore(MainStorageInterface mainStorageInterface, List<DfInfo> dfInfos, AtomicBoolean stopRestoring) throws IOException {
         int numFilesRequested = dfInfos.size();
         logger.info("Requesting files from StorageD: {}", numFilesRequested);
         numFilesRemaining = numFilesRequested;
@@ -192,6 +194,13 @@ public class ArchiveSDStorageDLS implements ArchiveStorageInterfaceDLS {
                         logger.debug("{}/{} Restoring {} bytes to {}.", 
                             new Object[]{returnedFileCount, numFilesRequested, returnedFileSize, location});
                         mainStorageInterface.put(chunkedInputStream, location);
+                        // check whether the stop flag has been set
+                        if (stopRestoring.get()) {
+                            // if it is then this is a safe place to exit
+                            logger.info("Stopping restore with {}/{} files still to be restored from StorageD", 
+                                    numFilesRemaining, numFilesRequested);
+                            return Collections.emptySet();
+                        }
                     }
                     chunkedInputStream.setFileSize(null);
                     numFilesRemaining--;
