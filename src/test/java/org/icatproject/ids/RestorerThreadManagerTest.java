@@ -94,7 +94,7 @@ public class RestorerThreadManagerTest {
         // (check logging output to confirm this, if required)
         List<DfInfo> dfInfos1 = archiveStorageDummy.createDfInfosList(0, 44);
         String preparedId = "preparedId1";
-        restorerThreadManager.submitFilesForRestore(preparedId, dfInfos1);
+        restorerThreadManager.submitFilesForRestore(preparedId, dfInfos1, true);
         int numFilesRemaining = dfInfos1.size();
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
@@ -165,7 +165,7 @@ public class RestorerThreadManagerTest {
         // restore the first 10 files from the dummy archive storage list
         RestorerThreadManager restorerThreadManager = new RestorerThreadManager();
         List<DfInfo> dfInfos1 = archiveStorageDummy.createDfInfosList(0, 10);
-        restorerThreadManager.submitFilesForRestore("preparedId1", dfInfos1);
+        restorerThreadManager.submitFilesForRestore("preparedId1", dfInfos1, true);
         int numFilesRemaining = dfInfos1.size();
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
@@ -180,7 +180,7 @@ public class RestorerThreadManagerTest {
         // restore the first 20 files from the dummy archive storage list
         // the first 10 of these should already be on the cache so will not be restored again
         List<DfInfo> dfInfos2 = archiveStorageDummy.createDfInfosList(0, 20);
-        restorerThreadManager.submitFilesForRestore("preparedId2", dfInfos2);
+        restorerThreadManager.submitFilesForRestore("preparedId2", dfInfos2, true);
         numFilesRemaining = dfInfos2.size();
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
@@ -224,7 +224,7 @@ public class RestorerThreadManagerTest {
 
         String preparedId = "preparedId1";
         RestorerThreadManager restorerThreadManager = new RestorerThreadManager();
-        restorerThreadManager.submitFilesForRestore(preparedId, dfInfosToRestore);
+        restorerThreadManager.submitFilesForRestore(preparedId, dfInfosToRestore, true);
         int numFilesRemaining = dfInfosToRestore.size();
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
