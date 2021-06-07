@@ -160,6 +160,9 @@ public class RestorerThreadManager {
      * This is done by totalling up the number of files remaining on each of
      * the threads working on the given preparedId.
      * 
+     * If there are no restorer threads running for the given prepared ID then
+     * zero is returned.
+     * 
      * @param preparedId the prepared ID
      * @return the total number of files still to be restored
      */
