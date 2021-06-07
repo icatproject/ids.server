@@ -55,10 +55,10 @@ with open("src/test/install/setup.properties", "wt") as f:
 with open("src/test/install/run.properties.example", "wt") as f:
     pass
 
-shutil.copy(glob.glob("target/ids.server-*.war")[0], "src/test/install/")
+shutil.copy(glob.glob("target/dls-ids-server-*.war")[0], "src/test/install/")
 shutil.copy("src/main/scripts/setup", "src/test/install/")
 
-with ZipFile(glob.glob("target/ids.server-*-distro.zip")[0]) as z:
+with ZipFile(glob.glob("target/dls-ids-server-*-distro.zip")[0]) as z:
     with open("src/test/install/setup_utils.py", "wb") as f:
         f.write(z.read("ids.server/setup_utils.py"))
 
