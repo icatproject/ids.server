@@ -1,5 +1,6 @@
 package org.icatproject.ids;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,9 +23,15 @@ public class RestoreFileCountManager {
 	private static RestoreFileCountManager instance = null;
 
     private Map<String, Integer> fileCountMap = new HashMap<>();
+
+    private Path preparedDir;
     
     private RestoreFileCountManager() {
 
+    }
+
+    private RestoreFileCountManager(Path preparedDir) {
+        this.preparedDir = preparedDir;
     }
 
     public static synchronized RestoreFileCountManager getInstance() {
@@ -32,6 +39,18 @@ public class RestoreFileCountManager {
 			instance = new RestoreFileCountManager();
 		}
 		return instance;
+	}
+
+    /**
+     * For testing. To enable creation of a PreparedFilesManager by specifiying
+     * the prepared files directory so that a PropertyHandler does not need to 
+     * be initialised.
+     * 
+     * @param preparedDir
+     * @return
+     */
+    public static synchronized RestoreFileCountManager getTestInstance(Path preparedDir) {
+		return new RestoreFileCountManager(preparedDir);
 	}
 
     public void addEntryToMap(String preparedId, int fileCount) {
@@ -52,7 +71,14 @@ public class RestoreFileCountManager {
     public int getFileCount(String preparedId) throws InternalException, NotFoundException {
         Integer fileCount = fileCountMap.get(preparedId);
         if (fileCount == null) {
-            PreparedFilesManager preparedFilesManager = new PreparedFilesManager();
+            PreparedFilesManager preparedFilesManager;
+            if (preparedDir == null) {
+                // allow the PropertyHandler to be used
+                preparedFilesManager = new PreparedFilesManager();
+            } else {
+                // use the prepared directory specified
+                preparedFilesManager = new PreparedFilesManager(preparedDir);
+            }
             Prepared prepared = preparedFilesManager.unpack(preparedId);
             fileCount = prepared.dfInfos.size();
             fileCountMap.put(preparedId, fileCount);
