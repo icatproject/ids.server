@@ -80,6 +80,7 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
             if (System.getProperty(RESTORE_FAIL_PROPERTY) != null) {
                 // clear the system property so that no other restore threads fail
                 // and set a flag to say that this restore should fail
+                logger.debug("This thread is set to fail part way through restoring");
                 System.clearProperty(RESTORE_FAIL_PROPERTY);
                 restoreShouldFail = true;
             }
