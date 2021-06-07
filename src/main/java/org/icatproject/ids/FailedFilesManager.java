@@ -55,6 +55,11 @@ public class FailedFilesManager {
             for(String filepath : sortedFilepathsSet) {
                 writer.write(filepath + System.lineSeparator());
             }
+        } catch (IOException e) {
+            String message = String.format("IOException writing failed file for prepared ID %s : %s",
+                    preparedId, e.getMessage());
+            logger.error(message);
+            throw new InternalException(message);
         }
     }
 
@@ -67,6 +72,11 @@ public class FailedFilesManager {
                 Set<String> sortedSet = new TreeSet<>();
                 sortedSet.addAll(failedFilepathsSet);
                 return sortedSet;
+            } catch (IOException e) {
+                String message = String.format("IOException getting failed files for prepared ID %s : %s",
+                        preparedId, e.getMessage());
+                logger.error(message);
+                throw new InternalException(message);
             }
         } else {
             return Collections.emptySet();
