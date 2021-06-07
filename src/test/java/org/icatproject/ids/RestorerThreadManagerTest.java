@@ -238,9 +238,6 @@ public class RestorerThreadManagerTest {
         expectedFailedFilesSet.addAll(nonExistentFiles1);
         expectedFailedFilesSet.addAll(nonExistentFiles2);
 
-        // check a completed file has been created
-        CompletedRestoresManager completedRestoresManager = new CompletedRestoresManager(cacheDirPath);
-        assertTrue("No completed file found", completedRestoresManager.checkCompletedFileExists(preparedId));
         // check the failed file contains the entries we expect in the correct order
         FailedFilesManager failedFilesManager = new FailedFilesManager(cacheDirPath);
         Set<String> actualfailedFilesSet = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
@@ -250,14 +247,11 @@ public class RestorerThreadManagerTest {
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfosExistingFiles);
     }
 
-    private boolean checkForCompletedFileAndEmptyFailedFile(String preparedId) throws IOException {
-        CompletedRestoresManager completedRestoresManager = new CompletedRestoresManager(cacheDirPath);
-        boolean completedFileExists = completedRestoresManager.checkCompletedFileExists(preparedId);
-        System.out.println("Found completed file for " + preparedId + " : " + completedFileExists);
+    private boolean checkForEmptyFailedFile(String preparedId) throws InternalException {
         FailedFilesManager failedFilesManager = new FailedFilesManager(cacheDirPath);
         Set<String> failedFiles = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
         System.out.println("Failed files for " + preparedId + " contains " + failedFiles.size() + " entries");
-        return completedFileExists && failedFiles.size()==0;
+        return failedFiles.size()==0;
     }
 
     @After
