@@ -11,9 +11,16 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.icatproject.ids.exceptions.InternalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class to manage the "failed" files which are kept within a subdirectory of
+ * the IDS cache directory, are named with the prepared ID that they relate to
+ * and contain an ordered list of all of the file paths of files for that 
+ * prepared ID that failed to restore from the Archive Storage.
+ */
 public class FailedFilesManager {
 
 	private static Logger logger = LoggerFactory.getLogger(FailedFilesManager.class);
@@ -47,7 +54,18 @@ public class FailedFilesManager {
         failedFilesDir = idsCacheDir.resolve(dirName);
     }
 
-    public void writeToFailedEntriesFile(String preparedId, Set<String> failedFilepaths) throws IOException {
+    /**
+     * Write the given list of file paths for the specified prepared ID to a
+     * file. If there are already files paths written to the file then add to 
+     * the list. The final list will be ordered so the file paths being added
+     * may appear above, below or mixed in with any entries that were already
+     * in the file.
+     * 
+     * @param preparedId the related prepared ID
+     * @param failedFilepaths the list of file paths to write into the file
+     * @throws InternalException if there is a problem writing to the file
+     */
+    public void writeToFailedEntriesFile(String preparedId, Set<String> failedFilepaths) throws InternalException {
         SortedSet<String> sortedFilepathsSet = new TreeSet<>();
         sortedFilepathsSet.addAll(getFailedEntriesForPreparedId(preparedId));
         sortedFilepathsSet.addAll(failedFilepaths);
@@ -63,7 +81,16 @@ public class FailedFilesManager {
         }
     }
 
-    public Set<String> getFailedEntriesForPreparedId(String preparedId) throws IOException {
+    /**
+     * Read an ordered list of file paths that have failed to restore for the 
+     * specified prepared ID from the "failed" file.
+     * 
+     * @param preparedId the related prepared ID
+     * @return a Set of Strings containing the failed file paths or an empty 
+     *         set if there is no file for the given prepared ID
+     * @throws InternalException if there is a problem reading the failed file
+     */
+    public Set<String> getFailedEntriesForPreparedId(String preparedId) throws InternalException {
         Path failedFilesFilePath = failedFilesDir.resolve(preparedId);
         if (Files.exists(failedFilesFilePath)) {
             Set<String> failedFilepathsSet;
@@ -83,6 +110,11 @@ public class FailedFilesManager {
         }
     }
 
+    /**
+     * Delete the failed file for the specified prepared ID.
+     * 
+     * @param preparedId the related prepared ID
+     */
     public void deleteFailedFile(String preparedId) {
         boolean deleted = failedFilesDir.resolve(preparedId).toFile().delete();
         if (deleted) {
@@ -92,6 +124,12 @@ public class FailedFilesManager {
         }
     }
 
+    /**
+     * Get the path to the directory that is being used to hold the "failed" 
+     * files.
+     * 
+     * @return the Path to the failed files directory
+     */
     public Path getFailedFilesDir() {
         return failedFilesDir;
     }
