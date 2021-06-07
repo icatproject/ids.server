@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.icatproject.ids.FailedFilesManager;
 import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.storage.ArchiveStorageInterfaceDLS;
 import org.slf4j.Logger;
@@ -24,12 +26,14 @@ public class RestorerThread extends Thread {
     private String preparedId;
     private List<DfInfo> dfInfosToRestore;
     private ArchiveStorageInterfaceDLS archiveStorage;
+    private AtomicBoolean stopRestoring;
 
     public RestorerThread(RestorerThreadManager restorerThreadManager, 
                           String preparedId, List<DfInfo> dfInfosToRestore) {
         this.restorerThreadManager = restorerThreadManager;
         this.preparedId = preparedId;
         this.dfInfosToRestore = dfInfosToRestore;
+        this.stopRestoring = new AtomicBoolean(false);
     }
 
     @Override
@@ -38,7 +42,13 @@ public class RestorerThread extends Thread {
         try {
             archiveStorage = archiveStorageClass.getConstructor(Properties.class).newInstance(propertyHandler.getSimpleProperties());
             logger.debug("Successfully instantiated {} for {}", archiveStorageClass.getName(), preparedId);
-            Set<DfInfo> failedRestores = archiveStorage.restore(propertyHandler.getMainStorage(), dfInfosToRestore);
+            Set<DfInfo> failedRestores = archiveStorage.restore(propertyHandler.getMainStorage(), dfInfosToRestore, stopRestoring);
+            if (stopRestoring.get()) {
+                // this thread has been requested to stop
+                // return here and the thread will end
+                logger.info("Exiting restore thread for prepared ID {}", preparedId);
+                return;
+            }
             // call FailedFilesManager to get these failures written to the "failed" file
             Set<String> failedFilepaths = new TreeSet<>();
             for (DfInfo dfInfo : failedRestores) {
@@ -60,6 +70,9 @@ public class RestorerThread extends Thread {
             // resubmit the list of DfInfos to try again in another thread
             logger.error("IOException for preparedId ID " + preparedId + ". Recreating restorer thread.", e);
             restorerThreadManager.createRestorerThread(preparedId, dfInfosToRestore, true);
+        } catch (InternalException e) {
+            // this was thrown when writing the failed files file and has already been logged
+            // nothing more we can do about it here
         }
         restorerThreadManager.removeThreadFromMap(preparedId, this);
         logger.debug("RestorerThread finishing for preparedId {}", preparedId);
@@ -67,6 +80,15 @@ public class RestorerThread extends Thread {
 
     public int getNumFilesRemaining() {
         return archiveStorage.getNumFilesRemaining();
+    }
+
+    /**
+     * Set the flag which tells the archive storage to stop restoring files
+     * at the next opportunity
+     */
+    public void setStopRestoring() {
+        logger.info("Setting stop restoring flag for prepared ID {}", preparedId);
+        stopRestoring.set(true);
     }
 
 }
