@@ -30,9 +30,13 @@ try:
             print(t, end="", file=f)
         print("icat.url = %s" % icaturl, file=f)
         print("testHome = %s" % home, file=f)
-    if (os.path.exists("src/test/install/run.properties") and 
-        cmp(name, "src/test/install/run.properties")):
-        sys.exit(0)
+    # TODO: sort this out
+    # presumably meant to prevent reinstalling of the IDS
+    # when run.properties has not changed but also stops
+    # setup install being run under other conditions        
+#    if (os.path.exists("src/test/install/run.properties") and 
+#        cmp(name, "src/test/install/run.properties")):
+#        sys.exit(0)
     print("Installing with %s" % propFile)
     shutil.copy(name, "src/test/install/run.properties")
 finally:
