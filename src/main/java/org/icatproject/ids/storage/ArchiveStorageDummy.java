@@ -195,6 +195,5 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
     // TODO: remove this
     public static void main(String[] args) throws Exception {
 //        createFile("/dls/some/folders/here/myfile.txt", 10);
-        System.out.println(calculateDummyTimeToGetFile(34567));
     }
 }
