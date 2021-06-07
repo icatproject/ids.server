@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,6 +15,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.storage.ArchiveStorageDummy;
@@ -104,8 +104,7 @@ public class RestorerThreadManagerTest {
         Thread.sleep(5000);
         // check all the files were restored to main storage
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos1);
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile(preparedId));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile(preparedId));
     }
 
     @Test
@@ -148,16 +147,11 @@ public class RestorerThreadManagerTest {
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos3);
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos4);
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos5);
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile("preparedId1"));
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile("preparedId2"));
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile("preparedId3"));
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile("preparedId4"));
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile("preparedId5"));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile("preparedId1"));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile("preparedId2"));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile("preparedId3"));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile("preparedId4"));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile("preparedId5"));
     }
 
     @Test
@@ -191,10 +185,8 @@ public class RestorerThreadManagerTest {
         Thread.sleep(5000);
         // check all the files were restored to main storage
         TestUtils.checkFilesOnMainStorage(mainStorage, dfInfos2);
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile("preparedId1"));
-        assertTrue("Problem with completed file and/or failed files", 
-                checkForCompletedFileAndEmptyFailedFile("preparedId2"));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile("preparedId1"));
+        assertTrue("Problem with failed files", checkForEmptyFailedFile("preparedId2"));
     }
 
     @Test
