@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 
 import org.icatproject.ids.CompletedRestoresManager;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.RestoreFileCountManager;
+import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,5 +210,84 @@ public class RestorerThreadManager {
             restoreFileCountManager.removeEntryFromMap(preparedId);
         }
     }
+
+    /**
+     * Return a string indicating the percentage of files that are already on
+     * main storage (cache) for the given prepared ID.
+     * 
+     * The return value is a string to allow for the possibility of returning
+     * values other than integers between 0 and 100, such as "UNKNOWN".
+     * 
+     * @param preparedId the prepared ID
+     * @return where possible a number between 0 and 100 but also perhaps 
+     *         a string indicating another status
+     * @throws InternalException if the "prepared" file needed to be read and 
+     *                           there was a problem reading it.
+     * @throws NotFoundException if the "prepared" file needed to be read to 
+     *                           find the total number of files and could not
+     *                           be found.
+     */
+    public String getPercentageComplete(String preparedId) throws InternalException, NotFoundException {
+        int totalFileCount = restoreFileCountManager.getFileCount(preparedId);
+        int filesRemaining = getTotalNumFilesRemaining(preparedId);
+        int filesRestored = totalFileCount - filesRemaining;
+        int percentageComplete = (filesRestored*100)/totalFileCount;
+        return String.valueOf(percentageComplete);
+    }
+
+    /**
+     * Construct a string that gives an overview of the status of all of the 
+     * restore threads being managed.
+     * 
+     * @return a string summarising the status
+     */
+    public String getStatusString() {
+        if (restorerThreadMap.size() == 0) {
+            return "There are no restores in progress";
+        }
+        String statusString = "";
+        for (String preparedId : restorerThreadMap.keySet()) {
+            String percentageComplete;
+            try {
+                percentageComplete = getPercentageComplete(preparedId);
+                statusString += preparedId + " : " + percentageComplete + "%\n";
+            } catch (InternalException | NotFoundException e) {
+                // ignore this
+            }
+        }
+        return statusString;
+    }
+
+    /**
+     * Cancel all of the restore threads that are restoring files for the given
+     * prepared ID.
+     * 
+     * This actually sets a flag in each of the restorer threads that in turn
+     * is regularly checked by the Archive Storage implementation and will 
+     * cause it to stop restoring files if it finds the flag has been set.
+     * 
+     * @param preparedId the prepared ID
+     */
+    public void cancelThreadsForPreparedId(String preparedId) {
+        List<RestorerThread> restorerThreads = restorerThreadMap.get(preparedId);
+        if (restorerThreads == null) {
+            logger.error("No restorer threads running for prepared ID {}", preparedId);
+        } else {
+            logger.info("Requesting {} restore thread(s) to stop for prepared ID {}", restorerThreads.size(), preparedId);
+        // loop over all of the restorer threads for this prepared ID and set the stop flag
+        for (RestorerThread restorerThread : restorerThreads) {
+                restorerThread.setStopRestoring();
+            }
+        }
+    }
+
+	@PreDestroy
+	public void exit() {
+        for (String preparedId : restorerThreadMap.keySet()) {
+            cancelThreadsForPreparedId(preparedId);
+        }
+        logger.info("RestorerThreadManager stopped");
+	}
+
 
 }
