@@ -83,9 +83,16 @@ public class Setup {
 
 		long time = System.currentTimeMillis();
 
-		ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py", "src/test/resources/" + runPropertyFile,
+		String prepareScript = "prepare_test.py";
+		ShellCommand sc = new ShellCommand("src/test/scripts/" + prepareScript, 
+				"src/test/resources/" + runPropertyFile,
 				home.toString(), containerHome, serverUrl);
-		System.out.println(sc.getStdout() + " " + sc.getStderr());
+		System.out.println(prepareScript + " exit code is: " + sc.getExitValue());
+		System.out.println(prepareScript + " std out is: " + sc.getStdout());
+		System.out.println(prepareScript + " std err is: " + sc.getStderr());
+		if (sc.getExitValue() != 0) {
+			throw new Exception(prepareScript + " failed with message: " + sc.getMessage());
+		}
 		System.out.println(
 				"Setting up " + runPropertyFile + " took " + (System.currentTimeMillis() - time) / 1000. + "seconds");
 
