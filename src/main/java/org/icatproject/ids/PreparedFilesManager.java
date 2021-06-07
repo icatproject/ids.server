@@ -100,10 +100,6 @@ public class PreparedFilesManager {
             gen.writeEnd().close();
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
-        } finally {
-            if (gen != null) {
-                gen.close();
-            }
         }
 	}
 
