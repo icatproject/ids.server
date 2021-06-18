@@ -18,6 +18,7 @@ maxIdsInQuery = 1000
 # permissions.  Read the installation instructions before enabling
 # this!
 !useReaderForPerformance = true
+!missingFilesZipEntryName = path/to/FILENAME.txt
 
 # Properties for archive storage
 plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage
