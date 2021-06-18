@@ -205,11 +205,13 @@ public class DataSelection {
 
 	private void manyDss(Long invid, JsonArray result)
 			throws IcatException, InsufficientPrivilegesException, InternalException {
-		long min = result.getJsonNumber(0).longValueExact();
-		long max = result.getJsonNumber(1).longValueExact();
 		long count = result.getJsonNumber(2).longValueExact();
-		logger.debug("manyDss min: {} max: {} count: {}", new Object[] {min, max, count});
-		if (count != 0) {
+		if (count == 0) {
+			logger.warn("Investigation {} contains no datasets", invid);
+		} else {
+			long min = result.getJsonNumber(0).longValueExact();
+			long max = result.getJsonNumber(1).longValueExact();
+			logger.debug("manyDss min: {} max: {} count: {}", new Object[] {min, max, count});
 			if (count <= maxEntities) {
 				String query = "SELECT inv.name, inv.visitId, inv.facility.id,  inv.facility.name FROM Investigation inv WHERE inv.id = "
 						+ invid;
@@ -263,11 +265,13 @@ public class DataSelection {
 			throws IcatException, InsufficientPrivilegesException, InternalException {
 		// dataset access for the user has been checked so the REST session for the
 		// reader account can be used if the IDS setting to allow this is enabled
-		long min = result.getJsonNumber(0).longValueExact();
-		long max = result.getJsonNumber(1).longValueExact();
 		long count = result.getJsonNumber(2).longValueExact();
-		logger.debug("manyDfs min: {} max: {} count: {}", new Object[] {min, max, count});
-		if (count != 0) {
+		if (count == 0) {
+			logger.warn("Dataset {} contains no datafiles", dsid);
+		} else {
+			long min = result.getJsonNumber(0).longValueExact();
+			long max = result.getJsonNumber(1).longValueExact();
+			logger.debug("manyDfs min: {} max: {} count: {}", new Object[] {min, max, count});
 			if (count <= maxEntities) {
 				String query = "SELECT df.id, df.name, df.location, df.createId, df.modId FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + max;
