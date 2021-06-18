@@ -31,6 +31,30 @@ public class BaseIntegrationTest {
 		icatRestClient = new org.icatproject.icat.client.ICAT(icatUrl);
 	}
 
+	public static List<String> getStringsFromQuery(String query) throws Exception {
+		List<Object> objList = getIDsFromQuery(query);
+		List<String> stringList = new ArrayList<>();
+		for (Object obj : objList) {
+			stringList.add((String)obj);
+		}
+		return stringList;
+	}
+
+	public static List<Long> getLongsFromQuery(String query) throws Exception {
+		List<Object> objList = getIDsFromQuery(query);
+		List<Long> longList = new ArrayList<>();
+		for (Object obj : objList) {
+			longList.add((Long)obj);
+		}
+		return longList;
+	}
+
+	public static List<Object> getIDsFromQuery(String query) throws Exception {
+		String rootSessionId = setup.getRootSessionId();
+		List<Object> objList = icatSoapClient.search(rootSessionId, query);
+		return objList;
+	}
+
 	public static void cleanIcat() throws Exception {
 		String rootSessionId = setup.getRootSessionId();
 		List<Object> objects = icatSoapClient.search(rootSessionId, "Facility");
@@ -54,7 +78,6 @@ public class BaseIntegrationTest {
 		Set<String> filePaths = pathToSizeMap.keySet();
 		Map<String, Investigation> invMap = new LinkedHashMap<>();
 		Map<String, Dataset> datasetMap = new LinkedHashMap<>();
-		int count = 0;
 		for (String path : filePaths) {
 			System.out.println(path);
 			String[] pathBits = path.split("/");
@@ -94,11 +117,28 @@ public class BaseIntegrationTest {
 			} else {
 				System.out.println("Path is not long enough");
 			}
-			count++;
-			// if (count == 10) {
-			// 	break;
-			// }
 		}
+
+		// add an empty investigation
+		String emptyInvName = "empty";
+		Investigation emptyInv = createInvestigation(rootSessionId, fac, invType, emptyInvName, "1");
+		invMap.put(emptyInvName, emptyInv);
+		
+		// add an empty dataset to the "mq" investigation
+		String emptyDsName = "mq/empty";
+		Dataset emptyDs = createDataset(rootSessionId, dsType, invMap.get("mq"), emptyDsName);
+		datasetMap.put(emptyDsName, emptyDs);
+
+		// add a file that doesn't exist on the storage
+		// to the mq/etc and the mq/legal datasets
+		createDatafile(rootSessionId, datafileFormat, datasetMap.get("mq/etc"), 
+				"non_existent_file.txt", 
+				"/dls/payara5/mq/etc/non_existent_file.txt", 0L);
+
+		createDatafile(rootSessionId, datafileFormat, datasetMap.get("mq/legal"), 
+				"non_existent_file.txt", 
+				"/dls/payara5/mq/legal/non_existent_file.txt", 0L);
+
 		System.out.println("invMap:");
 		for (String invName : invMap.keySet()) {
 			System.out.println(invName);
