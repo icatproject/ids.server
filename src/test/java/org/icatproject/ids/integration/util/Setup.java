@@ -52,6 +52,25 @@ public class Setup {
 	private boolean twoLevel;
 	private String key;
 
+	// TODO: probably remove this constructor
+	// added for testing to skip redeploy of IDS on each test run
+	public Setup() throws Exception {
+		// Start by reading the test properties
+		Properties testProps = new Properties();
+		InputStream is = Setup.class.getClassLoader().getResourceAsStream("test.properties");
+		try {
+			testProps.load(is);
+		} catch (Exception e) {
+			System.err.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
+		}
+
+		String serverUrl = System.getProperty("serverUrl");
+		icatUrl = new URL(serverUrl);
+		ICAT icat = ICATGetter.getService(serverUrl);
+		rootSessionId = TestUtils.login(icat, testProps.getProperty("login.root"));
+		idsUrl = new URL(serverUrl + "/ids");
+	}
+
 	public Setup(String runPropertyFile) throws Exception {
 
 		// Test home directory
