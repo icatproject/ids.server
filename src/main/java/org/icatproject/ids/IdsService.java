@@ -491,6 +491,51 @@ public class IdsService {
 	}
 
 	/**
+	 * Return a String describing the the percentage of files that have been
+	 * restored for the given prepared ID. This will normally be an integer 
+	 * value between 0 and 100 but could also be a status value such as 
+	 * "UNKNOWN".
+	 * 
+	 * @summary getPercentageComplete
+	 * 
+	 * @param preparedId
+	 *            A valid preparedId returned by a call to prepareData
+	 *
+	 * @return a String describing the completeness of the restore request
+	 *
+	 * @throws NotFoundException
+	 * @throws InternalException
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@GET
+	@Path("getPercentageComplete")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getPercentageComplete(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
+			throws NotFoundException, InternalException {
+		return idsBean.getPercentageComplete(preparedId, request.getRemoteAddr());
+	}
+
+	/**
+	 * Cancel the restore request linked to the given prepared ID.
+	 * 
+	 * @summary cancel
+	 * 
+	 * @param preparedId
+	 *            A valid preparedId returned by a call to prepareData
+	 *
+	 * @throws NotFoundException
+	 * 
+	 * @statuscode 200 To indicate success
+	 */
+	@GET
+	@Path("cancel")
+	public void cancel(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
+			throws NotFoundException {
+		idsBean.cancel(preparedId, request.getRemoteAddr());
+	}
+
+	/**
 	 * An ids server can be configured to be read only. This returns the
 	 * readOnly status of the server.
 	 * 
