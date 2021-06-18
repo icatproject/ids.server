@@ -267,24 +267,33 @@ public class RestorerThreadManager {
      * cause it to stop restoring files if it finds the flag has been set.
      * 
      * @param preparedId the prepared ID
+     * @throws NotFoundException if there are no restorer threads running for 
+     *                           the given prepared ID
      */
-    public void cancelThreadsForPreparedId(String preparedId) {
+    public void cancelThreadsForPreparedId(String preparedId) throws NotFoundException {
         List<RestorerThread> restorerThreads = restorerThreadMap.get(preparedId);
         if (restorerThreads == null) {
-            logger.error("No restorer threads running for prepared ID {}", preparedId);
+            String message = "No restore threads running for prepared ID " + preparedId;
+            logger.error(message);
+            throw new NotFoundException(message);
         } else {
             logger.info("Requesting {} restore thread(s) to stop for prepared ID {}", restorerThreads.size(), preparedId);
-        // loop over all of the restorer threads for this prepared ID and set the stop flag
-        for (RestorerThread restorerThread : restorerThreads) {
+            // loop over all of the restorer threads for this prepared ID and set the stop flag
+            for (RestorerThread restorerThread : restorerThreads) {
                 restorerThread.setStopRestoring();
             }
         }
+        restorerThreadMap.remove(preparedId);
     }
 
 	@PreDestroy
 	public void exit() {
         for (String preparedId : restorerThreadMap.keySet()) {
-            cancelThreadsForPreparedId(preparedId);
+            try {
+                cancelThreadsForPreparedId(preparedId);
+            } catch (NotFoundException e) {
+                logger.error("Error cancelling restore threads for prepared ID {}. {}", preparedId, e.getMessage());
+            }
         }
         logger.info("RestorerThreadManager stopped");
 	}
