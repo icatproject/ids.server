@@ -263,6 +263,38 @@ public class TestingClient {
 		}
 	}
 
+	public String getPercentageComplete(String preparedId, int sc) throws InternalException {
+		URIBuilder uriBuilder = getUriBuilder("getPercentageComplete");
+		uriBuilder.setParameter("preparedId", preparedId);
+		URI uri = getUri(uriBuilder);
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				return getString(response, sc);
+			} catch (Exception e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
+	public void cancel(String preparedId, int sc) throws InternalException {
+		URIBuilder uriBuilder = getUriBuilder("cancel");
+		uriBuilder.setParameter("preparedId", preparedId);
+		URI uri = getUri(uriBuilder);
+		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+			HttpGet httpGet = new HttpGet(uri);
+			try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+				expectNothing(response, sc);
+			} catch (Exception e) {
+				throw new InternalException(e.getClass() + " " + e.getMessage());
+			}
+		} catch (IOException e) {
+			throw new InternalException(e.getClass() + " " + e.getMessage());
+		}
+	}
+
 	public URL getIcatUrl(int sc) throws InternalException, ParseException, NotImplementedException {
 		URI uri = getUri(getUriBuilder("getIcatUrl"));
 		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
