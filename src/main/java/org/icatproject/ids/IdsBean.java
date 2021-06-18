@@ -1,11 +1,9 @@
 package org.icatproject.ids;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,9 +17,6 @@ import java.util.SortedSet;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipOutputStream;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
@@ -29,7 +24,6 @@ import javax.ejb.Stateless;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 
 import org.icatproject.Datafile;
 import org.icatproject.ICAT;
@@ -45,7 +39,6 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.thread.RestorerThreadManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +47,6 @@ import org.slf4j.LoggerFactory;
 public class IdsBean {
 
 	private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
-
-	private static final int BUFSIZ = 2048;
 
 	// matches standard UUID format of 8-4-4-4-12 hexadecimal digits
 	public static final Pattern uuidRegExp = Pattern
@@ -75,8 +66,6 @@ public class IdsBean {
 	Transmitter transmitter;
 
 	private MainStorageInterface mainStorage;
-
-	private ZipMapperInterface zipMapper;
 
 	private PropertyHandler propertyHandler;
 
@@ -106,7 +95,6 @@ public class IdsBean {
 			synchronized (inited) {
 				logger.info("creating IdsBean");
 				propertyHandler = PropertyHandler.getInstance();
-				zipMapper = propertyHandler.getZipMapper();
 				mainStorage = propertyHandler.getMainStorage();
 				twoLevel = propertyHandler.getArchiveStorageClass() != null;
 				Path preparedDir = propertyHandler.getCacheDir().resolve(Constants.PREPARED_DIR_NAME);
@@ -233,6 +221,16 @@ public class IdsBean {
 		return isPrepared;
 	}
 
+	public String getPercentageComplete(String preparedId, String remoteAddr) throws InternalException, NotFoundException {
+		logger.info("New webservice request: getPercentageComplete preparedId = {}", preparedId);
+		return restorerThreadManager.getPercentageComplete(preparedId);
+	}
+
+	public void cancel(String preparedId, String remoteAddr) throws NotFoundException {
+		logger.info("New webservice request: cancel preparedId = {}", preparedId);
+		restorerThreadManager.cancelThreadsForPreparedId(preparedId);
+	}
+
 	public String getDatafileIds(String preparedId, String ip)
 			throws BadRequestException, InternalException, NotFoundException {
 
@@ -353,7 +351,7 @@ public class IdsBean {
 
 		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
 				// TODO: pass the failedFiles so that they can be skipped in the zip file
-				.entity(new SO(dsInfos, dfInfos, offset, zip, compress, transferId, ip, time))
+				.entity(new IdsStreamingOutput(dsInfos, dfInfos, offset, zip, compress, transferId, ip, time))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
 	}
@@ -717,103 +715,6 @@ public class IdsBean {
 			throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
 	}
 
-	// TODO: move this out into a separate class with a better name!
-	private class SO implements StreamingOutput {
-
-		private long offset;
-		private boolean zip;
-		private Map<Long, DsInfo> dsInfos;
-		private boolean compress;
-		private Set<DfInfoImpl> dfInfos;
-		private String ip;
-		private long start;
-		private Long transferId;
-
-		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, 
-				boolean zip, boolean compress, Long transferId, String ip, long start) {
-			this.offset = offset;
-			this.zip = zip;
-			this.dsInfos = dsInfos;
-			this.dfInfos = dfInfos;
-			this.compress = compress;
-			this.transferId = transferId;
-			this.ip = ip;
-			this.start = start;
-		}
-
-		@Override
-		public void write(OutputStream output) throws IOException {
-			Object transfer = "??";
-			try {
-				if (offset != 0) { // Wrap the stream if needed
-					output = new RangeOutputStream(output, offset, null);
-				}
-				byte[] bytes = new byte[BUFSIZ];
-				if (zip) {
-					ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
-					if (!compress) {
-						zos.setLevel(0); // Otherwise use default compression
-					}
-
-					for (DfInfoImpl dfInfo : dfInfos) {
-						logger.debug("Adding " + dfInfo + " to zip");
-						transfer = dfInfo;
-						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
-						InputStream stream = null;
-						try {
-							zos.putNextEntry(new ZipEntry(entryName));
-							stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(), dfInfo.getModId());
-							int length;
-							while ((length = stream.read(bytes)) >= 0) {
-								zos.write(bytes, 0, length);
-							}
-						} catch (ZipException e) {
-							logger.debug("Skipped duplicate");
-						}
-						zos.closeEntry();
-						if (stream != null) {
-							stream.close();
-						}
-					}
-					zos.close();
-				} else {
-					DfInfoImpl dfInfo = dfInfos.iterator().next();
-					transfer = dfInfo;
-					InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
-							dfInfo.getModId());
-					int length;
-					while ((length = stream.read(bytes)) >= 0) {
-						output.write(bytes, 0, length);
-					}
-					output.close();
-					stream.close();
-				}
-
-				if (transferId != null) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-						gen.write("transferId", transferId);
-						gen.writeEnd();
-					}
-					transmitter.processMessage("getData", ip, baos.toString(), start);
-				}
-
-			} catch (IOException e) {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("transferId", transferId);
-					gen.write("exceptionClass", e.getClass().toString());
-					gen.write("exceptionMessage", e.getMessage());
-					gen.writeEnd();
-				}
-				transmitter.processMessage("getData", ip, baos.toString(), start);
-				logger.error("Failed to stream " + transfer + " due to " + e.getMessage());
-				throw e;
-			}
-		}
-
-	}
 
 	// Below are the methods that are no longer available in the DLS IDS 
 	// because they are not used. For now they log that they are being called 
