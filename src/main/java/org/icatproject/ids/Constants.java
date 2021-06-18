@@ -12,6 +12,8 @@ public class Constants {
 	public static final String COMPLETED_DIR_NAME = "completed";
 	public static final String FAILED_DIR_NAME = "failed";
 
+	public static final String DEFAULT_MISSING_FILES_FILENAME = "MISSING_FILES.txt";
+
 	static {
 
 		InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(
