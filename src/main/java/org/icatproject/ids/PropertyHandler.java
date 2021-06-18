@@ -29,7 +29,6 @@ import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.stfc.storaged.ArchiveSDStorage;
 
 /*
  * Load the properties specified in the properties file ids.properties.
@@ -87,6 +86,7 @@ public class PropertyHandler {
 	private Set<CallType> logSet = new HashSet<>();
 	private org.icatproject.icat.client.ICAT restIcat;
 	private boolean useReaderForPerformance;
+	private String missingFilesZipEntryName;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -256,6 +256,8 @@ public class PropertyHandler {
 			}
 
 			useReaderForPerformance = props.getBoolean("useReaderForPerformance", false);
+			missingFilesZipEntryName = props.getString("missingFilesZipEntryName", 
+					Constants.DEFAULT_MISSING_FILES_FILENAME);
 
 		} catch (CheckedPropertyException e) {
 			abort(e.getMessage());
@@ -447,4 +449,8 @@ public class PropertyHandler {
     public int getMaxRestoresPerThread() {
         return maxRestoresPerThread;
     }
+
+	public String getMissingFilesZipEntryName() {
+		return missingFilesZipEntryName;
+	}
 }
