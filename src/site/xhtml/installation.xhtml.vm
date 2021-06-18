@@ -149,6 +149,14 @@
 		<dd>The number of literal id values to be generated in an ICAT
 			query. For Oracle this must not exceed 1000.</dd>
 
+		<dt>missingFilesZipEntryName</dt>
+		<dd>Optional. Specifies the filename (and path if required) of a file
+			which will be added to the download zip file if there are files 
+			which failded to restore for a request. If not specified, the 
+			default of MISSING_FILES.txt will be used with the file appearing 
+			in the root of the zip file. The file can also be put in a 
+			subfolder using eg. path/to/FILENAME.txt </dd>
+			
 		<dt>log.list</dt>
 		<dd>Optional. If present it specifies a set of call types to log
 			via JMS calls. The types are specified by a space separated list of
