@@ -3,15 +3,12 @@ package org.icatproject.ids;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -38,37 +35,11 @@ public class RestorerThreadManagerTest {
     
     @BeforeClass
     public static void setupClass() throws Exception {
-        // copy "unit.tests.run.properties" to "run.properties"
-        // and put it in a location that is on the classpath
-        Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
-        Path sourceRunPropertiesPath = testClassesDir.resolve("unit.tests.run.properties");
-        targetRunPropertiesPath = testClassesDir.resolve("run.properties");
-        System.out.println("sourceRunPropertiesPath: " + sourceRunPropertiesPath);
-        System.out.println("targetRunPropertiesPath: " + targetRunPropertiesPath);
-        if (sourceRunPropertiesPath.toFile().exists()) {
-            System.out.println("Found unit.tests.run.properties");
-            Files.copy(sourceRunPropertiesPath, targetRunPropertiesPath, StandardCopyOption.REPLACE_EXISTING);    
-        }
+        targetRunPropertiesPath = TestUtils.copyUnitTestsRunPropertiesToClasspath();
 
-        // create directories that are specified in run.properties
-        // throw an exception if they already exist so the user can decide 
-        // whether they are safe to be deleted or not
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(targetRunPropertiesPath.toFile()));
-        pluginMainDirPath = Paths.get(properties.getProperty("plugin.main.dir"));
-        if (pluginMainDirPath.toFile().exists()) {
-            throw new Exception("plugin.main.dir: " + pluginMainDirPath + " already exists");
-        } else {
-            Files.createDirectories(pluginMainDirPath);
-        }
-        cacheDirPath = Paths.get(properties.getProperty("cache.dir"));
-        if (cacheDirPath.toFile().exists()) {
-            throw new Exception("cache.dir: " + cacheDirPath + " already exists");
-        } else {
-            Files.createDirectories(cacheDirPath);
-            Files.createDirectories(cacheDirPath.resolve(Constants.COMPLETED_DIR_NAME));
-            Files.createDirectories(cacheDirPath.resolve(Constants.FAILED_DIR_NAME));
-        }
+        pluginMainDirPath = TestUtils.createPluginMainDir();
+
+        cacheDirPath = TestUtils.createCacheDir();
 
         // run.properties will now be used to initialise the PropertyHandler
         // and the directories defined within it will now exist
