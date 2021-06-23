@@ -63,21 +63,21 @@ public class FailedFilesManager {
      * 
      * @param preparedId the related prepared ID
      * @param failedFilepaths the list of file paths to write into the file
-     * @throws InternalException if there is a problem writing to the file
      */
-    public void writeToFailedEntriesFile(String preparedId, Set<String> failedFilepaths) throws InternalException {
-        SortedSet<String> sortedFilepathsSet = new TreeSet<>();
-        sortedFilepathsSet.addAll(getFailedEntriesForPreparedId(preparedId));
-        sortedFilepathsSet.addAll(failedFilepaths);
-        try (FileWriter writer = new FileWriter(failedFilesDir.resolve(preparedId).toFile())) { 
-            for(String filepath : sortedFilepathsSet) {
-                writer.write(filepath + System.lineSeparator());
+    public void writeToFailedEntriesFile(String preparedId, Set<String> failedFilepaths) {
+        try {
+            SortedSet<String> sortedFilepathsSet = new TreeSet<>();
+            sortedFilepathsSet.addAll(getFailedEntriesForPreparedId(preparedId));
+            sortedFilepathsSet.addAll(failedFilepaths);
+            try (FileWriter writer = new FileWriter(failedFilesDir.resolve(preparedId).toFile())) {
+                for(String filepath : sortedFilepathsSet) {
+                    writer.write(filepath + System.lineSeparator());
+                }
             }
-        } catch (IOException e) {
-            String message = String.format("IOException writing failed file for prepared ID %s : %s",
-                    preparedId, e.getMessage());
+        } catch (InternalException | IOException e) {
+            String message = String.format("%s writing failed file for prepared ID %s : %s",
+                    e.getClass().getSimpleName(), preparedId, e.getMessage());
             logger.error(message);
-            throw new InternalException(message);
         }
     }
 
