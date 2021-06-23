@@ -10,13 +10,15 @@ import org.icatproject.ids.plugin.MainStorageInterface;
 
 /**
  * A modified version of the ArchiveStorageInterface defined in the original
- * IDS plugin that also allows for monitoring the progress of restore requests.
+ * IDS plugin that also allows for monitoring the progress of restore requests
+ * and also for the restore request to be stopped whilst in progress.
  */
 public interface ArchiveStorageInterfaceDLS {
     
     /**
      * Original method from the IDS plugin interface ArchiveStorageInterface
-     * but with the added ability to throw an IOException 
+     * but with the added ability to throw an IOException and to request that
+     * the restore request be stopped whilst in progress. 
      * 
      * @param mainStorageInterface MainStorageInterface as defined in the 
      *                             original IDS storage plugin
