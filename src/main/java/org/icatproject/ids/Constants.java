@@ -14,6 +14,8 @@ public class Constants {
 
 	public static final String DEFAULT_MISSING_FILES_FILENAME = "MISSING_FILES.txt";
 
+	public static final String RUN_PROPERTIES_FILENAME = "run.properties";
+
 	static {
 
 		InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(

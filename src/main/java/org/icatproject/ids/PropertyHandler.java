@@ -94,7 +94,7 @@ public class PropertyHandler {
 		CheckedProperties props = new CheckedProperties();
 
 		try {
-			props.loadFromResource("run.properties");
+			props.loadFromResource(Constants.RUN_PROPERTIES_FILENAME);
 			logger.info("Property file run.properties loaded");
 
 			icatUrl = ICATGetter.getCleanUrl(props.getString("icat.url"));
@@ -139,7 +139,7 @@ public class PropertyHandler {
 
 			// Now get simple properties to pass to the plugins
 			simpleProps = new Properties();
-			try (InputStream is = getClass().getClassLoader().getResourceAsStream("run.properties")) {
+			try (InputStream is = getClass().getClassLoader().getResourceAsStream(Constants.RUN_PROPERTIES_FILENAME)) {
 				simpleProps.load(is);
 			} catch (IOException e) {
 				abort(e.getClass() + " " + e.getMessage());
