@@ -103,7 +103,8 @@
 
 		<dt>cache.dir</dt>
 		<dd>The location (absolute or relative to the config directory of
-			the domain) of a directory to hold mostly zip files.</dd>
+			the domain) of a directory where the working files for the IDS 
+			are held eg. prepared, completed and failed files.</dd>
 
 		<dt>preparedCount</dt>
 		<dd>The number of preparedId values from prepareData calls to
