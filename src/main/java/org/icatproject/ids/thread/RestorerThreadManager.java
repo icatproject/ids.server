@@ -1,6 +1,7 @@
 package org.icatproject.ids.thread;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,6 +10,7 @@ import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 
 import org.icatproject.ids.CompletedRestoresManager;
+import org.icatproject.ids.FailedFilesManager;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.RestoreFileCountManager;
 import org.icatproject.ids.exceptions.InternalException;
@@ -69,6 +71,10 @@ public class RestorerThreadManager {
             CompletedRestoresManager completedRestoresManager = 
                     new CompletedRestoresManager(propertyHandler.getCacheDir());
             completedRestoresManager.createCompletedFile(preparedId);
+            // write a failed files file (empty)
+            FailedFilesManager failedFilesManager = 
+                    new FailedFilesManager(propertyHandler.getCacheDir());
+            failedFilesManager.writeToFailedEntriesFile(preparedId, Collections.emptySet());
         } else {
             logger.debug("{} files will be restored for preparedId {}", dfInfosToRestore.size(), preparedId);
             int maxFilesPerRequest = propertyHandler.getMaxRestoresPerThread();
