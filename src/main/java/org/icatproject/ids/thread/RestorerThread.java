@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.icatproject.ids.FailedFilesManager;
 import org.icatproject.ids.PropertyHandler;
-import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.storage.ArchiveStorageInterfaceDLS;
 import org.slf4j.Logger;
@@ -70,9 +69,6 @@ public class RestorerThread extends Thread {
             // resubmit the list of DfInfos to try again in another thread
             logger.error("IOException for preparedId ID " + preparedId + ". Recreating restorer thread.", e);
             restorerThreadManager.createRestorerThread(preparedId, dfInfosToRestore, true);
-        } catch (InternalException e) {
-            // this was thrown when writing the failed files file and has already been logged
-            // nothing more we can do about it here
         }
         restorerThreadManager.removeThreadFromMap(preparedId, this);
         logger.debug("RestorerThread finishing for preparedId {}", preparedId);
