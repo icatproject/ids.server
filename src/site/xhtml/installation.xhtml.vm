@@ -110,6 +110,12 @@
 		<dd>The number of preparedId values from prepareData calls to
 			remember.</dd>
 
+		<dt>completedCount</dt>
+		<dd>The number of completed files to keep in the cache.</dd>
+
+		<dt>failedFilesCount</dt>
+		<dd>The number of failed file listing files to keep in the cache.</dd>
+
 		<dt>processQueueIntervalSeconds</dt>
 		<dd>The frequency of checking the process queue. This is used
 			both for cleaning old information from memory and for triggering

@@ -8,6 +8,8 @@ plugin.main.dir = ${HOME}/ids/main/
 
 cache.dir = ${HOME}/ids/cache
 preparedCount = 10000
+completedCount = 10000
+failedFilesCount = 10000
 processQueueIntervalSeconds = 5
 rootUserNames = root
 sizeCheckIntervalSeconds = 60

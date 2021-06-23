@@ -64,6 +64,8 @@ public class PropertyHandler {
 	private Class<ArchiveStorageInterfaceDLS> archiveStorageClass;
 
 	private int preparedCount;
+	private int completedCount;
+	private int failedFilesCount;
 
 	private long processQueueIntervalSeconds;
 	private List<String> reader;
@@ -105,6 +107,8 @@ public class PropertyHandler {
 			}
 
 			preparedCount = props.getPositiveInt("preparedCount");
+			completedCount = props.getPositiveInt("completedCount");
+			failedFilesCount = props.getPositiveInt("failedFilesCount");
 			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
 			rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim().split("\\s+")));
 
@@ -388,6 +392,14 @@ public class PropertyHandler {
 
 	public int getPreparedCount() {
 		return preparedCount;
+	}
+
+	public int getCompletedCount() {
+		return completedCount;
+	}
+
+	public int getFailedFilesCount() {
+		return failedFilesCount;
 	}
 
 	public long getProcessQueueIntervalSeconds() {
