@@ -99,6 +99,7 @@ public class IdsStreamingOutput implements StreamingOutput {
                     } catch (ZipException e) {
                         logger.debug("Skipped duplicate");
                     } catch (IOException e) {
+                        logger.warn("Caught IOException {} {}", e.getClass().getSimpleName(), e.getMessage());
                         logger.warn("Skipping missing file in zip: {}", entryName);
                         missingFiles.add(entryName);
                     }
