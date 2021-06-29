@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,52 +16,82 @@ import java.util.zip.ZipInputStream;
 import org.icatproject.Dataset;
 import org.icatproject.Investigation;
 import org.icatproject.ids.Constants;
-import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.TestUtils;
+import org.icatproject.ids.integration.util.IcatSetup;
 import org.icatproject.ids.integration.util.client.DataSelection;
-import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class containing the integration tests that are run against the latest 
+ * version of the IDS which is compiled and packaged as part of the build 
+ * process and then deployed as part of the test setup.
+ * 
+ * When calling Setup to initiate the IDS (re)deploy process, the file which
+ * is to be used as the run.properties file upon deployment is specified.
+ * 
+ * The tests then use the TestingClient to communicate with the newly deployed
+ * IDS using HTTP calls.
+ */
 public class IntegrationTest extends BaseIntegrationTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
+    private static Logger logger = LoggerFactory.getLogger(IntegrationTest.class);
 
-    private static TestingClient testingClient;
+    /**
+     * Allow the logger class to be changed for sub-classes
+     * 
+     * @param klass the sub-class
+     */
+    public static void setLoggerClass(Class<?> klass) {
+        logger = LoggerFactory.getLogger(klass);
+    }
 
     @BeforeClass
-	public static void setup() throws Exception {
-//		setup = new Setup("integration.properties"); // for deploying the IDS
-
-        setup = new Setup(); // for just setting up an ICAT URL and getting a rootSessionId
-        testingClient = new TestingClient(setup.getIdsUrl());
-        icatsetup();
-
-        // these just require the default Setup() - not a redeploy of the IDS
-        // cleanIcat();
-        // populateIcat();
+	public static void setupClass() throws Exception {
+        doSetup("integration.run.properties");
+        // use the line below in development to skip 
+        // re-populating the ICAT every time a test is run  
+//        doSetup("integration.run.properties", true);
+        setLoggerClass(IntegrationTest.class);
 	}
 
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+        if (setup != null) {
+            // safe to delete this because a check is done for it being empty during setup
+            logger.debug("Recursively deleting plugin.main.dir {}", setup.getPluginMainDir());
+            TestUtils.recursivelyDeleteDirectory(setup.getPluginMainDir());
+            // re-create the empty directory
+            // (the IDS may still be running and expects it to be there)
+            Files.createDirectories(setup.getPluginMainDir());
+        }
+    }
+
     @Test
-	// TODO: remove this - just for testing
     public void testPrintIcatContentsSummary() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
 		List<Object> objects = icatSoapClient.search(rootSessionId, "Investigation INCLUDE Dataset, Datafile");
 		for (Object o : objects) {
 			Investigation inv = (Investigation)o;
-			System.out.println("INV : " + inv.getName() + " " + inv.getId());
+			logger.info("INV : " + inv.getName() + " " + inv.getId());
 			for (Dataset ds : inv.getDatasets()) {
-				System.out.println("    DS : " + ds.getName() + " " + ds.getId() + " " + ds.getDatafiles().size() + " files");
+				logger.info("    DS : " + ds.getName() + " " + ds.getId() + " " + ds.getDatafiles().size() + " files");
 			}
 		}
 	}
 
+    @org.junit.Ignore("just for emptying the ICAT during development")
+    @Test
+    public void testEmptyIcat() throws Exception {
+        IcatSetup icatSetup = new IcatSetup(icatSoapClient, rootSessionId);
+        icatSetup.cleanIcat();
+    }
+
     @Test
 	public void testPrepareInvDatasetsAndDatafiles() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
- 
         DataSelection dataSelection = new DataSelection();
 
         // the "h2db" investigation containing 2 small datasets
@@ -121,9 +152,9 @@ public class IntegrationTest extends BaseIntegrationTest {
                            "and datafile.dataset.investigation.name = 'mq'";
         locationList.addAll(getStringsFromQuery(query3loc));
 
-        logger.info("Zip file should contain " + locationList.size() + " restored files:");
+        logger.info("Zip file should contain {} restored files", locationList.size());
         for (String location : locationList) {
-            logger.info(location);
+            logger.debug(location);
         }
         
 		checkZipFile(preparedId, locationList, Collections.emptyList());
@@ -131,7 +162,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
 	public void testPrepareMultipleSmallerDatasets() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // all the smaller "glassfish" datasets (not lib and modules)
         String query1 = "select dataset.id from Dataset dataset " +
                         "where dataset.name != 'glassfish/lib' " +
@@ -163,9 +193,9 @@ public class IntegrationTest extends BaseIntegrationTest {
                            "and datafile.dataset.name != 'glassfish/modules' " + 
                            "and datafile.dataset.investigation.name = 'glassfish'";
         List<String> locationList = getStringsFromQuery(query2loc);
-        logger.info("Zip file should contain " + locationList.size() + " restored files:");
+        logger.info("Zip file should contain {} restored files", locationList.size());
         for (String location : locationList) {
-            logger.info(location);
+            logger.debug(location);
         }
         
 		checkZipFile(preparedId, locationList, Collections.emptyList());
@@ -173,7 +203,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testPrepareSimultaneousDatasets() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // the large glassfish/lib dataset
         String query1 = "select dataset.id from Dataset dataset " +
                         "where dataset.name = 'glassfish/lib' " +
@@ -210,9 +239,9 @@ public class IntegrationTest extends BaseIntegrationTest {
                            "where datafile.dataset.name = 'glassfish/lib' " +
                            "and datafile.dataset.investigation.name = 'glassfish'";
         List<String> gfLibLocationList = getStringsFromQuery(query1loc);
-        logger.info("Zip file should contain " + gfLibLocationList.size() + " restored files:");
+        logger.info("Zip file should contain {} restored files", gfLibLocationList.size());
         for (String location : gfLibLocationList) {
-            logger.info(location);
+            logger.debug(location);
         }
 		checkZipFile(gfLibPreparedId, gfLibLocationList, Collections.emptyList());
 
@@ -222,9 +251,9 @@ public class IntegrationTest extends BaseIntegrationTest {
                            "where datafile.dataset.name = 'glassfish/modules' " +
                            "and datafile.dataset.investigation.name = 'glassfish'";
         List<String> gfModLocationList = getStringsFromQuery(query2loc);
-        logger.info("Zip file should contain " + gfModLocationList.size() + " restored files:");
+        logger.info("Zip file should contain {} restored files", gfModLocationList.size());
         for (String location : gfModLocationList) {
-            logger.info(location);
+            logger.debug(location);
         }
 		checkZipFile(gfModPreparedId, gfModLocationList, Collections.emptyList());
 
@@ -232,7 +261,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testCancelThenResubmit() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // the mq/javadoc dataset
         String query1 = "select dataset.id from Dataset dataset " +
                         "where dataset.name = 'mq/javadoc' " +
@@ -280,9 +308,9 @@ public class IntegrationTest extends BaseIntegrationTest {
                            "where datafile.dataset.name = 'mq/javadoc' " +
                            "and datafile.dataset.investigation.name = 'mq'";
         List<String> mqJavadocLocationList = getStringsFromQuery(query1loc);
-        logger.info("Zip file should contain " + mqJavadocLocationList.size() + " restored files:");
+        logger.info("Zip file should contain {} restored files", mqJavadocLocationList.size());
         for (String location : mqJavadocLocationList) {
-            logger.info(location);
+            logger.debug(location);
         }
 		checkZipFile(preparedId, mqJavadocLocationList, Collections.emptyList());
 
@@ -290,7 +318,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testPrepareDatasetsWithMissingFiles() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // the mq/etc and mq/legal datasets each containing
         // a file that is not available from the Dummy Storage
         String query1 = "select dataset.id from Dataset dataset " +
@@ -316,9 +343,9 @@ public class IntegrationTest extends BaseIntegrationTest {
                            "and datafile.dataset.investigation.name = 'mq'";
         List<String> locationList = getStringsFromQuery(query1loc);
         locationList.add("/" + Constants.DEFAULT_MISSING_FILES_FILENAME);
-        logger.info("Zip file should contain " + locationList.size() + " files:");
+        logger.info("Zip file should contain {} files", locationList.size());
         for (String location : locationList) {
-            logger.info(location);
+            logger.debug(location);
         }
 
         // look up all datafile locations of the files in the 
@@ -340,7 +367,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testPrepareEmptyInvestigation() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // the ID of the "empty" Investigation
         String query1 = "select investigation.id from Investigation investigation " +
                         "where investigation.name = 'empty'";
@@ -360,7 +386,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testPrepareEmptyDataset() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // the ID of the "empty" Dataset
         String query1 = "select dataset.id from Dataset dataset " +
                         "where dataset.name = 'mq/empty' " +
@@ -381,7 +406,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testPrepareNonExistentFiles() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // the IDs of the "non-existent" Datafiles that are
         // not available from the Dummy Archive Storage
         String query1 = "select datafile.id from Datafile datafile " +
@@ -401,9 +425,9 @@ public class IntegrationTest extends BaseIntegrationTest {
 
         List<String> locationList = new ArrayList<>();
         locationList.add("/" + Constants.DEFAULT_MISSING_FILES_FILENAME);
-        logger.info("Zip file should contain " + locationList.size() + " files:");
+        logger.info("Zip file should contain {} files", locationList.size());
         for (String location : locationList) {
-            logger.info(location);
+            logger.debug(location);
         }
 
         // look up all datafile locations of the files in the 
@@ -426,7 +450,6 @@ public class IntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testGetDataSelectionSize() throws Exception {
-		String rootSessionId = setup.getRootSessionId();
         // the size of all the datafiles in the "glassfish" Investigation
         String query1 = "select sum(datafile.fileSize) from Datafile datafile " +
                         "where datafile.dataset.investigation.name = 'glassfish'";
@@ -513,7 +536,7 @@ public class IntegrationTest extends BaseIntegrationTest {
                     logger.error(message);
                     throw new Exception(message);
                 }
-                logger.info("Zip contains " + name);
+                logger.debug("Zip contains " + name);
                 if (name.equals("/" + Constants.DEFAULT_MISSING_FILES_FILENAME)) {
                     if (missingFilesExpected) {
                         // check the contents of the missing files file in the zip
@@ -580,5 +603,5 @@ public class IntegrationTest extends BaseIntegrationTest {
             }
         }
     }
-    
+
 }
