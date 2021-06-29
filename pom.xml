@@ -292,10 +292,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.19.1</version>
 				<configuration>
-					<!-- 
-						TODO: remove all the old excluded tests once they have
-						been deleted from the codebase
-					-->
 					<excludes>
 						<!--
 							Only unit tests should be run by the surefire plugin. 
@@ -303,10 +299,6 @@
 							they are run by the failsafe plugin.
 						-->
 						<exclude>org.icatproject.ids.integration.**</exclude>
-						<!--exclude>org.icatproject.ids.integration.one.*</exclude>
-						<exclude>org.icatproject.ids.integration.two.*</exclude>
-						<exclude>org.icatproject.ids.integration.twodf.*</exclude-->
-						<exclude>org.icatproject.ids.TestICATGetter</exclude>
 					</excludes>
 					<systemPropertyVariables>
 						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
@@ -394,22 +386,15 @@
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.19.1</version>
 				<configuration>
-					<!-- TODO: sort this out once there are some new integration tests -->
-					<!--includes>
-						<include>**/integration/**/*Test.java</include>
-					</includes-->
-					<!--
-						Only integration tests should be run by the failsafe plugin. 
-						Unit tests should be excluded here because
-						they are run by the failsafe plugin.
-					-->
-					<!-- just exclude all tests for now -->
-					<exclude>org.icatproject.ids.integration.**</exclude>
-					<!--exclude>org.icatproject.ids.integration.one.*</exclude>
-					<exclude>org.icatproject.ids.integration.two.*</exclude>
-					<exclude>org.icatproject.ids.integration.twodf.*</exclude-->
-					<exclude>org.icatproject.ids.*</exclude>
-
+					<includes>
+						<!--
+							Only integration tests should be run by the failsafe plugin. 
+							Unit tests should be excluded here because
+							they are run by the surefire plugin.
+						-->
+						<!--include>**/integration/**/*Test.java</include-->
+						<include>org.icatproject.ids.integration.**</include>
+					</includes>
 					<systemPropertyVariables>
 						<serverUrl>${serverUrl}</serverUrl>
 						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
