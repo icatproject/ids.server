@@ -2,10 +2,10 @@
 from setup_utils import *
 import os
 
-# ids.server
+# dls-ids-server
 
 def uninstall():
-    app = actions.getAppName("ids.server")
+    app = actions.getAppName("dls-ids-server")
     if app: actions.undeploy(app)
     actions.deleteJMSResource("jms/IDS/log")
 
