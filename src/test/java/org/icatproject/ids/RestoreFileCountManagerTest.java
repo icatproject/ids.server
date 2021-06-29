@@ -27,7 +27,6 @@ public class RestoreFileCountManagerTest {
         try{
             restoreFileCountManager.getFileCount(preparedId);
         } catch (Exception e) {
-            System.out.println(e);
             assertEquals("Exception type was not as expected", e.getClass(), NotFoundException.class);
         }
     }
