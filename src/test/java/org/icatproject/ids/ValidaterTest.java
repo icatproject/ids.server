@@ -5,8 +5,12 @@ import static org.junit.Assert.assertTrue;
 
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ValidaterTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(ValidaterTest.class);
 
 	@Test
 	public void testIsValidId() throws Exception {
@@ -24,7 +28,7 @@ public class ValidaterTest {
 			IdsBean.validateUUID("testValidUUID", id);
 			assertTrue(b);
 		} catch (BadRequestException e) {
-			System.out.println(e.getMessage());
+			logger.debug(e.getMessage());
 			assertFalse(b);
 		}
 

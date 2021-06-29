@@ -22,10 +22,14 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.stfc.storaged.DfInfoWithLocation;
 
 public class RestorerThreadManagerTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(RestorerThreadManagerTest.class);
 
     private static Path targetRunPropertiesPath;
     private static Path pluginMainDirPath;
@@ -103,11 +107,11 @@ public class RestorerThreadManagerTest {
             int numFilesRemaining3 = restorerThreadManager.getTotalNumFilesRemaining("preparedId3");
             int numFilesRemaining4 = restorerThreadManager.getTotalNumFilesRemaining("preparedId4");
             int numFilesRemaining5 = restorerThreadManager.getTotalNumFilesRemaining("preparedId5");
-            System.out.println("preparedId1 numFilesRemaining: " + numFilesRemaining1 + " (" + System.currentTimeMillis() + ")");
-            System.out.println("preparedId2 numFilesRemaining: " + numFilesRemaining2 + " (" + System.currentTimeMillis() + ")");
-            System.out.println("preparedId3 numFilesRemaining: " + numFilesRemaining3 + " (" + System.currentTimeMillis() + ")");
-            System.out.println("preparedId4 numFilesRemaining: " + numFilesRemaining4 + " (" + System.currentTimeMillis() + ")");
-            System.out.println("preparedId5 numFilesRemaining: " + numFilesRemaining5 + " (" + System.currentTimeMillis() + ")");
+            logger.info("preparedId1 numFilesRemaining: {}", numFilesRemaining1);
+            logger.info("preparedId2 numFilesRemaining: {}", numFilesRemaining2);
+            logger.info("preparedId3 numFilesRemaining: {}", numFilesRemaining3);
+            logger.info("preparedId4 numFilesRemaining: {}", numFilesRemaining4);
+            logger.info("preparedId5 numFilesRemaining: {}", numFilesRemaining5);
             numFilesRemaining = numFilesRemaining1 + numFilesRemaining2 + numFilesRemaining3 + numFilesRemaining4 + numFilesRemaining5;
         }
         // just wait a few secs to get any further reporting from threads
@@ -135,7 +139,7 @@ public class RestorerThreadManagerTest {
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
             numFilesRemaining = restorerThreadManager.getTotalNumFilesRemaining("preparedId1");
-            System.out.println("preparedId1 numFilesRemaining: " + numFilesRemaining + " (" + System.currentTimeMillis() + ")");
+            logger.info("preparedId1 numFilesRemaining: {}", numFilesRemaining);
         }
         // just wait a few secs to get any further reporting from threads
         Thread.sleep(5000);
@@ -150,7 +154,7 @@ public class RestorerThreadManagerTest {
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
             numFilesRemaining = restorerThreadManager.getTotalNumFilesRemaining("preparedId2");
-            System.out.println("preparedId2 numFilesRemaining: " + numFilesRemaining + " (" + System.currentTimeMillis() + ")");
+            logger.info("preparedId2 numFilesRemaining: {}", numFilesRemaining);
         }
         // just wait a few secs to get any further reporting from threads
         Thread.sleep(5000);
@@ -192,7 +196,7 @@ public class RestorerThreadManagerTest {
         while (numFilesRemaining > 0) {
             Thread.sleep(1000);
             numFilesRemaining = restorerThreadManager.getTotalNumFilesRemaining(preparedId);
-            System.out.println(preparedId + " numFilesRemaining: " + numFilesRemaining + " (" + System.currentTimeMillis() + ")");
+            logger.info("{} numFilesRemaining: {}", preparedId ,numFilesRemaining);
         }
         // just wait a few secs to get any further reporting from threads
         Thread.sleep(5000);
@@ -213,7 +217,7 @@ public class RestorerThreadManagerTest {
     private boolean checkForEmptyFailedFile(String preparedId) throws InternalException {
         FailedFilesManager failedFilesManager = new FailedFilesManager(cacheDirPath);
         Set<String> failedFiles = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
-        System.out.println("Failed files for " + preparedId + " contains " + failedFiles.size() + " entries");
+        logger.debug("Failed files for {} contains {} entries", preparedId, failedFiles.size());
         return failedFiles.size()==0;
     }
 
@@ -225,7 +229,6 @@ public class RestorerThreadManagerTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        System.out.println("Running tearDownClass");
         Files.deleteIfExists(targetRunPropertiesPath);
         if (pluginMainDirPath != null) {
             TestUtils.recursivelyDeleteDirectory(pluginMainDirPath);
