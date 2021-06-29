@@ -78,7 +78,7 @@ public class TestUtils {
                 throw new IOException("File " + filePath + " not found on Main Storage");
             }
         }
-        logger.debug("All {} files were found on Main Storage", dfInfos.size());
+        logger.info("All {} files were found on Main Storage", dfInfos.size());
     }
 
     /**
