@@ -12,6 +12,7 @@ plugin.main.dir = ${HOME}/ids/main/
 # Properties for archive storage
 plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage
 plugin.archive.dir = ${HOME}/ids/archive/
+maxRestoresPerThread = 100000
 plugin.zipMapper.class = org.icatproject.ids.storage.ZipMapper
 !missingFilesZipEntryName = path/to/FILENAME.txt
 
@@ -25,4 +26,3 @@ failedFilesCount = 10000
 sizeCheckIntervalSeconds = 60
 startArchivingLevel1024bytes = 5000000
 stopArchivingLevel1024bytes =  4000000
-maxRestoresPerThread = 100000
