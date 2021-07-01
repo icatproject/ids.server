@@ -130,23 +130,6 @@ public class IdsService {
 	/**
 	 * Return the version of the server
 	 * 
-	 * @summary getApiVersion
-	 * 
-	 * @return the version of the ids server
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("getApiVersion")
-	@Produces(MediaType.TEXT_PLAIN)
-	@Deprecated
-	public String getApiVersion() {
-		return Constants.API_VERSION;
-	}
-
-	/**
-	 * Return the version of the server
-	 * 
 	 * @summary Version
 	 * 
 	 * @return json string of the form: <samp>{"version":"4.4.0"}</samp>
@@ -536,12 +519,11 @@ public class IdsService {
 	}
 
 	/**
-	 * An ids server can be configured to be read only. This returns the
-	 * readOnly status of the server.
+	 * This version of the IDS is read only so this method always returns true.
 	 * 
 	 * @summary isReadOnly
 	 * 
-	 * @return true if readonly, else false
+	 * @return true
 	 * 
 	 * @statuscode 200 To indicate success
 	 */
@@ -549,16 +531,16 @@ public class IdsService {
 	@Path("isReadOnly")
 	@Produces(MediaType.TEXT_PLAIN)
 	public boolean isReadOnly(@Context HttpServletRequest request) {
-		return idsBean.isReadOnly(request.getRemoteAddr());
+		return true;
 	}
 
 	/**
-	 * An ids server can be configured to support one or two levels of data
-	 * storage. This returns the twoLevel status of the server.
+	 * This version of the IDS uses two level storage (main and archive) so 
+	 * this method always returns true.
 	 * 
 	 * @summary isTwoLevel
 	 * 
-	 * @return true if twoLevel, else false
+	 * @return true
 	 * 
 	 * @statuscode 200 To indicate success
 	 */
@@ -566,7 +548,7 @@ public class IdsService {
 	@Path("isTwoLevel")
 	@Produces(MediaType.TEXT_PLAIN)
 	public boolean isTwoLevel(@Context HttpServletRequest request) {
-		return idsBean.isTwoLevel(request.getRemoteAddr());
+		return true;
 	}
 
 	/**

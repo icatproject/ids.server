@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 @Stateless
 public class IdsBean {
 
-	private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
+	private static final Logger logger = LoggerFactory.getLogger(IdsBean.class);
 
 	// matches standard UUID format of 8-4-4-4-12 hexadecimal digits
 	public static final Pattern uuidRegExp = Pattern
@@ -62,9 +62,6 @@ public class IdsBean {
 	@EJB
 	IcatReader reader;
 
-	@EJB
-	Transmitter transmitter;
-
 	private MainStorageInterface mainStorage;
 
 	private PropertyHandler propertyHandler;
@@ -79,15 +76,6 @@ public class IdsBean {
 
 	private RestoreFileCountManager restoreFileCountManager;
 
-	private boolean readOnly;
-
-	private boolean twoLevel;
-
-	private Set<CallType> logSet;
-
-	enum CallType {
-		INFO, PREPARE, READ, WRITE, MIGRATE, LINK
-	};
 
 	@PostConstruct
 	private void init() {
@@ -96,7 +84,6 @@ public class IdsBean {
 				logger.info("creating IdsBean");
 				propertyHandler = PropertyHandler.getInstance();
 				mainStorage = propertyHandler.getMainStorage();
-				twoLevel = propertyHandler.getArchiveStorageClass() != null;
 				Path preparedDir = propertyHandler.getCacheDir().resolve(Constants.PREPARED_DIR_NAME);
 				Files.createDirectories(preparedDir);
 				preparedFilesManager = new PreparedFilesManager(preparedDir);
@@ -108,22 +95,13 @@ public class IdsBean {
 				restoreFileCountManager = RestoreFileCountManager.getInstance();
 
 				rootUserNames = propertyHandler.getRootUserNames();
-				readOnly = propertyHandler.getReadOnly();
 
 				icat = propertyHandler.getIcatService();
 
-				if (twoLevel) {
-					if (!inited) {
-						restartUnfinishedWork();
-					}
-				}
-
 				if (!inited) {
+					restartUnfinishedWork();
 					cleanPreparedDir(preparedDir);
 				}
-
-				logSet = propertyHandler.getLogSet();
-
 				inited = true;
 
 				logger.info("created IdsBean");
@@ -137,8 +115,6 @@ public class IdsBean {
 	public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
 			boolean compress, boolean zip, String ip)
 			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
-
-		long start = System.currentTimeMillis();
 
 		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
 				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "' " + "compress='" + compress
@@ -162,29 +138,11 @@ public class IdsBean {
 
 		restorerThreadManager.submitFilesForRestore(preparedId, new ArrayList<>(dfInfos), true);
 
-		if (logSet.contains(CallType.PREPARE)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.write("preparedId", preparedId);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("prepareData", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-
 		return preparedId;
 	}
 
 	public Boolean isPrepared(String preparedId, String ip)
 			throws BadRequestException, NotFoundException, InternalException {
-
-		long start = System.currentTimeMillis();
 
 		logger.info("New webservice request: isPrepared preparedId={}", preparedId);
 
@@ -208,16 +166,6 @@ public class IdsBean {
 			}
 		}
 
-		if (logSet.contains(CallType.INFO)) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			String body = baos.toString();
-			transmitter.processMessage("isPrepared", ip, body, start);
-		}
-
 		return isPrepared;
 	}
 
@@ -233,8 +181,6 @@ public class IdsBean {
 
 	public String getDatafileIds(String preparedId, String ip)
 			throws BadRequestException, InternalException, NotFoundException {
-
-		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
@@ -259,15 +205,6 @@ public class IdsBean {
 			gen.writeEnd().writeEnd().close();
 		}
 		String resp = baos.toString();
-
-		if (logSet.contains(CallType.INFO)) {
-			baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
-		}
 
 		return resp;
 	}
@@ -337,20 +274,9 @@ public class IdsBean {
 			}
 		}
 
-		Long transferId = null;
-		if (logSet.contains(CallType.READ)) {
-			transferId = atomicLong.getAndIncrement();
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("transferId", transferId);
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			transmitter.processMessage("getDataStart", ip, baos.toString(), time);
-		}
+		Long transferId = atomicLong.getAndIncrement();
 
 		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-				// TODO: pass the failedFiles so that they can be skipped in the zip file
 				.entity(new IdsStreamingOutput(dsInfos, dfInfos, offset, zip, compress, transferId, ip, time))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
@@ -358,8 +284,6 @@ public class IdsBean {
 
 	public long getSize(String preparedId, String ip)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
@@ -398,23 +322,11 @@ public class IdsBean {
 			size += getSizeFor(sessionId, sb);
 		}
 
-		if (logSet.contains(CallType.INFO)) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			String body = baos.toString();
-			transmitter.processMessage("getSize", ip, body, start);
-		}
-
 		return size;
 	}
 
 	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		long start = System.currentTimeMillis();
 
 		// Log and validate
 		logger.info(String.format("New webservice request: getSize investigationIds=%s, datasetIds=%s, datafileIds=%s",
@@ -472,21 +384,6 @@ public class IdsBean {
 			}
 		}
 
-		if (logSet.contains(CallType.INFO)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("getSize", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-
 		return size;
 	}
 
@@ -541,8 +438,6 @@ public class IdsBean {
 	public String getServiceStatus(String sessionId, String ip)
 			throws InternalException, InsufficientPrivilegesException {
 
-		long start = System.currentTimeMillis();
-
 		// Log and validate
 		logger.info("New webservice request: getServiceStatus");
 
@@ -559,44 +454,13 @@ public class IdsBean {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
-		if (logSet.contains(CallType.INFO)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("getServiceStatus", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-
 		// TODO: implement something that gives an overview of all restore threads?
 		// is it possible to also track what downloads are in progress?
 		// where is this information currently displayed? - in a browser? topcat admin page/script?
 		return restorerThreadManager.getStatusString();
 	}
 
-	public boolean isReadOnly(String ip) {
-		if (logSet.contains(CallType.INFO)) {
-			transmitter.processMessage("isReadOnly", ip, "{}", System.currentTimeMillis());
-		}
-		return readOnly;
-	}
-
-	public boolean isTwoLevel(String ip) {
-		if (logSet.contains(CallType.INFO)) {
-			transmitter.processMessage("isTwoLevel", ip, "{}", System.currentTimeMillis());
-		}
-		return twoLevel;
-	}
-
 	public String getIcatUrl(String ip) {
-		if (logSet.contains(CallType.INFO)) {
-			transmitter.processMessage("getIcatUrl", ip, "{}", System.currentTimeMillis());
-		}
 		return propertyHandler.getIcatUrl();
 	}
 
@@ -604,23 +468,11 @@ public class IdsBean {
 	// (this method previously removed items from the set of 'failures' so that 
 	// restoration could be re-attempted without skipping the 'failures')
 	public void reset(String preparedId, String ip) throws BadRequestException, InternalException, NotFoundException {
-		long start = System.currentTimeMillis();
-
 		logger.info(String.format("New webservice request: reset preparedId=%s", preparedId));
 
 		validateUUID("preparedId", preparedId);
 
 		// TODO: remove the 'failed' file?
-
-		if (logSet.contains(CallType.MIGRATE)) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			String body = baos.toString();
-			transmitter.processMessage("reset", ip, body, start);
-		}
 	}
 
 	// used by the JMS message sending to add IDs to the message
