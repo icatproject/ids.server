@@ -11,8 +11,12 @@ def uninstall():
 actions, arg, props = getActions("setup.properties", [])
 
 prop_name = "run.properties"
-prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
-"preparedCount", "rootUserNames", "sizeCheckIntervalSeconds", "reader"]
+prop_list = ["icat.url", "reader", 
+"plugin.main.class", "plugin.main.dir", 
+"plugin.archive.class", "plugin.archive.dir", "maxRestoresPerThread", 
+"plugin.zipMapper.class", 
+"cache.dir", "preparedCount", "completedCount", "failedFilesCount", 
+"sizeCheckIntervalSeconds", "startArchivingLevel1024bytes", "stopArchivingLevel1024bytes"]
 
 if arg in ["CONFIGURE", "INSTALL"]: actions.configure(prop_name, prop_list)
 idsProperties = getProperties(prop_name, prop_list)
@@ -24,10 +28,6 @@ if arg == "INSTALL":
 
     if not os.path.exists(os.path.expandvars(idsProperties.get("cache.dir"))):
         abort("Please create directory " + idsProperties.get("cache.dir") + " as specified in run.properties")
-
-    if idsProperties.get("plugin.archive.class"):
-        if not idsProperties.get("startArchivingLevel1024bytes"): abort("startArchivingLevel1024bytes is not set in run.properties")
-        if not idsProperties.get("stopArchivingLevel1024bytes"): abort("stopArchivingLevel1024bytes is not set in run.properties")
 
     try:
         uninstall()
