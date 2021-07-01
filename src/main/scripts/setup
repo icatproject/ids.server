@@ -36,7 +36,7 @@ if arg == "INSTALL":
 
         ovfiles = [[prop_name, "WEB-INF/classes"]]
         if os.path.exists("logback.xml"): ovfiles.append(["logback.xml", "WEB-INF/classes"])
-        actions.deploy(deploymentorder=120, files=ovfiles, libraries=props["libraries"].split())
+        actions.deploy(deploymentorder=120, files=ovfiles)
 
     except Exception as e:
         raise

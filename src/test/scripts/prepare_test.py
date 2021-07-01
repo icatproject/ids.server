@@ -47,7 +47,6 @@ with open("src/test/install/setup.properties", "wt") as f:
     print("container      = Glassfish", file=f)
     print("home           = %s" % containerHome, file=f)
     print("port           = 4848", file=f)
-    print("libraries      = ", file=f)
 
 with open("src/test/install/run.properties.example", "wt") as f:
     pass
