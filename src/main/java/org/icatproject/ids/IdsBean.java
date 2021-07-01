@@ -3,7 +3,6 @@ package org.icatproject.ids;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +34,6 @@ import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
-import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
@@ -475,32 +473,6 @@ public class IdsBean {
 		// TODO: remove the 'failed' file?
 	}
 
-	// used by the JMS message sending to add IDs to the message
-	private void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)
-			throws BadRequestException {
-		if (investigationIds != null) {
-			gen.writeStartArray("investigationIds");
-			for (long invid : DataSelection.getValidIds("investigationIds", investigationIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-		if (datasetIds != null) {
-			gen.writeStartArray("datasetIds");
-			for (long invid : DataSelection.getValidIds("datasetIds", datasetIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-		if (datafileIds != null) {
-			gen.writeStartArray("datafileIds");
-			for (long invid : DataSelection.getValidIds("datafileIds", datafileIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-	}
-
 	/**
 	 * Check that all of the files are on the cache apart from any that are
 	 * listed in the set of failed files.
@@ -565,97 +537,6 @@ public class IdsBean {
 	public static void validateUUID(String thing, String id) throws BadRequestException {
 		if (id == null || !uuidRegExp.matcher(id).matches())
 			throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
-	}
-
-
-	// Below are the methods that are no longer available in the DLS IDS 
-	// because they are not used. For now they log that they are being called 
-	// as an error and throw a NotImplementedException so that hopefully what 
-	// is calling them can be investigated to ensure it is not required.
-	// TODO: decide whether to remove them completely in the final version 
-	// along with the corresponding method in IdsService. I believe a generic
-	// NotImplementedException will be thrown in this case anyway - check.
-
-	public void archive(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-	    	throws NotImplementedException {
-		logger.error("New webservice request: archive (NOT AVAILABLE) " + "investigationIds='" + investigationIds + 
-				"' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public void delete(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: delete (NOT AVAILABLE) " + "investigationIds='" + investigationIds + 
-				"' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			final boolean compress, boolean zip, String outname, final long offset, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: getData (NOT AVAILABLE) " + "investigationIds='" + investigationIds + 
-				"' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: getDatafileIds (NOT AVAILABLE) " + "investigationIds='" + investigationIds + 
-				"' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public Response put(InputStream body, String sessionId, String name, String datafileFormatIdString,
-			String datasetIdString, String description, String doi, String datafileCreateTimeString,
-			String datafileModTimeString, boolean wrap, boolean padding, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: put (NOT AVAILABLE) " + "name='" + name + "' " + "datafileFormatId='"
-				+ datafileFormatIdString + "' " + "datasetId='" + datasetIdString + "' " + "description='"
-				+ description + "' " + "doi='" + doi + "' " + "datafileCreateTime='" + datafileCreateTimeString
-				+ "' " + "datafileModTime='" + datafileModTimeString + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public String getLink(String sessionId, long datafileId, String username, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: getLink (NOT AVAILABLE) datafileId=" + datafileId + 
-				" username='" + username + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public String getStatus(String preparedId, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: getStatus (NOT AVAILABLE) preparedId = '{}'", preparedId);
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public String getStatus(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: getStatus (NOT AVAILABLE) " + "investigationIds='" + investigationIds 
-				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public void restore(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-		throws NotImplementedException {
-		logger.error("New webservice request: restore (NOT AVAILABLE) " + "investigationIds='" + investigationIds 
-				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public void write(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: write (NOT AVAILABLE) " + "investigationIds='" + investigationIds 
-				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
-	}
-
-	public void reset(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws NotImplementedException {
-		logger.error("New webservice request: reset (NOT AVAILABLE) " + "investigationIds='" + investigationIds 
-				+ "' " + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-		throw new NotImplementedException("This operation is not available in this IDS");
 	}
 
 }
