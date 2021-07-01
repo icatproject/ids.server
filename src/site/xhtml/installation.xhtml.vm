@@ -133,12 +133,6 @@
 			<code>db username root password secret.</code>
 		</dd>
 
-		<dt>key</dt>
-		<dd>Optional key value. If specified this contributes to the
-			computation of a cryptographic hash added to the location value in
-			the database. The ids plugins do not see the hash. The key must of
-			course be long enough to be secure and must be kept private.</dd>
-
 		<dt>missingFilesZipEntryName</dt>
 		<dd>Optional. Specifies the filename (and path if required) of a file
 			which will be added to the download zip file if there are files 
