@@ -1,6 +1,6 @@
 # ICAT properties
 icat.url = https://www.example.com:8181
-rootUserNames = root
+!rootUserNames = root
 reader = db username root password password
 # Note that useReaderForPerformance has implications on access permissions. 
 # Read the installation instructions before enabling this!
