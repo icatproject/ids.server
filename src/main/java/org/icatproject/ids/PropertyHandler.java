@@ -7,7 +7,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -19,8 +18,6 @@ import javax.json.JsonReader;
 
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.IdsBean.CallType;
-import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.storage.ArchiveStorageInterfaceDLS;
@@ -30,65 +27,53 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-/*
- * Load the properties specified in the properties file ids.properties.
+/**
+ * Class to load the properties specified in the main configuration file 
+ * run.properties
  */
 public class PropertyHandler {
 
-	private static PropertyHandler instance = null;
 	private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
 
-	public synchronized static PropertyHandler getInstance() {
+	private static PropertyHandler instance = null;
+
+	private Properties simpleProps;
+
+	// ICAT related fields
+	private String icatUrl;
+	private ICAT icatService;
+	private org.icatproject.icat.client.ICAT restIcat;
+	private Integer maxEntities;
+	private Set<String> rootUserNames;
+	private List<String> reader;
+	private boolean useReaderForPerformance;
+
+	// Storage/plugin related fields
+	private MainStorageInterface mainStorage;
+	private Class<ArchiveStorageInterfaceDLS> archiveStorageClass;
+	private ZipMapperInterface zipMapper;
+	private String missingFilesZipEntryName;
+	private int maxRestoresPerThread;
+
+	private Path cacheDir;
+
+	// number of files to hold in the cache sub-directories
+	private int preparedCount;
+	private int completedCount;
+	private int failedFilesCount;
+
+	// properties for the Tidier
+	private long sizeCheckIntervalMillis;
+	private long startArchivingLevel;
+	private long stopArchivingLevel;
+
+
+	public static synchronized PropertyHandler getInstance() {
 		if (instance == null) {
 			instance = new PropertyHandler();
 		}
 		return instance;
 	}
-
-	public static Logger getLogger() {
-		return logger;
-	}
-
-	private Properties simpleProps;
-
-	private Path cacheDir;
-	private boolean enableWrite;
-	private Path filesCheckErrorLog;
-	private int filesCheckGapMillis;
-	private Path filesCheckLastIdFile;
-	private int filesCheckParallelCount;
-	private ICAT icatService;
-	private long linkLifetimeMillis;
-
-	private MainStorageInterface mainStorage;
-	private Class<ArchiveStorageInterfaceDLS> archiveStorageClass;
-
-	private int preparedCount;
-	private int completedCount;
-	private int failedFilesCount;
-
-	private long processQueueIntervalSeconds;
-	private List<String> reader;
-	private boolean readOnly;
-	private Set<String> rootUserNames;
-	private long sizeCheckIntervalMillis;
-	private long startArchivingLevel;
-	private long stopArchivingLevel;
-	private StorageUnit storageUnit;
-	private long delayDatasetWrites;
-	private long delayDatafileOperations;
-	private ZipMapperInterface zipMapper;
-	private int tidyBlockSize;
-	private int maxRestoresPerThread;
-	private String key;
-	private int maxIdsInQuery;
-	private String icatUrl;
-	private Integer maxEntities;
-	private String jmsTopicConnectionFactory;
-	private Set<CallType> logSet = new HashSet<>();
-	private org.icatproject.icat.client.ICAT restIcat;
-	private boolean useReaderForPerformance;
-	private String missingFilesZipEntryName;
 
 	@SuppressWarnings("unchecked")
 	private PropertyHandler() {
@@ -109,7 +94,6 @@ public class PropertyHandler {
 			preparedCount = props.getPositiveInt("preparedCount");
 			completedCount = props.getPositiveInt("completedCount");
 			failedFilesCount = props.getPositiveInt("failedFilesCount");
-			processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
 			rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim().split("\\s+")));
 
 			reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
@@ -117,18 +101,7 @@ public class PropertyHandler {
 				throw new IllegalStateException("reader must have an odd number of words");
 			}
 
-			readOnly = props.getBoolean("readOnly", false);
-			if (props.has("enableWrite")) {
-				enableWrite = props.getBoolean("enableWrite");
-			} else {
-				enableWrite = ! readOnly;
-			}
-
 			sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
-
-			if (props.has("key")) {
-				key = props.getString("key");
-			}
 
 			try {
 				Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class
@@ -183,34 +156,6 @@ public class PropertyHandler {
 					abort("startArchivingLevel1024bytes must be greater than stopArchivingLevel1024bytes");
 				}
 
-				try {
-					String storageUnitName = props.getString("storageUnit");
-					storageUnit = StorageUnit.valueOf(storageUnitName.toUpperCase());
-				} catch (IllegalArgumentException e) {
-					List<String> vs = new ArrayList<>();
-					for (StorageUnit s : StorageUnit.values()) {
-						vs.add(s.name());
-					}
-					abort("storageUnit value " + props.getString("storageUnit") + " must be taken from " + vs);
-				}
-				if (storageUnit == StorageUnit.DATASET) {
-					if (!props.has("delayDatasetWritesSeconds") && props.has("writeDelaySeconds")) {
-						// compatibility mode
-						logger.warn("writeDelaySeconds is deprecated, please use delayDatasetWritesSeconds instead");
-						delayDatasetWrites = props.getPositiveLong("writeDelaySeconds");
-					} else {
-						delayDatasetWrites = props.getPositiveLong("delayDatasetWritesSeconds");
-					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					if (!props.has("delayDatafileOperationsSeconds") && props.has("writeDelaySeconds")) {
-						// compatibility mode
-						logger.warn("writeDelaySeconds is deprecated, please use delayDatafileOperationsSeconds instead");
-						delayDatafileOperations = props.getPositiveLong("writeDelaySeconds");
-					} else {
-						delayDatafileOperations = props.getPositiveLong("delayDatafileOperationsSeconds");
-					}
-				}
-				tidyBlockSize = props.getPositiveInt("tidyBlockSize");
 				maxRestoresPerThread = props.getPositiveInt("maxRestoresPerThread");
 			}
 
@@ -223,43 +168,8 @@ public class PropertyHandler {
 				abort(cacheDir + " must be an existing directory");
 			}
 
-			filesCheckParallelCount = props.getNonNegativeInt("filesCheck.parallelCount");
-			if (filesCheckParallelCount > 0) {
-				filesCheckGapMillis = props.getPositiveInt("filesCheck.gapSeconds") * 1000;
-				filesCheckLastIdFile = props.getFile("filesCheck.lastIdFile").toPath();
-				if (!Files.exists(filesCheckLastIdFile.getParent())) {
-					abort("Directory for " + filesCheckLastIdFile + " does not exist");
-				}
-				filesCheckErrorLog = props.getFile("filesCheck.errorLog").toPath();
-				if (!Files.exists(filesCheckErrorLog.getParent())) {
-					abort("Directory for " + filesCheckErrorLog + " does not exist");
-				}
-			}
-
-			linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
-
-			maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
-
-			/* JMS stuff */
-			jmsTopicConnectionFactory = props.getString("jms.topicConnectionFactory",
-					"java:comp/DefaultJMSConnectionFactory");
-
-			/* Call logging categories */
-			if (props.has("log.list")) {
-				for (String callTypeString : props.getString("log.list").split("\\s+")) {
-					try {
-						logSet.add(CallType.valueOf(callTypeString.toUpperCase()));
-					} catch (IllegalArgumentException e) {
-						abort("Value " + callTypeString + " in log.list must be chosen from "
-								+ Arrays.asList(CallType.values()));
-					}
-				}
-				logger.info("log.list: " + logSet);
-			} else {
-				logger.info("'log.list' entry not present so no JMS call logging will be performed");
-			}
-
 			useReaderForPerformance = props.getBoolean("useReaderForPerformance", false);
+
 			missingFilesZipEntryName = props.getString("missingFilesZipEntryName", 
 					Constants.DEFAULT_MISSING_FILES_FILENAME);
 
@@ -274,38 +184,35 @@ public class PropertyHandler {
 		throw new IllegalStateException(msg);
 	}
 
-	// TODO: remove this method as a new ArchiveStorageInterfaceDLS will now
-	// be created in each restorer thread rather than one being shared
-	public ArchiveStorageInterface getArchiveStorage() {
-		return null;
+
+	public Properties getSimpleProperties() {
+		return simpleProps;
+	}
+
+
+	public MainStorageInterface getMainStorage() {
+		return mainStorage;
 	}
 
 	public Class<ArchiveStorageInterfaceDLS> getArchiveStorageClass() {
 		return archiveStorageClass;
 	}
 
-	public Path getCacheDir() {
-		return cacheDir;
+	public ZipMapperInterface getZipMapper() {
+		return zipMapper;
 	}
 
-	public boolean getEnableWrite() {
-		return enableWrite;
+	public String getMissingFilesZipEntryName() {
+		return missingFilesZipEntryName;
 	}
 
-	public Path getFilesCheckErrorLog() {
-		return filesCheckErrorLog;
-	}
+    public int getMaxRestoresPerThread() {
+        return maxRestoresPerThread;
+    }
 
-	public long getFilesCheckGapMillis() {
-		return filesCheckGapMillis;
-	}
 
-	public Path getFilesCheckLastIdFile() {
-		return filesCheckLastIdFile;
-	}
-
-	public int getFilesCheckParallelCount() {
-		return filesCheckParallelCount;
+	public String getIcatUrl() {
+		return icatUrl;
 	}
 
 	public synchronized ICAT getIcatService() {
@@ -328,28 +235,8 @@ public class PropertyHandler {
 		return icatService;
 	}
 
-	public String getIcatUrl() {
-		return icatUrl;
-	}
-
-	public String getJmsTopicConnectionFactory() {
-		return jmsTopicConnectionFactory;
-	}
-
-	public String getKey() {
-		return key;
-	}
-
-	public long getLinkLifetimeMillis() {
-		return linkLifetimeMillis;
-	}
-
-	public Set<CallType> getLogSet() {
-		return logSet;
-	}
-
-	public MainStorageInterface getMainStorage() {
-		return mainStorage;
+	public org.icatproject.icat.client.ICAT getRestIcat() {
+		return restIcat;
 	}
 
 	public synchronized int getMaxEntities() {
@@ -382,12 +269,21 @@ public class PropertyHandler {
 		return maxEntities;
 	}
 
-	public Properties getSimpleProperties() {
-		return simpleProps;
+	public List<String> getReader() {
+		return reader;
 	}
 
-	public int getMaxIdsInQuery() {
-		return maxIdsInQuery;
+	public Set<String> getRootUserNames() {
+		return rootUserNames;
+	}
+
+	public boolean getUseReaderForPerformance() {
+		return useReaderForPerformance;
+	}
+
+
+	public Path getCacheDir() {
+		return cacheDir;
 	}
 
 	public int getPreparedCount() {
@@ -402,21 +298,6 @@ public class PropertyHandler {
 		return failedFilesCount;
 	}
 
-	public long getProcessQueueIntervalSeconds() {
-		return processQueueIntervalSeconds;
-	}
-
-	public List<String> getReader() {
-		return reader;
-	}
-
-	public boolean getReadOnly() {
-		return readOnly;
-	}
-
-	public Set<String> getRootUserNames() {
-		return rootUserNames;
-	}
 
 	public long getSizeCheckIntervalMillis() {
 		return sizeCheckIntervalMillis;
@@ -430,39 +311,4 @@ public class PropertyHandler {
 		return stopArchivingLevel;
 	}
 
-	StorageUnit getStorageUnit() {
-		return storageUnit;
-	}
-
-	public int getTidyBlockSize() {
-		return tidyBlockSize;
-	}
-
-	public long getDelayDatasetWrites() {
-		return delayDatasetWrites;
-	}
-
-	public long getDelayDatafileOperations() {
-		return delayDatafileOperations;
-	}
-
-	public ZipMapperInterface getZipMapper() {
-		return zipMapper;
-	}
-
-	public org.icatproject.icat.client.ICAT getRestIcat() {
-		return restIcat;
-	}
-
-	public boolean getUseReaderForPerformance() {
-		return useReaderForPerformance;
-	}
-
-    public int getMaxRestoresPerThread() {
-        return maxRestoresPerThread;
-    }
-
-	public String getMissingFilesZipEntryName() {
-		return missingFilesZipEntryName;
-	}
 }

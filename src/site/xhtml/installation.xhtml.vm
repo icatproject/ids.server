@@ -116,11 +116,6 @@
 		<dt>failedFilesCount</dt>
 		<dd>The number of failed file listing files to keep in the cache.</dd>
 
-		<dt>processQueueIntervalSeconds</dt>
-		<dd>The frequency of checking the process queue. This is used
-			both for cleaning old information from memory and for triggering
-			movements between main and archive storage (if selected).</dd>
-
 		<dt>rootUserNames</dt>
 		<dd>A space separated list of users allowed to make the
 			getServiceStatus call. The user name must include the mechanism if
@@ -129,14 +124,6 @@
 		<dt>sizeCheckIntervalSeconds</dt>
 		<dd>How frequently to check the cache sizes and clean up if
 			necessary.</dd>
-
-		<dt>readOnly</dt>
-		<dd>If true disables write operations (put and delete).</dd>
-
-		<dt>linkLifetimeSeconds</dt>
-		<dd>The length of time in seconds to keep the links established
-			by the getLink call. If this is set to zero then the getLink call
-			will return a NotImplementedException.</dd>
 
 		<dt>reader</dt>
 		<dd>
@@ -152,10 +139,6 @@
 			the database. The ids plugins do not see the hash. The key must of
 			course be long enough to be secure and must be kept private.</dd>
 
-		<dt>maxIdsInQuery</dt>
-		<dd>The number of literal id values to be generated in an ICAT
-			query. For Oracle this must not exceed 1000.</dd>
-
 		<dt>missingFilesZipEntryName</dt>
 		<dd>Optional. Specifies the filename (and path if required) of a file
 			which will be added to the download zip file if there are files 
@@ -164,15 +147,6 @@
 			in the root of the zip file. The file can also be put in a 
 			subfolder using eg. path/to/FILENAME.txt </dd>
 			
-		<dt>log.list</dt>
-		<dd>Optional. If present it specifies a set of call types to log
-			via JMS calls. The types are specified by a space separated list of
-			values taken from READ, WRITE, LINK, MIGRATE, PREPARE and INFO.</dd>
-
-		<dt>jms.topicConnectionFactory</dt>
-		<dd>Optional. If present it overrides the default JMS connection
-			factory.</dd>
-
 		<dt>logback.xml</dt>
 		<dd>This is optional. If present it must specify the path to a
 			logback.xml file. The path may be absolute or relative to the config
@@ -201,18 +175,6 @@
 			be deployed in the lib/applibs directory of your domain and must be
 			packaged with all it dependencies.</dd>
 
-		<dt>delayDatasetWritesSeconds</dt>
-		<dd>The amount of time to wait before writing a dataset archive storage.
-			This exists to allow enough time for all the datafiles to be added to
-			a dataset before it is zipped and written.  This property is only
-			used if storageUnit is set to dataset, see below.</dd>
-
-		<dt>delayDatafileOperationsSeconds</dt>
-		<dd>The amount of time to wait before processing any deferred operations for
-			datafiles.  Operations are collected during this period of time and
-			processed at once in combined threads.  This property is only
-			used if storageUnit is set to datafile, see below.</dd>
-
 		<dt>startArchivingLevel1024bytes</dt>
 		<dd>If the space used in main storage exceeds this then datasets
 			will be archived (oldest first) until the space used is below
@@ -221,73 +183,13 @@
 		<dt>stopArchivingLevel1024bytes</dt>
 		<dd>See startArchivingLevel1024bytes.</dd>
 
-		<dt>storageUnit</dt>
-		<dd>May be dataset or datafile and is not case sensitive. A value
-			of "dataset" means that a whole dataset of files are zipped up to be
-			stored as a single file whereas "datafile" causes datafiles to be
-			stored individually.</dd>
-
-		<dt>tidyBlockSize</dt>
-		<dd>The number of datafiles or datasets to get back in one call
-			for archive request when space on main storage is low.</dd>
-
 		<dt>maxRestoresPerThread</dt>
 		<dd>The maximum number of files that should be requested from Archive
 			Storage in one go. Requests that exceed this limit will be split up
 			into multiple smaller requests that are below this threshold.</dd>
 
-		<dt>enableWrite</dt>
-		<dd>Optional. If true, the write call will be enabled, if false, it will be
-			disabled. If not set, the readOnly flag will take control and the
-			write call will be disabled if readOnly is true and enabled if
-			not.</dd>
-
 	</dl>
 
-
-	<h3>Properties for file checking</h3>
-	<p>When a datafile is added to the IDS its length and checksum are
-		computed and stored in ICAT. File checking, if enabled, cycles through
-		all the stored data making sure that they can be read and that files
-		have the expected size and checksum.</p>
-	<dl>
-		<dt>filesCheck.parallelCount</dt>
-		<dd>
-			This must always be set, and if non zero then the readability of the
-			data will be checked. The behaviour is dependent upon whether or not
-			archive storage has a been requested. In the case of single level
-			storage this is done in groups of files where the group size is
-			defined by this parameter. If archive storage has been requested then
-			only the archive is checked. Each file in the archive holds a
-			complete dataset and this filesCheck.parallelCount parameter then
-			defines how many dataset files will be checked in parallel.
-			<p>In the case of checking datasets in the archive storage these
-				are unzipped on the fly to compute the checksum of each file inside
-				the zip file as well as its length.</p>
-			<p>If the archive storage has a long latency then it is useful to
-				have a "large" value, however a thread is started for each stored
-				file so the value of this parameter should not be too large.</p>
-		</dd>
-		<dt>filesCheck.gapSeconds</dt>
-		<dd>the number of seconds to wait before launching a check of the
-			next batch of datafiles or datasets.</dd>
-		<dt>filesCheck.lastIdFile</dt>
-		<dd>the location of a file which is used to store the id value of
-			the last datafile or dataset to be checked. This is so that if the
-			IDS is restarted it will continue checking where it left off. If this
-			file is deleted the ids will restart checking from the beginning. The
-			parameters filesCheck.parallelCount and filesCheck.gapSeconds should
-			be set so that the data are all checked with the desired frequency
-			but without excessive I/O. A nagios plugin might check that this file
-			is being written periodically and that its contents change.</dd>
-		<dt>filesCheck.errorLog</dt>
-		<dd>the file with a list of errors found. The file is not kept
-			open but instead is opened in append mode each time a problem is
-			spotted and then closed. A nagios plugin might be set up to watch
-			this file. Entries in the file are data stamped and new entries are
-			simply appended without regard for the existence of an entry for the
-			same file.</dd>
-	</dl>
 
 	<h2>Check that the ids server works</h2>
 	<p>
