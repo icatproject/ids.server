@@ -2,10 +2,10 @@
 from setup_utils import *
 import os
 
-# dls-ids-server
+# ids.r2dfoo
 
 def uninstall():
-    app = actions.getAppName("dls-ids-server")
+    app = actions.getAppName("ids.r2dfoo")
     if app: actions.undeploy(app)
 
 actions, arg, props = getActions("setup.properties", [])
