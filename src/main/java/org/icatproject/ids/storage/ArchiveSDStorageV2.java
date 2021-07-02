@@ -34,17 +34,17 @@ import uk.ac.stfc.storaged.StorageD;
 /**
  * This is an updated version of the class ArchiveSDStorage from the StorageD 
  * IDS Plugin. Rather than extending AbstractArchiveStorage, this class
- * implements a new interface specific to the DLS IDS (ArchiveStorageInterface)
- * which defines the methods that are required to interact with the archive
- * storage and allows for a test class to be defined, also implementing
+ * implements an updated version of ArchiveStorageInterface which defines the 
+ * methods that are required to interact with the archive storage and allows 
+ * for a test class to be defined, also implementing the updated 
  * ArchiveStorageInterface and allowing for this test class to return 
- * test/dummy files such that a connection to a real StorageD server is not
+ * test/dummy files such that a connection to a real StorageD server is not 
  * required for the tests to run.
  * 
  * The original ArchiveSDStorage class from the plugin is no longer used but 
  * all of the other classes in the plugin are. Another thing to note is that 
  * the plugin is no longer installed as a separate component but is included
- * in the distribution of dls-ids-server as a dependency. 
+ * in the distribution of ids.r2dfoo as a dependency. 
  * 
  * Note that the code appears to be based on an SDClient class found in the 
  * StorageD SVN repository at:
@@ -53,7 +53,7 @@ import uk.ac.stfc.storaged.StorageD;
  * StorageD or the protocol that is used to communicate with it, I haven't 
  * attempted to modify it.
  */
-public class ArchiveSDStorageDLS implements ArchiveStorageInterfaceDLS {
+public class ArchiveSDStorageV2 implements ArchiveStorageInterfaceV2 {
 
     private static final int MSG_FIELD_LEN = 8;
 
@@ -67,12 +67,12 @@ public class ArchiveSDStorageDLS implements ArchiveStorageInterfaceDLS {
 
     private int numFilesRemaining;
 
-    private static final Logger logger = LoggerFactory.getLogger(ArchiveSDStorageDLS.class);
+    private static final Logger logger = LoggerFactory.getLogger(ArchiveSDStorageV2.class);
 
     // TODO: what exception to throw here. Need something different to the 
     // IOException used previously and different from the IOException thrown by
     // the restore method but InstantiationException is probably not right.
-    public ArchiveSDStorageDLS(Properties props) throws InstantiationException {
+    public ArchiveSDStorageV2(Properties props) throws InstantiationException {
         try {
             String name = props.getProperty("plugin.archive.uri");
             if (name == null) {
@@ -98,7 +98,7 @@ public class ArchiveSDStorageDLS implements ArchiveStorageInterfaceDLS {
             throw new InstantiationException(e.getClass() + " " + e.getMessage());
         }
 
-        logger.info("ArchiveSDStorageDLS initialized");
+        logger.info("ArchiveSDStorageV2 initialized");
     }
 
     private byte[] readData(InputStream in, int datasize) throws IOException {
