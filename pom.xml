@@ -2,15 +2,17 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>uk.ac.rl.esc</groupId>
-	<artifactId>dls-ids-server</artifactId>
+	<artifactId>ids.r2dfoo</artifactId>
 	<packaging>war</packaging>
-	<version>2.0.0-SNAPSHOT</version>
-	<name>DLS IDS Server</name>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>IDS Server R2DFoo</name>
+
+	<description>Forked version of the original ICAT Data Service designed for Read-only, 2 level, Datafile based systems (hence R2DFoo).</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<gitUrl>https://github.com/ral-facilities/dls-ids-server</gitUrl>
+		<gitUrl>https://github.com/ral-facilities/ids.r2dfoo</gitUrl>
 		<repoUrl>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases</repoUrl>
 		<project.scm.id>github</project.scm.id>
 	</properties>
@@ -73,8 +75,6 @@
 			<url>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
-
-	<description>ICAT Data Service specifically to work as part of the Diamond ICAT stack.</description>
 
 	<dependencies>
 
