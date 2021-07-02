@@ -110,11 +110,11 @@ public class IcatSetup {
 		// to the mq/etc and the mq/legal datasets
 		createDatafile(rootSessionId, datafileFormat, datasetMap.get("mq/etc"), 
 				"non_existent_file.txt", 
-				"/dls/payara5/mq/etc/non_existent_file.txt", 0L);
+				"/dummy/payara5/mq/etc/non_existent_file.txt", 0L);
 
 		createDatafile(rootSessionId, datafileFormat, datasetMap.get("mq/legal"), 
 				"non_existent_file.txt", 
-				"/dls/payara5/mq/legal/non_existent_file.txt", 0L);
+				"/dummy/payara5/mq/legal/non_existent_file.txt", 0L);
 
 		logger.trace("invMap keys:");
 		for (String invName : invMap.keySet()) {
