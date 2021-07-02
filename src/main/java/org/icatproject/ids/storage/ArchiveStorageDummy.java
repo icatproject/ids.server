@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.stfc.storaged.DfInfoWithLocation;
 
-public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
+public class ArchiveStorageDummy implements ArchiveStorageInterfaceV2 {
 
     private static final Logger logger = LoggerFactory.getLogger(ArchiveStorageDummy.class);
 
@@ -63,9 +63,9 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
                 // line format is: 
                 // <file size in bytes><space><filePath> 
                 // eg.
-                // 3649 /dls/payara5/README.txt
-                // 322535 /dls/payara5/glassfish/legal/3RD-PARTY-LICENSE.txt
-                // 38052 /dls/payara5/glassfish/legal/LICENSE.txt
+                // 3649 /dummy/payara5/README.txt
+                // 322535 /dummy/payara5/glassfish/legal/3RD-PARTY-LICENSE.txt
+                // 38052 /dummy/payara5/glassfish/legal/LICENSE.txt
                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                 while(reader.ready()) {
                     String line = reader.readLine();
@@ -201,8 +201,4 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceDLS {
         return dfInfos;
     }
 
-    // TODO: remove this
-    public static void main(String[] args) throws Exception {
-//        createFile("/dls/some/folders/here/myfile.txt", 10);
-    }
 }

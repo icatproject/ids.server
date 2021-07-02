@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.icatproject.ids.FailedFilesManager;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.DfInfo;
-import org.icatproject.ids.storage.ArchiveStorageInterfaceDLS;
+import org.icatproject.ids.storage.ArchiveStorageInterfaceV2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ public class RestorerThread extends Thread {
     private RestorerThreadManager restorerThreadManager;
     private String preparedId;
     private List<DfInfo> dfInfosToRestore;
-    private ArchiveStorageInterfaceDLS archiveStorage;
+    private ArchiveStorageInterfaceV2 archiveStorage;
     private AtomicBoolean stopRestoring;
 
     public RestorerThread(RestorerThreadManager restorerThreadManager, 
@@ -37,7 +37,7 @@ public class RestorerThread extends Thread {
 
     @Override
     public void run() {
-        Class<ArchiveStorageInterfaceDLS> archiveStorageClass = propertyHandler.getArchiveStorageClass();
+        Class<ArchiveStorageInterfaceV2> archiveStorageClass = propertyHandler.getArchiveStorageClass();
         try {
             archiveStorage = archiveStorageClass.getConstructor(Properties.class).newInstance(propertyHandler.getSimpleProperties());
             logger.debug("Successfully instantiated {} for {}", archiveStorageClass.getName(), preparedId);
@@ -62,7 +62,7 @@ public class RestorerThread extends Thread {
             // If this does happen there is a serious problem that needs 
             // intervention so log it and let the thread complete. 
             // There is no point resubmitting the request.         
-            logger.error("Failed to create instance of ArchiveStorageInterfaceDLS class " + archiveStorageClass.getName(), e);
+            logger.error("Failed to create instance of ArchiveStorageInterfaceV2 class " + archiveStorageClass.getName(), e);
         } catch (IOException e) {
             // this was thrown by the restore method and is likely to be a transient
             // connection problem so resubmit the request to try again

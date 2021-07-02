@@ -20,7 +20,7 @@ import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
-import org.icatproject.ids.storage.ArchiveStorageInterfaceDLS;
+import org.icatproject.ids.storage.ArchiveStorageInterfaceV2;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 import org.slf4j.Logger;
@@ -50,7 +50,7 @@ public class PropertyHandler {
 
 	// Storage/plugin related fields
 	private MainStorageInterface mainStorage;
-	private Class<ArchiveStorageInterfaceDLS> archiveStorageClass;
+	private Class<ArchiveStorageInterfaceV2> archiveStorageClass;
 	private ZipMapperInterface zipMapper;
 	private String missingFilesZipEntryName;
 	private int maxRestoresPerThread;
@@ -141,13 +141,13 @@ public class PropertyHandler {
 				abort(message);
 			} else {
 				try {
-					archiveStorageClass = (Class<ArchiveStorageInterfaceDLS>)Class.forName(props.getString("plugin.archive.class"));
-					ArchiveStorageInterfaceDLS archiveStorage = archiveStorageClass.getConstructor(Properties.class).newInstance(simpleProps);
-					logger.debug("Test instance of ArchiveStorageInterfaceDLS successfully initialised");
+					archiveStorageClass = (Class<ArchiveStorageInterfaceV2>)Class.forName(props.getString("plugin.archive.class"));
+					ArchiveStorageInterfaceV2 archiveStorage = archiveStorageClass.getConstructor(Properties.class).newInstance(simpleProps);
+					logger.debug("Test instance of ArchiveStorageInterfaceV2 successfully initialised");
 				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 						| IllegalArgumentException | InvocationTargetException | NoSuchMethodException
 						| SecurityException | ClassCastException e) {
-					logger.error("Failed to create test instance of ArchiveStorageInterfaceDLS", e);
+					logger.error("Failed to create test instance of ArchiveStorageInterfaceV2", e);
 					abort(e.getClass() + " " + e.getMessage());
 				}
 				startArchivingLevel = props.getPositiveLong("startArchivingLevel1024bytes") * 1024;
@@ -194,7 +194,7 @@ public class PropertyHandler {
 		return mainStorage;
 	}
 
-	public Class<ArchiveStorageInterfaceDLS> getArchiveStorageClass() {
+	public Class<ArchiveStorageInterfaceV2> getArchiveStorageClass() {
 		return archiveStorageClass;
 	}
 
