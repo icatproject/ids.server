@@ -13,7 +13,7 @@ import org.icatproject.ids.plugin.MainStorageInterface;
  * IDS plugin that also allows for monitoring the progress of restore requests
  * and also for the restore request to be stopped whilst in progress.
  */
-public interface ArchiveStorageInterfaceDLS {
+public interface ArchiveStorageInterfaceV2 {
     
     /**
      * Original method from the IDS plugin interface ArchiveStorageInterface
