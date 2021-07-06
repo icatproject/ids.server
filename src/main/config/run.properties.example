@@ -6,17 +6,18 @@ reader = db username root password password
 # Read the installation instructions before enabling this!
 !useReaderForPerformance = true
 
-# plugin properties
-plugin.main.class = org.icatproject.ids.storage.MainFileStorage
+# Main and Archive storage properties
+plugin.main.class = uk.ac.stfc.storaged.MainSDStorage
 plugin.main.dir = ${HOME}/ids/main/
-# Properties for archive storage
-plugin.archive.class = org.icatproject.ids.storage.ArchiveFileStorage
-plugin.archive.dir = ${HOME}/ids/archive/
+plugin.archive.class = org.icatproject.ids.storage.ArchiveSDStorageV2
+plugin.archive.uri = //fdsstoragedXX.fds.rl.ac.uk:7456
+plugin.archive.connectionTimeout = 10000
+plugin.archive.readTimeout = 28800000
 maxRestoresPerThread = 100000
 plugin.zipMapper.class = org.icatproject.ids.storage.ZipMapper
 !missingFilesZipEntryName = path/to/FILENAME.txt
 
-# cache directory properties
+# Cache directory properties
 cache.dir = ${HOME}/ids/cache
 preparedCount = 10000
 completedCount = 10000
