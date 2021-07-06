@@ -142,9 +142,6 @@ public class IdsStreamingOutput implements StreamingOutput {
                     gen.write("transferId", transferId);
                     gen.writeEnd();
                 }
-                // TODO: commenting out use of the transmitter for now as this
-                // functionality will probably be removed
-//                transmitter.processMessage("getData", ip, baos.toString(), start);
             }
 
         } catch (IOException e) {
@@ -155,7 +152,6 @@ public class IdsStreamingOutput implements StreamingOutput {
                 gen.write("exceptionMessage", e.getMessage());
                 gen.writeEnd();
             }
-//            transmitter.processMessage("getData", ip, baos.toString(), start);
             logger.error("Failed to stream {} due to {}", transfer, e.getMessage());
             throw e;
         }
