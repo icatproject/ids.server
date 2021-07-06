@@ -5,7 +5,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
-import org.icatproject.ids.RangeOutputStream;
 import org.junit.Test;
 
 public class RangeOutputStreamTest {
