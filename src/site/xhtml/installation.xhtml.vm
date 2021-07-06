@@ -1,22 +1,16 @@
 <html>
 <head>
-<title>IDS Installation</title>
+<title>IDS Installation (ids.r2dfoo)</title>
 </head>
 <body>
 
-
-
 	<h1>Installation</h1>
-
-	<h2>Compatibility</h2>
-	<p>This will work with an ICAT version of 4.3.0 or greater and
-		requires plugins implementing the IDS plugin interface 1.5.0.</p>
 
 	<h2>Prerequisites</h2>
 
 	<ul>
-		<li>The ids distribution: <a
-			href="${repoUrl}/org/icatproject/ids.server/${project.version}/ids.server-${project.version}-distro.zip">ids.server-${project.version}-distro.zip</a>
+		<li>The IDS distribution: <a
+			href="${repoUrl}/uk/ac/rl/esc/ids.r2dfoo/${project.version}/ids.r2dfoo-${project.version}-distro.zip">ids.r2dfoo-${project.version}-distro.zip</a>
 		</li>
 
 		<li>A suitable deployed container to support a web application.
@@ -25,11 +19,10 @@
 				(payara) installation instructions</a> are available.
 		</li>
 
-		<li>A deployed plugin or plugins for the storage mechanism you
-			wish to use. Please see <a href="/site/ids/plugin">plugin</a> to see
-			the interface you must implement. You might also like to look at the
-			<a href="/site/ids/storage_file">file storage plugin</a> as an
-			example.
+		<li>NOTE: unlike the main icatproject IDS, this version of the IDS
+			server does not require a storage plugin to be deployed separatedly
+			before the IDS is installed. The equivalent classes are now 
+			packaged within the IDS component.
 		</li>
 
 		<li>Python (version 2.4 to 2.7) installed on the server.</li>
@@ -54,15 +47,15 @@
 		<dd>
 			Values must be chosen from: <a target="_blank"
 				href="http://www.eclipse.org/eclipselink/api/2.6/org/eclipse/persistence/config/TargetServer.html">TargetServer</a>
-			Though only Glassfish is working properly at the moment.
+			Though only Glassfish (Payara) is working properly at the moment.
 		</dd>
 		<dt>home</dt>
 		<dd>is the top level of the container installation. For
-			glasssfish it must contain "glassfish/domains" and for wildfly it
-			must contain jboss-modules.jar.</dd>
+			glasssfish/payara it must contain "glassfish/domains" and for 
+			wildfly it must contain jboss-modules.jar.</dd>
 		<dt>port</dt>
 		<dd>is the administration port of the container which is
-			typically 4848 for glassfish and 9990 for wildfly.</dd>
+			typically 4848 for glassfish/payara and 9990 for wildfly.</dd>
 		<dt>secure</dt>
 		<dd>must be set to true or false. If true then only https and not
 			http connections will be allowed.</dd>
@@ -70,17 +63,7 @@
 
 	<h2>The run.properties file</h2>
 
-	All the property values are passed to the plugin(s). A plugin is only
-	expected to look at properties defined for its use. It is recommended
-	that such properties have names starting
-	<code>plugin.main.</code>
-	or
-	<code>plugin.archive</code>
-	. to make sure that they don't clash with any current or future
-	run.properties of the ids.server. To find the names of these properties
-	please consult the documentation for your plugin(s).
-
-	<h3>General Properties</h3>
+	<h3>ICAT Properties</h3>
 
 	<dl>
 		<dt>icat.url</dt>
@@ -90,17 +73,90 @@
 			<code>https://example.com:443</code>
 		</dd>
 
+		<dt>rootUserNames</dt>
+		<dd>Optional. A space separated list of users allowed to make the
+			getServiceStatus call. The user name must include the mechanism if
+			the authenticators have been configured that way.</dd>
+
+		<dt>reader</dt>
+		<dd>
+			Space separated icat plugin name and credentials for a user permitted
+			to read all datasets, datafiles, investigations and facilities. For
+			example:
+			<code>db username root password secret.</code>
+		</dd>
+
+		<dt>useReaderForPerformance</dt>
+		<dd>Optional. If true allows the IDS to make use of the reader account
+			to improve query performance. Note that this bypasses some
+			access permission checks. It essentially has the effect of
+			allowing any user access to datafiles if that user has access
+			permission to the dataset the datafiles belong to. This is
+			similar to an implicit PublicStep from Dataset to Datafile.  Do
+			not set this flag unless you would be happy to also create this
+			PublicStep in your ICAT!</dd>
+
+	</dl>
+
+	<h3>Main and Archive storage properties</h3>
+	<dl>
+
+		<dt>plugin.main.class</dt>
+		<dd>The class name of the main storage plugin. For StorageD this will 
+			be: uk.ac.stfc.storaged.MainSDStorage</dd>
+
+		<dt>plugin.main.dir</dt>
+		<dd>The location (absolute or relative to the config directory of
+			the domain) of a directory where the cache of files that have most 
+			recently been restored from StorageD are held. This directory is 
+			periodically checked by the Tidier and will have the oldest files
+			removed from it once its size exceeds a specified limit.</dd>
+
+		<dt>plugin.archive.class</dt>
+		<dd>The class name of the archive storage plugin. For StorageD this 
+			will be: org.icatproject.ids.storage.ArchiveSDStorageV2</dd>
+
+		<dt>plugin.archive.uri</dt>
+		<dd>If plugin.archive.class is set to 
+			org.icatproject.ids.storage.ArchiveSDStorageV2 then this must be 
+			set to a URI like: //fdsstoragedXX.fds.rl.ac.uk:7456 identifying 
+			both the StorageD server and the port number.</dd>
+
+		<dt>plugin.archive.connectionTimeout</dt>
+		<dd>If plugin.archive.class is set to 
+			org.icatproject.ids.storage.ArchiveSDStorageV2 then this must be 
+			set to the number of milliseconds to wait for the intial connection 
+			to StorageD before a SocketTimeoutException is thrown.</dd>
+
+		<dt>plugin.archive.readTimeout</dt>
+		<dd>If plugin.archive.class is set to 
+			org.icatproject.ids.storage.ArchiveSDStorageV2 then this must be 
+			set to the number of milliseconds to wait without reading any bytes
+			from StorageD before a SocketTimeoutException is thrown.</dd>
+
+		<dt>maxRestoresPerThread</dt>
+		<dd>The maximum number of files that should be requested from Archive
+			Storage in one go. Requests that exceed this limit will be split up
+			into multiple smaller requests that are below this threshold.</dd>
+
 		<dt>plugin.zipMapper.class</dt>
 		<dd>The class name of the ZipMapper which defines the Zip file
 			structure you want. The class must be deployed in the lib/applibs
 			directory of your domain and must be packaged with all it
 			dependencies.</dd>
 
-		<dt>plugin.main.class</dt>
-		<dd>The class name of the main storage plugin. The class must be
-			deployed in the lib/applibs directory of your domain and must be
-			packaged with all it dependencies.</dd>
+		<dt>missingFilesZipEntryName</dt>
+		<dd>Optional. Specifies the filename (and path if required) of a file
+			which will be added to the download zip file if there are files 
+			which failded to restore for a request. If not specified, the 
+			default of MISSING_FILES.txt will be used with the file appearing 
+			in the root of the zip file. The file can also be put in a 
+			subfolder using eg. path/to/FILENAME.txt </dd>
+			
+	</dl>
 
+	<h3>Cache directory properties</h3>
+	<dl>
 		<dt>cache.dir</dt>
 		<dd>The location (absolute or relative to the config directory of
 			the domain) of a directory where the working files for the IDS 
@@ -116,58 +172,13 @@
 		<dt>failedFilesCount</dt>
 		<dd>The number of failed file listing files to keep in the cache.</dd>
 
-		<dt>rootUserNames</dt>
-		<dd>Optional. A space separated list of users allowed to make the
-			getServiceStatus call. The user name must include the mechanism if
-			the authenticators have been configured that way.</dd>
+	</dl>
 
+	<h3>Tidier properties</h3>
+	<dl>
 		<dt>sizeCheckIntervalSeconds</dt>
 		<dd>How frequently to check the cache sizes and clean up if
 			necessary.</dd>
-
-		<dt>reader</dt>
-		<dd>
-			Space separated icat plugin name and credentials for a user permitted
-			to read all datasets, datafiles, investigations and facilities. For
-			example:
-			<code>db username root password secret.</code>
-		</dd>
-
-		<dt>missingFilesZipEntryName</dt>
-		<dd>Optional. Specifies the filename (and path if required) of a file
-			which will be added to the download zip file if there are files 
-			which failded to restore for a request. If not specified, the 
-			default of MISSING_FILES.txt will be used with the file appearing 
-			in the root of the zip file. The file can also be put in a 
-			subfolder using eg. path/to/FILENAME.txt </dd>
-			
-		<dt>logback.xml</dt>
-		<dd>This is optional. If present it must specify the path to a
-			logback.xml file. The path may be absolute or relative to the config
-			directory. The file ids.logback.xml.example may be renamed to
-			ids.logback.xml to get started.</dd>
-
-		<dt>useReaderForPerformance</dt>
-		<dd>Optional. If true allows the IDS to make use of the reader account
-			to improve query performance. Note that this bypasses some
-			access permission checks. It essentially has the effect of
-			allowing any user access to datafiles if that user has access
-			permission to the dataset the datafiles belong to. This is
-			similar to an implicit PublicStep from Dataset to Datafile.  Do
-			not set this flag unless you would be happy to also create this
-			PublicStep in your ICAT!</dd>
-
-	</dl>
-
-	<h3>Properties for archive storage</h3>
-	<p>If you are not using archive storage then all of these
-		properties should be omitted.</p>
-	<dl>
-
-		<dt>plugin.archive.class</dt>
-		<dd>The class name of the archive storage plugin. The class must
-			be deployed in the lib/applibs directory of your domain and must be
-			packaged with all it dependencies.</dd>
 
 		<dt>startArchivingLevel1024bytes</dt>
 		<dd>If the space used in main storage exceeds this then datasets
@@ -177,13 +188,17 @@
 		<dt>stopArchivingLevel1024bytes</dt>
 		<dd>See startArchivingLevel1024bytes.</dd>
 
-		<dt>maxRestoresPerThread</dt>
-		<dd>The maximum number of files that should be requested from Archive
-			Storage in one go. Requests that exceed this limit will be split up
-			into multiple smaller requests that are below this threshold.</dd>
-
 	</dl>
 
+	<h3>Other properties</h3>
+	<dl>
+		<dt>logback.xml</dt>
+		<dd>This is optional. If present it must specify the path to a
+			logback.xml file. The path may be absolute or relative to the config
+			directory. The file ids.logback.xml.example may be renamed to
+			ids.logback.xml to get started.</dd>
+
+	</dl>
 
 	<h2>Check that the ids server works</h2>
 	<p>
