@@ -56,7 +56,7 @@ shutil.copy("src/main/scripts/setup", "src/test/install/")
 
 with ZipFile(glob.glob("target/ids.r2dfoo-*-distro.zip")[0]) as z:
     with open("src/test/install/setup_utils.py", "wb") as f:
-        f.write(z.read("ids.server/setup_utils.py"))
+        f.write(z.read("ids.r2dfoo/setup_utils.py"))
 
 with open("src/main/resources/logback.xml", "rt") as s:
     with open("src/test/install/logback.xml", "wt") as f:
