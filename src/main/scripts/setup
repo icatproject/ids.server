@@ -13,7 +13,7 @@ actions, arg, props = getActions("setup.properties", [])
 prop_name = "run.properties"
 prop_list = ["icat.url", "reader", 
 "plugin.main.class", "plugin.main.dir", 
-"plugin.archive.class", "plugin.archive.dir", "maxRestoresPerThread", 
+"plugin.archive.class", "maxRestoresPerThread", 
 "plugin.zipMapper.class", 
 "cache.dir", "preparedCount", "completedCount", "failedFilesCount", 
 "sizeCheckIntervalSeconds", "startArchivingLevel1024bytes", "stopArchivingLevel1024bytes"]
@@ -28,6 +28,14 @@ if arg == "INSTALL":
 
     if not os.path.exists(os.path.expandvars(idsProperties.get("cache.dir"))):
         abort("Please create directory " + idsProperties.get("cache.dir") + " as specified in run.properties")
+
+    if idsProperties["plugin.archive.class"] == "org.icatproject.ids.storage.ArchiveSDStorageV2":
+        if not idsProperties.get("plugin.archive.uri"):
+            abort("plugin.archive.uri is not set in run.properties")
+        if not idsProperties.get("plugin.archive.connectionTimeout"):
+            abort("plugin.archive.connectionTimeout is not set in run.properties")
+        if not idsProperties.get("plugin.archive.readTimeout"):
+            abort("plugin.archive.readTimeout is not set in run.properties")
 
     try:
         uninstall()
