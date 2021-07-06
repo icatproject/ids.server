@@ -123,7 +123,7 @@ public class IdsService {
 	}
 
 	/**
-	 * Return the url of the icat.server that this ids.server has been
+	 * Return the url of the icat.server that this IDS server has been
 	 * configured to use. This is the icat.server from which a sessionId must be
 	 * obtained.
 	 * 
