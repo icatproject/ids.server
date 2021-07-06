@@ -1,8 +1,11 @@
-ids.server: Server part of ICAT Data Server (IDS)
--------------------------------------------------
+ids.r2dfoo: Server part of ICAT Data Server (IDS) used for Read-only, 2 level, Datafile centric ICATs
+-----------------------------------------------------------------------------------------------------
 
-General installation instructions are at http://www.icatproject.org/installation/component
+General installation instructions are at:
+http://www.icatproject.org/installation/component
 
-Specific installation instructions are at https://repo.icatproject.org/site/ids/server/${project.version}/installation.html
+Specific installation instructions are at:
+http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases/uk/ac/rl/esc/ids.r2dfoo/${project.version}/installation.html
 
-All documentation on ids.server may be found at https://repo.icatproject.org/site/ids/server/${project.version}
+All documentation on ids.r2dfoo may be found at:
+http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases/uk/ac/rl/esc/ids.r2dfoo/${project.version}
