@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DataSelection {
 
-	private final static Logger logger = LoggerFactory.getLogger(DataSelection.class);
+	private static final Logger logger = LoggerFactory.getLogger(DataSelection.class);
 
 	private ICAT icat;
 	private org.icatproject.icat.client.ICAT restIcat;
