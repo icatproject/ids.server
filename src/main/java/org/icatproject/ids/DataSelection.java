@@ -275,7 +275,9 @@ public class DataSelection {
 			if (count <= maxEntities) {
 				String query = "SELECT df.id, df.name, df.location, df.createId, df.modId FROM Datafile df WHERE df.dataset.id = "
 						+ dsid + " AND df.location IS NOT NULL AND df.id BETWEEN " + min + " AND " + max;
+				long startMs = System.currentTimeMillis();
 				result = Json.createReader(new ByteArrayInputStream(restSessionToUse.search(query).getBytes())).readArray();
+				logger.debug("Getting details of {} Datafiles took {}ms", result.size(), (System.currentTimeMillis()-startMs));
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dfid = tup.getJsonNumber(0).longValueExact();
