@@ -11,10 +11,10 @@ import java.util.Set;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonReader;
 import javax.json.JsonValue;
 
 import org.icatproject.Datafile;
-import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
@@ -53,6 +53,9 @@ public class DataSelection {
 	private boolean dsWanted;
 	private boolean dfWanted;
 
+	private enum EntityType {
+		DATASET, DATAFILE
+	}
 
 	public enum Returns {
 		DATASETS, DATASETS_AND_DATAFILES, DATAFILES
@@ -125,29 +128,22 @@ public class DataSelection {
 
 		try {
 			for (Long dfid : dfids) {
-				List<Object> dss = icat.search(userSessionId,
-						"SELECT ds FROM Dataset ds JOIN ds.datafiles df WHERE df.id = " + dfid
-								+ " AND df.location IS NOT NULL INCLUDE ds.investigation.facility");
-				if (dss.size() == 1) {
-					Dataset ds = (Dataset) dss.get(0);
-					long dsid = ds.getId();
-					dsInfos.put(dsid, new DsInfoImpl(ds));
-					if (dfWanted) {
-						Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
-						String location = IdsBean.getLocation(dfid, df.getLocation());
-						dfInfos.add(
-								new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
-					}
-				} else {
-					// Next line may reveal a permissions problem
-					icat.get(userSessionId, "Datafile", dfid);
-					throw new NotFoundException("Datafile " + dfid);
+				DsInfoImpl dsInfo = createDsInfo(EntityType.DATAFILE, dfid);
+				dsInfos.put(dsInfo.getDsId(), dsInfo);
+				if (dfWanted) {
+					Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
+					String location = IdsBean.getLocation(df.getLocation());
+					dfInfos.add(new DfInfoImpl(
+										dfid, df.getName(), location, 
+										df.getCreateId(), df.getModId(), 
+										dsInfo.getDsId()));
 				}
 			}
 
 			for (Long dsid : dsids) {
-				Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
-				dsInfos.put(dsid, new DsInfoImpl(ds));
+				if (!dsInfos.containsKey(dsid)) {
+					dsInfos.put(dsid, createDsInfo(EntityType.DATASET, dsid));
+				}
 				// dataset access for the user has been checked so the REST session for the
 				// reader account can be used if the IDS setting to allow this is enabled
 				String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
@@ -202,6 +198,64 @@ public class DataSelection {
 			emptyDatasets = new HashSet<>();
 		}
 	}
+
+	/**
+	 * Lookup a Dataset given the ID and entity type. Include the corresponding
+	 * Investigation and Facility information required to create a DsInfoImpl.
+	 * 
+	 * This REST query version was created to replace the previous SOAP lookup 
+	 * which was very slow (~2 seconds).
+	 * 
+	 * Although Dataset information is not required by ids.r2dfoo, for now the
+	 * Dataset information is looked up to keep the prepared files compatible 
+	 * with the IcatProject IDS. Also looking up the Dataset using the user's
+	 * session confirms that they have the rights to access the Dataset where
+	 * the useReaderForPerformance setting is being used.
+	 * 
+	 * @param entityId the ID of the entity to search for
+	 * @param entityType EntityType.DATASET or EntityType.DATAFILE
+	 * @return a populated DsInfoImpl
+	 * @throws NotFoundException if the specified Dataset is not found
+	 * @throws org.icatproject.icat.client.IcatException 
+	 * 		   if there is a problem performing the ICAT query
+	 */
+    private DsInfoImpl createDsInfo(EntityType entityType, long entityId) 
+            throws NotFoundException, org.icatproject.icat.client.IcatException {
+		logger.debug("Creating DsInfo for {} {}", entityType, entityId);
+        String query = "SELECT " + 
+                       "dataset.name, " + 
+                       "dataset.location, " +
+                       "dataset.investigation.id, " + 
+                       "dataset.investigation.name, " +
+                       "dataset.investigation.visitId, " + 
+                       "dataset.investigation.facility.id, " + 
+                       "dataset.investigation.facility.name " + 
+                       "FROM Dataset dataset ";
+        if (entityType == EntityType.DATASET) {
+            query += "WHERE dataset.id = " + entityId;
+        } else if (entityType == EntityType.DATAFILE) {
+            query += "JOIN dataset.datafiles datafile WHERE datafile.id = " + 
+                     entityId + " AND datafile.location IS NOT NULL";
+        }
+        String results = userRestSession.search(query);
+        try ( JsonReader jsonReader = Json.createReader(new ByteArrayInputStream(results.getBytes())) ) {
+            JsonArray jsonArrayRecords = jsonReader.readArray();
+            if (jsonArrayRecords.size() != 1) {
+                throw new NotFoundException(entityType + " " + entityId);
+            }
+            JsonArray jsonArrayValues = jsonArrayRecords.getJsonArray(0);
+            return new DsInfoImpl(
+					entityId, 
+                    jsonArrayValues.getString(0), 
+					jsonArrayValues.getString(1, null), 
+                    jsonArrayValues.getJsonNumber(2).longValueExact(), 
+                    jsonArrayValues.getString(3), 
+					jsonArrayValues.getString(4),
+                    jsonArrayValues.getJsonNumber(5).longValueExact(), 
+					jsonArrayValues.getString(6)
+			);
+        }
+    }
 
 	private void manyDss(Long invid, JsonArray result)
 			throws IcatException, InsufficientPrivilegesException, InternalException {
