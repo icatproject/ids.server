@@ -120,8 +120,10 @@ public class IdsBean {
 
 		validateUUID("sessionId", sessionId);
 
+		// retain lookup of Dataset information (as well as Datafile: DATASETS_AND_DATAFILES) 
+		// for now to keep prepared files compatible with the IcatProject IDS
 		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-				investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
+				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
 		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
 		Set<Long> emptyDs = dataSelection.getEmptyDatasets();
