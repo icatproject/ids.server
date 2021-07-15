@@ -14,7 +14,7 @@ plugin.archive.uri = //fdsstoragedXX.fds.rl.ac.uk:7456
 plugin.archive.connectionTimeout = 10000
 plugin.archive.readTimeout = 28800000
 maxRestoresPerThread = 100000
-plugin.zipMapper.class = org.icatproject.ids.storage.ZipMapper
+plugin.zipMapper.class = uk.ac.stfc.storaged.ZipMapper
 !missingFilesZipEntryName = path/to/FILENAME.txt
 
 # Cache directory properties
