@@ -114,9 +114,10 @@ public class IdsBean {
 			boolean compress, boolean zip, String ip)
 			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
 
-		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
-				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "' " + "compress='" + compress
-				+ "' " + "zip='" + zip + "'");
+		logger.info("New webservice request: prepareData " + 
+				"investigationIds='{}' datasetIds='{}' datafileIds='{}' " + 
+				"compress='{}' zip='{}'",
+				new Object[] {investigationIds, datasetIds, datafileIds, compress, zip});
 
 		validateUUID("sessionId", sessionId);
 
@@ -144,7 +145,7 @@ public class IdsBean {
 	public Boolean isPrepared(String preparedId, String ip)
 			throws BadRequestException, NotFoundException, InternalException {
 
-		logger.info("New webservice request: isPrepared preparedId={}", preparedId);
+		logger.info("New webservice request: isPrepared preparedId = {}", preparedId);
 
 		validateUUID("preparedId", preparedId);
 
@@ -183,7 +184,7 @@ public class IdsBean {
 			throws BadRequestException, InternalException, NotFoundException {
 
 		// Log and validate
-		logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
+		logger.info("New webservice request: getDatafileIds preparedId = {}", preparedId);
 
 		validateUUID("preparedId", preparedId);
 
@@ -212,10 +213,8 @@ public class IdsBean {
 	public Response getData(String preparedId, String outname, final long offset, String ip) throws BadRequestException,
 			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
 
-		long time = System.currentTimeMillis();
-
-		logger.info("New webservice request: getData preparedId = '" + preparedId + "' outname = '" + outname
-				+ "' offset = " + offset);
+		logger.info("New webservice request: getData preparedId = {} outname = {} offset = {}", 
+				new Object[] {preparedId, outname, offset});
 
 		validateUUID("preparedId", preparedId);
 
@@ -520,9 +519,9 @@ public class IdsBean {
 					}
 					thisSize += Files.size(path);
 					Files.delete(path);
-					logger.debug("Deleted " + path + " to reclaim " + thisSize + " bytes");
+					logger.debug("Deleted {} to reclaim {} bytes", path, thisSize);
 				} catch (IOException e) {
-					logger.debug("Failed to delete " + path + e.getMessage());
+					logger.debug("Failed to delete {} : {}", path, e.getMessage());
 				}
 			}
 		}
