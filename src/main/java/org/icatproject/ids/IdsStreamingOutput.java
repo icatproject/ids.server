@@ -5,10 +5,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
@@ -81,7 +80,8 @@ public class IdsStreamingOutput implements StreamingOutput {
                     zos.setLevel(0); // Otherwise use default compression
                 }
 
-                List<String> missingFiles = new ArrayList<>();
+                // create an ordered set of missing files
+                Set<String> missingFiles = new TreeSet<>();
                 for (DfInfoImpl dfInfo : dfInfos) {
                     logger.debug("Adding {} to zip", dfInfo);
                     transfer = dfInfo;
