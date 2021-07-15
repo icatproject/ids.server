@@ -327,9 +327,17 @@ public class IdsBean {
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 
 		// Log and validate
-		logger.info(String.format("New webservice request: getSize investigationIds=%s, datasetIds=%s, datafileIds=%s",
-				investigationIds, datasetIds, datafileIds));
+		logger.info("New webservice request: getSize investigationIds={}, datasetIds={}, datafileIds={}",
+				new Object[] {investigationIds, datasetIds, datafileIds});
 
+		if (propertyHandler.getUseReaderForPerformance()) {
+			try {
+				sessionId = reader.getSessionId();
+			} catch (IcatException_Exception e) {
+				throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+			}
+		}
+		
 		validateUUID("sessionId", sessionId);
 
 		List<Long> dfids = DataSelection.getValidIds("datafileIds", datafileIds);
