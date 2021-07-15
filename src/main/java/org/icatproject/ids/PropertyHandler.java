@@ -142,7 +142,7 @@ public class PropertyHandler {
 			} else {
 				try {
 					archiveStorageClass = (Class<ArchiveStorageInterfaceV2>)Class.forName(props.getString("plugin.archive.class"));
-					ArchiveStorageInterfaceV2 archiveStorage = archiveStorageClass.getConstructor(Properties.class).newInstance(simpleProps);
+					archiveStorageClass.getConstructor(Properties.class).newInstance(simpleProps);
 					logger.debug("Test instance of ArchiveStorageInterfaceV2 successfully initialised");
 				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 						| IllegalArgumentException | InvocationTargetException | NoSuchMethodException
