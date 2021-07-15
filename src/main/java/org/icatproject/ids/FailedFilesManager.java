@@ -25,6 +25,7 @@ public class FailedFilesManager {
 
 	private static Logger logger = LoggerFactory.getLogger(FailedFilesManager.class);
     private Path failedFilesDir;
+    private static final Object lock = new Object();
 
     /**
      * Default constructor used within the main IDS code to identify the 
@@ -65,19 +66,23 @@ public class FailedFilesManager {
      * @param failedFilepaths the list of file paths to write into the file
      */
     public void writeToFailedEntriesFile(String preparedId, Set<String> failedFilepaths) {
-        try {
-            SortedSet<String> sortedFilepathsSet = new TreeSet<>();
-            sortedFilepathsSet.addAll(getFailedEntriesForPreparedId(preparedId));
-            sortedFilepathsSet.addAll(failedFilepaths);
-            try (FileWriter writer = new FileWriter(failedFilesDir.resolve(preparedId).toFile())) {
-                for(String filepath : sortedFilepathsSet) {
-                    writer.write(filepath + System.lineSeparator());
+        // protect against multiple threads trying to update the same failed 
+        // file at the same time
+        synchronized(lock) {
+            try {
+                SortedSet<String> sortedFilepathsSet = new TreeSet<>();
+                sortedFilepathsSet.addAll(getFailedEntriesForPreparedId(preparedId));
+                sortedFilepathsSet.addAll(failedFilepaths);
+                try (FileWriter writer = new FileWriter(failedFilesDir.resolve(preparedId).toFile())) {
+                    for(String filepath : sortedFilepathsSet) {
+                        writer.write(filepath + System.lineSeparator());
+                    }
                 }
+            } catch (InternalException | IOException e) {
+                String message = String.format("%s writing failed file for prepared ID %s : %s",
+                        e.getClass().getSimpleName(), preparedId, e.getMessage());
+                logger.error(message);
             }
-        } catch (InternalException | IOException e) {
-            String message = String.format("%s writing failed file for prepared ID %s : %s",
-                    e.getClass().getSimpleName(), preparedId, e.getMessage());
-            logger.error(message);
         }
     }
 
