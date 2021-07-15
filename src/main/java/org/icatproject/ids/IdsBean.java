@@ -291,7 +291,8 @@ public class IdsBean {
 
 		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
 
-		// Note that the "fast computation for the simple case" (see the other getSize() implementation) is not
+		// Note that the "fast computation for the simple case" 
+		// (see the other getSize() implementation) is not
 		// available when calling getSize() with a preparedId.
 		logger.debug("Slow computation for normal case");
 		String sessionId;
