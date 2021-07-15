@@ -205,9 +205,7 @@ public class IdsBean {
 			}
 			gen.writeEnd().writeEnd().close();
 		}
-		String resp = baos.toString();
-
-		return resp;
+		return baos.toString();
 	}
 
 	public Response getData(String preparedId, String outname, final long offset, String ip) throws BadRequestException,
