@@ -216,7 +216,7 @@ public class DataSelection {
 				String query = "SELECT inv.name, inv.visitId, inv.facility.id,  inv.facility.name FROM Investigation inv WHERE inv.id = "
 						+ invid;
 				result = Json.createReader(new ByteArrayInputStream(userRestSession.search(query).getBytes())).readArray();
-				if (result.size() == 0) {
+				if (result.isEmpty()) {
 					return;
 				}
 				result = result.getJsonArray(0);
