@@ -119,7 +119,7 @@ public class DataSelection {
 	}
 
 	private void resolveDatasetIds()
-			throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
+			throws NotFoundException, InsufficientPrivilegesException, InternalException {
 		dsInfos = new HashMap<>();
 		emptyDatasets = new HashSet<>();
 		if (dfWanted) {
@@ -335,7 +335,7 @@ public class DataSelection {
 				for (JsonValue tupV : result) {
 					JsonArray tup = (JsonArray) tupV;
 					long dfid = tup.getJsonNumber(0).longValueExact();
-					String location = IdsBean.getLocation(dfid, tup.getString(2, null));
+					String location = IdsBean.getLocation(tup.getString(2, null));
 					dfInfos.add(
 							new DfInfoImpl(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
 				}

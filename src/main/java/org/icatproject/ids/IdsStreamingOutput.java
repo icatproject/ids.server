@@ -45,12 +45,10 @@ public class IdsStreamingOutput implements StreamingOutput {
     private Map<Long, DsInfo> dsInfos;
     private boolean compress;
     private Set<DfInfoImpl> dfInfos;
-    private String ip;
-    private long start;
     private Long transferId;
 
-    public IdsStreamingOutput(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, 
-            boolean zip, boolean compress, Long transferId, String ip, long start) {
+    public IdsStreamingOutput(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, 
+            long offset, boolean zip, boolean compress, Long transferId) {
 
         propertyHandler = PropertyHandler.getInstance();
         mainStorage = propertyHandler.getMainStorage();
@@ -62,8 +60,6 @@ public class IdsStreamingOutput implements StreamingOutput {
         this.dfInfos = dfInfos;
         this.compress = compress;
         this.transferId = transferId;
-        this.ip = ip;
-        this.start = start;
     }
 
     @Override

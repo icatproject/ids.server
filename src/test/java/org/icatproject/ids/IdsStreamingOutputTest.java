@@ -98,7 +98,7 @@ public class IdsStreamingOutputTest {
 			dfInfos.add(dfInfo);		
 		}
 		// create the IdsStreamingOutput class
-		IdsStreamingOutput so = new IdsStreamingOutput(dsInfos, dfInfos, 0L, true, true, 0L, "ip", 0L);
+		IdsStreamingOutput so = new IdsStreamingOutput(dsInfos, dfInfos, 0L, true, true, 0L);
 		// write the streamed zip file to the system temp dir
 		FileOutputStream fos = new FileOutputStream(tempZipFile);
 		so.write(fos);

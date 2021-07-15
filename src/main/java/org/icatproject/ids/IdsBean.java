@@ -111,7 +111,7 @@ public class IdsBean {
 	}
 
 	public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			boolean compress, boolean zip, String ip)
+			boolean compress, boolean zip)
 			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
 
 		logger.info("New webservice request: prepareData " + 
@@ -142,7 +142,7 @@ public class IdsBean {
 		return preparedId;
 	}
 
-	public Boolean isPrepared(String preparedId, String ip)
+	public Boolean isPrepared(String preparedId)
 			throws BadRequestException, NotFoundException, InternalException {
 
 		logger.info("New webservice request: isPrepared preparedId = {}", preparedId);
@@ -170,17 +170,17 @@ public class IdsBean {
 		return isPrepared;
 	}
 
-	public String getPercentageComplete(String preparedId, String remoteAddr) throws InternalException, NotFoundException {
+	public String getPercentageComplete(String preparedId) throws InternalException, NotFoundException {
 		logger.info("New webservice request: getPercentageComplete preparedId = {}", preparedId);
 		return restorerThreadManager.getPercentageComplete(preparedId);
 	}
 
-	public void cancel(String preparedId, String remoteAddr) throws NotFoundException {
+	public void cancel(String preparedId) throws NotFoundException {
 		logger.info("New webservice request: cancel preparedId = {}", preparedId);
 		restorerThreadManager.cancelThreadsForPreparedId(preparedId);
 	}
 
-	public String getDatafileIds(String preparedId, String ip)
+	public String getDatafileIds(String preparedId)
 			throws BadRequestException, InternalException, NotFoundException {
 
 		// Log and validate
@@ -208,8 +208,8 @@ public class IdsBean {
 		return baos.toString();
 	}
 
-	public Response getData(String preparedId, String outname, final long offset, String ip) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
+	public Response getData(String preparedId, String outname, final long offset) 
+			throws BadRequestException, NotFoundException, InternalException, DataNotOnlineException {
 
 		logger.info("New webservice request: getData preparedId = {} outname = {} offset = {}", 
 				new Object[] {preparedId, outname, offset});
@@ -274,13 +274,13 @@ public class IdsBean {
 		Long transferId = atomicLong.getAndIncrement();
 
 		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-				.entity(new IdsStreamingOutput(dsInfos, dfInfos, offset, zip, compress, transferId, ip, time))
+				.entity(new IdsStreamingOutput(dsInfos, dfInfos, offset, zip, compress, transferId))
 				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
 				.build();
 	}
 
-	public long getSize(String preparedId, String ip)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+	public long getSize(String preparedId)
+			throws BadRequestException, NotFoundException, InternalException {
 
 		// Log and validate
 		logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
@@ -323,7 +323,7 @@ public class IdsBean {
 		return size;
 	}
 
-	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
+	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 
 		// Log and validate
@@ -441,7 +441,7 @@ public class IdsBean {
 		}
 	}
 
-	public String getServiceStatus(String sessionId, String ip)
+	public String getServiceStatus(String sessionId)
 			throws InternalException, InsufficientPrivilegesException {
 
 		// Log and validate
@@ -466,15 +466,15 @@ public class IdsBean {
 		return restorerThreadManager.getStatusString();
 	}
 
-	public String getIcatUrl(String ip) {
+	public String getIcatUrl() {
 		return propertyHandler.getIcatUrl();
 	}
 
 	// TODO: should this method remove the 'failed' file for a prepared ID?
 	// (this method previously removed items from the set of 'failures' so that 
 	// restoration could be re-attempted without skipping the 'failures')
-	public void reset(String preparedId, String ip) throws BadRequestException, InternalException, NotFoundException {
-		logger.info(String.format("New webservice request: reset preparedId=%s", preparedId));
+	public void reset(String preparedId) throws BadRequestException {
+		logger.info("New webservice request: reset preparedId = {}", preparedId);
 
 		validateUUID("preparedId", preparedId);
 
@@ -506,7 +506,7 @@ public class IdsBean {
 		return dfInfosStillMissing;
 	}
 
-	private void restartUnfinishedWork() throws InternalException {
+	private void restartUnfinishedWork() {
 		// TODO: does this need re-implementing?
 		// how to make it re-start any unfinished restore requests when an IDS is restarted?
 	}
@@ -534,8 +534,8 @@ public class IdsBean {
 		}
 	}
 
-	public static String getLocation(long dfid, String location)
-			throws InsufficientPrivilegesException, InternalException {
+	public static String getLocation(String location)
+			throws InternalException {
 		if (location == null) {
 			throw new InternalException("location is null");
 		}

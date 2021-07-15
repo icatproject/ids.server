@@ -135,7 +135,7 @@ public class IdsService {
 	@Path("getIcatUrl")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getIcatUrl(@Context HttpServletRequest request) {
-		return idsBean.getIcatUrl(request.getRemoteAddr());
+		return idsBean.getIcatUrl();
 	}
 
 	/**
@@ -168,7 +168,7 @@ public class IdsService {
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public Response getData(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
 			@QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
+			NotFoundException, InternalException, DataNotOnlineException {
 		long offset = 0;
 		if (range != null) {
 
@@ -179,7 +179,7 @@ public class IdsService {
 			offset = Long.parseLong(m.group(1));
 			logger.debug("Range {} -> offset {}", range, offset);
 		}
-		return idsBean.getData(preparedId, outname, offset, request.getRemoteAddr());
+		return idsBean.getData(preparedId, outname, offset);
 	}
 
 	/**
@@ -203,7 +203,7 @@ public class IdsService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getDatafileIds(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
 			throws BadRequestException, InternalException, NotFoundException {
-		return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
+		return idsBean.getDatafileIds(preparedId);
 	}
 
 	/**
@@ -228,7 +228,7 @@ public class IdsService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getServiceStatus(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId)
 			throws InternalException, InsufficientPrivilegesException {
-		return idsBean.getServiceStatus(sessionId, request.getRemoteAddr());
+		return idsBean.getServiceStatus(sessionId);
 	}
 
 	/**
@@ -266,9 +266,9 @@ public class IdsService {
 			@QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 		if (preparedId != null) {
-			return idsBean.getSize(preparedId, request.getRemoteAddr());
+			return idsBean.getSize(preparedId);
 		} else {
-			return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+			return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds);
 		}
 	}
 
@@ -301,7 +301,7 @@ public class IdsService {
 	@Produces(MediaType.TEXT_PLAIN)
 	public boolean isPrepared(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
 			throws BadRequestException, NotFoundException, InternalException {
-		return idsBean.isPrepared(preparedId, request.getRemoteAddr());
+		return idsBean.isPrepared(preparedId);
 	}
 
 	/**
@@ -327,7 +327,7 @@ public class IdsService {
 	@Produces(MediaType.TEXT_PLAIN)
 	public String getPercentageComplete(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
 			throws NotFoundException, InternalException {
-		return idsBean.getPercentageComplete(preparedId, request.getRemoteAddr());
+		return idsBean.getPercentageComplete(preparedId);
 	}
 
 	/**
@@ -346,7 +346,7 @@ public class IdsService {
 	@Path("cancel")
 	public void cancel(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
 			throws NotFoundException {
-		idsBean.cancel(preparedId, request.getRemoteAddr());
+		idsBean.cancel(preparedId);
 	}
 
 	/**
@@ -392,8 +392,7 @@ public class IdsService {
 			@FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
 			@FormParam("zip") boolean zip)
 			throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException {
-		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip,
-				request.getRemoteAddr());
+		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip);
 	}
 
 	/**
@@ -413,8 +412,8 @@ public class IdsService {
 	@POST
 	@Path("reset")
 	public void reset(@Context HttpServletRequest request, @FormParam("preparedId") String preparedId)
-			throws BadRequestException, InternalException, NotFoundException {
-		idsBean.reset(preparedId, request.getRemoteAddr());
+			throws BadRequestException {
+		idsBean.reset(preparedId);
 	}
 
 }
