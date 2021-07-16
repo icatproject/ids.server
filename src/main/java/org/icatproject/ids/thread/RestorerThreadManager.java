@@ -59,8 +59,9 @@ public class RestorerThreadManager {
      * @param preparedId the prepared ID relating to the restore request
      * @param dfInfosToRestore the list of DatafileInfo objects to restore
      * @param checkCache whether to check if the files are already on the cache
+     * @throws InternalException if there is a problem creating a RestorerThread
      */
-    public void submitFilesForRestore(String preparedId, List<DfInfo> dfInfosToRestore, boolean checkCache) {
+    public void submitFilesForRestore(String preparedId, List<DfInfo> dfInfosToRestore, boolean checkCache) throws InternalException {
         logger.debug("{} files submitted for restore with preparedId {}", dfInfosToRestore.size(), preparedId);
         if (checkCache) {
             removeFilesAlreadyOnCache(dfInfosToRestore);
@@ -114,8 +115,9 @@ public class RestorerThreadManager {
      * @param preparedId the prepared ID that this request relates to
      * @param dfInfosToRestore the list of DatafileInfo objects to restore
      * @param checkCache whether to check if the files are already on the cache
+     * @throws InternalException if there is a problem creating a RestoreThread
      */
-    public void createRestorerThread(String preparedId, List<DfInfo> dfInfosToRestore, boolean checkCache) {
+    public void createRestorerThread(String preparedId, List<DfInfo> dfInfosToRestore, boolean checkCache) throws InternalException {
         if (checkCache) {
             removeFilesAlreadyOnCache(dfInfosToRestore);
         }
