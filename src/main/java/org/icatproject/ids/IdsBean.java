@@ -470,17 +470,6 @@ public class IdsBean {
 		return propertyHandler.getIcatUrl();
 	}
 
-	// TODO: should this method remove the 'failed' file for a prepared ID?
-	// (this method previously removed items from the set of 'failures' so that 
-	// restoration could be re-attempted without skipping the 'failures')
-	public void reset(String preparedId) throws BadRequestException {
-		logger.info("New webservice request: reset preparedId = {}", preparedId);
-
-		validateUUID("preparedId", preparedId);
-
-		// TODO: remove the 'failed' file?
-	}
-
 	/**
 	 * Check that all of the files are on the cache apart from any that are
 	 * listed in the set of failed files.

@@ -395,25 +395,4 @@ public class IdsService {
 		return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip);
 	}
 
-	/**
-	 * Reset a particular preparedId so that retrieval from Archive Storage can
-	 * be tried again.
-	 * 
-	 * @summary reset
-	 * @param preparedId
-	 *            A valid preparedId returned by a call to prepareData
-	 * 
-	 * @throws BadRequestException
-	 * @throws NotFoundException
-	 * @throws InternalException
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@POST
-	@Path("reset")
-	public void reset(@Context HttpServletRequest request, @FormParam("preparedId") String preparedId)
-			throws BadRequestException {
-		idsBean.reset(preparedId);
-	}
-
 }
