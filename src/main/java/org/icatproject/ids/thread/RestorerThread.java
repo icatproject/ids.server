@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.icatproject.ids.FailedFilesManager;
 import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.storage.ArchiveStorageInterfaceV2;
 import org.slf4j.Logger;
@@ -28,19 +29,28 @@ public class RestorerThread extends Thread {
     private AtomicBoolean stopRestoring;
 
     public RestorerThread(RestorerThreadManager restorerThreadManager, 
-                          String preparedId, List<DfInfo> dfInfosToRestore) {
+                          String preparedId, List<DfInfo> dfInfosToRestore) throws InternalException {
         this.restorerThreadManager = restorerThreadManager;
         this.preparedId = preparedId;
         this.dfInfosToRestore = dfInfosToRestore;
         this.stopRestoring = new AtomicBoolean(false);
-    }
-
-    @Override
-    public void run() {
         Class<ArchiveStorageInterfaceV2> archiveStorageClass = propertyHandler.getArchiveStorageClass();
         try {
             archiveStorage = archiveStorageClass.getConstructor(Properties.class).newInstance(propertyHandler.getSimpleProperties());
             logger.debug("Successfully instantiated {} for {}", archiveStorageClass.getName(), preparedId);
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+            // This should never happen because a test for instantiation of 
+            // this class is done in the PropertyHandler. 
+            String message = "Failed to create instance of ArchiveStorageInterfaceV2 class " + archiveStorageClass.getName();
+            logger.error(message, e);
+            throw new InternalException(message);
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
             Set<DfInfo> failedRestores = archiveStorage.restore(propertyHandler.getMainStorage(), dfInfosToRestore, stopRestoring);
             if (stopRestoring.get()) {
                 // this thread has been requested to stop
@@ -55,20 +65,16 @@ public class RestorerThread extends Thread {
             }
             FailedFilesManager failedFilesManager = new FailedFilesManager(propertyHandler.getCacheDir());
             failedFilesManager.writeToFailedEntriesFile(preparedId, failedFilepaths);
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            // This should never happen because a test for instantiation of 
-            // this class is done in the PropertyHandler. 
-            // If this does happen there is a serious problem that needs 
-            // intervention so log it and let the thread complete. 
-            // There is no point resubmitting the request.         
-            logger.error("Failed to create instance of ArchiveStorageInterfaceV2 class " + archiveStorageClass.getName(), e);
         } catch (IOException e) {
             // this was thrown by the restore method and is likely to be a transient
             // connection problem so resubmit the request to try again
             // resubmit the list of DfInfos to try again in another thread
             logger.error("IOException for preparedId ID " + preparedId + ". Recreating restorer thread.", e);
-            restorerThreadManager.createRestorerThread(preparedId, dfInfosToRestore, true);
+            try {
+                restorerThreadManager.createRestorerThread(preparedId, dfInfosToRestore, true);
+            } catch (InternalException e1) {
+                logger.error("Error recreating RestorerThread: {}", e.getMessage());
+            }
         }
         restorerThreadManager.removeThreadFromMap(preparedId, this);
         logger.debug("RestorerThread finishing for preparedId {}", preparedId);
