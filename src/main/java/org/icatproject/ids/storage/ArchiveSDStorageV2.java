@@ -194,6 +194,7 @@ public class ArchiveSDStorageV2 implements ArchiveStorageInterfaceV2 {
                         logger.debug("{}/{} Restoring {} bytes to {}.", 
                             new Object[]{returnedFileCount, numFilesRequested, returnedFileSize, location});
                         mainStorageInterface.put(chunkedInputStream, location);
+                        numFilesRemaining--;
                         // check whether the stop flag has been set
                         if (stopRestoring.get()) {
                             // if it is then this is a safe place to exit
@@ -203,7 +204,6 @@ public class ArchiveSDStorageV2 implements ArchiveStorageInterfaceV2 {
                         }
                     }
                     chunkedInputStream.setFileSize(null);
-                    numFilesRemaining--;
                 } else if (resp.getType() == StorageD.ResponseType.STATUS) {
                     // A status response is returned both after some filesets have been returned and
                     // also if no files were found, but the response from StorageD is not correct. 
