@@ -74,7 +74,7 @@ public class IdsService {
 	/**
 	 * Return the version of the server
 	 * 
-	 * @summary Version
+	 * @summary version
 	 * 
 	 * @return json string of the form: <samp>{"version":"4.4.0"}</samp>
 	 */
