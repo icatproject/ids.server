@@ -24,6 +24,23 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.stfc.storaged.DfInfoWithLocation;
 
+/**
+ * A dummy implementation of the ArchiveStorageInterfaceV2 which is used for 
+ * development and testing. It simulates an archive storage interface like the
+ * StorageD one by allowing for a list of files to be requested and then 
+ * restoring them at a configurable rate. 
+ * 
+ * So that the files do not even need to exist, the dummy implementation works
+ * from a supplied list of absolute filepaths, each of them prepended with the
+ * size of the file in bytes. For example, for the first implementation, a 
+ * basic command was run to list all of the files in a Payara server 
+ * installation and their sizes.
+ * 
+ * The dummy implementation creates the files by simply adding lines to a 
+ * file as it is created, repeating the filepath on each line as many times as
+ * necessary to create the number of bytes specified. This means that each 
+ * file has a known size and the exact contents are known.
+ */
 public class ArchiveStorageDummy implements ArchiveStorageInterfaceV2 {
 
     private static final Logger logger = LoggerFactory.getLogger(ArchiveStorageDummy.class);
@@ -91,6 +108,13 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceV2 {
         }
     }
 
+    /**
+     * Return a Map representation of the files listed in the dummy file 
+     * listing and their sizes.
+     * 
+     * @return a Map keyed on the file path with the corresponding file size in 
+     *         bytes as the value
+     */
     public Map<String, Integer> getPathToSizeMap() {
         return pathToSizeMap;
     }
@@ -160,6 +184,17 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceV2 {
         return numFilesRemaining;
     }
 
+    /**
+     * Create the contents of a file by repeating the location/path of the file
+     * as many times as necessary to create a file of the requested size. Each
+     * line has a carriage return on the end and the last line will nearly 
+     * always be truncated so that the file is exactly the right number of 
+     * bytes.
+     * 
+     * @param location the (full) file path
+     * @param fileSize the size of the file to create in bytes
+     * @return a byte array containing the file contents
+     */
     private static byte[] createFile(String location, int fileSize) {
         byte[] bytes = new byte[fileSize];
         String repeatString = location + "\n";
@@ -186,6 +221,19 @@ public class ArchiveStorageDummy implements ArchiveStorageInterfaceV2 {
         return timeMs;
     }
 
+    /**
+     * Create a list of DatafileInfo objects (only the location/path will be
+     * populated in each) by using a subset of the file list available to the
+     * dummy archive storage. 
+     * 
+     * This provides a convenient way to create a list of files to request for
+     * restore without knowing in advance what files are available via the 
+     * dummy storage. 
+     * 
+     * @param startIndex
+     * @param endIndex
+     * @return a List of DfInfo (DatafileInfo) objects 
+     */
     public List<DfInfo> createDfInfosList(int startIndex, int endIndex) {
         List<DfInfo> dfInfos = new ArrayList<>();
         int index = 0;
