@@ -7,5 +7,7 @@ http://www.icatproject.org/installation/component
 Specific installation instructions are at:
 http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases/uk/ac/rl/esc/ids.r2dfoo/${project.version}/installation.html
 
-All documentation on ids.r2dfoo may be found at:
+Documentation on ids.r2dfoo may be found at:
+https://github.com/ral-facilities/ids.r2dfoo/wiki
+and
 http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases/uk/ac/rl/esc/ids.r2dfoo/${project.version}
