@@ -4,7 +4,7 @@
 	<groupId>uk.ac.rl.esc</groupId>
 	<artifactId>ids.r2dfoo</artifactId>
 	<packaging>war</packaging>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>2.0.0-SNAPSHOT</version>
 	<name>IDS Server R2DFoo</name>
 
 	<description>Forked version of the original ICAT Data Service designed for Read-only, 2 level, Datafile based systems (hence R2DFoo).</description>
@@ -394,6 +394,7 @@
 						-->
 						<!--include>**/integration/**/*Test.java</include-->
 						<include>org.icatproject.ids.integration.**</include>
+						<!--include>org.icatproject.ids.integration.**</include-->
 					</includes>
 					<systemPropertyVariables>
 						<serverUrl>${serverUrl}</serverUrl>
