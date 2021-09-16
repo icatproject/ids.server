@@ -3,8 +3,8 @@ icat.url = https://www.example.com:8181
 !rootUserNames = root
 reader = db username root password password
 # Note that useReaderForPerformance has implications on access permissions. 
-# Read the installation instructions before enabling this!
-!useReaderForPerformance = true
+# Read the installation instructions to confirm that you are OK with this being enabled
+useReaderForPerformance = true
 
 # Main and Archive storage properties
 plugin.main.class = uk.ac.stfc.storaged.MainSDStorage
