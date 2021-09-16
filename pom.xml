@@ -64,7 +64,7 @@
 		<downloadUrl>http://nexus.esc.rl.ac.uk:8081/nexus</downloadUrl>
 		<site>
 			<id>nexus.esc.rl.ac.uk</id>
-			<url>dav:http://nexus.esc.rl.ac.uk:8081/nexus/content/sites/site/storaged-ids-server/${project.version}</url>
+			<url>dav:http://nexus.esc.rl.ac.uk:8081/nexus/content/sites/site/ids.r2dfoo/${project.version}</url>
 		</site>
 		<repository>
 			<id>nexus.esc.rl.ac.uk</id>
