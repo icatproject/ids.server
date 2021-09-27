@@ -394,7 +394,6 @@
 						-->
 						<!--include>**/integration/**/*Test.java</include-->
 						<include>org.icatproject.ids.integration.**</include>
-						<!--include>org.icatproject.ids.integration.**</include-->
 					</includes>
 					<systemPropertyVariables>
 						<serverUrl>${serverUrl}</serverUrl>
