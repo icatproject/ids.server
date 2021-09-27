@@ -1,950 +1,195 @@
 package org.icatproject.ids;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
-import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipOutputStream;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.xml.datatype.DatatypeFactory;
 
 import org.icatproject.Datafile;
-import org.icatproject.DatafileFormat;
-import org.icatproject.Dataset;
-import org.icatproject.EntityBaseBean;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.DataSelection.Returns;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
-import org.icatproject.ids.exceptions.IdsException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
-import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.plugin.ZipMapperInterface;
-import org.icatproject.utils.IcatSecurity;
-import org.icatproject.utils.ShellCommand;
+import org.icatproject.ids.thread.RestorerThreadManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Stateless
 public class IdsBean {
 
-	public class RunPrepDsCheck implements Callable<Void> {
+	private static final Logger logger = LoggerFactory.getLogger(IdsBean.class);
 
-		private Collection<DsInfo> toCheck;
-		private Set<Long> emptyDatasets;
-
-		public RunPrepDsCheck(Collection<DsInfo> toCheck, Set<Long> emptyDatasets) {
-			this.toCheck = toCheck;
-			this.emptyDatasets = emptyDatasets;
-		}
-
-		@Override
-		public Void call() throws Exception {
-			for (DsInfo dsInfo : toCheck) {
-				fsm.checkFailure(dsInfo.getDsId());
-				restoreIfOffline(dsInfo, emptyDatasets);
-			}
-			return null;
-		}
-
-	}
-
-	public class RunPrepDfCheck implements Callable<Void> {
-
-		private SortedSet<DfInfoImpl> toCheck;
-
-		public RunPrepDfCheck(SortedSet<DfInfoImpl> toCheck) {
-			this.toCheck = toCheck;
-		}
-
-		@Override
-		public Void call() throws Exception {
-			for (DfInfoImpl dfInfo : toCheck) {
-				fsm.checkFailure(dfInfo.getDfId());
-				restoreIfOffline(dfInfo);
-			}
-			return null;
-		}
-
-	}
-
-	enum CallType {
-		INFO, PREPARE, READ, WRITE, MIGRATE, LINK
-	};
-
-	public class RestoreDfTask implements Callable<Void> {
-
-		private Set<DfInfoImpl> dfInfos;
-
-		public RestoreDfTask(Set<DfInfoImpl> dfInfos) {
-			this.dfInfos = dfInfos;
-		}
-
-		@Override
-		public Void call() throws Exception {
-			for (DfInfoImpl dfInfo : dfInfos) {
-				restoreIfOffline(dfInfo);
-			}
-			return null;
-		}
-
-	}
-
-	public class RestoreDsTask implements Callable<Void> {
-		private Collection<DsInfo> dsInfos;
-		private Set<Long> emptyDs;
-
-		public RestoreDsTask(Collection<DsInfo> dsInfos, Set<Long> emptyDs) {
-			this.dsInfos = dsInfos;
-			this.emptyDs = emptyDs;
-		}
-
-		@Override
-		public Void call() throws Exception {
-			for (DsInfo dsInfo : dsInfos) {
-				restoreIfOffline(dsInfo, emptyDs);
-			}
-			return null;
-		}
-	}
-
-	private class SO implements StreamingOutput {
-
-		private long offset;
-		private boolean zip;
-		private Map<Long, DsInfo> dsInfos;
-		private Lock lock;
-		private boolean compress;
-		private Set<DfInfoImpl> dfInfos;
-		private String ip;
-		private long start;
-		private Long transferId;
-
-		SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
-				Lock lock, Long transferId, String ip, long start) {
-			this.offset = offset;
-			this.zip = zip;
-			this.dsInfos = dsInfos;
-			this.dfInfos = dfInfos;
-			this.lock = lock;
-			this.compress = compress;
-			this.transferId = transferId;
-			this.ip = ip;
-			this.start = start;
-		}
-
-		@Override
-		public void write(OutputStream output) throws IOException {
-			Object transfer = "??";
-			try {
-				if (offset != 0) { // Wrap the stream if needed
-					output = new RangeOutputStream(output, offset, null);
-				}
-				byte[] bytes = new byte[BUFSIZ];
-				if (zip) {
-					ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
-					if (!compress) {
-						zos.setLevel(0); // Otherwise use default compression
-					}
-
-					for (DfInfoImpl dfInfo : dfInfos) {
-						logger.debug("Adding " + dfInfo + " to zip");
-						transfer = dfInfo;
-						DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-						String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
-						InputStream stream = null;
-						try {
-							zos.putNextEntry(new ZipEntry(entryName));
-							stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(), dfInfo.getModId());
-							int length;
-							while ((length = stream.read(bytes)) >= 0) {
-								zos.write(bytes, 0, length);
-							}
-						} catch (ZipException e) {
-							logger.debug("Skipped duplicate");
-						}
-						zos.closeEntry();
-						if (stream != null) {
-							stream.close();
-						}
-					}
-					zos.close();
-				} else {
-					DfInfoImpl dfInfo = dfInfos.iterator().next();
-					transfer = dfInfo;
-					InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
-							dfInfo.getModId());
-					int length;
-					while ((length = stream.read(bytes)) >= 0) {
-						output.write(bytes, 0, length);
-					}
-					output.close();
-					stream.close();
-				}
-
-				if (transferId != null) {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-						gen.write("transferId", transferId);
-						gen.writeEnd();
-					}
-					transmitter.processMessage("getData", ip, baos.toString(), start);
-				}
-
-			} catch (IOException e) {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("transferId", transferId);
-					gen.write("exceptionClass", e.getClass().toString());
-					gen.write("exceptionMessage", e.getMessage());
-					gen.writeEnd();
-				}
-				transmitter.processMessage("getData", ip, baos.toString(), start);
-				logger.error("Failed to stream " + transfer + " due to " + e.getMessage());
-				throw e;
-			} finally {
-				lock.release();
-			}
-		}
-
-	}
-
-	private static final int BUFSIZ = 2048;
-
-	private static Boolean inited = false;
-
-	private static String key;
-
-	private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
-	private static String paddedPrefix;
-	private static final String prefix = "<html><script type=\"text/javascript\">window.name='";
-	private static final String suffix = "';</script></html>";
-
-	/** matches standard UUID format of 8-4-4-4-12 hexadecimal digits */
+	// matches standard UUID format of 8-4-4-4-12 hexadecimal digits
 	public static final Pattern uuidRegExp = Pattern
 			.compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
-	static {
-		paddedPrefix = "<html><script type=\"text/javascript\">/*";
-		for (int n = 1; n < 25; n++) {
-			paddedPrefix += " *        \n";
-		}
-		paddedPrefix += "*/window.name='";
-	}
-
-	static void cleanDatasetCache(Path datasetDir) {
-		for (File dsFile : datasetDir.toFile().listFiles()) {
-			Path path = dsFile.toPath();
-			try {
-				long thisSize = Files.size(path);
-				Files.delete(path);
-				logger.debug("Deleted " + path + " to reclaim " + thisSize + " bytes");
-			} catch (IOException e) {
-				logger.debug("Failed to delete " + path + " " + e.getClass() + " " + e.getMessage());
-			}
-		}
-	}
-
-	static void cleanPreparedDir(Path preparedDir) {
-		for (File file : preparedDir.toFile().listFiles()) {
-			Path path = file.toPath();
-			String pf = path.getFileName().toString();
-			if (pf.startsWith("tmp.") || pf.endsWith(".tmp")) {
-				try {
-					long thisSize = 0;
-					if (Files.isDirectory(path)) {
-						for (File notZipFile : file.listFiles()) {
-							thisSize += Files.size(notZipFile.toPath());
-							Files.delete(notZipFile.toPath());
-						}
-					}
-					thisSize += Files.size(path);
-					Files.delete(path);
-					logger.debug("Deleted " + path + " to reclaim " + thisSize + " bytes");
-				} catch (IOException e) {
-					logger.debug("Failed to delete " + path + e.getMessage());
-				}
-			}
-		}
-	}
-
-	public static String getLocation(long dfid, String location)
-			throws InsufficientPrivilegesException, InternalException {
-		if (location == null) {
-			throw new InternalException("location is null");
-		}
-		if (key == null) {
-			return location;
-		} else {
-			return getLocationFromDigest(dfid, location, key);
-		}
-	}
-
-	static String getLocationFromDigest(long id, String locationWithHash, String key)
-			throws InternalException, InsufficientPrivilegesException {
-		int i = locationWithHash.lastIndexOf(' ');
-		try {
-			String location = locationWithHash.substring(0, i);
-			String hash = locationWithHash.substring(i + 1);
-			if (!hash.equals(IcatSecurity.digest(id, location, key))) {
-				throw new InsufficientPrivilegesException(
-						"Location \"" + locationWithHash + "\" does not contain a valid hash.");
-			}
-			return location;
-		} catch (IndexOutOfBoundsException e) {
-			throw new InsufficientPrivilegesException("Location \"" + locationWithHash + "\" does not contain hash.");
-		} catch (NoSuchAlgorithmException e) {
-			throw new InternalException(e.getMessage());
-		}
-	}
-
-	static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DsInfo> dsInfos,
-			Set<DfInfoImpl> dfInfos, Set<Long> emptyDatasets) {
-		JsonGenerator gen = Json.createGenerator(stream);
-		gen.writeStartObject();
-		gen.write("zip", zip);
-		gen.write("compress", compress);
-
-		gen.writeStartArray("dsInfo");
-		for (DsInfo dsInfo : dsInfos.values()) {
-			logger.debug("dsInfo " + dsInfo);
-			gen.writeStartObject().write("dsId", dsInfo.getDsId())
-
-					.write("dsName", dsInfo.getDsName()).write("facilityId", dsInfo.getFacilityId())
-					.write("facilityName", dsInfo.getFacilityName()).write("invId", dsInfo.getInvId())
-					.write("invName", dsInfo.getInvName()).write("visitId", dsInfo.getVisitId());
-			if (dsInfo.getDsLocation() != null) {
-				gen.write("dsLocation", dsInfo.getDsLocation());
-			} else {
-				gen.writeNull("dsLocation");
-			}
-			gen.writeEnd();
-		}
-		gen.writeEnd();
-
-		gen.writeStartArray("dfInfo");
-		for (DfInfoImpl dfInfo : dfInfos) {
-			DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-			gen.writeStartObject().write("dsId", dsInfo.getDsId()).write("dfId", dfInfo.getDfId())
-					.write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
-					.write("modId", dfInfo.getModId());
-			if (dfInfo.getDfLocation() != null) {
-				gen.write("dfLocation", dfInfo.getDfLocation());
-			} else {
-				gen.writeNull("dfLocation");
-			}
-			gen.writeEnd();
-
-		}
-		gen.writeEnd();
-
-		gen.writeStartArray("emptyDs");
-		for (Long emptyDs : emptyDatasets) {
-			gen.write(emptyDs);
-		}
-		gen.writeEnd();
-
-		gen.writeEnd().close();
-
-	}
-
-	static Prepared unpack(InputStream stream) throws InternalException {
-		Prepared prepared = new Prepared();
-		JsonObject pd;
-		try (JsonReader jsonReader = Json.createReader(stream)) {
-			pd = jsonReader.readObject();
-		}
-		prepared.zip = pd.getBoolean("zip");
-		prepared.compress = pd.getBoolean("compress");
-		SortedMap<Long, DsInfo> dsInfos = new TreeMap<>();
-		SortedSet<DfInfoImpl> dfInfos = new TreeSet<>();
-		Set<Long> emptyDatasets = new HashSet<>();
-
-		for (JsonValue itemV : pd.getJsonArray("dfInfo")) {
-			JsonObject item = (JsonObject) itemV;
-			String dfLocation = item.isNull("dfLocation") ? null : item.getString("dfLocation");
-			dfInfos.add(new DfInfoImpl(item.getJsonNumber("dfId").longValueExact(), item.getString("dfName"),
-					dfLocation, item.getString("createId"), item.getString("modId"),
-					item.getJsonNumber("dsId").longValueExact()));
-
-		}
-		prepared.dfInfos = dfInfos;
-
-		for (JsonValue itemV : pd.getJsonArray("dsInfo")) {
-			JsonObject item = (JsonObject) itemV;
-			long dsId = item.getJsonNumber("dsId").longValueExact();
-			String dsLocation = item.isNull("dsLocation") ? null : item.getString("dsLocation");
-			dsInfos.put(dsId, new DsInfoImpl(dsId, item.getString("dsName"), dsLocation,
-					item.getJsonNumber("invId").longValueExact(), item.getString("invName"), item.getString("visitId"),
-					item.getJsonNumber("facilityId").longValueExact(), item.getString("facilityName")));
-		}
-		prepared.dsInfos = dsInfos;
-
-		for (JsonValue itemV : pd.getJsonArray("emptyDs")) {
-			emptyDatasets.add(((JsonNumber) itemV).longValueExact());
-		}
-		prepared.emptyDatasets = emptyDatasets;
-
-		return prepared;
-	}
-
-	public static void validateUUID(String thing, String id) throws BadRequestException {
-		if (id == null || !uuidRegExp.matcher(id).matches())
-			throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
-	}
+	private static Boolean inited = false;
 
 	private static AtomicLong atomicLong = new AtomicLong();
 
 	@EJB
-	Transmitter transmitter;
-
-	private ExecutorService threadPool;
-
-	private ArchiveStorageInterface archiveStorage;
-
-	private Path datasetDir;
-
-	private DatatypeFactory datatypeFactory;
-
-	private boolean enableWrite;
-
-	@EJB
-	private FiniteStateMachine fsm;
-
-	@EJB
-	private LockManager lockManager;
-
-	private ICAT icat;
-
-	private Path linkDir;
-
-	private boolean linkEnabled;
-
-	private MainStorageInterface mainStorage;
-
-	private Path markerDir;
-
-	private Path preparedDir;
-
-	private PropertyHandler propertyHandler;
+	private RestorerThreadManager restorerThreadManager;
 
 	@EJB
 	IcatReader reader;
 
-	private boolean readOnly;
+	private MainStorageInterface mainStorage;
+
+	private PropertyHandler propertyHandler;
+
+	private ICAT icat;
 
 	private Set<String> rootUserNames;
 
-	private StorageUnit storageUnit;
+	private PreparedFilesManager preparedFilesManager;
 
-	private ZipMapperInterface zipMapper;
+	private FailedFilesManager failedFilesManager;
 
-	private int maxIdsInQuery;
+	private RestoreFileCountManager restoreFileCountManager;
 
-	private boolean twoLevel;
 
-	private Set<CallType> logSet;
-
-	class PreparedStatus {
-		public ReentrantLock lock = new ReentrantLock();
-		public DfInfoImpl fromDfElement;
-		public Future<?> future;
-		public Long fromDsElement;
-	};
-
-	private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
-
-	private void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)
-			throws BadRequestException {
-		if (investigationIds != null) {
-			gen.writeStartArray("investigationIds");
-			for (long invid : DataSelection.getValidIds("investigationIds", investigationIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-		if (datasetIds != null) {
-			gen.writeStartArray("datasetIds");
-			for (long invid : DataSelection.getValidIds("datasetIds", datasetIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-		if (datafileIds != null) {
-			gen.writeStartArray("datafileIds");
-			for (long invid : DataSelection.getValidIds("datafileIds", datafileIds)) {
-				gen.write(invid);
-			}
-			gen.writeEnd();
-		}
-	}
-
-	public void archive(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-	    throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-		   NotFoundException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: archive " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
-				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-
-		validateUUID("sessionId", sessionId);
-
-		// Do it
-		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.queue(dsInfo, DeferredOp.ARCHIVE);
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-					investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-			for (DfInfoImpl dfInfo : dfInfos) {
-				fsm.queue(dfInfo, DeferredOp.ARCHIVE);
-			}
-		} else {
-			throw new NotImplementedException("This operation is unavailable for single level storage");
-		}
-
-		if (logSet.contains(CallType.MIGRATE)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("archive", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-	}
-
-	private void checkDatafilesPresent(Set<? extends DfInfo> dfInfos)
-			throws NotFoundException, InternalException {
-		/* Check that datafiles have not been deleted before locking */
-		int n = 0;
-		StringBuffer sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
-		for (DfInfo dfInfo : dfInfos) {
-			if (n != 0) {
-				sb.append(',');
-			}
-			sb.append(dfInfo.getDfId());
-			if (++n == maxIdsInQuery) {
-				try {
-					if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
-						throw new NotFoundException("One of the data files requested has been deleted");
-					}
-					n = 0;
-					sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
-				} catch (IcatException_Exception e) {
-					throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
-				}
-			}
-		}
-		if (n != 0) {
-			try {
-				if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
-					throw new NotFoundException("One of the datafiles requested has been deleted");
-				}
-			} catch (IcatException_Exception e) {
-				throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
-			}
-		}
-
-	}
-
-	private void checkOnline(Collection<DsInfo> dsInfos, Set<Long> emptyDatasets,
-			Set<DfInfoImpl> dfInfos)
-			throws InternalException, DataNotOnlineException {
-		if (storageUnit == StorageUnit.DATASET) {
-			boolean maybeOffline = false;
-			for (DsInfo dsInfo : dsInfos) {
-				if (restoreIfOffline(dsInfo, emptyDatasets)) {
-					maybeOffline = true;
-				}
-			}
-			if (maybeOffline) {
-				throw new DataNotOnlineException(
-						"Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			boolean maybeOffline = false;
-			for (DfInfoImpl dfInfo : dfInfos) {
-				if (restoreIfOffline(dfInfo)) {
-					maybeOffline = true;
-				}
-			}
-			if (maybeOffline) {
-				throw new DataNotOnlineException(
-						"Before getting a datafile, it must be restored, restoration requested automatically");
-			}
-		}
-	}
-
-	public void delete(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-			NotFoundException, DataNotOnlineException {
-
-		long start = System.currentTimeMillis();
-
-		logger.info("New webservice request: delete " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
-				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-
-		if (readOnly) {
-			throw new NotImplementedException("This operation has been configured to be unavailable");
-		}
-
-		IdsBean.validateUUID("sessionId", sessionId);
-
-		DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
-
-		// Do it
-		Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
-		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-
-		try (Lock lock = lockManager.lock(dsInfos, LockType.EXCLUSIVE)) {
-			if (storageUnit == StorageUnit.DATASET) {
-				checkOnline(dsInfos, dataSelection.getEmptyDatasets(), dfInfos);
-			}
-
-			/* Now delete from ICAT */
-			List<EntityBaseBean> dfs = new ArrayList<>();
-			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
-				Datafile df = new Datafile();
-				df.setId(dfInfo.getDfId());
-				dfs.add(df);
-			}
-			try {
-				icat.deleteMany(sessionId, dfs);
-			} catch (IcatException_Exception e) {
-				IcatExceptionType type = e.getFaultInfo().getType();
-
-				if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
-					throw new InsufficientPrivilegesException(e.getMessage());
-				}
-				if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-					throw new NotFoundException(e.getMessage());
-				}
-				throw new InternalException(type + " " + e.getMessage());
-			}
-
-			/*
-			 * Delete the local copy directly rather than queueing it as it has
-			 * been removed from ICAT so will not be accessible to any
-			 * subsequent IDS calls.
-			 */
-			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
-				String location = dfInfo.getDfLocation();
-				try {
-					if ((long) reader
-							.search("SELECT COUNT(df) FROM Datafile df WHERE df.location LIKE '" + location.replaceAll("'", "''") + "%'")
-							.get(0) == 0) {
-						if (mainStorage.exists(location)) {
-							logger.debug("Delete physical file " + location + " from main storage");
-							mainStorage.delete(location, dfInfo.getCreateId(), dfInfo.getModId());
-						}
-						if (storageUnit == StorageUnit.DATAFILE) {
-							fsm.queue(dfInfo, DeferredOp.DELETE);
-						}
-					}
-				} catch (IcatException_Exception e) {
-					throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
-				} catch (IOException e) {
-					logger.error("I/O error " + e.getMessage() + " deleting " + dfInfo);
-					throw new InternalException(e.getClass() + " " + e.getMessage());
-				}
-			}
-
-			if (storageUnit == StorageUnit.DATASET) {
-				for (DsInfo dsInfo : dsInfos) {
-					fsm.queue(dsInfo, DeferredOp.WRITE);
-				}
-			}
-
-		} catch (AlreadyLockedException e) {
-			logger.debug("Could not acquire lock, delete failed");
-			throw new DataNotOnlineException("Data is busy");
-		} catch (IOException e) {
-			logger.error("I/O error " + e.getMessage());
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-		if (logSet.contains(CallType.WRITE)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("delete", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-	}
-
-	public Response getData(String preparedId, String outname, final long offset, String ip) throws BadRequestException,
-			NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
-
-		long time = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: getData preparedId = '" + preparedId + "' outname = '" + outname
-				+ "' offset = " + offset);
-
-		validateUUID("preparedId", preparedId);
-
-		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-		final boolean zip = prepared.zip;
-		final boolean compress = prepared.compress;
-		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
-		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
-		Set<Long> emptyDatasets = prepared.emptyDatasets;
-
-		Lock lock = null;
+	@PostConstruct
+	private void init() {
 		try {
-			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
+			synchronized (inited) {
+				logger.info("creating IdsBean");
+				propertyHandler = PropertyHandler.getInstance();
+				mainStorage = propertyHandler.getMainStorage();
+				Path preparedDir = propertyHandler.getCacheDir().resolve(Constants.PREPARED_DIR_NAME);
+				Files.createDirectories(preparedDir);
+				preparedFilesManager = new PreparedFilesManager(preparedDir);
+				Path completedDir = propertyHandler.getCacheDir().resolve(Constants.COMPLETED_DIR_NAME);
+				Files.createDirectories(completedDir);
+				Path failedFilesDir = propertyHandler.getCacheDir().resolve(Constants.FAILED_DIR_NAME);
+				Files.createDirectories(failedFilesDir);
+				failedFilesManager = new FailedFilesManager(propertyHandler.getCacheDir());
+				restoreFileCountManager = RestoreFileCountManager.getInstance();
 
-			if (twoLevel) {
-				checkOnline(dsInfos.values(), emptyDatasets, dfInfos);
-			}
-			checkDatafilesPresent(dfInfos);
+				rootUserNames = propertyHandler.getRootUserNames();
 
-			/* Construct the name to include in the headers */
-			String name;
-			if (outname == null) {
-				if (zip) {
-					name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
-				} else {
-					name = dfInfos.iterator().next().getDfName();
+				icat = propertyHandler.getIcatService();
+
+				if (!inited) {
+					restartUnfinishedWork();
+					cleanPreparedDir(preparedDir);
 				}
-			} else {
-				if (zip) {
-					String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
-					if ("zip".equals(ext)) {
-						name = outname;
-					} else {
-						name = outname + ".zip";
-					}
-				} else {
-					name = outname;
-				}
-			}
+				inited = true;
 
-			Long transferId = null;
-			if (logSet.contains(CallType.READ)) {
-				transferId = atomicLong.getAndIncrement();
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("transferId", transferId);
-					gen.write("preparedId", preparedId);
-					gen.writeEnd();
-				}
-				transmitter.processMessage("getDataStart", ip, baos.toString(), time);
+				logger.info("created IdsBean");
 			}
-
-			return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-					.entity(new SO(dsInfos, dfInfos, offset, zip, compress, lock, transferId, ip, time))
-					.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
-					.build();
-		} catch (AlreadyLockedException e) {
-			logger.debug("Could not acquire lock, getData failed");
-			throw new DataNotOnlineException("Data is busy");
-		} catch (IOException e) {
-			if (lock != null) {
-				lock.release();
-			}
-			logger.error("I/O error " + e.getMessage());
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		} catch (IdsException e) {
-			lock.release();
-			throw e;
+		} catch (Throwable e) {
+			logger.error("Won't start ", e);
+			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
 		}
 	}
 
-	public Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			final boolean compress, boolean zip, String outname, final long offset, String ip)
-			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
-			DataNotOnlineException {
+	public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
+			boolean compress, boolean zip)
+			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
 
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info(String.format("New webservice request: getData investigationIds=%s, datasetIds=%s, datafileIds=%s",
-				investigationIds, datasetIds, datafileIds));
+		logger.info("New webservice request: prepareData " + 
+				"investigationIds='{}' datasetIds='{}' datafileIds='{}' " + 
+				"compress='{}' zip='{}'",
+				new Object[] {investigationIds, datasetIds, datafileIds, compress, zip});
 
 		validateUUID("sessionId", sessionId);
 
+		// retain lookup of Dataset information (as well as Datafile: DATASETS_AND_DATAFILES) 
+		// for now to keep prepared files compatible with the IcatProject IDS
 		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
 				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
-		// Do it
 		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+		Set<Long> emptyDs = dataSelection.getEmptyDatasets();
 		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
 
-		Lock lock = null;
-		try {
-			lock = lockManager.lock(dsInfos.values(), LockType.SHARED);
+		String preparedId = UUID.randomUUID().toString();
+		logger.debug("preparedId is {}", preparedId);
 
-			if (twoLevel) {
-				checkOnline(dsInfos.values(), dataSelection.getEmptyDatasets(), dfInfos);
-			}
-			checkDatafilesPresent(dfInfos);
+		preparedFilesManager.pack(preparedId, zip, compress, dsInfos, dfInfos, emptyDs);
 
-			final boolean finalZip = zip ? true : dataSelection.mustZip();
+		restoreFileCountManager.addEntryToMap(preparedId, dfInfos.size());
 
-			/* Construct the name to include in the headers */
-			String name;
-			if (outname == null) {
-				if (finalZip) {
-					name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
-				} else {
-					name = dataSelection.getDfInfo().iterator().next().getDfName();
-				}
-			} else {
-				if (finalZip) {
-					String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
-					if ("zip".equals(ext)) {
-						name = outname;
-					} else {
-						name = outname + ".zip";
-					}
-				} else {
-					name = outname;
-				}
-			}
+		restorerThreadManager.submitFilesForRestore(preparedId, new ArrayList<>(dfInfos), true);
 
-			Long transferId = null;
-			if (logSet.contains(CallType.READ)) {
-				try {
-					transferId = atomicLong.getAndIncrement();
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-						gen.write("transferId", transferId);
-						gen.write("userName", icat.getUserName(sessionId));
-						addIds(gen, investigationIds, datasetIds, datafileIds);
-						gen.writeEnd();
-					}
-					transmitter.processMessage("getDataStart", ip, baos.toString(), start);
-				} catch (IcatException_Exception e) {
-					logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-				}
-			}
-
-			return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-					.entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lock,
-							transferId, ip, start))
-					.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
-					.build();
-		} catch (AlreadyLockedException e) {
-			logger.debug("Could not acquire lock, getData failed");
-			throw new DataNotOnlineException("Data is busy");
-		} catch (IOException e) {
-			if (lock != null) {
-				lock.release();
-			}
-			logger.error("I/O error " + e.getMessage());
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		} catch (IdsException e) {
-			lock.release();
-			throw e;
-		}
+		return preparedId;
 	}
 
-	public String getDatafileIds(String preparedId, String ip)
+	public Boolean isPrepared(String preparedId)
+			throws BadRequestException, NotFoundException, InternalException {
+
+		logger.info("New webservice request: isPrepared preparedId = {}", preparedId);
+
+		validateUUID("preparedId", preparedId);
+
+		boolean isPrepared = false;
+
+		if (restorerThreadManager.getTotalNumFilesRemaining(preparedId) == 0) {
+			// there are no restore threads running for this prepared ID
+			// check whether all the files are still on the cache
+			Prepared prepared = preparedFilesManager.unpack(preparedId);
+			Set<String> failedFiles = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
+			List<DfInfo> dfInfosStillMissing = checkFilesOnline(prepared.dfInfos, failedFiles);
+			if (dfInfosStillMissing.isEmpty()) {
+				// all files were either on the cache or 
+				// in the list of files that failed to restore
+				isPrepared = true;
+			} else {
+				// restore the files that were missing
+				restorerThreadManager.submitFilesForRestore(preparedId, dfInfosStillMissing, false);
+			}
+		}
+
+		return isPrepared;
+	}
+
+	public String getPercentageComplete(String preparedId) throws InternalException, NotFoundException {
+		logger.info("New webservice request: getPercentageComplete preparedId = {}", preparedId);
+		return restorerThreadManager.getPercentageComplete(preparedId);
+	}
+
+	public void cancel(String preparedId) throws NotFoundException {
+		logger.info("New webservice request: cancel preparedId = {}", preparedId);
+		restorerThreadManager.cancelThreadsForPreparedId(preparedId);
+	}
+
+	public String getDatafileIds(String preparedId)
 			throws BadRequestException, InternalException, NotFoundException {
 
-		long start = System.currentTimeMillis();
-
 		// Log and validate
-		logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
+		logger.info("New webservice request: getDatafileIds preparedId = {}", preparedId);
 
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		final boolean zip = prepared.zip;
 		final boolean compress = prepared.compress;
@@ -960,226 +205,94 @@ public class IdsBean {
 			}
 			gen.writeEnd().writeEnd().close();
 		}
-		String resp = baos.toString();
-
-		if (logSet.contains(CallType.INFO)) {
-			baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
-		}
-
-		return resp;
+		return baos.toString();
 	}
 
-	public String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			String ip)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
+	public Response getData(String preparedId, String outname, final long offset) 
+			throws BadRequestException, NotFoundException, InternalException, DataNotOnlineException {
 
-		long start = System.currentTimeMillis();
+		logger.info("New webservice request: getData preparedId = {} outname = {} offset = {}", 
+				new Object[] {preparedId, outname, offset});
 
-		// Log and validate
-		logger.info(String.format(
-				"New webservice request: getDatafileIds investigationIds=%s, datasetIds=%s, datafileIds=%s",
-				investigationIds, datasetIds, datafileIds));
+		validateUUID("preparedId", preparedId);
 
-		validateUUID("sessionId", sessionId);
+		boolean isPrepared = false;
+		// these will be needed later on if the data is all online
+		Prepared prepared = null;
+		Set<String> failedFiles = null;
 
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-				investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-
-		// Do it
-		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-			gen.writeStartArray("ids");
-			for (DfInfoImpl dfInfo : dfInfos) {
-				gen.write(dfInfo.getDfId());
+		String restoreStatus = "in progress";
+		if (restorerThreadManager.getTotalNumFilesRemaining(preparedId) == 0) {
+			// there are no restore threads running for this prepared ID
+			// check whether all the files are still on the cache
+			prepared = preparedFilesManager.unpack(preparedId);
+			failedFiles = failedFilesManager.getFailedEntriesForPreparedId(preparedId);
+			List<DfInfo> dfInfosStillMissing = checkFilesOnline(prepared.dfInfos, failedFiles);
+			if (dfInfosStillMissing.isEmpty()) {
+				// all files were either on the cache or 
+				// in the list of files that failed to restore
+				isPrepared = true;
+			} else {
+				// restore the files that were missing
+				restorerThreadManager.submitFilesForRestore(preparedId, dfInfosStillMissing, false);
+				restoreStatus = "requested";
 			}
-			gen.writeEnd().writeEnd().close();
 		}
-		String resp = baos.toString();
 
-		if (logSet.contains(CallType.INFO)) {
-			baos = new ByteArrayOutputStream();
-			try {
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
+		if (!isPrepared) {
+			String message = "Not all files are online for prepared ID " + preparedId + " - Restore " + restoreStatus;
+			logger.info(message);
+			throw new DataNotOnlineException(message);
+		}
+
+		final boolean zip = prepared.zip;
+		final boolean compress = prepared.compress;
+		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
+		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
+
+		// construct the name to include in the headers 
+		String name;
+		if (outname == null) {
+			if (prepared.zip) {
+				name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
+			} else {
+				name = dfInfos.iterator().next().getDfName();
+			}
+		} else {
+			if (zip) {
+				String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
+				if ("zip".equals(ext)) {
+					name = outname;
+				} else {
+					name = outname + ".zip";
 				}
-				transmitter.processMessage("getDatafileIds", ip, baos.toString(), start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+			} else {
+				name = outname;
 			}
 		}
 
-		return resp;
+		Long transferId = atomicLong.getAndIncrement();
 
+		return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
+				.entity(new IdsStreamingOutput(dsInfos, dfInfos, offset, zip, compress, transferId))
+				.header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
+				.build();
 	}
 
-	public String getIcatUrl(String ip) {
-		if (logSet.contains(CallType.INFO)) {
-			transmitter.processMessage("getIcatUrl", ip, "{}", System.currentTimeMillis());
-		}
-		return propertyHandler.getIcatUrl();
-	}
-
-	public String getLink(String sessionId, long datafileId, String username, String ip)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException,
-			DataNotOnlineException, NotImplementedException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: getLink datafileId=" + datafileId + " username='" + username + "'");
-
-		if (!linkEnabled) {
-			throw new NotImplementedException("Sorry getLink is not available on this IDS installation");
-		}
-
-		validateUUID("sessionId", sessionId);
-
-		Datafile datafile = null;
-		try {
-			datafile = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset, Investigation, Facility", datafileId);
-		} catch (IcatException_Exception e) {
-			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.BAD_PARAMETER) {
-				throw new BadRequestException(e.getMessage());
-			} else if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {
-				throw new InsufficientPrivilegesException(e.getMessage());
-			} else if (type == IcatExceptionType.INTERNAL) {
-				throw new InternalException(e.getMessage());
-			} else if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-				throw new NotFoundException(e.getMessage());
-			} else if (type == IcatExceptionType.OBJECT_ALREADY_EXISTS) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
-			} else if (type == IcatExceptionType.SESSION) {
-				throw new InsufficientPrivilegesException(e.getMessage());
-			} else if (type == IcatExceptionType.VALIDATION) {
-				throw new BadRequestException(e.getMessage());
-			}
-		}
-		if (datafile.getLocation() == null) {
-			throw new NotFoundException("Datafile not found");
-		}
-
-		String location = getLocation(datafile.getId(), datafile.getLocation());
-		DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
-
-		try (Lock lock = lockManager.lock(dsInfo, LockType.SHARED)) {
-			if (storageUnit == StorageUnit.DATASET) {
-				Set<Long> mt = Collections.emptySet();
-				if (restoreIfOffline(dsInfo, mt)) {
-					throw new DataNotOnlineException(
-							"Before linking a datafile, its dataset has to be restored, restoration requested automatically");
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				DfInfoImpl dfInfo = new DfInfoImpl(datafileId, datafile.getName(), location, datafile.getCreateId(),
-						datafile.getModId(), datafile.getDataset().getId());
-				if (restoreIfOffline(dfInfo)) {
-					throw new DataNotOnlineException(
-							"Before linking a datafile, it has to be restored, restoration requested automatically");
-				}
-			}
-
-			Path target = mainStorage.getPath(location, datafile.getCreateId(), datafile.getModId());
-			ShellCommand sc = new ShellCommand("setfacl", "-m", "user:" + username + ":r", target.toString());
-			if (sc.getExitValue() != 0) {
-				throw new BadRequestException(sc.getMessage() + ". Check that user '" + username + "' exists");
-			}
-			Path link = linkDir.resolve(UUID.randomUUID().toString());
-			Files.createLink(link, target);
-
-			if (logSet.contains(CallType.LINK)) {
-				try {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-						gen.write("userName", icat.getUserName(sessionId));
-						gen.write("datafileId", datafileId);
-						gen.writeEnd();
-					}
-					String body = baos.toString();
-					transmitter.processMessage("getLink", ip, body, start);
-				} catch (IcatException_Exception e) {
-					logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-				}
-			}
-
-			return link.toString();
-		} catch (AlreadyLockedException e) {
-			logger.debug("Could not acquire lock, getLink failed");
-			throw new DataNotOnlineException("Data is busy");
-		} catch (IOException e) {
-			logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-	}
-
-	public String getServiceStatus(String sessionId, String ip)
-			throws InternalException, InsufficientPrivilegesException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: getServiceStatus");
-
-		try {
-			String uname = icat.getUserName(sessionId);
-			if (!rootUserNames.contains(uname)) {
-				throw new InsufficientPrivilegesException(uname + " is not included in the ids rootUserNames set.");
-			}
-		} catch (IcatException_Exception e) {
-			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.SESSION) {
-				throw new InsufficientPrivilegesException(e.getClass() + " " + e.getMessage());
-			}
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-		if (logSet.contains(CallType.INFO)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("getServiceStatus", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-
-		return fsm.getServiceStatus();
-	}
-
-	public long getSize(String preparedId, String ip)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		long start = System.currentTimeMillis();
+	public long getSize(String preparedId)
+			throws BadRequestException, NotFoundException, InternalException {
 
 		// Log and validate
 		logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
 		validateUUID("preparedId", preparedId);
 
 		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
+		Prepared prepared = preparedFilesManager.unpack(preparedId);
 
 		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
 
-		// Note that the "fast computation for the simple case" (see the other getSize() implementation) is not
+		// Note that the "fast computation for the simple case" 
+		// (see the other getSize() implementation) is not
 		// available when calling getSize() with a preparedId.
 		logger.debug("Slow computation for normal case");
 		String sessionId;
@@ -1207,29 +320,24 @@ public class IdsBean {
 			size += getSizeFor(sessionId, sb);
 		}
 
-		if (logSet.contains(CallType.INFO)) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			String body = baos.toString();
-			transmitter.processMessage("getSize", ip, body, start);
-		}
-
 		return size;
 	}
 
-
-	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
+	public long getSize(String sessionId, String investigationIds, String datasetIds, String datafileIds)
 			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
 
-		long start = System.currentTimeMillis();
-
 		// Log and validate
-		logger.info(String.format("New webservice request: getSize investigationIds=%s, datasetIds=%s, datafileIds=%s",
-				investigationIds, datasetIds, datafileIds));
+		logger.info("New webservice request: getSize investigationIds={}, datasetIds={}, datafileIds={}",
+				new Object[] {investigationIds, datasetIds, datafileIds});
 
+		if (propertyHandler.getUseReaderForPerformance()) {
+			try {
+				sessionId = reader.getSessionId();
+			} catch (IcatException_Exception e) {
+				throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+			}
+		}
+		
 		validateUUID("sessionId", sessionId);
 
 		List<Long> dfids = DataSelection.getValidIds("datafileIds", datafileIds);
@@ -1279,21 +387,6 @@ public class IdsBean {
 			}
 			if (n > 0) {
 				size += getSizeFor(sessionId, sb);
-			}
-		}
-
-		if (logSet.contains(CallType.INFO)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("getSize", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
 			}
 		}
 
@@ -1348,960 +441,99 @@ public class IdsBean {
 		}
 	}
 
-	public String getStatus(String preparedId, String ip)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		long start = System.currentTimeMillis();
+	public String getServiceStatus(String sessionId)
+			throws InternalException, InsufficientPrivilegesException {
 
 		// Log and validate
-		logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
-		validateUUID("preparedId", preparedId);
-
-		// Do it
-		Prepared prepared;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			prepared = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-		final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
-		final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
-		Set<Long> emptyDatasets = prepared.emptyDatasets;
-
-		Status status = Status.ONLINE;
-
-		if (storageUnit == StorageUnit.DATASET) {
-			Set<DsInfo> restoring = fsm.getDsRestoring();
-			Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.checkFailure(dsInfo.getDsId());
-				if (restoring.contains(dsInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			Set<DfInfo> restoring = fsm.getDfRestoring();
-			Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
-			for (DfInfo dfInfo : dfInfos) {
-				fsm.checkFailure(dfInfo.getDfId());
-				if (restoring.contains(dfInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dfInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
-		}
-
-		logger.debug("Status is " + status.name());
-
-		if (logSet.contains(CallType.INFO)) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			String body = baos.toString();
-			transmitter.processMessage("getStatus", ip, body, start);
-		}
-
-		return status.name();
-
-	}
-
-	public String getStatus(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info(
-				String.format("New webservice request: getStatus investigationIds=%s, datasetIds=%s, datafileIds=%s",
-						investigationIds, datasetIds, datafileIds));
-
-		if (sessionId == null) {
-			try {
-				sessionId = reader.getSessionId();
-			} catch (IcatException_Exception e) {
-				throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
-			}
-		} else {
-			validateUUID("sessionId", sessionId);
-		}
-
-		// Do it
-		Status status = Status.ONLINE;
-
-		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-
-			Set<DsInfo> restoring = fsm.getDsRestoring();
-			Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
-			Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.checkFailure(dsInfo.getDsId());
-				if (restoring.contains(dsInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-					investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-
-			Set<DfInfo> restoring = fsm.getDfRestoring();
-			Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
-			for (DfInfo dfInfo : dfInfos) {
-				fsm.checkFailure(dfInfo.getDfId());
-				if (restoring.contains(dfInfo)) {
-					status = Status.RESTORING;
-				} else if (maybeOffline.contains(dfInfo)) {
-					status = Status.ARCHIVED;
-					break;
-				} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-					status = Status.ARCHIVED;
-					break;
-				}
-			}
-		} else {
-			// Throw exception if selection does not exist
-			new DataSelection(propertyHandler, reader, sessionId,
-					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-		}
-
-		logger.debug("Status is " + status.name());
-
-		if (logSet.contains(CallType.INFO)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					if (sessionId != null) {
-						gen.write("userName", icat.getUserName(sessionId));
-					}
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("getStatus", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-
-		return status.name();
-
-	}
-
-	@PostConstruct
-	private void init() {
-		try {
-			synchronized (inited) {
-				logger.info("creating IdsBean");
-				propertyHandler = PropertyHandler.getInstance();
-				zipMapper = propertyHandler.getZipMapper();
-				mainStorage = propertyHandler.getMainStorage();
-				archiveStorage = propertyHandler.getArchiveStorage();
-				twoLevel = archiveStorage != null;
-				datatypeFactory = DatatypeFactory.newInstance();
-				preparedDir = propertyHandler.getCacheDir().resolve("prepared");
-				Files.createDirectories(preparedDir);
-				linkDir = propertyHandler.getCacheDir().resolve("link");
-				Files.createDirectories(linkDir);
-
-				rootUserNames = propertyHandler.getRootUserNames();
-				readOnly = propertyHandler.getReadOnly();
-				enableWrite = propertyHandler.getEnableWrite();
-
-				icat = propertyHandler.getIcatService();
-
-				if (!inited) {
-					key = propertyHandler.getKey();
-					logger.info("Key is " + (key == null ? "not set" : "set"));
-				}
-
-				if (twoLevel) {
-					storageUnit = propertyHandler.getStorageUnit();
-					datasetDir = propertyHandler.getCacheDir().resolve("dataset");
-					markerDir = propertyHandler.getCacheDir().resolve("marker");
-					if (!inited) {
-						Files.createDirectories(datasetDir);
-						Files.createDirectories(markerDir);
-						restartUnfinishedWork();
-					}
-				}
-
-				if (!inited) {
-					cleanPreparedDir(preparedDir);
-					if (twoLevel) {
-						cleanDatasetCache(datasetDir);
-					}
-				}
-
-				linkEnabled = propertyHandler.getLinkLifetimeMillis() > 0;
-
-				maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
-
-				threadPool = Executors.newCachedThreadPool();
-
-				logSet = propertyHandler.getLogSet();
-
-				inited = true;
-
-				logger.info("created IdsBean");
-			}
-		} catch (Throwable e) {
-			logger.error("Won't start ", e);
-			throw new RuntimeException("IdsBean reports " + e.getClass() + " " + e.getMessage());
-		}
-	}
-
-	public Boolean isPrepared(String preparedId, String ip)
-			throws BadRequestException, NotFoundException, InternalException {
-
-		long start = System.currentTimeMillis();
-
-		logger.info(String.format("New webservice request: isPrepared preparedId=%s", preparedId));
-
-		// Validate
-		validateUUID("preparedId", preparedId);
-
-		// Do it
-		boolean prepared = true;
-
-		Prepared preparedJson;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			preparedJson = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-		PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
-
-		if (!status.lock.tryLock()) {
-			logger.debug("Lock held for evaluation of isPrepared for preparedId {}", preparedId);
-			return false;
-		}
-		try {
-			Future<?> future = status.future;
-			if (future != null) {
-				if (future.isDone()) {
-					try {
-						future.get();
-					} catch (ExecutionException e) {
-						throw new InternalException(e.getClass() + " " + e.getMessage());
-					} catch (InterruptedException e) {
-						// Ignore
-					} finally {
-						status.future = null;
-					}
-				} else {
-					logger.debug("Background process still running for preparedId {}", preparedId);
-					return false;
-				}
-			}
-
-			if (storageUnit == StorageUnit.DATASET) {
-				Collection<DsInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
-						: preparedJson.dsInfos.tailMap(status.fromDsElement).values();
-				logger.debug("Will check online status of {} entries", toCheck.size());
-				for (DsInfo dsInfo : toCheck) {
-					fsm.checkFailure(dsInfo.getDsId());
-					if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
-						prepared = false;
-						status.fromDsElement = dsInfo.getDsId();
-						toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
-						logger.debug("Will check in background status of {} entries", toCheck.size());
-						status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets));
-						break;
-					}
-				}
-				if (prepared) {
-					toCheck = status.fromDsElement == null ? Collections.emptySet()
-							: preparedJson.dsInfos.headMap(status.fromDsElement).values();
-					logger.debug("Will check finally online status of {} entries", toCheck.size());
-					for (DsInfo dsInfo : toCheck) {
-						fsm.checkFailure(dsInfo.getDsId());
-						if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
-							prepared = false;
-						}
-					}
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
-						: preparedJson.dfInfos.tailSet(status.fromDfElement);
-				logger.debug("Will check online status of {} entries", toCheck.size());
-				for (DfInfoImpl dfInfo : toCheck) {
-					fsm.checkFailure(dfInfo.getDfId());
-					if (restoreIfOffline(dfInfo)) {
-						prepared = false;
-						status.fromDfElement = dfInfo;
-						toCheck = preparedJson.dfInfos.tailSet(status.fromDfElement);
-						logger.debug("Will check in background status of {} entries", toCheck.size());
-						status.future = threadPool.submit(new RunPrepDfCheck(toCheck));
-						break;
-					}
-				}
-				if (prepared) {
-					toCheck = status.fromDfElement == null ? new TreeSet<>()
-							: preparedJson.dfInfos.headSet(status.fromDfElement);
-					logger.debug("Will check finally online status of {} entries", toCheck.size());
-					for (DfInfoImpl dfInfo : toCheck) {
-						fsm.checkFailure(dfInfo.getDfId());
-						if (restoreIfOffline(dfInfo)) {
-							prepared = false;
-						}
-					}
-				}
-			}
-
-			if (logSet.contains(CallType.INFO)) {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("preparedId", preparedId);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("isPrepared", ip, body, start);
-			}
-
-			return prepared;
-
-		} finally {
-			status.lock.unlock();
-		}
-
-	}
-
-	public boolean isReadOnly(String ip) {
-		if (logSet.contains(CallType.INFO)) {
-			transmitter.processMessage("isReadOnly", ip, "{}", System.currentTimeMillis());
-		}
-		return readOnly;
-	}
-
-	public boolean isTwoLevel(String ip) {
-		if (logSet.contains(CallType.INFO)) {
-			transmitter.processMessage("isTwoLevel", ip, "{}", System.currentTimeMillis());
-		}
-		return twoLevel;
-	}
-
-	public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-			boolean compress, boolean zip, String ip)
-			throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
-				+ "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "' " + "compress='" + compress
-				+ "' " + "zip='" + zip + "'");
-
-		validateUUID("sessionId", sessionId);
-
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
-
-		// Do it
-		String preparedId = UUID.randomUUID().toString();
-
-		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-		Set<Long> emptyDs = dataSelection.getEmptyDatasets();
-		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-
-		if (storageUnit == StorageUnit.DATASET) {
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.recordSuccess(dsInfo.getDsId());
-			}
-			threadPool.submit(new RestoreDsTask(dsInfos.values(), emptyDs));
-
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			for (DfInfo dfInfo : dfInfos) {
-				fsm.recordSuccess(dfInfo.getDfId());
-			}
-			threadPool.submit(new RestoreDfTask(dfInfos));
-		}
-
-		if (dataSelection.mustZip()) {
-			zip = true;
-		}
-
-		logger.debug("Writing to " + preparedDir.resolve(preparedId));
-		try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(preparedDir.resolve(preparedId)))) {
-			pack(stream, zip, compress, dsInfos, dfInfos, emptyDs);
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-		logger.debug("preparedId is " + preparedId);
-
-		if (logSet.contains(CallType.PREPARE)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.write("preparedId", preparedId);
-					gen.writeEnd();
-				}
-				String body = baos.toString();
-				transmitter.processMessage("prepareData", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-
-		return preparedId;
-	}
-
-	public Response put(InputStream body, String sessionId, String name, String datafileFormatIdString,
-			String datasetIdString, String description, String doi, String datafileCreateTimeString,
-			String datafileModTimeString, boolean wrap, boolean padding, String ip)
-			throws NotFoundException, DataNotOnlineException, BadRequestException, InsufficientPrivilegesException,
-			InternalException, NotImplementedException {
-
-		long start = System.currentTimeMillis();
+		logger.info("New webservice request: getServiceStatus");
 
 		try {
-			// Log and validate
-			logger.info("New webservice request: put " + "name='" + name + "' " + "datafileFormatId='"
-					+ datafileFormatIdString + "' " + "datasetId='" + datasetIdString + "' " + "description='"
-					+ description + "' " + "doi='" + doi + "' " + "datafileCreateTime='" + datafileCreateTimeString
-					+ "' " + "datafileModTime='" + datafileModTimeString + "'");
-
-			if (readOnly) {
-				throw new NotImplementedException("This operation has been configured to be unavailable");
+			String uname = icat.getUserName(sessionId);
+			if (!rootUserNames.contains(uname)) {
+				throw new InsufficientPrivilegesException(uname + " is not included in the ids rootUserNames set.");
 			}
-
-			IdsBean.validateUUID("sessionId", sessionId);
-			if (name == null) {
-				throw new BadRequestException("The name parameter must be set");
-			}
-
-			if (datafileFormatIdString == null) {
-				throw new BadRequestException("The datafileFormatId parameter must be set");
-			}
-			long datafileFormatId;
-			try {
-				datafileFormatId = Long.parseLong(datafileFormatIdString);
-			} catch (NumberFormatException e) {
-				throw new BadRequestException("The datafileFormatId parameter must be numeric");
-			}
-
-			if (datasetIdString == null) {
-				throw new BadRequestException("The datasetId parameter must be set");
-			}
-			long datasetId;
-			try {
-				datasetId = Long.parseLong(datasetIdString);
-			} catch (NumberFormatException e) {
-				throw new BadRequestException("The datasetId parameter must be numeric");
-			}
-
-			Long datafileCreateTime = null;
-			if (datafileCreateTimeString != null) {
-				try {
-					datafileCreateTime = Long.parseLong(datafileCreateTimeString);
-				} catch (NumberFormatException e) {
-					throw new BadRequestException("The datafileCreateTime parameter must be numeric");
-				}
-			}
-
-			Long datafileModTime = null;
-			if (datafileModTimeString != null) {
-				try {
-					datafileModTime = Long.parseLong(datafileModTimeString);
-				} catch (NumberFormatException e) {
-					throw new BadRequestException("The datafileModTime parameter must be numeric");
-				}
-			}
-
-			// Do it
-			Dataset ds;
-			try {
-				ds = (Dataset) icat.get(sessionId, "Dataset INCLUDE Investigation, Facility", datasetId);
-			} catch (IcatException_Exception e) {
-				IcatExceptionType type = e.getFaultInfo().getType();
-				if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
-					throw new InsufficientPrivilegesException(e.getMessage());
-				}
-				if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-					throw new NotFoundException(e.getMessage());
-				}
-				throw new InternalException(type + " " + e.getMessage());
-			}
-
-			DsInfo dsInfo = new DsInfoImpl(ds);
-			try (Lock lock = lockManager.lock(dsInfo, LockType.SHARED)) {
-				if (storageUnit == StorageUnit.DATASET) {
-					Set<DfInfoImpl> dfInfos = Collections.emptySet();
-					Set<Long> emptyDatasets = new HashSet<>();
-					try {
-						List<Object> counts = icat.search(sessionId,
-								"COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
-						if ((Long) counts.get(0) == 0) {
-							emptyDatasets.add(dsInfo.getDsId());
-						}
-					} catch (IcatException_Exception e) {
-						IcatExceptionType type = e.getFaultInfo().getType();
-						if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
-							throw new InsufficientPrivilegesException(e.getMessage());
-						}
-						if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-							throw new NotFoundException(e.getMessage());
-						}
-						throw new InternalException(type + " " + e.getMessage());
-					}
-					Set<DsInfo> dsInfos = new HashSet<>();
-					dsInfos.add(dsInfo);
-					checkOnline(dsInfos, emptyDatasets, dfInfos);
-				}
-
-				CRC32 crc = new CRC32();
-				CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
-				String location;
-				try {
-					location = mainStorage.put(dsInfo, name, is);
-				} catch (IllegalArgumentException e) {
-					throw new BadRequestException("Illegal filename or dataset: " + e.getMessage());
-				}
-				is.close();
-				long checksum = crc.getValue();
-				long size = is.getSize();
-				Long dfId;
-				try {
-					dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum, size, ds,
-							description, doi, datafileCreateTime, datafileModTime);
-				} catch (InsufficientPrivilegesException | NotFoundException | InternalException
-						| BadRequestException e) {
-					logger.debug("Problem with registration " + e.getClass() + " " + e.getMessage()
-							+ " datafile will now be deleted");
-					String userId = null;
-					try {
-						userId = icat.getUserName(sessionId);
-					} catch (IcatException_Exception e1) {
-						logger.error("Unable to get user name for session " + sessionId + " so mainStorage.delete of "
-								+ location + " may fail");
-					}
-					mainStorage.delete(location, userId, userId);
-					throw e;
-				}
-
-				if (storageUnit == StorageUnit.DATASET) {
-					fsm.queue(dsInfo, DeferredOp.WRITE);
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					Datafile df;
-					try {
-						df = (Datafile) reader.get("Datafile", dfId);
-					} catch (IcatException_Exception e) {
-						throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
-					}
-					fsm.queue(new DfInfoImpl(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getDsId()),
-							DeferredOp.WRITE);
-				}
-
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				Json.createGenerator(baos).writeStartObject().write("id", dfId).write("checksum", checksum)
-						.write("location", location.replace("\\", "\\\\").replace("'", "\\'")).write("size", size)
-						.writeEnd().close();
-				String resp = wrap ? prefix + baos.toString() + suffix : baos.toString();
-
-				if (logSet.contains(CallType.WRITE)) {
-					try {
-						baos = new ByteArrayOutputStream();
-						try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-							gen.write("userName", icat.getUserName(sessionId));
-							gen.write("datafileId", dfId);
-							gen.writeEnd();
-						}
-						transmitter.processMessage("put", ip, baos.toString(), start);
-					} catch (IcatException_Exception e) {
-						logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-					}
-				}
-
-				return Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build();
-
-			} catch (AlreadyLockedException e) {
-				logger.debug("Could not acquire lock, put failed");
-				throw new DataNotOnlineException("Data is busy");
-			} catch (IOException e) {
-				logger.error("I/O exception " + e.getMessage() + " putting " + name + " to Dataset with id "
-						+ datasetIdString);
-				throw new InternalException(e.getClass() + " " + e.getMessage());
-			}
-		} catch (IdsException e) {
-
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			JsonGenerator gen = Json.createGenerator(baos);
-			gen.writeStartObject().write("code", e.getClass().getSimpleName()).write("message", e.getShortMessage());
-			gen.writeEnd().close();
-			if (wrap) {
-				String pre = padding ? paddedPrefix : prefix;
-				return Response.status(e.getHttpStatusCode()).entity(pre + baos.toString().replace("'", "\\'") + suffix)
-						.build();
-			} else {
-				return Response.status(e.getHttpStatusCode()).entity(baos.toString()).build();
-			}
-		}
-
-	}
-
-	private Long registerDatafile(String sessionId, String name, long datafileFormatId, String location, long checksum,
-			long size, Dataset dataset, String description, String doi, Long datafileCreateTime, Long datafileModTime)
-			throws InsufficientPrivilegesException, NotFoundException, InternalException, BadRequestException {
-		final Datafile df = new Datafile();
-		DatafileFormat format;
-		try {
-			format = (DatafileFormat) icat.get(sessionId, "DatafileFormat", datafileFormatId);
 		} catch (IcatException_Exception e) {
 			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
-				throw new InsufficientPrivilegesException(e.getMessage());
+			if (type == IcatExceptionType.SESSION) {
+				throw new InsufficientPrivilegesException(e.getClass() + " " + e.getMessage());
 			}
-			if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-				throw new NotFoundException(e.getMessage());
-			}
-			throw new InternalException(type + " " + e.getMessage());
-		}
-
-		df.setDatafileFormat(format);
-		df.setLocation(location);
-		df.setFileSize(size);
-		df.setChecksum(Long.toHexString(checksum));
-		df.setName(name);
-		df.setDataset(dataset);
-		df.setDescription(description);
-		df.setDoi(doi);
-		if (datafileCreateTime != null) {
-			GregorianCalendar gregorianCalendar = new GregorianCalendar();
-			gregorianCalendar.setTimeInMillis(datafileCreateTime);
-			df.setDatafileCreateTime(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
-		}
-		if (datafileModTime != null) {
-			GregorianCalendar gregorianCalendar = new GregorianCalendar();
-			gregorianCalendar.setTimeInMillis(datafileModTime);
-			df.setDatafileModTime(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
-		}
-		try {
-			long dfId = icat.create(sessionId, df);
-			df.setId(dfId);
-
-			if (key != null) {
-				df.setLocation(location + " " + IcatSecurity.digest(dfId, location, key));
-				icat.update(sessionId, df);
-			}
-
-			logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at " + location);
-			return dfId;
-		} catch (IcatException_Exception e) {
-			IcatExceptionType type = e.getFaultInfo().getType();
-			if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
-				throw new InsufficientPrivilegesException(e.getMessage());
-			}
-			if (type == IcatExceptionType.VALIDATION) {
-				throw new BadRequestException(e.getMessage());
-			}
-			throw new InternalException(type + " " + e.getMessage());
-		} catch (NoSuchAlgorithmException e) {
-			throw new InternalException(e.getMessage());
-		}
-	}
-
-	public void reset(String preparedId, String ip) throws BadRequestException, InternalException, NotFoundException {
-		long start = System.currentTimeMillis();
-
-		logger.info(String.format("New webservice request: reset preparedId=%s", preparedId));
-
-		// Validate
-		validateUUID("preparedId", preparedId);
-
-		// Do it
-		Prepared preparedJson;
-		try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-			preparedJson = unpack(stream);
-		} catch (NoSuchFileException e) {
-			throw new NotFoundException("The preparedId " + preparedId + " is not known");
-		} catch (IOException e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
 		}
 
-		if (storageUnit == StorageUnit.DATASET) {
-			for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
-				fsm.recordSuccess(dsInfo.getDsId());
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			for (DfInfoImpl dfInfo : preparedJson.dfInfos) {
-				fsm.recordSuccess(dfInfo.getDfId());
-			}
-		}
-
-		if (logSet.contains(CallType.MIGRATE)) {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-				gen.write("preparedId", preparedId);
-				gen.writeEnd();
-			}
-			String body = baos.toString();
-			transmitter.processMessage("reset", ip, body, start);
-		}
+		// TODO: implement something that gives an overview of all restore threads?
+		// is it possible to also track what downloads are in progress?
+		// where is this information currently displayed? - in a browser? topcat admin page/script?
+		return restorerThreadManager.getStatusString();
 	}
 
-	public void reset(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-		long start = System.currentTimeMillis();
+	public String getIcatUrl() {
+		return propertyHandler.getIcatUrl();
+	}
 
-		// Log and validate
-		logger.info("New webservice request: reset " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
-				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-
-		validateUUID("sessionId", sessionId);
-
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
-
-		// Do it
-		if (storageUnit == StorageUnit.DATASET) {
-			for (DsInfo dsInfo : dataSelection.getDsInfo().values()) {
-				fsm.recordSuccess(dsInfo.getDsId());
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
-				fsm.recordSuccess(dfInfo.getDfId());
-			}
-		}
-
-		if (logSet.contains(CallType.MIGRATE)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
+	/**
+	 * Check that all of the files are on the cache apart from any that are
+	 * listed in the set of failed files.
+	 * 
+	 * @param dfInfos the set of DatafileInfo objects to check
+	 * @param failedFiles a list of files that failed to restore and therefore
+	 *                    will not be on the cache
+	 * @return a list of DatafileInfo objects for any files that were found to
+	 *         be missing (and not in the list of failed files)
+	 */
+	private List<DfInfo> checkFilesOnline(SortedSet<DfInfoImpl> dfInfos, Set<String> failedFiles) {
+		List<DfInfo> dfInfosStillMissing = new ArrayList<>();
+		for (DfInfo dfInfo: dfInfos) {
+			if (!mainStorage.exists(dfInfo.getDfLocation())) {
+				// this file is not on the cache
+				if (!failedFiles.contains(dfInfo.getDfLocation())) {
+					// and it is not one that failed to restore
+					// Add it to a list to re-request.
+					dfInfosStillMissing.add(dfInfo);
 				}
-				String body = baos.toString();
-				transmitter.processMessage("reset", ip, body, start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
 			}
 		}
+		return dfInfosStillMissing;
 	}
 
-	private void restartUnfinishedWork() throws InternalException {
+	private void restartUnfinishedWork() {
+		// TODO: does this need re-implementing?
+		// how to make it re-start any unfinished restore requests when an IDS is restarted?
+	}
 
-		try {
-			for (File file : markerDir.toFile().listFiles()) {
-				if (storageUnit == StorageUnit.DATASET) {
-					long dsid = Long.parseLong(file.toPath().getFileName().toString());
-					Dataset ds = null;
-					try {
-						ds = (Dataset) reader.get("Dataset ds INCLUDE ds.investigation.facility", dsid);
-						DsInfo dsInfo = new DsInfoImpl(ds);
-						fsm.queue(dsInfo, DeferredOp.WRITE);
-						logger.info("Queued dataset with id " + dsid + " " + dsInfo
-								+ " to be written as it was not written out previously by IDS");
-					} catch (IcatException_Exception e) {
-						if (e.getFaultInfo().getType() == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-							logger.warn("Dataset with id " + dsid
-									+ " was not written out by IDS and now no longer known to ICAT");
-							Files.delete(file.toPath());
-						} else {
-							throw e;
+	static void cleanPreparedDir(Path preparedDir) {
+		for (File file : preparedDir.toFile().listFiles()) {
+			Path path = file.toPath();
+			String pf = path.getFileName().toString();
+			if (pf.startsWith("tmp.") || pf.endsWith(".tmp")) {
+				try {
+					long thisSize = 0;
+					if (Files.isDirectory(path)) {
+						for (File notZipFile : file.listFiles()) {
+							thisSize += Files.size(notZipFile.toPath());
+							Files.delete(notZipFile.toPath());
 						}
 					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					long dfid = Long.parseLong(file.toPath().getFileName().toString());
-					Datafile df = null;
-					try {
-						df = (Datafile) reader.get("Datafile ds INCLUDE ds.dataset", dfid);
-						String location = getLocation(df.getId(), df.getLocation());
-						DfInfoImpl dfInfo = new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(),
-								df.getModId(), df.getDataset().getId());
-						fsm.queue(dfInfo, DeferredOp.WRITE);
-						logger.info("Queued datafile with id " + dfid + " " + dfInfo
-								+ " to be written as it was not written out previously by IDS");
-					} catch (IcatException_Exception e) {
-						if (e.getFaultInfo().getType() == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-							logger.warn("Datafile with id " + dfid
-									+ " was not written out by IDS and now no longer known to ICAT");
-							Files.delete(file.toPath());
-						} else {
-							throw e;
-						}
-					}
+					thisSize += Files.size(path);
+					Files.delete(path);
+					logger.debug("Deleted {} to reclaim {} bytes", path, thisSize);
+				} catch (IOException e) {
+					logger.debug("Failed to delete {} : {}", path, e.getMessage());
 				}
-			}
-		} catch (Exception e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-	}
-
-	public void restore(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-		throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-		       NotFoundException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: restore " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
-				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-
-		validateUUID("sessionId", sessionId);
-
-		// Do it
-		if (storageUnit == StorageUnit.DATASET) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-					investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-			Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-			for (DsInfo dsInfo : dsInfos.values()) {
-				fsm.queue(dsInfo, DeferredOp.RESTORE);
-			}
-		} else if (storageUnit == StorageUnit.DATAFILE) {
-			DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-					investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-			Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-			for (DfInfoImpl dfInfo : dfInfos) {
-				fsm.queue(dfInfo, DeferredOp.RESTORE);
-			}
-		} else {
-			throw new NotImplementedException("This operation is unavailable for single level storage");
-		}
-
-		if (logSet.contains(CallType.MIGRATE)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				transmitter.processMessage("restore", ip, baos.toString(), start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
 			}
 		}
 	}
 
-	private boolean restoreIfOffline(DfInfoImpl dfInfo) throws InternalException {
-		boolean maybeOffline = false;
-		if (fsm.getDfMaybeOffline().contains(dfInfo)) {
-			maybeOffline = true;
-		} else if (!mainStorage.exists(dfInfo.getDfLocation())) {
-			fsm.queue(dfInfo, DeferredOp.RESTORE);
-			maybeOffline = true;
+	public static String getLocation(String location)
+			throws InternalException {
+		if (location == null) {
+			throw new InternalException("location is null");
 		}
-		return maybeOffline;
+		return location;
 	}
 
-	private boolean restoreIfOffline(DsInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
-		boolean maybeOffline = false;
-		if (fsm.getDsMaybeOffline().contains(dsInfo)) {
-			maybeOffline = true;
-		} else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
-			fsm.queue(dsInfo, DeferredOp.RESTORE);
-			maybeOffline = true;
-		}
-		return maybeOffline;
+	public static void validateUUID(String thing, String id) throws BadRequestException {
+		if (id == null || !uuidRegExp.matcher(id).matches())
+			throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
 	}
 
-	public void write(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
-			throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException, 
-			       NotFoundException, DataNotOnlineException {
-
-		long start = System.currentTimeMillis();
-
-		// Log and validate
-		logger.info("New webservice request: write " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
-				+ datasetIds + "' " + "datafileIds='" + datafileIds + "'");
-
-		if (!enableWrite) {
-			throw new NotImplementedException("This operation has been configured to be unavailable");
-		}
-
-		validateUUID("sessionId", sessionId);
-
-		final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-				investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
-
-		// Do it
-		Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-		Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-
-		try (Lock lock = lockManager.lock(dsInfos.values(), LockType.SHARED)) {
-			if (twoLevel) {
-				boolean maybeOffline = false;
-				if (storageUnit == StorageUnit.DATASET) {
-					for (DsInfo dsInfo : dsInfos.values()) {
-						if (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) && 
-						    !mainStorage.exists(dsInfo)) {
-							maybeOffline = true;
-						}
-					}
-				} else if (storageUnit == StorageUnit.DATAFILE) {
-					for (DfInfoImpl dfInfo : dfInfos) {
-						if (!mainStorage.exists(dfInfo.getDfLocation())) {
-							maybeOffline = true;
-						}
-					}
-				}
-				if (maybeOffline) {
-					throw new DataNotOnlineException("Requested data is not online, write request refused");
-				}
-			}
-
-			if (storageUnit == StorageUnit.DATASET) {
-				for (DsInfo dsInfo : dsInfos.values()) {
-					fsm.queue(dsInfo, DeferredOp.WRITE);
-				}
-			} else if (storageUnit == StorageUnit.DATAFILE) {
-				for (DfInfoImpl dfInfo : dfInfos) {
-					fsm.queue(dfInfo, DeferredOp.WRITE);
-				}
-			} else {
-				throw new NotImplementedException("This operation is unavailable for single level storage");
-			}
-		} catch (AlreadyLockedException e) {
-			logger.debug("Could not acquire lock, write failed");
-			throw new DataNotOnlineException("Data is busy");
-		} catch (IOException e) {
-			logger.error("I/O error " + e.getMessage() + " writing");
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-
-		if (logSet.contains(CallType.MIGRATE)) {
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-					gen.write("userName", icat.getUserName(sessionId));
-					addIds(gen, investigationIds, datasetIds, datafileIds);
-					gen.writeEnd();
-				}
-				transmitter.processMessage("write", ip, baos.toString(), start);
-			} catch (IcatException_Exception e) {
-				logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-			}
-		}
-	}
 }

@@ -5,7 +5,16 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class Constants {
+	
 	public static String API_VERSION;
+
+	public static final String PREPARED_DIR_NAME = "prepared";
+	public static final String COMPLETED_DIR_NAME = "completed";
+	public static final String FAILED_DIR_NAME = "failed";
+
+	public static final String DEFAULT_MISSING_FILES_FILENAME = "MISSING_FILES.txt";
+
+	public static final String RUN_PROPERTIES_FILENAME = "run.properties";
 
 	static {
 

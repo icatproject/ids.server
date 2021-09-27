@@ -1,14 +1,11 @@
-# Glassfish
+# Glassfish/Payara
 secure         = true
 container      = Glassfish
-home           = /home/fisher/pf/glassfish4
+home           = /home/glassfish/payara
 port           = 4848
 
 # WildFly
 !secure         = false
 !container      = JBoss
-!home           = /home/fisher/pf/wildfly
+!home           = /home/glassfish/wildfly
 !port           = 9990
-
-# Any libraries needed (space separated list of jars in domain's lib/applibs
-libraries=ids.storage_file*.jar

@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond
@@ -46,6 +48,8 @@ import org.mockito.junit.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
  public class DataSelectionDevTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(DataSelectionDevTest.class);
 
     @Mock
     private PropertyHandler mockedPropertyHandler;
@@ -76,7 +80,6 @@ import org.mockito.junit.MockitoJUnitRunner;
         // get session IDs for an end user and the reader user (with read-all permissions)
         String userCredsString = testProps.getProperty("login.user");
         userSessionId = TestUtils.login(icatService, userCredsString);
-        System.out.println("userSessionId = " + userSessionId);
         List<String> readerCreds = Arrays.asList(testProps.getProperty("login.reader").trim().split("\\s+"));
         this.readerCreds = readerCreds;
         investigationIds = testProps.getProperty("investigation.ids");
@@ -105,9 +108,9 @@ import org.mockito.junit.MockitoJUnitRunner;
         long startMs = System.currentTimeMillis();
         DataSelection dataSelection = new DataSelection(mockedPropertyHandler, icatReader, userSessionId,
                 investigationIds, datasetIds, datafileIds, DataSelection.Returns.DATASETS_AND_DATAFILES);
-        System.out.println("Creating DataSelection took " + (System.currentTimeMillis()-startMs) + " ms");
-        System.out.println("DsInfo size: " + dataSelection.getDsInfo().size());
-        System.out.println("DfInfo size: " + dataSelection.getDfInfo().size());
+        logger.info("Creating DataSelection took {} ms", System.currentTimeMillis() - startMs);
+        logger.info("DsInfo size: {}", dataSelection.getDsInfo().size());
+        logger.info("DfInfo size: {}", dataSelection.getDfInfo().size());
         // there must be at least one Datafile in the DataSelection
         assertTrue("message", dataSelection.getDfInfo().size()>0 );
     }

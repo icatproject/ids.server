@@ -32,6 +32,7 @@ try:
         print("testHome = %s" % home, file=f)
     if (os.path.exists("src/test/install/run.properties") and 
         cmp(name, "src/test/install/run.properties")):
+        print("run.properties has not changed - skipping IDS redeploy")
         sys.exit(0)
     print("Installing with %s" % propFile)
     shutil.copy(name, "src/test/install/run.properties")
@@ -46,22 +47,28 @@ with open("src/test/install/setup.properties", "wt") as f:
     print("container      = Glassfish", file=f)
     print("home           = %s" % containerHome, file=f)
     print("port           = 4848", file=f)
-    print("libraries      = ids.storage_test*.jar", file=f)
 
 with open("src/test/install/run.properties.example", "wt") as f:
     pass
 
-shutil.copy(glob.glob("target/ids.server-*.war")[0], "src/test/install/")
+shutil.copy(glob.glob("target/ids.r2dfoo-*.war")[0], "src/test/install/")
 shutil.copy("src/main/scripts/setup", "src/test/install/")
 
-with ZipFile(glob.glob("target/ids.server-*-distro.zip")[0]) as z:
+with ZipFile(glob.glob("target/ids.r2dfoo-*-distro.zip")[0]) as z:
     with open("src/test/install/setup_utils.py", "wb") as f:
-        f.write(z.read("ids.server/setup_utils.py"))
+        f.write(z.read("ids.r2dfoo/setup_utils.py"))
 
 with open("src/main/resources/logback.xml", "rt") as s:
     with open("src/test/install/logback.xml", "wt") as f:
         t = Template(s.read()).substitute(subst)
         print(t, end="", file=f)
 
-p = subprocess.Popen(["./setup", "install"], cwd="src/test/install")
-p.wait()
+p = subprocess.Popen(["./setup", "-vvv", "install"], cwd="src/test/install", 
+    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#p.wait()
+out, err = p.communicate()
+print("./setup install stdout: " + out)
+print("./setup install stderr: " + err)
+rc = p.returncode
+if rc != 0:
+    sys.exit(rc)

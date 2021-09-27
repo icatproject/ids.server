@@ -1,16 +1,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.icatproject</groupId>
-	<artifactId>ids.server</artifactId>
+	<groupId>uk.ac.rl.esc</groupId>
+	<artifactId>ids.r2dfoo</artifactId>
 	<packaging>war</packaging>
-	<version>1.12.0-SNAPSHOT</version>
-	<name>IDS Server</name>
+	<version>2.0.0-SNAPSHOT</version>
+	<name>IDS Server R2DFoo</name>
+
+	<description>Forked version of the original ICAT Data Service designed for Read-only, 2 level, Datafile based systems (hence R2DFoo).</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<repoUrl>https://repo.icatproject.org/repo</repoUrl>
+		<gitUrl>https://github.com/ral-facilities/ids.r2dfoo</gitUrl>
+		<repoUrl>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases</repoUrl>
 		<project.scm.id>github</project.scm.id>
 	</properties>
 
@@ -18,6 +21,10 @@
 		<repository>
 			<id>ICAT Repo</id>
 			<url>https://repo.icatproject.org/repo</url>
+		</repository>
+		<repository>
+			<id>nexus.esc.rl.ac.uk</id>
+			<url>http://nexus.esc.rl.ac.uk:8081/nexus/content/groups/public</url>
 		</repository>
 	</repositories>
 
@@ -30,14 +37,14 @@
 	</pluginRepositories>
 
 	<scm>
-		<connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
-		<developerConnection>scm:git:git@github.com:icatproject/ids.server.git</developerConnection>
-		<url>https://github.com/icatproject/ids.server</url>
-		<tag>v1.9.1</tag>
+		<connection>scm:git:${gitUrl}.git</connection>
+		<developerConnection>scm:git:${gitUrl}.git</developerConnection>
+		<url>${gitUrl}</url>
+		<tag>v${project.version}</tag>
 	</scm>
 
 	<issueManagement>
-		<url>https://github.com/icatproject/ids.server/issues</url>
+		<url>${gitUrl}/issues</url>
 		<system>GitHub</system>
 	</issueManagement>
 
@@ -49,23 +56,25 @@
 	</licenses>
 
 	<organization>
-		<name>The ICAT Collaboration</name>
-		<url>http://www.icatproject.org</url>
+		<name>UKRI/STFC</name>
+		<url>https://stfc.ukri.org/</url>
 	</organization>
 
 	<distributionManagement>
-		<downloadUrl>https://repo.icatproject.org/repo</downloadUrl>
+		<downloadUrl>http://nexus.esc.rl.ac.uk:8081/nexus</downloadUrl>
 		<site>
-			<id>repo.icatproject.org</id>
-			<url>dav:https://repo.icatproject.org/site/ids/server/${project.version}</url>
+			<id>nexus.esc.rl.ac.uk</id>
+			<url>dav:http://nexus.esc.rl.ac.uk:8081/nexus/content/sites/site/ids.r2dfoo/${project.version}</url>
 		</site>
 		<repository>
-			<id>repo.icatproject.org</id>
-			<url>dav:https://repo.icatproject.org/repo</url>
+			<id>nexus.esc.rl.ac.uk</id>
+			<url>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/releases</url>
 		</repository>
+		<snapshotRepository>
+			<id>nexus.esc.rl.ac.uk</id>
+			<url>http://nexus.esc.rl.ac.uk:8081/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
 	</distributionManagement>
-
-	<description>ICAT Data Service to provide a uniform interface to data.</description>
 
 	<dependencies>
 
@@ -85,6 +94,12 @@
 			<groupId>org.icatproject</groupId>
 			<artifactId>ids.plugin</artifactId>
 			<version>1.5.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>uk.ac.rl.esc</groupId>
+			<artifactId>storaged-ids-plugin</artifactId>
+			<version>1.2.3</version>
 		</dependency>
 
 		<dependency>
@@ -167,7 +182,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<licence>cHJvamVjdHxvcmcuaWNhdHByb2plY3QuaWRzLnNlcnZlcnwyMDIyLTA0LTAxfGZhbHNlfC0xI01Dd0NGQjFzVFhsRS9CL1llTklZWndCZnB2UHlramcrQWhSYW5NR2JOS2craFZMUzJwRzZtcnZ3WXlEMzB3PT0=</licence>
+					<licence>cHJvamVjdHx1ay5hYy5ybC5lc2MuaWRzLnIyZGZvb3wyMDI0LTA5LTIzfGZhbHNlfC0xI01DMENGUUNONDNPc2hySytWREtld2VucG5xK1Awb2pXUmdJVUxWbGxmTVczY3I5bUl0N0dXenNiek43YnVPWT0=</licence>
 					<output>
 						<html>
 							<location>site/miredot</location>
@@ -275,14 +290,15 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.18.1</version>
+				<version>2.19.1</version>
 				<configuration>
-
 					<excludes>
-						<exclude>
-							**/integration/**/*Test.java
-						</exclude>
-
+						<!--
+							Only unit tests should be run by the surefire plugin. 
+							Integration tests should be excluded here because
+							they are run by the failsafe plugin.
+						-->
+						<exclude>org.icatproject.ids.integration.**</exclude>
 					</excludes>
 					<systemPropertyVariables>
 						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
@@ -368,12 +384,17 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.18.1</version>
+				<version>2.19.1</version>
 				<configuration>
 					<includes>
-						<include>**/integration/**/*Test.java</include>
+						<!--
+							Only integration tests should be run by the failsafe plugin. 
+							Unit tests should be excluded here because
+							they are run by the surefire plugin.
+						-->
+						<!--include>**/integration/**/*Test.java</include-->
+						<include>org.icatproject.ids.integration.**</include>
 					</includes>
-
 					<systemPropertyVariables>
 						<serverUrl>${serverUrl}</serverUrl>
 						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>

@@ -2,19 +2,21 @@
 from setup_utils import *
 import os
 
-# ids.server
+# ids.r2dfoo
 
 def uninstall():
-    app = actions.getAppName("ids.server")
+    app = actions.getAppName("ids.r2dfoo")
     if app: actions.undeploy(app)
-    actions.deleteJMSResource("jms/IDS/log")
 
 actions, arg, props = getActions("setup.properties", [])
 
 prop_name = "run.properties"
-prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
-"preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "reader",
-"filesCheck.parallelCount", "linkLifetimeSeconds", "maxIdsInQuery"]
+prop_list = ["icat.url", "reader", 
+"plugin.main.class", "plugin.main.dir", 
+"plugin.archive.class", "maxRestoresPerThread", 
+"plugin.zipMapper.class", 
+"cache.dir", "preparedCount", "completedCount", "failedFilesCount", 
+"sizeCheckIntervalSeconds", "startArchivingLevel1024bytes", "stopArchivingLevel1024bytes"]
 
 if arg in ["CONFIGURE", "INSTALL"]: actions.configure(prop_name, prop_list)
 idsProperties = getProperties(prop_name, prop_list)
@@ -27,39 +29,20 @@ if arg == "INSTALL":
     if not os.path.exists(os.path.expandvars(idsProperties.get("cache.dir"))):
         abort("Please create directory " + idsProperties.get("cache.dir") + " as specified in run.properties")
 
-    if idsProperties.get("plugin.archive.class"):
-        if not idsProperties.get("startArchivingLevel1024bytes"): abort("startArchivingLevel1024bytes is not set in run.properties")
-        if not idsProperties.get("stopArchivingLevel1024bytes"): abort("stopArchivingLevel1024bytes is not set in run.properties")
-        if not idsProperties.get("tidyBlockSize"): abort("tidyBlockSize is not set in ids.properties")
-        if not idsProperties.get("storageUnit"): abort("storageUnit is not set in run.properties")
-        if idsProperties["storageUnit"].lower == "dataset":
-            if not (idsProperties.get("delayDatasetWritesSeconds") or
-                    idsProperties.get("writeDelaySeconds")):
-                abort("delayDatasetWritesSeconds is not set in run.properties")
-        if idsProperties["storageUnit"].lower == "datafile":
-            if not (idsProperties.get("delayDatafileOperationsSeconds") or
-                    idsProperties.get("writeDelaySeconds")):
-                abort("delayDatafileOperationsSeconds is not set in run.properties")
-
-    if int(idsProperties["filesCheck.parallelCount"]):
-        if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in run.properties")
-        if not idsProperties.get("filesCheck.lastIdFile"): abort("filesCheck.lastIdFile is not set in run.properties")
-        parent = os.path.dirname(os.path.expandvars(idsProperties["filesCheck.lastIdFile"]))
-        if not os.path.exists(parent):
-            abort("Please create directory " + parent + " for filesCheck.lastIdFile specified in run.properties")
-        if not idsProperties.get("filesCheck.errorLog"): abort("filesCheck.errorLog is not set in run.properties")
-        parent = os.path.dirname(os.path.expandvars(idsProperties["filesCheck.errorLog"]))
-        if not os.path.exists(parent):
-            abort("Please create directory " + parent + " for filesCheck.errorLog specified in run.properties")
-        if not idsProperties.get("reader"): abort("reader is not set in run.properties")
+    if idsProperties["plugin.archive.class"] == "org.icatproject.ids.storage.ArchiveSDStorageV2":
+        if not idsProperties.get("plugin.archive.uri"):
+            abort("plugin.archive.uri is not set in run.properties")
+        if not idsProperties.get("plugin.archive.connectionTimeout"):
+            abort("plugin.archive.connectionTimeout is not set in run.properties")
+        if not idsProperties.get("plugin.archive.readTimeout"):
+            abort("plugin.archive.readTimeout is not set in run.properties")
 
     try:
         uninstall()
-        actions.createJMSResource("javax.jms.Topic", "jms/IDS/log")
 
         ovfiles = [[prop_name, "WEB-INF/classes"]]
         if os.path.exists("logback.xml"): ovfiles.append(["logback.xml", "WEB-INF/classes"])
-        actions.deploy(deploymentorder=120, files=ovfiles, libraries=props["libraries"].split(), jmsTopicConnectionFactory=idsProperties.get("jms.topicConnectionFactory"))
+        actions.deploy(deploymentorder=120, files=ovfiles)
 
     except Exception as e:
         raise
