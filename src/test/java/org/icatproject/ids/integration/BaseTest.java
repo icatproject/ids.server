@@ -32,8 +32,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import javax.json.Json;
-import javax.json.JsonReader;
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
 
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;

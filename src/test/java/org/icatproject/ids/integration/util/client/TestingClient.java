@@ -22,12 +22,12 @@ import java.util.Set;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import javax.json.Json;
-import javax.json.JsonException;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonException;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
