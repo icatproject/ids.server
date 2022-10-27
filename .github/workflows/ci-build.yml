@@ -83,6 +83,9 @@ jobs:
           source payara_path_command
           mvn install -B -DskipTests
 
+      - name: Run Unit Tests
+        run: mvn test -B
+
       - name: After Failure
         if: ${{ failure() }}
         run: |
