@@ -103,6 +103,11 @@ jobs:
       - name: Run Unit Tests
         run: mvn test -B
 
+      # failsafe:integration-test to run the integration tests
+      # failsafe:verify required to check for test failures
+      - name: Run Integration Tests
+        run: mvn failsafe:integration-test failsafe:verify -B
+
       - name: After Failure
         if: ${{ failure() }}
         run: |
