@@ -1,0 +1,91 @@
+name: CI Build
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_and_tests:
+    runs-on: ubuntu-20.04
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: 8
+            experimental: false
+          - version: 11
+            experimental: true
+
+    steps:
+      # Setup Java & Python
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.version }}
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9.7"
+          architecture: x64
+
+      # ICAT Ansible clone and install dependencies
+      - name: Checkout icat-ansible
+        uses: actions/checkout@v2
+        with:
+          repository: icatproject-contrib/icat-ansible
+          path: icat-ansible
+          ref: master
+      - name: Install Ansible
+        run: pip install -r icat-ansible/requirements.txt
+
+      # Prep for running the playbook
+      - name: Create Hosts File
+        run: echo -e "[icat_server_dev_hosts]\nlocalhost ansible_connection=local" > icat-ansible/hosts
+      - name: Prepare vault pass
+        run: echo -e "icattravispw" > icat-ansible/vault_pass.txt
+      - name: Move vault to directory it'll get detected by Ansible
+        run: mv icat-ansible/vault.yml icat-ansible/group_vars/all
+      - name: Replace default payara user with Actions user
+        run: |
+          sed -i -e "s/^payara_user: \"glassfish\"/payara_user: \"runner\"/" icat-ansible/group_vars/all/vars.yml
+      - name: Add Ansible roles
+        run: |
+          sed -i "s/- role: icat_lucene/- role: icat_server\\
+          \    - role: ids_storage_file/g" icat-ansible/icat_server_dev_hosts.yml
+
+      # Force hostname to localhost - bug fix for previous ICAT Ansible issues on Actions
+      - name: Change hostname to localhost
+        run: sudo hostname -b localhost
+
+      # Remove existing MySQL installation so it doesn't interfere with GitHub Actions
+      - name: Remove existing mysql
+        run: |
+          sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
+          sudo apt-get remove --purge "mysql*"
+          sudo rm -rf /var/lib/mysql* /etc/mysql
+
+      # Create local instance of ICAT
+      - name: Run ICAT Ansible Playbook
+        run: |
+          ansible-playbook icat-ansible/icat_server_dev_hosts.yml -i icat-ansible/hosts --vault-password-file icat-ansible/vault_pass.txt -vv
+
+      - name: Checkout ids-server
+        uses: actions/checkout@v2
+
+      # Payara must be sourced otherwise the Maven build command fails
+      - name: Run Build
+        run: |
+          grep payara ~/.bash_profile > payara_path_command
+          source payara_path_command
+          mvn install -B -DskipTests
+
+      - name: After Failure
+        if: ${{ failure() }}
+        run: |
+          cat /home/runner/logs/ids.log
+          cat /home/runner/logs/icat.log
+          cat /home/runner/payara*/glassfish/domains/domain1/logs/server.log
