@@ -73,6 +73,23 @@ jobs:
         run: |
           ansible-playbook icat-ansible/icat_server_dev_hosts.yml -i icat-ansible/hosts --vault-password-file icat-ansible/vault_pass.txt -vv
 
+      # Prep for the integration tests
+      - name: Checkout ids-storage-test
+        uses: actions/checkout@v2
+        with:
+          repository: icatproject/ids.storage_test
+          path: ids.storage_test
+          ref: master
+      - name: Install ids-storage-test
+        run: |
+          cd ids.storage_test
+          mvn package
+          unzip target/ids.storage_test-*.zip
+          cd ids.storage_test
+          cp properties.example setup.properties
+          sed -i 's+home=/home/fisher/pf/glassfish4+home='"$(realpath /home/runner/payara*)+g" setup.properties
+          ./setup -vv install
+
       - name: Checkout ids-server
         uses: actions/checkout@v2
 
