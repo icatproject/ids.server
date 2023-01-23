@@ -42,7 +42,7 @@ jobs:
 
       # ICAT Ansible clone and install dependencies
       - name: Checkout icat-ansible
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: icatproject-contrib/icat-ansible
           path: icat-ansible
@@ -83,7 +83,7 @@ jobs:
 
       # Prep for the integration tests
       - name: Checkout ids-storage-test
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: icatproject/ids.storage_test
           path: ids.storage_test
@@ -99,7 +99,7 @@ jobs:
           ./setup -vv install
 
       - name: Checkout ids-server
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Payara must be sourced otherwise the Maven build command fails
       - name: Run Build
