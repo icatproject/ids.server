@@ -59,10 +59,11 @@ with ZipFile(glob.glob("target/ids.server-*-distro.zip")[0]) as z:
     with open("src/test/install/setup_utils.py", "wb") as f:
         f.write(z.read("ids.server/setup_utils.py"))
 
-with open("src/main/resources/logback.xml", "rt") as s:
-    with open("src/test/install/logback.xml", "wt") as f:
-        t = Template(s.read()).substitute(subst)
-        print(t, end="", file=f)
+if not os.path.exists("src/test/install/logback.xml"):
+    with open("src/main/resources/logback.xml", "rt") as s:
+        with open("src/test/install/logback.xml", "wt") as f:
+            t = Template(s.read()).substitute(subst)
+            print(t, end="", file=f)
 
 p = subprocess.Popen(["./setup", "install"], cwd="src/test/install")
 p.wait()
