@@ -9,15 +9,11 @@ on:
 jobs:
   build_and_tests:
     runs-on: ubuntu-20.04
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - version: 8
-            experimental: false
-          - version: 11
-            experimental: true
 
     steps:
       # Setup Java & Python
