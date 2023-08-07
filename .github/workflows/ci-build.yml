@@ -72,6 +72,10 @@ jobs:
           sudo apt-get remove --purge "mysql*"
           sudo rm -rf /var/lib/mysql* /etc/mysql
 
+      # Needed for `maven_artifact` module on Ansible - lxml is in requirements.txt but doesn't seem to work on GitHub Actions
+      - name: Install lxml
+        run: sudo apt-get install python3-lxml
+
       # Create local instance of ICAT
       - name: Run ICAT Ansible Playbook
         run: |
