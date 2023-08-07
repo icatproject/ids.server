@@ -13,7 +13,7 @@
             <param-value>org.icatproject.ids</param-value>
         </init-param>
 
-	<load-on-startup>1</load-on-startup>
+        <load-on-startup>1</load-on-startup>
 
         <multipart-config></multipart-config>
     </servlet>
