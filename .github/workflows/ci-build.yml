@@ -42,7 +42,7 @@ jobs:
         with:
           repository: icatproject-contrib/icat-ansible
           path: icat-ansible
-          ref: master
+          ref: payara6
       - name: Install Ansible
         run: pip install -r icat-ansible/requirements.txt
 
