@@ -8,12 +8,10 @@ on:
 
 jobs:
   build_and_tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
-      fail-fast: false
       matrix:
-        include:
-          - version: 11
+        java_version: [11, 17]
 
     steps:
       # Setup Java & Python
@@ -21,12 +19,7 @@ jobs:
         uses: actions/setup-java@3f07048e3d294f56e9b90ac5ea2c6f74e9ad0f98 # v3.10.0
         with:
           distribution: 'temurin'
-          java-version: ${{ matrix.version }}
-      - name: Setup Python
-        uses: actions/setup-python@d27e3f3d7c64b4bbf8e4abfb9b63b83e846e0435 # v4.5.0
-        with:
-          python-version: "3.9.7"
-          architecture: x64
+          java-version: ${{ matrix.java_version }}
 
       - name: Cache local Maven repository
         uses: actions/cache@69d9d449aced6a2ede0bc19182fadc3a0a42d2b0 # v3.2.6
@@ -35,6 +28,9 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+
+      - name: Run apt-get update
+        run: sudo apt-get update
 
       # ICAT Ansible clone and install dependencies
       - name: Checkout icat-ansible
@@ -71,10 +67,6 @@ jobs:
           sudo apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
           sudo apt-get remove --purge "mysql*"
           sudo rm -rf /var/lib/mysql* /etc/mysql
-
-      # Needed for `maven_artifact` module on Ansible - lxml is in requirements.txt but doesn't seem to work on GitHub Actions
-      - name: Install lxml
-        run: sudo apt-get install python3-lxml
 
       # Create local instance of ICAT
       - name: Run ICAT Ansible Playbook
