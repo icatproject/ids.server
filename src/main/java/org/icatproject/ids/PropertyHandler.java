@@ -197,7 +197,11 @@ public class PropertyHandler {
 				abort(cacheDir + " must be an existing directory");
 			}
 
-			filesCheckParallelCount = props.getNonNegativeInt("filesCheck.parallelCount");
+			if (props.has("filesCheck.parallelCount")) {
+				filesCheckParallelCount = props.getNonNegativeInt("filesCheck.parallelCount");
+			} else {
+				filesCheckParallelCount = 0;
+			}
 			if (filesCheckParallelCount > 0) {
 				filesCheckGapMillis = props.getPositiveInt("filesCheck.gapSeconds") * 1000;
 				filesCheckLastIdFile = props.getFile("filesCheck.lastIdFile").toPath();
@@ -210,8 +214,11 @@ public class PropertyHandler {
 				}
 			}
 
-			linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
-
+			if (props.has("linkLifetimeSeconds")) {
+				linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
+			} else {
+				linkLifetimeMillis = 0;
+			}
 			maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
 
 			/* JMS stuff */
