@@ -1,25 +1,26 @@
 <h1>IDS Restful API</h1>
 
 <h2>authorization</h2>
-<p>Most operations require a sessionId from making a login call to
+<p>
+	Most operations require a sessionId from making a login call to
 	ICAT. The sessionId is then used to check that the operation on the
 	data is permitted by following the general rule that if you are allowed
 	that access to the metadata then you are allowed the same access to the
 	data.
+</p>
+
 <h2>Error handling</h2>
-<p>In the case of an error the returned json will be of the form:
+<p>
+	In the case of an error the returned json will be of the form:
 	{"code":"NotFoundException", "message":"One of the data files requested
 	has been deleted"}. Clients should always check the status code and if
-	status/100 is not 2 then an error has occurred.</p>
+	status/100 is not 2 then an error has occurred.
+</p>
 
 <h2>Testing</h2>
 <p>
 	The @GET calls can be tried on a web browser and curl can be used to
 	make any of the calls. For example a url of the form:
-	<kbd> https://example.com:443/ids/getApiVersion</kbd>
-	will return some text such as
-	<samp>1.5.0</samp>
+	<kbd>https://example.com/ids/version</kbd> will return some text such
+	as <samp>{"version":"2.0.0"}</samp>
 </p>
-
-
-
