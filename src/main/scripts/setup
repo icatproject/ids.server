@@ -34,12 +34,10 @@ if arg == "INSTALL":
         if not idsProperties.get("tidyBlockSize"): abort("tidyBlockSize is not set in ids.properties")
         if not idsProperties.get("storageUnit"): abort("storageUnit is not set in run.properties")
         if idsProperties["storageUnit"].lower == "dataset":
-            if not (idsProperties.get("delayDatasetWritesSeconds") or
-                    idsProperties.get("writeDelaySeconds")):
+            if not (idsProperties.get("delayDatasetWritesSeconds")):
                 abort("delayDatasetWritesSeconds is not set in run.properties")
         if idsProperties["storageUnit"].lower == "datafile":
-            if not (idsProperties.get("delayDatafileOperationsSeconds") or
-                    idsProperties.get("writeDelaySeconds")):
+            if not (idsProperties.get("delayDatafileOperationsSeconds")):
                 abort("delayDatafileOperationsSeconds is not set in run.properties")
 
     if int(idsProperties["filesCheck.parallelCount"]):
