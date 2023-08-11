@@ -328,6 +328,7 @@ public class IdsService {
 	@Path("getLink")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.TEXT_PLAIN)
+	@Deprecated
 	public String getLink(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("datafileId") long datafileId, @FormParam("username") String username)
 			throws BadRequestException, InsufficientPrivilegesException, NotImplementedException, InternalException,
