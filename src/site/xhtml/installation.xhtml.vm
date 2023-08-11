@@ -127,9 +127,13 @@
 		<dd>If true disables write operations (put and delete).</dd>
 
 		<dt>linkLifetimeSeconds</dt>
-		<dd>The length of time in seconds to keep the links established
-			by the getLink call. If this is set to zero then the getLink call
-			will return a NotImplementedException.</dd>
+		<dd>Optional, default zero. The length of time in seconds to keep the links
+			established by the getLink call. If this is set to zero then the getLink
+			call is disabled.
+			<p><strong>Deprecated:</strong> the getLink call is deprecated
+				and slated for removal along with this property in
+				ids.server 3.0.</p>
+		</dd>
 
 		<dt>reader</dt>
 		<dd>
@@ -230,10 +234,12 @@
 		computed and stored in ICAT. File checking, if enabled, cycles through
 		all the stored data making sure that they can be read and that files
 		have the expected size and checksum.</p>
+	<p><strong>Deprecated:</strong> the FileChecker is deprecated and slated for removal
+		along with the properties in this section in ids.server 3.0.</p>
 	<dl>
 		<dt>filesCheck.parallelCount</dt>
 		<dd>
-			This must always be set, and if non zero then the readability of the
+			Optional, default zero. If non zero then the readability of the
 			data will be checked. The behaviour is dependent upon whether or not
 			archive storage has a been requested. In the case of single level
 			storage this is done in groups of files where the group size is
@@ -247,6 +253,8 @@
 			<p>If the archive storage has a long latency then it is useful to
 				have a "large" value, however a thread is started for each stored
 				file so the value of this parameter should not be too large.</p>
+			<p>If this is set to zero then the FileChecker is disabled and all other
+				properties in this section will be ignored.</p>
 		</dd>
 		<dt>filesCheck.gapSeconds</dt>
 		<dd>the number of seconds to wait before launching a check of the
