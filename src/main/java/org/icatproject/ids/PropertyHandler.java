@@ -181,21 +181,9 @@ public class PropertyHandler {
 					abort("storageUnit value " + props.getString("storageUnit") + " must be taken from " + vs);
 				}
 				if (storageUnit == StorageUnit.DATASET) {
-					if (!props.has("delayDatasetWritesSeconds") && props.has("writeDelaySeconds")) {
-						// compatibility mode
-						logger.warn("writeDelaySeconds is deprecated, please use delayDatasetWritesSeconds instead");
-						delayDatasetWrites = props.getPositiveLong("writeDelaySeconds");
-					} else {
-						delayDatasetWrites = props.getPositiveLong("delayDatasetWritesSeconds");
-					}
+					delayDatasetWrites = props.getPositiveLong("delayDatasetWritesSeconds");
 				} else if (storageUnit == StorageUnit.DATAFILE) {
-					if (!props.has("delayDatafileOperationsSeconds") && props.has("writeDelaySeconds")) {
-						// compatibility mode
-						logger.warn("writeDelaySeconds is deprecated, please use delayDatafileOperationsSeconds instead");
-						delayDatafileOperations = props.getPositiveLong("writeDelaySeconds");
-					} else {
-						delayDatafileOperations = props.getPositiveLong("delayDatafileOperationsSeconds");
-					}
+					delayDatafileOperations = props.getPositiveLong("delayDatafileOperationsSeconds");
 				}
 				tidyBlockSize = props.getPositiveInt("tidyBlockSize");
 			}
