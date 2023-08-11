@@ -130,23 +130,6 @@ public class IdsService {
 	/**
 	 * Return the version of the server
 	 * 
-	 * @summary getApiVersion
-	 * 
-	 * @return the version of the ids server
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("getApiVersion")
-	@Produces(MediaType.TEXT_PLAIN)
-	@Deprecated
-	public String getApiVersion() {
-		return Constants.API_VERSION;
-	}
-
-	/**
-	 * Return the version of the server
-	 * 
 	 * @summary Version
 	 * 
 	 * @return json string of the form: <samp>{"version":"4.4.0"}</samp>
