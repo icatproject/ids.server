@@ -310,6 +310,7 @@ public class FileChecker {
 		StorageUnit storageUnit = propertyHandler.getStorageUnit();
 		filesCheckParallelCount = propertyHandler.getFilesCheckParallelCount();
 		if (filesCheckParallelCount > 0) {
+			logger.warn("The FileChecker is deprecated and slated for removal in ids.server 3.0");
 			if (storageUnit == null || storageUnit == StorageUnit.DATASET) {
 				filesCheckGapMillis = propertyHandler.getFilesCheckGapMillis();
 				filesCheckLastIdFile = propertyHandler.getFilesCheckLastIdFile();

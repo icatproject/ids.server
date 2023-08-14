@@ -30,14 +30,14 @@ storageUnit = dataset
 tidyBlockSize = 500
 !enableWrite = true
 
-# File checking properties
-filesCheck.parallelCount = 5
-filesCheck.gapSeconds = 5
-filesCheck.lastIdFile = ${HOME}/ids/lastIdFile
-filesCheck.errorLog = ${HOME}/ids/errorLog
+# File checking properties.  Deprecated
+!filesCheck.parallelCount = 5
+!filesCheck.gapSeconds = 5
+!filesCheck.lastIdFile = ${HOME}/ids/lastIdFile
+!filesCheck.errorLog = ${HOME}/ids/errorLog
 
-# Link properties
-linkLifetimeSeconds = 3600
+# Link properties.  Deprecated
+!linkLifetimeSeconds = 3600
 
 # JMS Logging
 log.list = READ WRITE INFO LINK MIGRATE PREPARE

@@ -128,23 +128,6 @@ public class IdsService {
 	/**
 	 * Return the version of the server
 	 * 
-	 * @summary getApiVersion
-	 * 
-	 * @return the version of the ids server
-	 * 
-	 * @statuscode 200 To indicate success
-	 */
-	@GET
-	@Path("getApiVersion")
-	@Produces(MediaType.TEXT_PLAIN)
-	@Deprecated
-	public String getApiVersion() {
-		return Constants.API_VERSION;
-	}
-
-	/**
-	 * Return the version of the server
-	 * 
 	 * @summary Version
 	 * 
 	 * @return json string of the form: <samp>{"version":"4.4.0"}</samp>
@@ -326,6 +309,7 @@ public class IdsService {
 	@Path("getLink")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.TEXT_PLAIN)
+	@Deprecated
 	public String getLink(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
 			@FormParam("datafileId") long datafileId, @FormParam("username") String username)
 			throws BadRequestException, InsufficientPrivilegesException, NotImplementedException, InternalException,
