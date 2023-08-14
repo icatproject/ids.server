@@ -2,8 +2,8 @@ package org.icatproject.ids;
 
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
+import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Singleton;
 
 import org.icatproject.EntityBaseBean;
 import org.icatproject.ICAT;

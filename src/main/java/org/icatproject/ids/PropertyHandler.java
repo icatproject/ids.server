@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.json.Json;
-import javax.json.JsonReader;
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
 
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;

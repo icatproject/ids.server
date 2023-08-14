@@ -3,35 +3,33 @@ package org.icatproject.ids;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Stateless;
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.Part;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.fileupload.util.Streams;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -652,11 +650,7 @@ public class IdsService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
 			InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
-		if (!ServletFileUpload.isMultipartContent(request)) {
-			throw new BadRequestException("Multipart content expected");
-		}
 		try {
-			ServletFileUpload upload = new ServletFileUpload();
 			String sessionId = null;
 			String name = null;
 			String datafileFormatId = null;
@@ -670,13 +664,11 @@ public class IdsService {
 			boolean padding = false;
 
 			// Parse the request
-			FileItemIterator iter = upload.getItemIterator(request);
-			while (iter.hasNext()) {
-				FileItemStream item = iter.next();
-				String fieldName = item.getFieldName();
-				InputStream stream = item.openStream();
-				if (item.isFormField()) {
-					String value = Streams.asString(stream);
+			for (Part part : request.getParts()) {
+				String fieldName = part.getName();
+				InputStream stream = part.getInputStream();
+				if (part.getSubmittedFileName() == null) {
+					String value = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
 					if (fieldName.equals("sessionId")) {
 						sessionId = value;
 					} else if (fieldName.equals("name")) {
@@ -702,15 +694,17 @@ public class IdsService {
 					}
 				} else {
 					if (name == null) {
-						name = item.getName();
+						name = part.getSubmittedFileName();
 					}
 					result = idsBean.put(stream, sessionId, name, datafileFormatId, datasetId, description, doi,
 							datafileCreateTime, datafileModTime, wrap, padding, request.getRemoteAddr());
 				}
 			}
 			return result;
-		} catch (IOException | FileUploadException e) {
+		} catch (IOException e) {
 			throw new InternalException(e.getClass() + " " + e.getMessage());
+		} catch (ServletException e) {
+			throw new BadRequestException("Multipart content expected");
 		}
 	}
 
