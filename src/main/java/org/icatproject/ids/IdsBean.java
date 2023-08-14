@@ -1038,6 +1038,8 @@ public class IdsBean {
 
 		if (!linkEnabled) {
 			throw new NotImplementedException("Sorry getLink is not available on this IDS installation");
+		} else {
+			logger.warn("The getLink API call is deprecated and slated for removal in ids.server 3.0");
 		}
 
 		validateUUID("sessionId", sessionId);

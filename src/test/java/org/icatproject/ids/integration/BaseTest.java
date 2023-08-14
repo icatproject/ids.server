@@ -494,10 +494,6 @@ public class BaseTest {
 		System.out.println(testingClient.getIcatUrl(200));
 	}
 
-	protected void apiVersionTest() throws Exception {
-		assertTrue(testingClient.getApiVersion(200).startsWith("1.8."));
-	}
-
 	protected void raceTest() throws Exception {
 		logTime("Starting");
 
