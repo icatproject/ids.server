@@ -15,7 +15,7 @@ actions, arg, props = getActions("setup.properties", [])
 prop_name = "run.properties"
 prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
 "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "reader",
-"filesCheck.parallelCount", "linkLifetimeSeconds", "maxIdsInQuery"]
+"maxIdsInQuery"]
 
 if arg in ["CONFIGURE", "INSTALL"]: actions.configure(prop_name, prop_list)
 idsProperties = getProperties(prop_name, prop_list)
@@ -40,7 +40,7 @@ if arg == "INSTALL":
             if not (idsProperties.get("delayDatafileOperationsSeconds")):
                 abort("delayDatafileOperationsSeconds is not set in run.properties")
 
-    if int(idsProperties["filesCheck.parallelCount"]):
+    if int(idsProperties.get("filesCheck.parallelCount", 0)) > 0:
         warnings.warn("The FileChecker is deprecated and slated for removal in ids.server 3.0")
         if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in run.properties")
         if not idsProperties.get("filesCheck.lastIdFile"): abort("filesCheck.lastIdFile is not set in run.properties")
@@ -53,7 +53,7 @@ if arg == "INSTALL":
             abort("Please create directory " + parent + " for filesCheck.errorLog specified in run.properties")
         if not idsProperties.get("reader"): abort("reader is not set in run.properties")
 
-    if int(idsProperties["linkLifetimeSeconds"]):
+    if int(idsProperties.get("linkLifetimeSeconds", 0)) > 0:
         warnings.warn("The getLink API call is deprecated and slated for removal in ids.server 3.0")
 
     try:
