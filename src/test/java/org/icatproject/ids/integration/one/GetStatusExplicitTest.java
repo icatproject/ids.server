@@ -17,62 +17,62 @@ import org.junit.Test;
 
 public class GetStatusExplicitTest extends BaseTest {
 
-	@BeforeClass
-	public static void setup() throws Exception {
-		setup = new Setup("one.properties");
-		icatsetup();
-	}
+    @BeforeClass
+    public static void setup() throws Exception {
+        setup = new Setup("one.properties");
+        icatsetup();
+    }
 
-	@Test
-	public void ping() throws Exception {
-		testingClient.ping(200);
-	}
+    @Test
+    public void ping() throws Exception {
+        testingClient.ping(200);
+    }
 
-	@Test(expected = BadRequestException.class)
-	public void badPreparedId() throws Exception {
-		testingClient.isPrepared("99999999", 400);
-	}
+    @Test(expected = BadRequestException.class)
+    public void badPreparedId() throws Exception {
+        testingClient.isPrepared("99999999", 400);
+    }
 
-	@Test(expected = NotFoundException.class)
-	public void notFoundPreparedId() throws Exception {
-		testingClient.isPrepared("88888888-4444-4444-4444-cccccccccccc", 404);
-	}
+    @Test(expected = NotFoundException.class)
+    public void notFoundPreparedId() throws Exception {
+        testingClient.isPrepared("88888888-4444-4444-4444-cccccccccccc", 404);
+    }
 
-	@Test(expected = NotFoundException.class)
-	public void notFoundDatafileIdsTest() throws Exception {
-		testingClient.getStatus(sessionId, new DataSelection().addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
-	}
+    @Test(expected = NotFoundException.class)
+    public void notFoundDatafileIdsTest() throws Exception {
+        testingClient.getStatus(sessionId, new DataSelection().addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
+    }
 
-	@Test(expected = NotFoundException.class)
-	public void notFoundDatafileIdsTestAnon() throws Exception {
-		testingClient.getStatus(null, new DataSelection().addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
-	}
+    @Test(expected = NotFoundException.class)
+    public void notFoundDatafileIdsTestAnon() throws Exception {
+        testingClient.getStatus(null, new DataSelection().addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
+    }
 
-	@Test(expected = InsufficientPrivilegesException.class)
-	public void forbiddenTest() throws Exception {
-		testingClient.getStatus(setup.getForbiddenSessionId(), new DataSelection().addDatafiles(datafileIds), 403);
-	}
+    @Test(expected = InsufficientPrivilegesException.class)
+    public void forbiddenTest() throws Exception {
+        testingClient.getStatus(setup.getForbiddenSessionId(), new DataSelection().addDatafiles(datafileIds), 403);
+    }
 
-	@Test
-	public void correctBehaviourTest() throws Exception {
+    @Test
+    public void correctBehaviourTest() throws Exception {
 
-		Status status;
-		do {
-			Thread.sleep(1000);
-			status = testingClient.getStatus(sessionId, new DataSelection().addDatafiles(datafileIds), 200);
-			System.out.println("*" + status + "*");
-		} while (status != Status.ONLINE);
+        Status status;
+        do {
+            Thread.sleep(1000);
+            status = testingClient.getStatus(sessionId, new DataSelection().addDatafiles(datafileIds), 200);
+            System.out.println("*" + status + "*");
+        } while (status != Status.ONLINE);
 
-	}
+    }
 
-	@Test
-	public void getStatusPreparedIdTest() throws Exception {
-		DataSelection selection = new DataSelection().addDatafile(datafileIds.get(0));
-		String preparedId = testingClient.prepareData(sessionId, selection, Flag.NONE, 200);
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
-		assertEquals(testingClient.getStatus(preparedId, 200), Status.ONLINE);
-	}
+    @Test
+    public void getStatusPreparedIdTest() throws Exception {
+        DataSelection selection = new DataSelection().addDatafile(datafileIds.get(0));
+        String preparedId = testingClient.prepareData(sessionId, selection, Flag.NONE, 200);
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
+        assertEquals(testingClient.getStatus(preparedId, 200), Status.ONLINE);
+    }
 
 }

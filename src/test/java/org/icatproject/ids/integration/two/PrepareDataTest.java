@@ -18,203 +18,203 @@ import org.junit.Test;
 
 public class PrepareDataTest extends BaseTest {
 
-	@BeforeClass
-	public static void setup() throws Exception {
-		setup = new Setup("two.properties");
-		icatsetup();
-	}
+    @BeforeClass
+    public static void setup() throws Exception {
+        setup = new Setup("two.properties");
+        icatsetup();
+    }
 
-	@Test
-	public void prepareArchivedDataset() throws Exception {
-		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+    @Test
+    public void prepareArchivedDataset() throws Exception {
+        Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
-				Flag.NONE, 200);
-		
-		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
-		assertEquals(2, ids.size());
-		assertTrue(ids.contains(datafileIds.get(0)));
-		assertTrue(ids.contains(datafileIds.get(1)));
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
+                Flag.NONE, 200);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+        assertEquals(2, ids.size());
+        assertTrue(ids.contains(datafileIds.get(0)));
+        assertTrue(ids.contains(datafileIds.get(1)));
 
-		checkPresent(dirOnFastStorage);
-	}
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	@Test
-	public void prepareTwoArchivedDatasets() throws Exception {
+        checkPresent(dirOnFastStorage);
+    }
 
-		Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
+    @Test
+    public void prepareTwoArchivedDatasets() throws Exception {
 
-		Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-				.addDataset(datasetIds.get(1)), Flag.NONE, 200);
+        Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
 
-		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
-		assertEquals(4, ids.size());
-		for (Long id : datafileIds) {
-			assertTrue(ids.contains(id));
-		}
+        Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
+                .addDataset(datasetIds.get(1)), Flag.NONE, 200);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+        assertEquals(4, ids.size());
+        for (Long id : datafileIds) {
+            assertTrue(ids.contains(id));
+        }
 
-		checkPresent(dirOnFastStorage1);
-		checkPresent(dirOnFastStorage2);
-	}
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	@Test
-	public void prepareArchivedDatafile() throws Exception {
-		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+        checkPresent(dirOnFastStorage1);
+        checkPresent(dirOnFastStorage2);
+    }
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-				Flag.NONE, 200);
+    @Test
+    public void prepareArchivedDatafile() throws Exception {
+        Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
-		assertEquals(1, ids.size());
-		assertTrue(ids.contains(datafileIds.get(0)));
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+                Flag.NONE, 200);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+        assertEquals(1, ids.size());
+        assertTrue(ids.contains(datafileIds.get(0)));
 
-		checkPresent(dirOnFastStorage);
-	}
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	@Test
-	public void prepareArchivedDatafileAndItsDataset() throws Exception {
-		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+        checkPresent(dirOnFastStorage);
+    }
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-				.addDatafile(datafileIds.get(0)), Flag.NONE, 200);
+    @Test
+    public void prepareArchivedDatafileAndItsDataset() throws Exception {
+        Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-		List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
-		assertEquals(2, ids.size());
-		assertTrue(ids.contains(datafileIds.get(0)));
-		assertTrue(ids.contains(datafileIds.get(1)));
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
+                .addDatafile(datafileIds.get(0)), Flag.NONE, 200);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        List<Long> ids = testingClient.getDatafileIds(preparedId, 200);
+        assertEquals(2, ids.size());
+        assertTrue(ids.contains(datafileIds.get(0)));
+        assertTrue(ids.contains(datafileIds.get(1)));
 
-		checkPresent(dirOnFastStorage);
-	}
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	@Test(expected = BadRequestException.class)
-	public void badSessionIdFormatTest() throws Exception {
-		testingClient.prepareData("bad sessionId format", new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE,
-				400);
-	}
+        checkPresent(dirOnFastStorage);
+    }
 
-	@Test
-	public void noIdsTest() throws Exception {
-		testingClient.prepareData(sessionId, new DataSelection(), Flag.NONE, 200);
-	}
+    @Test(expected = BadRequestException.class)
+    public void badSessionIdFormatTest() throws Exception {
+        testingClient.prepareData("bad sessionId format", new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE,
+                400);
+    }
 
-	@Test(expected = InsufficientPrivilegesException.class)
-	public void nonExistingSessionIdTest() throws Exception {
-		testingClient.prepareData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-				new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 403);
+    @Test
+    public void noIdsTest() throws Exception {
+        testingClient.prepareData(sessionId, new DataSelection(), Flag.NONE, 200);
+    }
 
-	}
+    @Test(expected = InsufficientPrivilegesException.class)
+    public void nonExistingSessionIdTest() throws Exception {
+        testingClient.prepareData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE, 403);
 
-	@Test
-	public void correctBehaviourTest() throws Exception {
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafiles(datafileIds),
-				Flag.NONE, 200);
-		assertNotNull(preparedId);
-	}
+    }
 
-	@Test
-	public void prepareRestoredDataset() throws Exception {
-		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+    @Test
+    public void correctBehaviourTest() throws Exception {
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafiles(datafileIds),
+                Flag.NONE, 200);
+        assertNotNull(preparedId);
+    }
 
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
+    @Test
+    public void prepareRestoredDataset() throws Exception {
+        Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-		waitForIds();
+        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
-		checkPresent(dirOnFastStorage);
+        waitForIds();
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
-				Flag.NONE, 200);
+        checkPresent(dirOnFastStorage);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
+                Flag.NONE, 200);
 
-		checkPresent(dirOnFastStorage);
-		checkPresent(setup.getPreparedCacheDir().resolve(preparedId));
-	}
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	@Test
-	public void prepareTwoRestoredDatasets() throws Exception {
+        checkPresent(dirOnFastStorage);
+        checkPresent(setup.getPreparedCacheDir().resolve(preparedId));
+    }
 
-		Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
-		Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
+    @Test
+    public void prepareTwoRestoredDatasets() throws Exception {
 
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-				.addDataset(datasetIds.get(1)), 204);
+        Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
+        Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
 
-		waitForIds();
+        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0))
+                .addDataset(datasetIds.get(1)), 204);
 
-		checkPresent(dirOnFastStorage1);
-		checkPresent(dirOnFastStorage2);
+        waitForIds();
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-				.addDataset(datasetIds.get(1)), Flag.NONE, 200);
+        checkPresent(dirOnFastStorage1);
+        checkPresent(dirOnFastStorage2);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
+                .addDataset(datasetIds.get(1)), Flag.NONE, 200);
 
-		Path preparedFile = setup.getPreparedCacheDir().resolve(preparedId);
-		checkPresent(preparedFile);
-	}
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	@Test
-	public void prepareRestoredDatafile() throws Exception {
+        Path preparedFile = setup.getPreparedCacheDir().resolve(preparedId);
+        checkPresent(preparedFile);
+    }
 
-		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+    @Test
+    public void prepareRestoredDatafile() throws Exception {
 
-		testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 204);
+        Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-		waitForIds();
+        testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 204);
 
-		checkPresent(dirOnFastStorage);
+        waitForIds();
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-				Flag.NONE, 200);
+        checkPresent(dirOnFastStorage);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+                Flag.NONE, 200);
 
-		Path preparedFile = setup.getPreparedCacheDir().resolve(preparedId);
-		checkPresent(preparedFile);
-	}
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	@Test
-	public void prepareRestoredDatafileAndItsDataset() throws Exception {
+        Path preparedFile = setup.getPreparedCacheDir().resolve(preparedId);
+        checkPresent(preparedFile);
+    }
 
-		Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
+    @Test
+    public void prepareRestoredDatafileAndItsDataset() throws Exception {
 
-		testingClient.restore(sessionId,
-				new DataSelection().addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)), 204);
-		waitForIds();
-		checkPresent(dirOnFastStorage);
+        Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-		String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0))
-				.addDataset(datasetIds.get(0)), Flag.NONE, 200);
+        testingClient.restore(sessionId,
+                new DataSelection().addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)), 204);
+        waitForIds();
+        checkPresent(dirOnFastStorage);
 
-		while (!testingClient.isPrepared(preparedId, 200)) {
-			Thread.sleep(1000);
-		}
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0))
+                .addDataset(datasetIds.get(0)), Flag.NONE, 200);
 
-		checkPresent(setup.getPreparedCacheDir().resolve(preparedId));
+        while (!testingClient.isPrepared(preparedId, 200)) {
+            Thread.sleep(1000);
+        }
 
-	}
+        checkPresent(setup.getPreparedCacheDir().resolve(preparedId));
+
+    }
 
 }

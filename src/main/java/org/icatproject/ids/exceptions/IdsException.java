@@ -7,24 +7,24 @@ package org.icatproject.ids.exceptions;
  */
 @SuppressWarnings("serial")
 public class IdsException extends Exception {
-	private int httpStatusCode;
-	private String message;
+    private int httpStatusCode;
+    private String message;
 
-	public IdsException(int httpStatusCode, String message) {
-		this.httpStatusCode = httpStatusCode;
-		this.message = message;
-	}
+    public IdsException(int httpStatusCode, String message) {
+        this.httpStatusCode = httpStatusCode;
+        this.message = message;
+    }
 
-	public String getShortMessage() {
-		return message;
-	}
+    public String getShortMessage() {
+        return message;
+    }
 
-	public int getHttpStatusCode() {
-		return httpStatusCode;
-	}
+    public int getHttpStatusCode() {
+        return httpStatusCode;
+    }
 
-	public String getMessage() {
-		return "(" + httpStatusCode + ") : " + message;
-	}
+    public String getMessage() {
+        return "(" + httpStatusCode + ") : " + message;
+    }
 
 }

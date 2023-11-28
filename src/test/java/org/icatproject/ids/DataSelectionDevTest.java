@@ -27,17 +27,17 @@ import org.mockito.junit.MockitoJUnitRunner;
  * This test was created to fix issue #115 and was run against the Diamond
  * pre-production ICAT using specifically selected usernames of users known
  * to have access to a lot of data.
- *
+ * <p>
  * As well as monitoring the time taken to create the DataSelection, detailed
  * monitoring of the eclipselink SQL logging was done to confirm that the
  * changes were having the desired effect at the database level.
- *
+ * <p>
  * It would be extremely difficult to recreate an equivalent setup on a test
  * ICAT in order to perform repeatable tests so this has not been attempted.
  * However, this test was invaluable for testing during development and may
  * prove useful in the future, so has been added to the test suite even if it
  * remains Ignored.
- *
+ * <p>
  * The test runs from a small set of properties defined in
  * DataSelectionDevTest.properties. These need to be configured to point at the
  * desired ICAT (not the one used by the integration tests), define user and
@@ -45,7 +45,7 @@ import org.mockito.junit.MockitoJUnitRunner;
  * datafile IDs which the defined user has access to.
  */
 @RunWith(MockitoJUnitRunner.class)
- public class DataSelectionDevTest {
+public class DataSelectionDevTest {
 
     @Mock
     private PropertyHandler mockedPropertyHandler;
@@ -105,10 +105,10 @@ import org.mockito.junit.MockitoJUnitRunner;
         long startMs = System.currentTimeMillis();
         DataSelection dataSelection = new DataSelection(mockedPropertyHandler, icatReader, userSessionId,
                 investigationIds, datasetIds, datafileIds, DataSelection.Returns.DATASETS_AND_DATAFILES);
-        System.out.println("Creating DataSelection took " + (System.currentTimeMillis()-startMs) + " ms");
+        System.out.println("Creating DataSelection took " + (System.currentTimeMillis() - startMs) + " ms");
         System.out.println("DsInfo size: " + dataSelection.getDsInfo().size());
         System.out.println("DfInfo size: " + dataSelection.getDfInfo().size());
         // there must be at least one Datafile in the DataSelection
-        assertTrue("message", dataSelection.getDfInfo().size()>0 );
+        assertTrue("message", dataSelection.getDfInfo().size() > 0);
     }
 }

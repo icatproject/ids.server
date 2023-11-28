@@ -21,80 +21,80 @@ import org.junit.Test;
 
 public class FileCheckerTest extends BaseTest {
 
-	private static Path errorLog;
+    private static Path errorLog;
 
-	@BeforeClass
-	public static void setup() throws Exception {
-		setup = new Setup("twodf.properties");
-		icatsetup();
-		errorLog = setup.getErrorLog();
-	}
+    @BeforeClass
+    public static void setup() throws Exception {
+        setup = new Setup("twodf.properties");
+        icatsetup();
+        errorLog = setup.getErrorLog();
+    }
 
-	@Ignore("File checker not currently supported for storageUnit DATAFILE")
-	@Test
-	public void everythingTest() throws Exception {
+    @Ignore("File checker not currently supported for storageUnit DATAFILE")
+    @Test
+    public void everythingTest() throws Exception {
 
-		Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(0));
-		testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
+        Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(0));
+        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
-		waitForIds();
+        waitForIds();
 
-		testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
+        testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
-		Long dfid = 0L;
-		for (int i = 0; i < 3; i++) {
-			dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file_" + i,
-					datasetIds.get(0), supportedDatafileFormat.getId(), "A rather splendid datafile", 201);
-		}
-		Datafile df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", dfid);
+        Long dfid = 0L;
+        for (int i = 0; i < 3; i++) {
+            dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file_" + i,
+                    datasetIds.get(0), supportedDatafileFormat.getId(), "A rather splendid datafile", 201);
+        }
+        Datafile df = (Datafile) icatWS.get(sessionId, "Datafile INCLUDE 1", dfid);
 
-		waitForIds();
-		Files.deleteIfExists(errorLog);
+        waitForIds();
+        Files.deleteIfExists(errorLog);
 
-		Long fileSize = df.getFileSize();
-		String checksum = df.getChecksum();
+        Long fileSize = df.getFileSize();
+        String checksum = df.getChecksum();
 
-		df.setFileSize(fileSize + 1);
-		icatWS.update(sessionId, df);
+        df.setFileSize(fileSize + 1);
+        icatWS.update(sessionId, df);
 
-		checkHas("Dataset", datasetIds.get(0), "file size wrong");
+        checkHas("Dataset", datasetIds.get(0), "file size wrong");
 
-		df.setFileSize(null);
-		icatWS.update(sessionId, df);
-		Files.deleteIfExists(errorLog);
-		checkHas("Dataset", datasetIds.get(0), "file size null");
+        df.setFileSize(null);
+        icatWS.update(sessionId, df);
+        Files.deleteIfExists(errorLog);
+        checkHas("Dataset", datasetIds.get(0), "file size null");
 
-		df.setFileSize(fileSize);
-		df.setChecksum("Aardvark");
-		icatWS.update(sessionId, df);
-		Files.deleteIfExists(errorLog);
-		checkHas("Dataset", datasetIds.get(0), "checksum wrong");
+        df.setFileSize(fileSize);
+        df.setChecksum("Aardvark");
+        icatWS.update(sessionId, df);
+        Files.deleteIfExists(errorLog);
+        checkHas("Dataset", datasetIds.get(0), "checksum wrong");
 
-		df.setChecksum(null);
-		icatWS.update(sessionId, df);
-		Files.deleteIfExists(errorLog);
-		checkHas("Dataset", datasetIds.get(0), "checksum null");
+        df.setChecksum(null);
+        icatWS.update(sessionId, df);
+        Files.deleteIfExists(errorLog);
+        checkHas("Dataset", datasetIds.get(0), "checksum null");
 
-		df.setChecksum(checksum);
-		icatWS.update(sessionId, df);
-		Files.delete(fileOnArchiveStorage);
-		Files.deleteIfExists(errorLog);
-		checkHas("Dataset", datasetIds.get(0), "/" + datasetIds.get(0));
-	}
+        df.setChecksum(checksum);
+        icatWS.update(sessionId, df);
+        Files.delete(fileOnArchiveStorage);
+        Files.deleteIfExists(errorLog);
+        checkHas("Dataset", datasetIds.get(0), "/" + datasetIds.get(0));
+    }
 
-	private void checkHas(String type, Long id, String message) throws IOException, InterruptedException {
-		Set<String> lines = new HashSet<String>();
-		while (!Files.exists(errorLog)) {
-			Thread.sleep(10);
-		}
-		for (String line : Files.readAllLines(errorLog, Charset.defaultCharset())) {
-			int n = line.indexOf(": ") + 2;
-			lines.add(line.substring(n));
-		}
-		assertEquals(1, lines.size());
-		String msg = new ArrayList<String>(lines).get(0);
-		assertTrue(msg + ":" + type + " " + id, msg.startsWith(type + " " + id));
-		assertTrue(msg + ":" + message, msg.endsWith(message));
-	}
+    private void checkHas(String type, Long id, String message) throws IOException, InterruptedException {
+        Set<String> lines = new HashSet<String>();
+        while (!Files.exists(errorLog)) {
+            Thread.sleep(10);
+        }
+        for (String line : Files.readAllLines(errorLog, Charset.defaultCharset())) {
+            int n = line.indexOf(": ") + 2;
+            lines.add(line.substring(n));
+        }
+        assertEquals(1, lines.size());
+        String msg = new ArrayList<String>(lines).get(0);
+        assertTrue(msg + ":" + type + " " + id, msg.startsWith(type + " " + id));
+        assertTrue(msg + ":" + message, msg.endsWith(message));
+    }
 
 }

@@ -9,15 +9,15 @@ import org.junit.Test;
 
 public class WriteTest extends BaseTest {
 
-	@BeforeClass
-	public static void setup() throws Exception {
-		setup = new Setup("one.properties");
-		icatsetup();
-	}
+    @BeforeClass
+    public static void setup() throws Exception {
+        setup = new Setup("one.properties");
+        icatsetup();
+    }
 
-	@Test(expected = NotImplementedException.class)
-	public void writeNotAvailableTest() throws Exception {
-		testingClient.write(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 501);
-	}
+    @Test(expected = NotImplementedException.class)
+    public void writeNotAvailableTest() throws Exception {
+        testingClient.write(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 501);
+    }
 
 }

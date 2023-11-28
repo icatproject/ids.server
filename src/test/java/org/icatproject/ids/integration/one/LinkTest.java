@@ -14,22 +14,22 @@ import org.junit.Test;
 
 public class LinkTest extends BaseTest {
 
-	private static Path here;
+    private static Path here;
 
-	@BeforeClass
-	public static void setup() throws Exception {
-		setup = new Setup("one.properties");
-		icatsetup();
-		here = Paths.get("").toAbsolutePath();
-	}
+    @BeforeClass
+    public static void setup() throws Exception {
+        setup = new Setup("one.properties");
+        icatsetup();
+        here = Paths.get("").toAbsolutePath();
+    }
 
-	@Test
-	public void getLink() throws Exception {
-		Path link = here.resolve("alink");
-		link = testingClient.getLink(sessionId, datafileIds.get(0), System.getProperty("user.name"), 200);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		Files.copy(link, baos);
-		assertEquals("df1 test content very compressible very compressible", baos.toString());
-		Files.delete(link);
-	}
+    @Test
+    public void getLink() throws Exception {
+        Path link = here.resolve("alink");
+        link = testingClient.getLink(sessionId, datafileIds.get(0), System.getProperty("user.name"), 200);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Files.copy(link, baos);
+        assertEquals("df1 test content very compressible very compressible", baos.toString());
+        Files.delete(link);
+    }
 }

@@ -1,437 +1,447 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.icatproject</groupId>
-	<artifactId>ids.server</artifactId>
-	<packaging>war</packaging>
-	<version>1.12.1-SNAPSHOT</version>
-	<name>IDS Server</name>
+    <groupId>org.icatproject</groupId>
+    <artifactId>ids.server</artifactId>
+    <packaging>war</packaging>
+    <version>1.12.1-SNAPSHOT</version>
+    <name>IDS Server</name>
 
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<repoUrl>https://repo.icatproject.org/repo</repoUrl>
-		<project.scm.id>github</project.scm.id>
-	</properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <repoUrl>https://repo.icatproject.org/repo</repoUrl>
+        <project.scm.id>github</project.scm.id>
+    </properties>
 
-	<repositories>
-		<repository>
-			<id>ICAT Repo</id>
-			<url>https://repo.icatproject.org/repo</url>
-		</repository>
-	</repositories>
+    <repositories>
+        <repository>
+            <id>ICAT Repo</id>
+            <url>https://repo.icatproject.org/repo</url>
+        </repository>
+    </repositories>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<id>miredot</id>
-			<name>MireDot Releases</name>
-			<url>https://secure-nexus.miredot.com/content/repositories/miredot</url>
-		</pluginRepository>
-	</pluginRepositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>miredot</id>
+            <name>MireDot Releases</name>
+            <url>https://secure-nexus.miredot.com/content/repositories/miredot</url>
+        </pluginRepository>
+    </pluginRepositories>
 
-	<scm>
-		<connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
-		<developerConnection>scm:git:git@github.com:icatproject/ids.server.git</developerConnection>
-		<url>https://github.com/icatproject/ids.server</url>
-		<tag>v1.9.1</tag>
-	</scm>
+    <scm>
+        <connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
+        <developerConnection>scm:git:git@github.com:icatproject/ids.server.git</developerConnection>
+        <url>https://github.com/icatproject/ids.server</url>
+        <tag>v1.9.1</tag>
+    </scm>
 
-	<issueManagement>
-		<url>https://github.com/icatproject/ids.server/issues</url>
-		<system>GitHub</system>
-	</issueManagement>
+    <issueManagement>
+        <url>https://github.com/icatproject/ids.server/issues</url>
+        <system>GitHub</system>
+    </issueManagement>
 
-	<licenses>
-		<license>
-			<name>Apache License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
-		</license>
-	</licenses>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
 
-	<organization>
-		<name>The ICAT Collaboration</name>
-		<url>http://www.icatproject.org</url>
-	</organization>
+    <organization>
+        <name>The ICAT Collaboration</name>
+        <url>http://www.icatproject.org</url>
+    </organization>
 
-	<distributionManagement>
-		<downloadUrl>https://repo.icatproject.org/repo</downloadUrl>
-		<site>
-			<id>repo.icatproject.org</id>
-			<url>dav:https://repo.icatproject.org/site/ids/server/${project.version}</url>
-		</site>
-		<repository>
-			<id>repo.icatproject.org</id>
-			<url>dav:https://repo.icatproject.org/repo</url>
-		</repository>
-	</distributionManagement>
+    <distributionManagement>
+        <downloadUrl>https://repo.icatproject.org/repo</downloadUrl>
+        <site>
+            <id>repo.icatproject.org</id>
+            <url>dav:https://repo.icatproject.org/site/ids/server/${project.version}</url>
+        </site>
+        <repository>
+            <id>repo.icatproject.org</id>
+            <url>dav:https://repo.icatproject.org/repo</url>
+        </repository>
+    </distributionManagement>
 
-	<description>ICAT Data Service to provide a uniform interface to data.</description>
+    <description>ICAT Data Service to provide a uniform interface to data.</description>
 
-	<dependencies>
+    <dependencies>
 
-		<dependency>
-			<groupId>org.icatproject</groupId>
-			<artifactId>icat.client</artifactId>
-			<version>4.10.0</version>
-		</dependency>
+        <dependency>
+            <groupId>org.icatproject</groupId>
+            <artifactId>icat.client</artifactId>
+            <version>4.10.0</version>
+        </dependency>
 
-		<dependency>
-			<groupId>org.icatproject</groupId>
-			<artifactId>icat.utils</artifactId>
-			<version>4.16.1</version>
-		</dependency>
+        <dependency>
+            <groupId>org.icatproject</groupId>
+            <artifactId>icat.utils</artifactId>
+            <version>4.16.1</version>
+        </dependency>
 
-		<dependency>
-			<groupId>org.icatproject</groupId>
-			<artifactId>ids.plugin</artifactId>
-			<version>1.5.0</version>
-		</dependency>
+        <dependency>
+            <groupId>org.icatproject</groupId>
+            <artifactId>ids.plugin</artifactId>
+            <version>1.5.0</version>
+        </dependency>
 
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
+        </dependency>
 
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<version>3.8.0</version>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>3.8.0</version>
+            <scope>test</scope>
+        </dependency>
 
-		<dependency>
-			<groupId>javax</groupId>
-			<artifactId>javaee-api</artifactId>
-			<version>7.0</version>
-		</dependency>
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-api</artifactId>
+            <version>7.0</version>
+        </dependency>
 
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.2.0</version>
-		</dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.0</version>
+        </dependency>
 
-		<dependency>
-			<groupId>commons-fileupload</groupId>
-			<artifactId>commons-fileupload</artifactId>
-			<version>1.3.3</version>
-		</dependency>
+        <dependency>
+            <groupId>commons-fileupload</groupId>
+            <artifactId>commons-fileupload</artifactId>
+            <version>1.3.3</version>
+        </dependency>
 
-		<dependency>
-			<groupId>org.glassfish</groupId>
-			<artifactId>javax.json</artifactId>
-			<version>1.0.4</version>
-			<scope>test</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>1.0.4</version>
+            <scope>test</scope>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
-	<build>
+    <build>
 
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-webdav-jackrabbit</artifactId>
-				<version>2.10</version>
-			</extension>
-		</extensions>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-webdav-jackrabbit</artifactId>
+                <version>2.10</version>
+            </extension>
+        </extensions>
 
-		<resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
 
-		<testResources>
-			<testResource>
-				<directory>src/test/resources</directory>
-				<filtering>true</filtering>
-			</testResource>
-		</testResources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
 
-		<plugins>
+        <plugins>
 
-			<plugin>
-				<groupId>com.qmino</groupId>
-				<artifactId>miredot-plugin</artifactId>
-				<version>1.6.2</version>
-				<executions>
-					<execution>
-						<id>miredot</id>
-						<goals>
-							<goal>restdoc</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<licence>cHJvamVjdHxvcmcuaWNhdHByb2plY3QuaWRzLnNlcnZlcnwyMDIyLTA0LTAxfGZhbHNlfC0xI01Dd0NGQjFzVFhsRS9CL1llTklZWndCZnB2UHlramcrQWhSYW5NR2JOS2craFZMUzJwRzZtcnZ3WXlEMzB3PT0=</licence>
-					<output>
-						<html>
-							<location>site/miredot</location>
-							<baseUrl>https://example.com/ids</baseUrl>
-						</html>
-					</output>
-					<analysis>
-						<checks>
-							<JAVADOC_MISSING_EXCEPTION_DOCUMENTATION>ignore</JAVADOC_MISSING_EXCEPTION_DOCUMENTATION>
-							<REST_UNMAPPED_EXCEPTION>ignore</REST_UNMAPPED_EXCEPTION>
-							<JAVADOC_MISSING_SUMMARY>warn</JAVADOC_MISSING_SUMMARY>
-							<JAVADOC_MISSING_INTERFACEDOCUMENTATION>warn</JAVADOC_MISSING_INTERFACEDOCUMENTATION>
-							<JAVADOC_MISSING_PARAMETER_DOCUMENTATION>warn</JAVADOC_MISSING_PARAMETER_DOCUMENTATION>
-							<JAVADOC_MISSING_AUTHORS>ignore</JAVADOC_MISSING_AUTHORS>
-							<JAXRS_MISSING_PRODUCES>warn</JAXRS_MISSING_PRODUCES>
-							<JAXRS_MISSING_CONSUMES>warn</JAXRS_MISSING_CONSUMES>
-							<JAXRS_MISSING_PATH_PARAM>warn</JAXRS_MISSING_PATH_PARAM>
-							<UNREACHABLE_RESOURCE>warn</UNREACHABLE_RESOURCE>
-							<PARTIAL_RESOURCE_OVERLAP>warn</PARTIAL_RESOURCE_OVERLAP>
-						</checks>
-					</analysis>
-					<restModel>
-						<httpStatusCodes>
-							<httpStatusCode>
-								<httpCode>400</httpCode>
-								<document>explicit:
-									org.icatproject.ids.exceptions.BadRequestException</document>
-								<defaultMessage>Invalid request.</defaultMessage>
-							</httpStatusCode>
-							<httpStatusCode>
-								<httpCode>403</httpCode>
-								<document>explicit:
-									org.icatproject.ids.exceptions.InsufficientPrivilegesException</document>
-								<defaultMessage>Insufficient privileges.</defaultMessage>
-							</httpStatusCode>
+            <plugin>
+                <groupId>com.qmino</groupId>
+                <artifactId>miredot-plugin</artifactId>
+                <version>1.6.2</version>
+                <executions>
+                    <execution>
+                        <id>miredot</id>
+                        <goals>
+                            <goal>restdoc</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <licence>
+                        cHJvamVjdHxvcmcuaWNhdHByb2plY3QuaWRzLnNlcnZlcnwyMDIyLTA0LTAxfGZhbHNlfC0xI01Dd0NGQjFzVFhsRS9CL1llTklZWndCZnB2UHlramcrQWhSYW5NR2JOS2craFZMUzJwRzZtcnZ3WXlEMzB3PT0=
+                    </licence>
+                    <output>
+                        <html>
+                            <location>site/miredot</location>
+                            <baseUrl>https://example.com/ids</baseUrl>
+                        </html>
+                    </output>
+                    <analysis>
+                        <checks>
+                            <JAVADOC_MISSING_EXCEPTION_DOCUMENTATION>ignore</JAVADOC_MISSING_EXCEPTION_DOCUMENTATION>
+                            <REST_UNMAPPED_EXCEPTION>ignore</REST_UNMAPPED_EXCEPTION>
+                            <JAVADOC_MISSING_SUMMARY>warn</JAVADOC_MISSING_SUMMARY>
+                            <JAVADOC_MISSING_INTERFACEDOCUMENTATION>warn</JAVADOC_MISSING_INTERFACEDOCUMENTATION>
+                            <JAVADOC_MISSING_PARAMETER_DOCUMENTATION>warn</JAVADOC_MISSING_PARAMETER_DOCUMENTATION>
+                            <JAVADOC_MISSING_AUTHORS>ignore</JAVADOC_MISSING_AUTHORS>
+                            <JAXRS_MISSING_PRODUCES>warn</JAXRS_MISSING_PRODUCES>
+                            <JAXRS_MISSING_CONSUMES>warn</JAXRS_MISSING_CONSUMES>
+                            <JAXRS_MISSING_PATH_PARAM>warn</JAXRS_MISSING_PATH_PARAM>
+                            <UNREACHABLE_RESOURCE>warn</UNREACHABLE_RESOURCE>
+                            <PARTIAL_RESOURCE_OVERLAP>warn</PARTIAL_RESOURCE_OVERLAP>
+                        </checks>
+                    </analysis>
+                    <restModel>
+                        <httpStatusCodes>
+                            <httpStatusCode>
+                                <httpCode>400</httpCode>
+                                <document>explicit:
+                                    org.icatproject.ids.exceptions.BadRequestException
+                                </document>
+                                <defaultMessage>Invalid request.</defaultMessage>
+                            </httpStatusCode>
+                            <httpStatusCode>
+                                <httpCode>403</httpCode>
+                                <document>explicit:
+                                    org.icatproject.ids.exceptions.InsufficientPrivilegesException
+                                </document>
+                                <defaultMessage>Insufficient privileges.</defaultMessage>
+                            </httpStatusCode>
 
-							<httpStatusCode>
-								<httpCode>404</httpCode>
-								<document>explicit:
-									org.icatproject.ids.exceptions.NotFoundException</document>
-								<defaultMessage>Data not found.</defaultMessage>
-							</httpStatusCode>
+                            <httpStatusCode>
+                                <httpCode>404</httpCode>
+                                <document>explicit:
+                                    org.icatproject.ids.exceptions.NotFoundException
+                                </document>
+                                <defaultMessage>Data not found.</defaultMessage>
+                            </httpStatusCode>
 
-							<httpStatusCode>
-								<httpCode>500</httpCode>
-								<document>explicit:
-									org.icatproject.ids.exceptions.InsufficientStorageException</document>
-								<defaultMessage>The service call has not succeeded.</defaultMessage>
-							</httpStatusCode>
+                            <httpStatusCode>
+                                <httpCode>500</httpCode>
+                                <document>explicit:
+                                    org.icatproject.ids.exceptions.InsufficientStorageException
+                                </document>
+                                <defaultMessage>The service call has not succeeded.</defaultMessage>
+                            </httpStatusCode>
 
-							<httpStatusCode>
-								<httpCode>500</httpCode>
-								<document>explicit:
-									org.icatproject.ids.exceptions.InternalException</document>
-								<defaultMessage>The service call has not succeeded.</defaultMessage>
-							</httpStatusCode>
+                            <httpStatusCode>
+                                <httpCode>500</httpCode>
+                                <document>explicit:
+                                    org.icatproject.ids.exceptions.InternalException
+                                </document>
+                                <defaultMessage>The service call has not succeeded.</defaultMessage>
+                            </httpStatusCode>
 
-							<httpStatusCode>
-								<httpCode>500</httpCode>
-								<document>always</document>
-								<defaultMessage>The service call has not succeeded.</defaultMessage>
-								<sticky>true</sticky> <!-- Document always, even if there is an @statuscode tag -->
-							</httpStatusCode>
+                            <httpStatusCode>
+                                <httpCode>500</httpCode>
+                                <document>always</document>
+                                <defaultMessage>The service call has not succeeded.</defaultMessage>
+                                <sticky>true</sticky> <!-- Document always, even if there is an @statuscode tag -->
+                            </httpStatusCode>
 
-							<httpStatusCode>
-								<httpCode>501</httpCode>
-								<document>explicit:
-									org.icatproject.ids.exceptions.NotImplementedException</document>
-								<defaultMessage>Not implemented.</defaultMessage>
-							</httpStatusCode>
+                            <httpStatusCode>
+                                <httpCode>501</httpCode>
+                                <document>explicit:
+                                    org.icatproject.ids.exceptions.NotImplementedException
+                                </document>
+                                <defaultMessage>Not implemented.</defaultMessage>
+                            </httpStatusCode>
 
-							<httpStatusCode>
-								<httpCode>503</httpCode>
-								<document>explicit:
-									org.icatproject.ids.exceptions.DataNotOnlineException</document>
-								<defaultMessage>Data not online.</defaultMessage>
-							</httpStatusCode>
-						</httpStatusCodes>
-					</restModel>
-				</configuration>
-			</plugin>
+                            <httpStatusCode>
+                                <httpCode>503</httpCode>
+                                <document>explicit:
+                                    org.icatproject.ids.exceptions.DataNotOnlineException
+                                </document>
+                                <defaultMessage>Data not online.</defaultMessage>
+                            </httpStatusCode>
+                        </httpStatusCodes>
+                    </restModel>
+                </configuration>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.3</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>3.0.1</version>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.0.0-M1</version>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.0.0-M1</version>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.18.1</version>
-				<configuration>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.18.1</version>
+                <configuration>
 
-					<excludes>
-						<exclude>
-							**/integration/**/*Test.java
-						</exclude>
+                    <excludes>
+                        <exclude>
+                            **/integration/**/*Test.java
+                        </exclude>
 
-					</excludes>
-					<systemPropertyVariables>
-						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
-						<serverUrl>${serverUrl}</serverUrl>
-						<containerHome>${containerHome}</containerHome>
-					</systemPropertyVariables>
-				</configuration>
-			</plugin>
+                    </excludes>
+                    <systemPropertyVariables>
+                        <javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
+                        <serverUrl>${serverUrl}</serverUrl>
+                        <containerHome>${containerHome}</containerHome>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.6</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<version>3.0.0</version>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.0.0</version>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>3.0.0</version>
-				<configuration>
-					<descriptors>
-						<descriptor>${project.basedir}/assemble/distribution.xml</descriptor>
-					</descriptors>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>${project.basedir}/assemble/distribution.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.4.0</version>
-				<executions>
-					<execution>
-						<id>Force install for first test</id>
-						<phase>pre-integration-test</phase>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-						<configuration>
-							<executable>rm</executable>
-							<arguments>
-								<argument>-f</argument>
-								<argument>src/test/install/run.properties</argument>
-							</arguments>
-						</configuration>
-					</execution>
-				</executions>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.4.0</version>
+                <executions>
+                    <execution>
+                        <id>Force install for first test</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>rm</executable>
+                            <arguments>
+                                <argument>-f</argument>
+                                <argument>src/test/install/run.properties</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
 
-			</plugin>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-site-plugin</artifactId>
-				<version>3.5.1</version>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.5.1</version>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>2.8.2</version>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.8.2</version>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.18.1</version>
-				<configuration>
-					<includes>
-						<include>**/integration/**/*Test.java</include>
-					</includes>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.18.1</version>
+                <configuration>
+                    <includes>
+                        <include>**/integration/**/*Test.java</include>
+                    </includes>
 
-					<systemPropertyVariables>
-						<serverUrl>${serverUrl}</serverUrl>
-						<javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
-						<containerHome>${containerHome}</containerHome>
-						<testHome>${testHome}</testHome>
-					</systemPropertyVariables>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>integration-test</goal>
-							<goal>verify</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+                    <systemPropertyVariables>
+                        <serverUrl>${serverUrl}</serverUrl>
+                        <javax.net.ssl.trustStore>${javax.net.ssl.trustStore}</javax.net.ssl.trustStore>
+                        <containerHome>${containerHome}</containerHome>
+                        <testHome>${testHome}</testHome>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-release-plugin</artifactId>
-				<version>2.5.3</version>
-				<configuration>
-					<tagNameFormat>v@{project.version}</tagNameFormat>
-					<arguments>-Dmaven.javadoc.skip=true</arguments>
-				</configuration>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                    <arguments>-Dmaven.javadoc.skip=true</arguments>
+                </configuration>
+            </plugin>
 
-		</plugins>
+        </plugins>
 
-	</build>
+    </build>
 
-	<reporting>
-		<plugins>
+    <reporting>
+        <plugins>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>2.8.1</version>
-				<configuration>
-					<dependencyLocationsEnabled>false</dependencyLocationsEnabled>
-				</configuration>
-				<reportSets>
-					<reportSet>
-						<reports>
-							<report>index</report>
-							<report>summary</report>
-							<report>dependencies</report>
-							<report>issue-tracking</report>
-							<report>license</report>
-							<report>plugins</report>
-							<report>scm</report>
-						</reports>
-					</reportSet>
-				</reportSets>
-			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.8.1</version>
+                <configuration>
+                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>index</report>
+                            <report>summary</report>
+                            <report>dependencies</report>
+                            <report>issue-tracking</report>
+                            <report>license</report>
+                            <report>plugins</report>
+                            <report>scm</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
 
-		</plugins>
-	</reporting>
+        </plugins>
+    </reporting>
 
 </project>
 

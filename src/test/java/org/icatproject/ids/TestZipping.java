@@ -17,52 +17,52 @@ import org.junit.Test;
 
 public class TestZipping {
 
-	@Test
-	public void testDuplicates() throws Exception {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(baos));
+    @Test
+    public void testDuplicates() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(baos));
 
-		// zos.setLevel(0);
-		List<String> in = new ArrayList<>();
+        // zos.setLevel(0);
+        List<String> in = new ArrayList<>();
 
-		for (String entryName : Arrays.asList("abcd/qa", "abcd/qw", "abcd/qw", "abcd/qb", "abcd/qc", "abcd/qw")) {
+        for (String entryName : Arrays.asList("abcd/qa", "abcd/qw", "abcd/qw", "abcd/qb", "abcd/qc", "abcd/qw")) {
 
-			try {
-				zos.putNextEntry(new ZipEntry(entryName));
-				byte[] bytes = entryName.getBytes();
+            try {
+                zos.putNextEntry(new ZipEntry(entryName));
+                byte[] bytes = entryName.getBytes();
 
-				zos.write(bytes, 0, bytes.length);
-				zos.write(bytes, 0, bytes.length);
-				in.add(entryName);
-			} catch (ZipException e) {
-				// OK
-			}
-			zos.closeEntry();
-		}
-		zos.close();
-		
-		assertEquals(4, in.size());
+                zos.write(bytes, 0, bytes.length);
+                zos.write(bytes, 0, bytes.length);
+                in.add(entryName);
+            } catch (ZipException e) {
+                // OK
+            }
+            zos.closeEntry();
+        }
+        zos.close();
 
-		ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-		ZipInputStream zis = new ZipInputStream(bais);
+        assertEquals(4, in.size());
 
-		int off = 0;
-		ZipEntry ze = zis.getNextEntry();
-		while (ze != null) {
-			String entryName = ze.getName();
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ZipInputStream zis = new ZipInputStream(bais);
 
-			assertEquals(in.get(off), entryName);
-			byte[] bytes = new byte[40];
-			int n;
-			while ((n = zis.read(bytes, 0, 40)) >= 0) {
-				String s = new String(bytes, 0, n);
-				assertEquals(in.get(off) + in.get(off), s);
-			}
-			off++;
-			ze = zis.getNextEntry();
-		}
-		zis.close();
+        int off = 0;
+        ZipEntry ze = zis.getNextEntry();
+        while (ze != null) {
+            String entryName = ze.getName();
 
-	}
+            assertEquals(in.get(off), entryName);
+            byte[] bytes = new byte[40];
+            int n;
+            while ((n = zis.read(bytes, 0, 40)) >= 0) {
+                String s = new String(bytes, 0, n);
+                assertEquals(in.get(off) + in.get(off), s);
+            }
+            off++;
+            ze = zis.getNextEntry();
+        }
+        zis.close();
+
+    }
 
 }

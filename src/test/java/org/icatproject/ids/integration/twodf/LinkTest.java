@@ -15,28 +15,28 @@ import org.junit.Test;
 
 public class LinkTest extends BaseTest {
 
-	@BeforeClass
-	public static void setup() throws Exception {
-		setup = new Setup("twodf.properties");
-		icatsetup();
-	}
+    @BeforeClass
+    public static void setup() throws Exception {
+        setup = new Setup("twodf.properties");
+        icatsetup();
+    }
 
-	@Test
-	public void getLink() throws Exception {
+    @Test
+    public void getLink() throws Exception {
 
-		String username = System.getProperty("user.name");
-		try {
-			testingClient.getLink(sessionId, datafileIds.get(0), username, 503);
-			fail("Should have thrown an exception");
-		} catch (DataNotOnlineException e) {
-			// All is well
-		}
+        String username = System.getProperty("user.name");
+        try {
+            testingClient.getLink(sessionId, datafileIds.get(0), username, 503);
+            fail("Should have thrown an exception");
+        } catch (DataNotOnlineException e) {
+            // All is well
+        }
 
-		waitForIds();
+        waitForIds();
 
-		Path link = testingClient.getLink(sessionId, datafileIds.get(0), username, 200);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		Files.copy(link, baos);
-		assertEquals("df1 test content very compressible very compressible", baos.toString());
-	}
+        Path link = testingClient.getLink(sessionId, datafileIds.get(0), username, 200);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Files.copy(link, baos);
+        assertEquals("df1 test content very compressible very compressible", baos.toString());
+    }
 }

@@ -1,10 +1,10 @@
 package org.icatproject.ids.integration.util.client;
 
 @SuppressWarnings("serial")
-public class IdsException extends Exception{
+public class IdsException extends Exception {
 
-	public IdsException(String msg) {
-		super(msg);
-	}
+    public IdsException(String msg) {
+        super(msg);
+    }
 
 }
