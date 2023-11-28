@@ -1,12 +1,12 @@
 package org.icatproject.ids.integration.twodf;
 
-import java.nio.file.Path;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Path;
 
 public class DeleteTest extends BaseTest {
 

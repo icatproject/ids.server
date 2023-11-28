@@ -1,12 +1,12 @@
 package org.icatproject.ids;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class TestUtils {
 

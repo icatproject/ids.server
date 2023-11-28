@@ -1,10 +1,10 @@
 package org.icatproject.ids.integration.util.client;
 
-import java.io.FilterInputStream;
-import java.io.IOException;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.FilterInputStream;
+import java.io.IOException;
 
 public class HttpInputStream extends FilterInputStream {
 

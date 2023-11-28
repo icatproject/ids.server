@@ -10,14 +10,13 @@ import jakarta.jms.TextMessage;
 import jakarta.jms.Topic;
 import jakarta.jms.TopicConnection;
 import jakarta.jms.TopicConnectionFactory;
-
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 @Singleton
 public class Transmitter {

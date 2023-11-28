@@ -1,5 +1,21 @@
 package org.icatproject.ids;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import org.icatproject.Datafile;
+import org.icatproject.Dataset;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.plugin.DfInfo;
+import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.plugin.MainStorageInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,23 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.ejb.EJB;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-
-import org.icatproject.Datafile;
-import org.icatproject.Dataset;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.plugin.DfInfo;
-import org.icatproject.ids.plugin.DsInfo;
-import org.icatproject.ids.plugin.MainStorageInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Singleton
 @Startup

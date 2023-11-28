@@ -1,9 +1,26 @@
 package org.icatproject.ids.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
+import org.icatproject.Datafile;
+import org.icatproject.DatafileFormat;
+import org.icatproject.Dataset;
+import org.icatproject.DatasetType;
+import org.icatproject.EntityBaseBean;
+import org.icatproject.Facility;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.Investigation;
+import org.icatproject.InvestigationType;
+import org.icatproject.icat.client.ICAT;
+import org.icatproject.icat.client.Session;
+import org.icatproject.ids.ICATGetter;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
+import org.icatproject.ids.integration.util.client.TestingClient;
+import org.icatproject.ids.integration.util.client.TestingClient.Flag;
+import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
+import org.icatproject.ids.integration.util.client.TestingClient.Status;
+import org.junit.Before;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,28 +49,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import jakarta.json.Json;
-import jakarta.json.JsonReader;
-
-import org.icatproject.Datafile;
-import org.icatproject.DatafileFormat;
-import org.icatproject.Dataset;
-import org.icatproject.DatasetType;
-import org.icatproject.EntityBaseBean;
-import org.icatproject.Facility;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.Investigation;
-import org.icatproject.InvestigationType;
-import org.icatproject.icat.client.ICAT;
-import org.icatproject.icat.client.Session;
-import org.icatproject.ids.ICATGetter;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
-import org.icatproject.ids.integration.util.client.TestingClient;
-import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
-import org.junit.Before;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class BaseTest {
 

@@ -1,8 +1,5 @@
 package org.icatproject.ids.thread;
 
-import java.util.Collection;
-import java.util.List;
-
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
@@ -10,6 +7,9 @@ import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Delete datafiles from archive

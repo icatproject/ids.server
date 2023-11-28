@@ -1,5 +1,11 @@
 package org.icatproject.ids.integration.util;
 
+import org.icatproject.ICAT;
+import org.icatproject.ids.ICATGetter;
+import org.icatproject.ids.TestUtils;
+import org.icatproject.utils.CheckedProperties;
+import org.icatproject.utils.ShellCommand;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,12 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
-
-import org.icatproject.ICAT;
-import org.icatproject.ids.ICATGetter;
-import org.icatproject.ids.TestUtils;
-import org.icatproject.utils.CheckedProperties;
-import org.icatproject.utils.ShellCommand;
 
 /*
  * Setup the test environment for the IDS. This is done by reading property

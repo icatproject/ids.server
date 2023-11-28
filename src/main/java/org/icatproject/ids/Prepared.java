@@ -1,10 +1,10 @@
 package org.icatproject.ids;
 
+import org.icatproject.ids.plugin.DsInfo;
+
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
-
-import org.icatproject.ids.plugin.DsInfo;
 
 /* This is a POJO with only package access so don't make data private */
 class Prepared {

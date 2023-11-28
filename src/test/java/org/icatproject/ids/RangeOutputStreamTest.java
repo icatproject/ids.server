@@ -1,12 +1,11 @@
 package org.icatproject.ids;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
-import org.icatproject.ids.RangeOutputStream;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class RangeOutputStreamTest {
 

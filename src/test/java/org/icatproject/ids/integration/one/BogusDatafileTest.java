@@ -1,15 +1,5 @@
 package org.icatproject.ids.integration.one;
 
-import java.io.InputStream;
-import java.util.Collections;
-
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.integration.BaseTest;
@@ -17,7 +7,14 @@ import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.InputStream;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
 
 /*
  * Issue #63: Internal error is raised trying to restore a dataset

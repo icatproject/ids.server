@@ -1,7 +1,5 @@
 package org.icatproject.ids.integration.one;
 
-import java.util.Arrays;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
@@ -11,6 +9,8 @@ import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 public class GetStatusForPreparedIdTest extends BaseTest {
 

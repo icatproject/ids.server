@@ -1,9 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Arrays;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
@@ -13,6 +9,10 @@ import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
 
 public class GetStatusExplicitTest extends BaseTest {
 

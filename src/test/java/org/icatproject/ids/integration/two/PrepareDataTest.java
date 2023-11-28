@@ -1,12 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.nio.file.Path;
-import java.util.List;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
@@ -15,6 +8,13 @@ import org.icatproject.ids.integration.util.client.InsufficientPrivilegesExcepti
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class PrepareDataTest extends BaseTest {
 

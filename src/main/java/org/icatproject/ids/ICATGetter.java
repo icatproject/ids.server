@@ -1,15 +1,14 @@
 package org.icatproject.ids;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import jakarta.xml.ws.WebServiceException;
-
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;
 import org.icatproject.IcatException;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * To find the ICAT SOAP web service irrespective of the container in use. It

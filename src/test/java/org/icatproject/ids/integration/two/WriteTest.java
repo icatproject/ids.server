@@ -1,11 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.UUID;
-
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.DatasetType;
@@ -18,6 +12,11 @@ import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.UUID;
 
 public class WriteTest extends BaseTest {
 

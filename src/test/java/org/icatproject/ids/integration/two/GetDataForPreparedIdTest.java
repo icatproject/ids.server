@@ -1,9 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.InputStream;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
@@ -12,6 +8,10 @@ import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.InputStream;
+
+import static org.junit.Assert.assertEquals;
 
 public class GetDataForPreparedIdTest extends BaseTest {
 

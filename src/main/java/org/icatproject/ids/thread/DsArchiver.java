@@ -1,8 +1,5 @@
 package org.icatproject.ids.thread;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
@@ -10,6 +7,9 @@ import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /*
  * Removes datasets from the fast storage (doesn't write them to slow storage)

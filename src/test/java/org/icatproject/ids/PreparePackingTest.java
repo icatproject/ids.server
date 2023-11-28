@@ -1,10 +1,7 @@
 package org.icatproject.ids;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.icatproject.ids.plugin.DsInfo;
+import org.junit.Test;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -17,8 +14,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.icatproject.ids.plugin.DsInfo;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class PreparePackingTest {
 

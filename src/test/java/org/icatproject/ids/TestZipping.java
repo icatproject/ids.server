@@ -1,6 +1,6 @@
 package org.icatproject.ids;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class TestZipping {
 

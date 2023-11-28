@@ -1,18 +1,8 @@
 package org.icatproject.ids;
 
-import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
-
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ICAT;
@@ -27,6 +17,15 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.plugin.DsInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Class to convert 3 comma separated strings containing Investigation,
