@@ -3,7 +3,7 @@ package org.icatproject.ids;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import javax.xml.ws.WebServiceException;
+import jakarta.xml.ws.WebServiceException;
 
 import org.icatproject.ICAT;
 import org.icatproject.ICATService;

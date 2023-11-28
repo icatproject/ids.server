@@ -22,12 +22,12 @@ import java.util.Set;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
-import javax.json.Json;
-import javax.json.JsonException;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonException;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -249,21 +249,6 @@ public class TestingClient {
             if (!EntityUtils.toString(entity).isEmpty()) {
                 throw new InternalException("No http entity expected in response");
             }
-        }
-    }
-
-    public String getApiVersion(int sc) throws InternalException, ParseException, NotImplementedException {
-        URI uri = getUri(getUriBuilder("getApiVersion"));
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-            HttpGet httpGet = new HttpGet(uri);
-            try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                return getString(response, sc);
-            } catch (IOException | InsufficientStorageException | DataNotOnlineException | BadRequestException
-                     | InsufficientPrivilegesException | NotFoundException e) {
-                throw new InternalException(e.getClass() + " " + e.getMessage());
-            }
-        } catch (IOException e) {
-            throw new InternalException(e.getClass() + " " + e.getMessage());
         }
     }
 

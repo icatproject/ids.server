@@ -18,11 +18,11 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
@@ -310,6 +310,7 @@ public class FileChecker {
         StorageUnit storageUnit = propertyHandler.getStorageUnit();
         filesCheckParallelCount = propertyHandler.getFilesCheckParallelCount();
         if (filesCheckParallelCount > 0) {
+            logger.warn("The FileChecker is deprecated and slated for removal in ids.server 3.0");
             if (storageUnit == null || storageUnit == StorageUnit.DATASET) {
                 filesCheckGapMillis = propertyHandler.getFilesCheckGapMillis();
                 filesCheckLastIdFile = propertyHandler.getFilesCheckLastIdFile();

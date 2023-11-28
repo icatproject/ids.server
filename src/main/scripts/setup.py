@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from setup_utils import *
 import os
+import warnings
 
 # ids.server
 
@@ -14,7 +15,7 @@ actions, arg, props = getActions("setup.properties", [])
 prop_name = "run.properties"
 prop_list = ["icat.url", "plugin.zipMapper.class", "plugin.main.class", "cache.dir",
 "preparedCount", "processQueueIntervalSeconds", "rootUserNames", "sizeCheckIntervalSeconds", "reader",
-"filesCheck.parallelCount", "linkLifetimeSeconds", "maxIdsInQuery"]
+"maxIdsInQuery"]
 
 if arg in ["CONFIGURE", "INSTALL"]: actions.configure(prop_name, prop_list)
 idsProperties = getProperties(prop_name, prop_list)
@@ -33,15 +34,14 @@ if arg == "INSTALL":
         if not idsProperties.get("tidyBlockSize"): abort("tidyBlockSize is not set in ids.properties")
         if not idsProperties.get("storageUnit"): abort("storageUnit is not set in run.properties")
         if idsProperties["storageUnit"].lower == "dataset":
-            if not (idsProperties.get("delayDatasetWritesSeconds") or
-                    idsProperties.get("writeDelaySeconds")):
+            if not (idsProperties.get("delayDatasetWritesSeconds")):
                 abort("delayDatasetWritesSeconds is not set in run.properties")
         if idsProperties["storageUnit"].lower == "datafile":
-            if not (idsProperties.get("delayDatafileOperationsSeconds") or
-                    idsProperties.get("writeDelaySeconds")):
+            if not (idsProperties.get("delayDatafileOperationsSeconds")):
                 abort("delayDatafileOperationsSeconds is not set in run.properties")
 
-    if int(idsProperties["filesCheck.parallelCount"]):
+    if int(idsProperties.get("filesCheck.parallelCount", 0)) > 0:
+        warnings.warn("The FileChecker is deprecated and slated for removal in ids.server 3.0")
         if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in run.properties")
         if not idsProperties.get("filesCheck.lastIdFile"): abort("filesCheck.lastIdFile is not set in run.properties")
         parent = os.path.dirname(os.path.expandvars(idsProperties["filesCheck.lastIdFile"]))
@@ -53,9 +53,12 @@ if arg == "INSTALL":
             abort("Please create directory " + parent + " for filesCheck.errorLog specified in run.properties")
         if not idsProperties.get("reader"): abort("reader is not set in run.properties")
 
+    if int(idsProperties.get("linkLifetimeSeconds", 0)) > 0:
+        warnings.warn("The getLink API call is deprecated and slated for removal in ids.server 3.0")
+
     try:
         uninstall()
-        actions.createJMSResource("javax.jms.Topic", "jms/IDS/log")
+        actions.createJMSResource("jakarta.jms.Topic", "jms/IDS/log")
 
         ovfiles = [[prop_name, "WEB-INF/classes"]]
         if os.path.exists("logback.xml"): ovfiles.append(["logback.xml", "WEB-INF/classes"])

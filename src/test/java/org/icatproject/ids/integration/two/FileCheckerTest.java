@@ -66,13 +66,7 @@ public class FileCheckerTest extends BaseTest {
 
         df.setFileSize(fileSize + 1);
         icatWS.update(sessionId, df);
-
         checkHas("Dataset", datasetIds.get(0), "file size wrong");
-
-        df.setFileSize(null);
-        icatWS.update(sessionId, df);
-        Files.deleteIfExists(errorLog);
-        checkHas("Dataset", datasetIds.get(0), "file size null");
 
         df.setFileSize(fileSize);
         df.setChecksum("Aardvark");

@@ -32,8 +32,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import javax.json.Json;
-import javax.json.JsonReader;
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
 
 import org.icatproject.Datafile;
 import org.icatproject.DatafileFormat;
@@ -492,10 +492,6 @@ public class BaseTest {
 
     protected void getIcatUrlTest() throws Exception {
         System.out.println(testingClient.getIcatUrl(200));
-    }
-
-    protected void apiVersionTest() throws Exception {
-        assertTrue(testingClient.getApiVersion(200).startsWith("1.8."));
     }
 
     protected void raceTest() throws Exception {

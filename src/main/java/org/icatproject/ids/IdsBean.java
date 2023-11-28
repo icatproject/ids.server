@@ -40,17 +40,18 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.EJB;
-import javax.ejb.Stateless;
-import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.annotation.PostConstruct;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Stateless;
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+
 import javax.xml.datatype.DatatypeFactory;
 
 import org.icatproject.Datafile;
@@ -1044,6 +1045,8 @@ public class IdsBean {
 
         if (!linkEnabled) {
             throw new NotImplementedException("Sorry getLink is not available on this IDS installation");
+        } else {
+            logger.warn("The getLink API call is deprecated and slated for removal in ids.server 3.0");
         }
 
         validateUUID("sessionId", sessionId);

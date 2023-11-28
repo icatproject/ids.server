@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 import sys
 import os
@@ -41,12 +41,13 @@ finally:
 for f in glob.glob("src/test/install/*.war"):
     os.remove(f)
 
-with open("src/test/install/setup.properties", "wt") as f:
-    print("secure         = true", file=f)
-    print("container      = Glassfish", file=f)
-    print("home           = %s" % containerHome, file=f)
-    print("port           = 4848", file=f)
-    print("libraries      = ids.storage_test*.jar", file=f)
+if not os.path.exists("src/test/install/setup.properties"):
+    with open("src/test/install/setup.properties", "wt") as f:
+        print("secure         = true", file=f)
+        print("container      = Glassfish", file=f)
+        print("home           = %s" % containerHome, file=f)
+        print("port           = 4848", file=f)
+        print("libraries      = ids.storage_test*.jar", file=f)
 
 with open("src/test/install/run.properties.example", "wt") as f:
     pass
@@ -58,10 +59,11 @@ with ZipFile(glob.glob("target/ids.server-*-distro.zip")[0]) as z:
     with open("src/test/install/setup_utils.py", "wb") as f:
         f.write(z.read("ids.server/setup_utils.py"))
 
-with open("src/main/resources/logback.xml", "rt") as s:
-    with open("src/test/install/logback.xml", "wt") as f:
-        t = Template(s.read()).substitute(subst)
-        print(t, end="", file=f)
+if not os.path.exists("src/test/install/logback.xml"):
+    with open("src/main/resources/logback.xml", "rt") as s:
+        with open("src/test/install/logback.xml", "wt") as f:
+            t = Template(s.read()).substitute(subst)
+            print(t, end="", file=f)
 
 p = subprocess.Popen(["./setup", "install"], cwd="src/test/install")
 p.wait()

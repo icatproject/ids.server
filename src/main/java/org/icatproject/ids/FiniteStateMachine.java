@@ -20,13 +20,13 @@ import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ejb.DependsOn;
-import javax.ejb.EJB;
-import javax.ejb.Singleton;
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.ejb.DependsOn;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Singleton;
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
 
 import org.icatproject.Dataset;
 import org.icatproject.ids.LockManager.Lock;

@@ -26,11 +26,6 @@ public class BaseTests extends BaseTest {
     }
 
     @Test
-    public void apiVersionTest() throws Exception {
-        super.apiVersionTest();
-    }
-
-    @Test
     public void getDatafileIdsTest() throws Exception {
         super.getDatafileIdsTest();
     }

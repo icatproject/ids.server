@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.json.Json;
-import javax.json.JsonReader;
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
 
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
@@ -181,21 +181,9 @@ public class PropertyHandler {
                     abort("storageUnit value " + props.getString("storageUnit") + " must be taken from " + vs);
                 }
                 if (storageUnit == StorageUnit.DATASET) {
-                    if (!props.has("delayDatasetWritesSeconds") && props.has("writeDelaySeconds")) {
-                        // compatibility mode
-                        logger.warn("writeDelaySeconds is deprecated, please use delayDatasetWritesSeconds instead");
-                        delayDatasetWrites = props.getPositiveLong("writeDelaySeconds");
-                    } else {
-                        delayDatasetWrites = props.getPositiveLong("delayDatasetWritesSeconds");
-                    }
+                    delayDatasetWrites = props.getPositiveLong("delayDatasetWritesSeconds");
                 } else if (storageUnit == StorageUnit.DATAFILE) {
-                    if (!props.has("delayDatafileOperationsSeconds") && props.has("writeDelaySeconds")) {
-                        // compatibility mode
-                        logger.warn("writeDelaySeconds is deprecated, please use delayDatafileOperationsSeconds instead");
-                        delayDatafileOperations = props.getPositiveLong("writeDelaySeconds");
-                    } else {
-                        delayDatafileOperations = props.getPositiveLong("delayDatafileOperationsSeconds");
-                    }
+                    delayDatafileOperations = props.getPositiveLong("delayDatafileOperationsSeconds");
                 }
                 tidyBlockSize = props.getPositiveInt("tidyBlockSize");
             }
@@ -209,7 +197,11 @@ public class PropertyHandler {
                 abort(cacheDir + " must be an existing directory");
             }
 
-            filesCheckParallelCount = props.getNonNegativeInt("filesCheck.parallelCount");
+            if (props.has("filesCheck.parallelCount")) {
+                filesCheckParallelCount = props.getNonNegativeInt("filesCheck.parallelCount");
+            } else {
+                filesCheckParallelCount = 0;
+            }
             if (filesCheckParallelCount > 0) {
                 filesCheckGapMillis = props.getPositiveInt("filesCheck.gapSeconds") * 1000;
                 filesCheckLastIdFile = props.getFile("filesCheck.lastIdFile").toPath();
@@ -222,8 +214,11 @@ public class PropertyHandler {
                 }
             }
 
-            linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
-
+            if (props.has("linkLifetimeSeconds")) {
+                linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
+            } else {
+                linkLifetimeMillis = 0;
+            }
             maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
 
             /* JMS stuff */
