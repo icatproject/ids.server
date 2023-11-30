@@ -86,7 +86,7 @@ jobs:
           mvn package
           unzip target/ids.storage_test-*.zip
           cd ids.storage_test
-          cp properties.example setup.properties
+          cp setup.properties.example setup.properties
           sed -i 's+home=/home/fisher/pf/glassfish4+home='"$(realpath /home/runner/payara*)+g" setup.properties
           ./setup -vv install
 
