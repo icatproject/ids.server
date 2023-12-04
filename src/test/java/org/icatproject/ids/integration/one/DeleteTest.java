@@ -1,13 +1,5 @@
 package org.icatproject.ids.integration.one;
 
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
-import org.icatproject.ids.integration.util.client.NotFoundException;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -15,6 +7,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
+import org.icatproject.ids.integration.util.client.NotFoundException;
+import org.icatproject.ids.integration.util.client.TestingClient.Status;
 
 public class DeleteTest extends BaseTest {
 

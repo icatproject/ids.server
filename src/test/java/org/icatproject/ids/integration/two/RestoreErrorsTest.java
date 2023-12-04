@@ -5,14 +5,6 @@ package org.icatproject.ids.integration.two;
  * in archive storage having unexpected content.
  */
 
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
-import org.icatproject.ids.integration.util.client.InternalException;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +14,14 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
+import org.icatproject.ids.integration.util.client.InternalException;
+import org.icatproject.ids.integration.util.client.TestingClient.Status;
 
 public class RestoreErrorsTest extends BaseTest {
 

@@ -1,17 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import org.icatproject.Datafile;
-import org.icatproject.Dataset;
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
-import org.icatproject.ids.integration.util.client.NotFoundException;
-import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.icatproject.ids.integration.util.client.TestingClient.Status;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -23,6 +11,18 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.Datafile;
+import org.icatproject.Dataset;
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
+import org.icatproject.ids.integration.util.client.NotFoundException;
+import org.icatproject.ids.integration.util.client.TestingClient.Flag;
+import org.icatproject.ids.integration.util.client.TestingClient.Status;
 
 /*
  * Issue #63: Internal error is raised trying to restore a dataset

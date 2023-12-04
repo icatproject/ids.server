@@ -1,18 +1,19 @@
 package org.icatproject.ids.thread;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 /*
  * Restores datafiles from the slow to the fast storage.

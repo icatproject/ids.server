@@ -1,18 +1,5 @@
 package org.icatproject.ids;
 
-import jakarta.json.Json;
-import jakarta.json.JsonReader;
-import org.icatproject.ICAT;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.IdsBean.CallType;
-import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.plugin.ZipMapperInterface;
-import org.icatproject.utils.CheckedProperties;
-import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +13,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.icatproject.ICAT;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.IdsBean.CallType;
+import org.icatproject.ids.plugin.ArchiveStorageInterface;
+import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.utils.CheckedProperties;
+import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 
 /*
  * Load the properties specified in the properties file ids.properties.

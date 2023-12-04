@@ -1,12 +1,12 @@
 package org.icatproject.ids;
 
-import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.utils.IcatSecurity;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.Test;
+
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.utils.IcatSecurity;
 
 public class DigestTest {
 

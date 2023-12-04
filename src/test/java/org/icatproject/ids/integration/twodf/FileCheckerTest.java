@@ -1,13 +1,5 @@
 package org.icatproject.ids.integration.twodf;
 
-import org.icatproject.Datafile;
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -18,6 +10,14 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.icatproject.Datafile;
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
 
 public class FileCheckerTest extends BaseTest {
 

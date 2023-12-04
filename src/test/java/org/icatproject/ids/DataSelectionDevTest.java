@@ -1,17 +1,5 @@
 package org.icatproject.ids;
 
-import jakarta.json.Json;
-import jakarta.json.JsonReader;
-import org.icatproject.ICAT;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.icat.client.IcatException;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.net.URISyntaxException;
@@ -19,8 +7,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
+
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import static org.mockito.Mockito.when;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import org.icatproject.ICAT;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.icat.client.IcatException;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond

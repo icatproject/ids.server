@@ -1,15 +1,15 @@
 package org.icatproject.ids.integration.twodf;
 
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
 
 public class QueueTest extends BaseTest {
 

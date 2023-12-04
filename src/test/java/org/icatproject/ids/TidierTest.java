@@ -1,8 +1,5 @@
 package org.icatproject.ids;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +8,8 @@ import java.nio.file.StandardCopyOption;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class TidierTest {
 

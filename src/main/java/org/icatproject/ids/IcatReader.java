@@ -1,17 +1,19 @@
 package org.icatproject.ids;
 
+import java.util.List;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Singleton;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.icatproject.EntityBaseBean;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 @Singleton
 public class IcatReader {

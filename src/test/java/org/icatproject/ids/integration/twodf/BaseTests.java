@@ -1,10 +1,11 @@
 package org.icatproject.ids.integration.twodf;
 
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
 
 public class BaseTests extends BaseTest {
 

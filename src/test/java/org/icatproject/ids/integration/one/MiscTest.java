@@ -1,18 +1,18 @@
 package org.icatproject.ids.integration.one;
 
+import java.io.InputStream;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.NotImplementedException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.io.InputStream;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class MiscTest extends BaseTest {
 

@@ -1,21 +1,21 @@
 package org.icatproject.ids.integration.one;
 
-import org.icatproject.Datafile;
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.BadRequestException;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import javax.xml.datatype.DatatypeFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import javax.xml.datatype.DatatypeFactory;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.Datafile;
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.BadRequestException;
 
 public class PutTest extends BaseTest {
 

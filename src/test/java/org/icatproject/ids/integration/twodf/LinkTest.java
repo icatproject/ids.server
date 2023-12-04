@@ -1,17 +1,17 @@
 package org.icatproject.ids.integration.twodf;
 
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataNotOnlineException;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataNotOnlineException;
 
 public class LinkTest extends BaseTest {
 

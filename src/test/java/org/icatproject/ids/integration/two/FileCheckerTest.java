@@ -1,18 +1,5 @@
 package org.icatproject.ids.integration.two;
 
-import org.icatproject.Datafile;
-import org.icatproject.DatafileFormat;
-import org.icatproject.Dataset;
-import org.icatproject.DatasetType;
-import org.icatproject.Facility;
-import org.icatproject.Investigation;
-import org.icatproject.InvestigationType;
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +13,19 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.Datafile;
+import org.icatproject.DatafileFormat;
+import org.icatproject.Dataset;
+import org.icatproject.DatasetType;
+import org.icatproject.Facility;
+import org.icatproject.Investigation;
+import org.icatproject.InvestigationType;
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
 
 public class FileCheckerTest extends BaseTest {
 

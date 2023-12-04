@@ -1,15 +1,16 @@
 package org.icatproject.ids.exceptions;
 
+import java.io.ByteArrayOutputStream;
+
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
 
 @Provider
 public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {

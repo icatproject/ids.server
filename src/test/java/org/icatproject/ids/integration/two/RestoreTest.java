@@ -1,12 +1,13 @@
 package org.icatproject.ids.integration.two;
 
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.icatproject.ids.integration.util.client.DataSelection;
+import java.nio.file.Path;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.nio.file.Path;
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
+import org.icatproject.ids.integration.util.client.DataSelection;
 
 public class RestoreTest extends BaseTest {
 

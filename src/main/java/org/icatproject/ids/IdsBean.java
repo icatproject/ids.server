@@ -1,45 +1,5 @@
 package org.icatproject.ids;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.ejb.EJB;
-import jakarta.ejb.Stateless;
-import jakarta.json.Json;
-import jakarta.json.JsonNumber;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import jakarta.json.JsonValue;
-import jakarta.json.stream.JsonGenerator;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
-import org.icatproject.Datafile;
-import org.icatproject.DatafileFormat;
-import org.icatproject.Dataset;
-import org.icatproject.EntityBaseBean;
-import org.icatproject.ICAT;
-import org.icatproject.IcatExceptionType;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.DataSelection.Returns;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.LockManager.LockType;
-import org.icatproject.ids.exceptions.BadRequestException;
-import org.icatproject.ids.exceptions.DataNotOnlineException;
-import org.icatproject.ids.exceptions.IdsException;
-import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.exceptions.NotFoundException;
-import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DfInfo;
-import org.icatproject.ids.plugin.DsInfo;
-import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.plugin.ZipMapperInterface;
-import org.icatproject.utils.IcatSecurity;
-import org.icatproject.utils.ShellCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.xml.datatype.DatatypeFactory;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -79,6 +39,48 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
+import javax.xml.datatype.DatatypeFactory;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Stateless;
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.icatproject.Datafile;
+import org.icatproject.DatafileFormat;
+import org.icatproject.Dataset;
+import org.icatproject.EntityBaseBean;
+import org.icatproject.ICAT;
+import org.icatproject.IcatExceptionType;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.DataSelection.Returns;
+import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.LockManager.LockType;
+import org.icatproject.ids.exceptions.BadRequestException;
+import org.icatproject.ids.exceptions.DataNotOnlineException;
+import org.icatproject.ids.exceptions.IdsException;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.exceptions.NotFoundException;
+import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.plugin.ArchiveStorageInterface;
+import org.icatproject.ids.plugin.DfInfo;
+import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.utils.IcatSecurity;
+import org.icatproject.utils.ShellCommand;
 
 @Stateless
 public class IdsBean {

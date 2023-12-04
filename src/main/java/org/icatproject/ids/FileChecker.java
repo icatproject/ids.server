@@ -1,23 +1,5 @@
 package org.icatproject.ids;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.ejb.EJB;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import org.icatproject.Datafile;
-import org.icatproject.Dataset;
-import org.icatproject.EntityBaseBean;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DsInfo;
-import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.plugin.ZipMapperInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +17,26 @@ import java.util.TimerTask;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.icatproject.Datafile;
+import org.icatproject.Dataset;
+import org.icatproject.EntityBaseBean;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.plugin.ArchiveStorageInterface;
+import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.plugin.ZipMapperInterface;
 
 @Singleton
 @Startup

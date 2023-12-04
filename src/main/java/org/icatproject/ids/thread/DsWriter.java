@@ -1,5 +1,17 @@
 package org.icatproject.ids.thread;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipOutputStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.DfInfoImpl;
@@ -12,17 +24,6 @@ import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipOutputStream;
 
 /**
  * Copies dataset from main to archive

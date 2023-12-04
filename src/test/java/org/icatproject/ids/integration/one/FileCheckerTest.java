@@ -1,12 +1,5 @@
 package org.icatproject.ids.integration.one;
 
-import org.icatproject.Datafile;
-import org.icatproject.EntityBaseBean;
-import org.icatproject.ids.integration.BaseTest;
-import org.icatproject.ids.integration.util.Setup;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -19,6 +12,13 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import org.icatproject.Datafile;
+import org.icatproject.EntityBaseBean;
+import org.icatproject.ids.integration.BaseTest;
+import org.icatproject.ids.integration.util.Setup;
 
 public class FileCheckerTest extends BaseTest {
 

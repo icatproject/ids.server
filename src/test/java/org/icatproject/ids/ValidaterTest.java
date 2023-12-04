@@ -1,10 +1,10 @@
 package org.icatproject.ids;
 
-import org.icatproject.ids.exceptions.BadRequestException;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+
+import org.icatproject.ids.exceptions.BadRequestException;
 
 public class ValidaterTest {
 

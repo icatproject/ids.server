@@ -1,30 +1,5 @@
 package org.icatproject.ids;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.ejb.DependsOn;
-import jakarta.ejb.EJB;
-import jakarta.ejb.Singleton;
-import jakarta.json.Json;
-import jakarta.json.stream.JsonGenerator;
-import org.icatproject.Dataset;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.LockManager.LockInfo;
-import org.icatproject.ids.LockManager.LockType;
-import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.plugin.DfInfo;
-import org.icatproject.ids.plugin.DsInfo;
-import org.icatproject.ids.thread.DfArchiver;
-import org.icatproject.ids.thread.DfDeleter;
-import org.icatproject.ids.thread.DfRestorer;
-import org.icatproject.ids.thread.DfWriter;
-import org.icatproject.ids.thread.DsArchiver;
-import org.icatproject.ids.thread.DsRestorer;
-import org.icatproject.ids.thread.DsWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -43,6 +18,33 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.ejb.DependsOn;
+import jakarta.ejb.EJB;
+import jakarta.ejb.Singleton;
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.icatproject.Dataset;
+import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.LockManager.LockInfo;
+import org.icatproject.ids.LockManager.LockType;
+import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.plugin.DfInfo;
+import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.thread.DfArchiver;
+import org.icatproject.ids.thread.DfDeleter;
+import org.icatproject.ids.thread.DfRestorer;
+import org.icatproject.ids.thread.DfWriter;
+import org.icatproject.ids.thread.DsArchiver;
+import org.icatproject.ids.thread.DsRestorer;
+import org.icatproject.ids.thread.DsWriter;
 
 @Singleton
 @DependsOn({"LockManager"})

@@ -1,9 +1,9 @@
 package org.icatproject.ids;
 
-import org.icatproject.ICAT;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import org.icatproject.ICAT;
 
 public class TestICATGetter {
 

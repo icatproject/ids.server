@@ -1,8 +1,5 @@
 package org.icatproject.ids;
 
-import org.icatproject.ids.plugin.DsInfo;
-import org.junit.Test;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,6 +16,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.Test;
+
+import org.icatproject.ids.plugin.DsInfo;
 
 public class PreparePackingTest {
 
