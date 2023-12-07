@@ -5,7 +5,7 @@
     <groupId>org.icatproject</groupId>
     <artifactId>ids.server</artifactId>
     <packaging>war</packaging>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.0.1-SNAPSHOT</version>
     <name>IDS Server</name>
 
     <properties>
@@ -34,7 +34,7 @@
         <connection>scm:git:https://github.com/icatproject/ids.server.git</connection>
         <developerConnection>scm:git:git@github.com:icatproject/ids.server.git</developerConnection>
         <url>https://github.com/icatproject/ids.server</url>
-        <tag>v1.9.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
