@@ -355,28 +355,6 @@ public class TestingClient {
 		}
 	}
 
-	public Path getLink(String sessionId, long datafileId, String username, int sc)
-			throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException,
-			DataNotOnlineException, NotImplementedException {
-		URI uri = getUri(getUriBuilder("getLink"));
-		List<NameValuePair> formparams = new ArrayList<>();
-		formparams.add(new BasicNameValuePair("sessionId", sessionId));
-		formparams.add(new BasicNameValuePair("datafileId", Long.toString(datafileId)));
-		formparams.add(new BasicNameValuePair("username", username));
-
-		try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
-			HttpPost httpPost = new HttpPost(uri);
-			httpPost.setEntity(new UrlEncodedFormEntity(formparams));
-			try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-				return Paths.get(getString(response, sc));
-			} catch (InsufficientStorageException e) {
-				throw new InternalException(e.getClass() + " " + e.getMessage());
-			}
-		} catch (IOException e) {
-			throw new InternalException(e.getClass() + " " + e.getMessage());
-		}
-	}
-
 	public ServiceStatus getServiceStatus(String sessionId, Integer sc)
 			throws InternalException, InsufficientPrivilegesException, NotImplementedException {
 
