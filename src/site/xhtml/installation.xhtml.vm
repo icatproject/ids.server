@@ -126,15 +126,6 @@
 		<dt>readOnly</dt>
 		<dd>If true disables write operations (put and delete).</dd>
 
-		<dt>linkLifetimeSeconds</dt>
-		<dd>Optional, default zero. The length of time in seconds to keep the links
-			established by the getLink call. If this is set to zero then the getLink
-			call is disabled.
-			<p><strong>Deprecated:</strong> the getLink call is deprecated
-				and slated for removal along with this property in
-				ids.server 3.0.</p>
-		</dd>
-
 		<dt>reader</dt>
 		<dd>
 			Space separated icat plugin name and credentials for a user permitted

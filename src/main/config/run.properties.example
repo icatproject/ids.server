@@ -36,9 +36,6 @@ tidyBlockSize = 500
 !filesCheck.lastIdFile = ${HOME}/ids/lastIdFile
 !filesCheck.errorLog = ${HOME}/ids/errorLog
 
-# Link properties.  Deprecated
-!linkLifetimeSeconds = 3600
-
 # JMS Logging
 log.list = READ WRITE INFO LINK MIGRATE PREPARE
 

@@ -214,11 +214,6 @@ public class PropertyHandler {
 				}
 			}
 
-			if (props.has("linkLifetimeSeconds")) {
-				linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
-			} else {
-				linkLifetimeMillis = 0;
-			}
 			maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
 
 			/* JMS stuff */
