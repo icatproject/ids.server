@@ -125,7 +125,7 @@ public class IdsBean {
 	}
 
 	enum CallType {
-		INFO, PREPARE, READ, WRITE, MIGRATE, LINK
+		INFO, PREPARE, READ, WRITE, MIGRATE
 	};
 
 	public class RestoreDfTask implements Callable<Void> {
@@ -471,10 +471,6 @@ public class IdsBean {
 	private LockManager lockManager;
 
 	private ICAT icat;
-
-	private Path linkDir;
-
-	private boolean linkEnabled;
 
 	private MainStorageInterface mainStorage;
 
@@ -1432,8 +1428,6 @@ public class IdsBean {
 				datatypeFactory = DatatypeFactory.newInstance();
 				preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 				Files.createDirectories(preparedDir);
-				linkDir = propertyHandler.getCacheDir().resolve("link");
-				Files.createDirectories(linkDir);
 
 				rootUserNames = propertyHandler.getRootUserNames();
 				readOnly = propertyHandler.getReadOnly();
@@ -1463,8 +1457,6 @@ public class IdsBean {
 						cleanDatasetCache(datasetDir);
 					}
 				}
-
-				linkEnabled = propertyHandler.getLinkLifetimeMillis() > 0;
 
 				maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
 

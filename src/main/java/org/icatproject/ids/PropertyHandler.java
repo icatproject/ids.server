@@ -55,7 +55,6 @@ public class PropertyHandler {
 	private Path filesCheckLastIdFile;
 	private int filesCheckParallelCount;
 	private ICAT icatService;
-	private long linkLifetimeMillis;
 
 	private MainStorageInterface mainStorage;
 
@@ -306,10 +305,6 @@ public class PropertyHandler {
 
 	public String getKey() {
 		return key;
-	}
-
-	public long getLinkLifetimeMillis() {
-		return linkLifetimeMillis;
 	}
 
 	public Set<CallType> getLogSet() {

@@ -37,7 +37,7 @@ tidyBlockSize = 500
 !filesCheck.errorLog = ${HOME}/ids/errorLog
 
 # JMS Logging
-log.list = READ WRITE INFO LINK MIGRATE PREPARE
+log.list = READ WRITE INFO MIGRATE PREPARE
 
 # JMS - uncomment and edit if needed
 !jms.topicConnectionFactory = java:comp/DefaultJMSConnectionFactory

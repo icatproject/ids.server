@@ -43,25 +43,6 @@ public class Tidier {
 			try {
 				cleanPreparedDir(preparedDir, preparedCount);
 
-				if (linkLifetimeMillis > 0) {
-					long deleteMillis = System.currentTimeMillis() - linkLifetimeMillis;
-					int n = 0;
-					for (File f : linkDir.toFile().listFiles()) {
-						Path p = f.toPath();
-
-						if (Files.getLastModifiedTime(p).toMillis() < deleteMillis) {
-							try {
-								Files.delete(p);
-								n++;
-							} catch (Exception e) {
-								logger.error(e.getClass() + " " + e.getMessage());
-							}
-						}
-					}
-					if (n > 0) {
-						logger.debug("Deleted " + n + " links from " + linkDir);
-					}
-				}
 				if (twoLevel) {
 					if (storageUnit == StorageUnit.DATASET) {
 						List<DsInfo> dsInfos = mainStorage.getDatasetsToArchive(stopArchivingLevel,
@@ -227,8 +208,6 @@ public class Tidier {
 	@EJB
 	private FiniteStateMachine fsm;
 
-	private Path linkDir;
-	private long linkLifetimeMillis;
 	private MainStorageInterface mainStorage;
 
 	private Path preparedDir;
@@ -263,9 +242,6 @@ public class Tidier {
 			preparedCount = propertyHandler.getPreparedCount();
 			preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 			Files.createDirectories(preparedDir);
-			linkDir = propertyHandler.getCacheDir().resolve("link");
-			Files.createDirectories(linkDir);
-			linkLifetimeMillis = propertyHandler.getLinkLifetimeMillis();
 			mainStorage = propertyHandler.getMainStorage();
 			twoLevel = propertyHandler.getArchiveStorage() != null;
 			key = propertyHandler.getKey();
