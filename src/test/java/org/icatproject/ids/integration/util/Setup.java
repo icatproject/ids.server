@@ -42,11 +42,6 @@ public class Setup {
 		return storageUnit;
 	}
 
-	public Path getErrorLog() {
-		return errorLog;
-	}
-
-	private Path errorLog;
 	private String storageUnit;
 	private boolean twoLevel;
 	private String key;
@@ -116,8 +111,6 @@ public class Setup {
 			}
 			storageUnit = storageUnitString.toUpperCase();
 		}
-
-		errorLog = runProperties.getPath("filesCheck.errorLog");
 
 	}
 
