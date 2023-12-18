@@ -147,7 +147,7 @@
 		<dt>log.list</dt>
 		<dd>Optional. If present it specifies a set of call types to log
 			via JMS calls. The types are specified by a space separated list of
-			values taken from READ, WRITE, LINK, MIGRATE, PREPARE and INFO.</dd>
+			values taken from READ, WRITE, MIGRATE, PREPARE and INFO.</dd>
 
 		<dt>jms.topicConnectionFactory</dt>
 		<dd>Optional. If present it overrides the default JMS connection
