@@ -129,8 +129,6 @@ public class IdsBean {
         INFO, PREPARE, READ, WRITE, MIGRATE, LINK
     }
 
-    ;
-
     public class RestoreDfTask implements Callable<Void> {
 
         private Set<DfInfoImpl> dfInfos;
@@ -512,8 +510,6 @@ public class IdsBean {
         public Future<?> future;
         public Long fromDsElement;
     }
-
-    ;
 
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 

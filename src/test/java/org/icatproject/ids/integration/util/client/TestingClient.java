@@ -105,13 +105,9 @@ public class TestingClient {
 
     }
 
-    ;
-
     public enum Status {
         ARCHIVED, ONLINE, RESTORING
     }
-
-    ;
 
     private String basePath;
     private URI idsUri;
