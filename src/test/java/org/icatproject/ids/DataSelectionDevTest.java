@@ -27,17 +27,17 @@ import org.icatproject.icat.client.IcatException;
  * This test was created to fix issue #115 and was run against the Diamond
  * pre-production ICAT using specifically selected usernames of users known
  * to have access to a lot of data.
- * <p>
+ *
  * As well as monitoring the time taken to create the DataSelection, detailed
  * monitoring of the eclipselink SQL logging was done to confirm that the
  * changes were having the desired effect at the database level.
- * <p>
+ *
  * It would be extremely difficult to recreate an equivalent setup on a test
  * ICAT in order to perform repeatable tests so this has not been attempted.
  * However, this test was invaluable for testing during development and may
  * prove useful in the future, so has been added to the test suite even if it
  * remains Ignored.
- * <p>
+ *
  * The test runs from a small set of properties defined in
  * DataSelectionDevTest.properties. These need to be configured to point at the
  * desired ICAT (not the one used by the integration tests), define user and
