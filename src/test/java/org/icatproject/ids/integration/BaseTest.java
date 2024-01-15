@@ -400,8 +400,10 @@ public class BaseTest {
                 + "/" + ds.getName() + "/" + df.getName(), df.getLocation());
     }
 
-    private static final char[] HEX_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E',
-            'F'};
+    private static final char[] HEX_CHARS = {
+	'0', '1', '2', '3', '4', '5', '6', '7',
+	'8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    };
 
     private String digest(Long id, String location, String key) throws NoSuchAlgorithmException {
         byte[] pattern = (id + location + key).getBytes();
