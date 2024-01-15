@@ -1,8 +1,5 @@
 package org.icatproject.ids;
 
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.net.URISyntaxException;
@@ -13,15 +10,18 @@ import java.util.Properties;
 import jakarta.json.Json;
 import jakarta.json.JsonReader;
 
-import org.icatproject.ICAT;
-import org.icatproject.IcatException_Exception;
-import org.icatproject.icat.client.IcatException;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import org.icatproject.ICAT;
+import org.icatproject.IcatException_Exception;
+import org.icatproject.icat.client.IcatException;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond
@@ -45,7 +45,7 @@ import org.mockito.junit.MockitoJUnitRunner;
  * datafile IDs which the defined user has access to.
  */
 @RunWith(MockitoJUnitRunner.class)
- public class DataSelectionDevTest {
+public class DataSelectionDevTest {
 
     @Mock
     private PropertyHandler mockedPropertyHandler;
@@ -105,10 +105,10 @@ import org.mockito.junit.MockitoJUnitRunner;
         long startMs = System.currentTimeMillis();
         DataSelection dataSelection = new DataSelection(mockedPropertyHandler, icatReader, userSessionId,
                 investigationIds, datasetIds, datafileIds, DataSelection.Returns.DATASETS_AND_DATAFILES);
-        System.out.println("Creating DataSelection took " + (System.currentTimeMillis()-startMs) + " ms");
+        System.out.println("Creating DataSelection took " + (System.currentTimeMillis() - startMs) + " ms");
         System.out.println("DsInfo size: " + dataSelection.getDsInfo().size());
         System.out.println("DfInfo size: " + dataSelection.getDfInfo().size());
         // there must be at least one Datafile in the DataSelection
-        assertTrue("message", dataSelection.getDfInfo().size()>0 );
+        assertTrue("message", dataSelection.getDfInfo().size() > 0);
     }
 }

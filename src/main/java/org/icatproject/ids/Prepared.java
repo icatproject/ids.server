@@ -8,9 +8,9 @@ import org.icatproject.ids.plugin.DsInfo;
 
 /* This is a POJO with only package access so don't make data private */
 class Prepared {
-	boolean zip;
-	boolean compress;
-	SortedSet<DfInfoImpl> dfInfos;
-	SortedMap<Long, DsInfo> dsInfos;
-	Set<Long> emptyDatasets;
+    boolean zip;
+    boolean compress;
+    SortedSet<DfInfoImpl> dfInfos;
+    SortedMap<Long, DsInfo> dsInfos;
+    Set<Long> emptyDatasets;
 }
