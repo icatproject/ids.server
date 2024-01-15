@@ -1,3 +1,5 @@
+.idea
+ids.server.iml
 /target/
 /.settings/
 /.classpath

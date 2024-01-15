@@ -1,248 +1,286 @@
 <html>
 <head>
-<title>IDS Server Release Notes</title>
+    <title>IDS Server Release Notes</title>
 </head>
 <body>
 
-	<h1>IDS Server Release Notes</h1>
+<h1>IDS Server Release Notes</h1>
 
-	<h2>2.0.0</h2>
-	<p>Make the transition to Payara 6</p>
-	<ul>
-		<li>#138: Upgrade to Java 11 and JakartaEE 10 API for compatibility with Payara 6</li>
-		<li>#139: Remove getApiVersion call, deprecated in 1.8.0.
-			Remove runtime property	writeDelaySeconds, deprecated in 1.10.0.
-			Deprecate FileChecker and getLink call</li>
-	</ul>
+<h2>2.0.0</h2>
+<p>Make the transition to Payara 6</p>
+<ul>
+    <li>#138: Upgrade to Java 11 and JakartaEE 10 API for compatibility with Payara 6</li>
+    <li>#139: Remove getApiVersion call, deprecated in 1.8.0.
+        Remove runtime property writeDelaySeconds, deprecated in 1.10.0.
+        Deprecate FileChecker and getLink call
+    </li>
+</ul>
 
-	<h2>1.12.1</h2>
-	<ul>
-		<li>#122: Bump dependency on logback-classic to version 1.2.0.</li>
-		<li>#134: Bump dependency on commons-fileupload to version 1.5</li>
-		<li>#128: Use python3 instead of python in the interpreter line of Python scripts</li>
-	</ul>
+<h2>1.12.1</h2>
+<ul>
+    <li>#122: Bump dependency on logback-classic to version 1.2.0.</li>
+    <li>#134: Bump dependency on commons-fileupload to version 1.5</li>
+    <li>#128: Use python3 instead of python in the interpreter line of Python scripts</li>
+</ul>
 
-	<h2>1.12.0</h2>
-	<p>Improve performance in some cases</p>
-	<ul>
-		<li>#115, #118: Work around an issue in icat.server
-			that causes queries to take much longer then tolerable.</li>
-		<li>#116: Bump icat.utils to version 4.16.1.</li>
-		<li>#113: Bump dependency on junit to version 4.13.1.</li>
-	</ul>
+<h2>1.12.0</h2>
+<p>Improve performance in some cases</p>
+<ul>
+    <li>#115, #118: Work around an issue in icat.server
+        that causes queries to take much longer then tolerable.
+    </li>
+    <li>#116: Bump icat.utils to version 4.16.1.</li>
+    <li>#113: Bump dependency on junit to version 4.13.1.</li>
+</ul>
 
-	<h2>1.11.0</h2>
-	<p>Various small enhancements</p>
-	<ul>
-		<li>#104, #110: Extend getStatus() and getSize() to accept a preparedID.</li>
-		<li>#105, #106: Add an optional configuration option enableWrite.</li>
-		<li>#108: The API calls archive, restore, and write throw NotImplementedException in
-			the case of single level storage.</li>
-		<li>#103: Bump dependency on commons-fileupload to version 1.3.3.</li>
-	</ul>
+<h2>1.11.0</h2>
+<p>Various small enhancements</p>
+<ul>
+    <li>#104, #110: Extend getStatus() and getSize() to accept a preparedID.</li>
+    <li>#105, #106: Add an optional configuration option enableWrite.</li>
+    <li>#108: The API calls archive, restore, and write throw NotImplementedException in
+        the case of single level storage.
+    </li>
+    <li>#103: Bump dependency on commons-fileupload to version 1.3.3.</li>
+</ul>
 
-	<h2>1.10.1</h2>
-	<p>Bug fix release</p>
-	<ul>
-		<li>#101: Fix write call fails with DataNotOnlineError if an ARCHIVE request is
-			pending.</li>
-		<li>Documentation fixes.</li>
-	</ul>
+<h2>1.10.1</h2>
+<p>Bug fix release</p>
+<ul>
+    <li>#101: Fix write call fails with DataNotOnlineError if an ARCHIVE request is
+        pending.
+    </li>
+    <li>Documentation fixes.</li>
+</ul>
 
-	<h2>1.10.0</h2>
-	<p>Add file system locking in the storage plugin</p>
-	<ul>
-		<li>#80: Call mainStorage.lock(DsInfo, boolean) whenever a dataset is locked
-			internally.  This call has been added to MainStorageInterface ids.plugin
-			1.5.0.  The plugin may implement this call to acquire a file system lock.
-			This would then allow safe concurrent access to main storage for other
-			processes.</li>
-		<li>#94: Add new configuration properties delayDatasetWritesSeconds and
-			delayDatafileOperationsSeconds, replacing writeDelaySeconds.  Deprecate
-			writeDelaySeconds.</li>
-		<li>#96: Error handling in DsRestorer in the case of a corrupt ZIP archive.</li>
-		<li>Require ids.plugin 1.5.0.</li>
-	</ul>
+<h2>1.10.0</h2>
+<p>Add file system locking in the storage plugin</p>
+<ul>
+    <li>#80: Call mainStorage.lock(DsInfo, boolean) whenever a dataset is locked
+        internally. This call has been added to MainStorageInterface ids.plugin
+        1.5.0. The plugin may implement this call to acquire a file system lock.
+        This would then allow safe concurrent access to main storage for other
+        processes.
+    </li>
+    <li>#94: Add new configuration properties delayDatasetWritesSeconds and
+        delayDatafileOperationsSeconds, replacing writeDelaySeconds. Deprecate
+        writeDelaySeconds.
+    </li>
+    <li>#96: Error handling in DsRestorer in the case of a corrupt ZIP archive.</li>
+    <li>Require ids.plugin 1.5.0.</li>
+</ul>
 
-	<h2>1.9.1</h2>
-	<p>Bug fix release</p>
-	<ul>
-		<li>#87: Fix uncaught exception in DfRestorer can cause restoration to stall until
-			IDS is restarted.</li>
-		<li>#85: Fix once again JMS Session not closed if an exception is thrown.  The
-			previous fix from 1.9.0 was not thread safe.</li>
-		<li>#92: Fix: must escape single quote character in datafile location values when
-			building JPQL queries.</li>
-	</ul>
+<h2>1.9.1</h2>
+<p>Bug fix release</p>
+<ul>
+    <li>#87: Fix uncaught exception in DfRestorer can cause restoration to stall until
+        IDS is restarted.
+    </li>
+    <li>#85: Fix once again JMS Session not closed if an exception is thrown. The
+        previous fix from 1.9.0 was not thread safe.
+    </li>
+    <li>#92: Fix: must escape single quote character in datafile location values when
+        building JPQL queries.
+    </li>
+</ul>
 
-	<h2>1.9.0</h2>
-	<p>Add a new Write API call and review the internal locking</p>
-	<ul>
-		<li>#67: Add a new Write API call that triggers write to archive storage.</li>
-		<li>#59: Review of the internal locking mechanism which fixes various race
-			conditions.</li>
-		<li>#63: Ignore Datafiles having the location attribute not set.</li>
-		<li>#84: Change the HTTP status returned on DataNotOnlineException to 503.</li>
-		<li>#85: Fix JMS Session not closed if an exception is thrown.</li>
-		<li>#75: Add a configuration option "testHome" to be set in settings.xml.  Files are
-			created relative to this directory when running the tests.</li>
-		<li>Tests are now independent of locale.</li>
-		<li>Glassfish 4.0 is no longer supported</li>
-	</ul>
+<h2>1.9.0</h2>
+<p>Add a new Write API call and review the internal locking</p>
+<ul>
+    <li>#67: Add a new Write API call that triggers write to archive storage.</li>
+    <li>#59: Review of the internal locking mechanism which fixes various race
+        conditions.
+    </li>
+    <li>#63: Ignore Datafiles having the location attribute not set.</li>
+    <li>#84: Change the HTTP status returned on DataNotOnlineException to 503.</li>
+    <li>#85: Fix JMS Session not closed if an exception is thrown.</li>
+    <li>#75: Add a configuration option "testHome" to be set in settings.xml. Files are
+        created relative to this directory when running the tests.
+    </li>
+    <li>Tests are now independent of locale.</li>
+    <li>Glassfish 4.0 is no longer supported</li>
+</ul>
 
-	<h2>1.8.0</h2>
-	<p>Bug fix release - with new style deployment</p>
-	<ul>
-		<li>Workaround for oracle planning bug</li>
-		<li>Make the implementation of getSize much more efficient.</li>
-		<li>Modified a ContainerResponseFilter to allow Content-Type
-			headers to be transmitted properly.</li>
-		<li>Provided a restful "version" call. The getApiVersion call is
-			marked as deprecated.</li>
-		<li>Make isPrepared more efficient.</li>
-		<li>Ensure that Tidier action runs at high priority.</li>
-		<li>Plugins need a slightly different interface - hence the move
-			to 1.8.0</li>
-		<li>File checker for Datasets no longer generates an error for an
-			empty Dataset</li>
-		<li>Add list of failed restores to the information returned by
-			getServiceStatus.</li>
-		<li>Avoid marking files as unavailable when unsure</li>
-		<li>The prepareData call resets flags marking previous restore
-			failures.</li>
-	</ul>
+<h2>1.8.0</h2>
+<p>Bug fix release - with new style deployment</p>
+<ul>
+    <li>Workaround for oracle planning bug</li>
+    <li>Make the implementation of getSize much more efficient.</li>
+    <li>Modified a ContainerResponseFilter to allow Content-Type
+        headers to be transmitted properly.
+    </li>
+    <li>Provided a restful "version" call. The getApiVersion call is
+        marked as deprecated.
+    </li>
+    <li>Make isPrepared more efficient.</li>
+    <li>Ensure that Tidier action runs at high priority.</li>
+    <li>Plugins need a slightly different interface - hence the move
+        to 1.8.0
+    </li>
+    <li>File checker for Datasets no longer generates an error for an
+        empty Dataset
+    </li>
+    <li>Add list of failed restores to the information returned by
+        getServiceStatus.
+    </li>
+    <li>Avoid marking files as unavailable when unsure</li>
+    <li>The prepareData call resets flags marking previous restore
+        failures.
+    </li>
+</ul>
 
 
-	<h2>1.7.0</h2>
-	<p>Deal with multiple Datafiles with the same location and bug
-		fixes</p>
-	<ul>
-		<li>If the icat.url in the ids.properties file contains a
-			recognised wsdl suffix it will be removed. It is better not to
-			include any suffix however.</li>
-		<li>It is now permissible to have multiple Datafiles with the
-			same location. The IDS has no mechanism to write such as structure
-			however it can arise from an icat call to the cloneEntity operation
-			or by storing and cataloguing data outside the IDS. It is possible
-			for the getSize call to be inaccurate however as a physical file may
-			be counted more than once.</li>
-	</ul>
+<h2>1.7.0</h2>
+<p>Deal with multiple Datafiles with the same location and bug
+    fixes</p>
+<ul>
+    <li>If the icat.url in the ids.properties file contains a
+        recognised wsdl suffix it will be removed. It is better not to
+        include any suffix however.
+    </li>
+    <li>It is now permissible to have multiple Datafiles with the
+        same location. The IDS has no mechanism to write such as structure
+        however it can arise from an icat call to the cloneEntity operation
+        or by storing and cataloguing data outside the IDS. It is possible
+        for the getSize call to be inaccurate however as a physical file may
+        be counted more than once.
+    </li>
+</ul>
 
-	<h2>1.6.0</h2>
-	<p>Checks the value of maxEntities from the ICAT it is using and
-		various improvements and bug fixes.</p>
-	<ul>
-		<li>No attempt will be made to restore a file when it is already
-			on-line</li>
-		<li>The server checks the value of maxEntities from the ICAT it
-			is using to avoid generating queries that will fail in ICAT.</li>
-		<li>The messages from the file checker have been improved when
-			storage is by dataset and a zip file is found to be corrupt.</li>
-		<li>Now waits for ICAT connection if ICAT not available at
-			startup.</li>
-		<li>Protect against non numeric values being passed to the put
-			call.</li>
-		<li>Produces JMS logging for all calls as specified in the
-			ids.properties file</li>
-		<li>Moved to the latest icat.utils to support multiple containers</li>
-		<li>Uses logback via slf4j rather than log4j via slf4j</li>
-		<li>A race condition has been avoided which could have resulted
-			in the loss of data</li>
-		<li>If writing to secondary storage fails then archive is
-			inhibited for that data set or data file. This is to prevent data
-			loss.</li>
-		<li>Code changed to be more efficient when dealing with very
-			large investigations or data sets.</li>
-		<li>container specified in ids-setup.properties must an entry
-			from <a target="_blank"
-			href="http://www.eclipse.org/eclipselink/api/2.6/org/eclipse/persistence/config/TargetServer.html">TargetServer</a>
-			Though only Glassfish is working properly at the moment.
-		</li>
+<h2>1.6.0</h2>
+<p>Checks the value of maxEntities from the ICAT it is using and
+    various improvements and bug fixes.</p>
+<ul>
+    <li>No attempt will be made to restore a file when it is already
+        on-line
+    </li>
+    <li>The server checks the value of maxEntities from the ICAT it
+        is using to avoid generating queries that will fail in ICAT.
+    </li>
+    <li>The messages from the file checker have been improved when
+        storage is by dataset and a zip file is found to be corrupt.
+    </li>
+    <li>Now waits for ICAT connection if ICAT not available at
+        startup.
+    </li>
+    <li>Protect against non numeric values being passed to the put
+        call.
+    </li>
+    <li>Produces JMS logging for all calls as specified in the
+        ids.properties file
+    </li>
+    <li>Moved to the latest icat.utils to support multiple containers</li>
+    <li>Uses logback via slf4j rather than log4j via slf4j</li>
+    <li>A race condition has been avoided which could have resulted
+        in the loss of data
+    </li>
+    <li>If writing to secondary storage fails then archive is
+        inhibited for that data set or data file. This is to prevent data
+        loss.
+    </li>
+    <li>Code changed to be more efficient when dealing with very
+        large investigations or data sets.
+    </li>
+    <li>container specified in ids-setup.properties must an entry
+        from <a target="_blank"
+                href="http://www.eclipse.org/eclipselink/api/2.6/org/eclipse/persistence/config/TargetServer.html">TargetServer</a>
+        Though only Glassfish is working properly at the moment.
+    </li>
 
-	</ul>
+</ul>
 
-	<h2>1.5.0</h2>
-	<p>New getDatafileIds, getIcatUrl and improved performance of
-		prepareData.</p>
-	<ul>
-		<li>Added getDatafileIds call.</li>
-		<li>Improved performance of prepareData by performing some
-			operations asynchronously.</li>
-		<li>Changed values of filesCheck.lastIdFile and
-			filesCheck.errorLog to be relative to ../data/ids rather than
-			../data/icat in the ids.properties.example file.</li>
-		<li>getStatus allows sessionId to be null.</li>
-	</ul>
+<h2>1.5.0</h2>
+<p>New getDatafileIds, getIcatUrl and improved performance of
+    prepareData.</p>
+<ul>
+    <li>Added getDatafileIds call.</li>
+    <li>Improved performance of prepareData by performing some
+        operations asynchronously.
+    </li>
+    <li>Changed values of filesCheck.lastIdFile and
+        filesCheck.errorLog to be relative to ../data/ids rather than
+        ../data/icat in the ids.properties.example file.
+    </li>
+    <li>getStatus allows sessionId to be null.</li>
+</ul>
 
-	<h2>1.4.0</h2>
-	<p>New getIcatUrl and now uses icat 4.5 client.</p>
-	<ul>
-		<li>Bug fix release to fix handling of corrupt
-			filesCheck.lastIdFile file.</li>
-		<li>Work with icat 4.5</li>
-		<li>Added getIcatUrl call.</li>
-		<li>All calls now produce CORS headers.</li>
-	</ul>
+<h2>1.4.0</h2>
+<p>New getIcatUrl and now uses icat 4.5 client.</p>
+<ul>
+    <li>Bug fix release to fix handling of corrupt
+        filesCheck.lastIdFile file.
+    </li>
+    <li>Work with icat 4.5</li>
+    <li>Added getIcatUrl call.</li>
+    <li>All calls now produce CORS headers.</li>
+</ul>
 
-	<h2>1.3.1</h2>
-	<p>Bug fix release to fix file handle leak.</p>
-	<ul>
-		<li>Minor corrections to the documentation.</li>
-		<li>Ensure that files are closed when returned individually.</li>
-		<li>Remove redundant (and possibly dangerous) line of code from
-			DsWriter.</li>
-	</ul>
+<h2>1.3.1</h2>
+<p>Bug fix release to fix file handle leak.</p>
+<ul>
+    <li>Minor corrections to the documentation.</li>
+    <li>Ensure that files are closed when returned individually.</li>
+    <li>Remove redundant (and possibly dangerous) line of code from
+        DsWriter.
+    </li>
+</ul>
 
-	<h2>1.3.0</h2>
-	<p>Add getApiVersion call, make major change to prepareData, make
-		it also support archive by datafile and provide the option of
-		protecting Datafile.location with a cryptographic hash.</p>
-	<ul>
-		<li>getApiVersion call added to return version of server</li>
-		<li>ids.properties values: preparedCacheSize1024bytes,
-			datasetCacheSize1024bytes, compressDatasetCache, and
-			tolerateWrongCompression are no longer used.</li>
-		<li>ids.properties value preparedCount has changed its meaning.</li>
-		<li>ids.properties value tidyBlockSize has been added.</li>
-		<li>ids.properties value maxIdsInQuery has been added.</li>
-		<li>The json string returned by getServiceStatus has changed.</li>
-		<li>The Datafile.location value can be protected by a
-			cryptographic hash. This is enabled by adding a property "key" to the
-			ids.properties file.</li>
-	</ul>
+<h2>1.3.0</h2>
+<p>Add getApiVersion call, make major change to prepareData, make
+    it also support archive by datafile and provide the option of
+    protecting Datafile.location with a cryptographic hash.</p>
+<ul>
+    <li>getApiVersion call added to return version of server</li>
+    <li>ids.properties values: preparedCacheSize1024bytes,
+        datasetCacheSize1024bytes, compressDatasetCache, and
+        tolerateWrongCompression are no longer used.
+    </li>
+    <li>ids.properties value preparedCount has changed its meaning.</li>
+    <li>ids.properties value tidyBlockSize has been added.</li>
+    <li>ids.properties value maxIdsInQuery has been added.</li>
+    <li>The json string returned by getServiceStatus has changed.</li>
+    <li>The Datafile.location value can be protected by a
+        cryptographic hash. This is enabled by adding a property "key" to the
+        ids.properties file.
+    </li>
+</ul>
 
-	<h2>1.2.0</h2>
-	<p>For two level storage clean up main storage as needed.</p>
-	<ul>
-		<li>Add parameters: startArchivingLevel1024bytes,
-			stopArchivingLevel1024bytes and linkLifetimeSeconds.</li>
-		<li>Cope with some obscure file checker errors.</li>
-		<li>Datasets are archived when main storage becomes too full.</li>
-	</ul>
+<h2>1.2.0</h2>
+<p>For two level storage clean up main storage as needed.</p>
+<ul>
+    <li>Add parameters: startArchivingLevel1024bytes,
+        stopArchivingLevel1024bytes and linkLifetimeSeconds.
+    </li>
+    <li>Cope with some obscure file checker errors.</li>
+    <li>Datasets are archived when main storage becomes too full.</li>
+</ul>
 
-	<h2>1.1.0</h2>
-	<p>Provide background file checking and facility control of
-		returned zip file structure.</p>
-	<ul>
-		<li>Another file handle leak fixed.</li>
-		<li>Compatible with plugin interface 1.1.0.</li>
-		<li>Provide background file checking - which requires that the
-			parameter checkFiles.parallelCount is set to an integer. If the
-			integer is non zero then other entries must be set in the
-			ids.properties file.</li>
-		<li>ids.properties needs a new parameter: plugin.zipMapper.class
-			which identifies the code to define the zip file structure.</li>
-	</ul>
+<h2>1.1.0</h2>
+<p>Provide background file checking and facility control of
+    returned zip file structure.</p>
+<ul>
+    <li>Another file handle leak fixed.</li>
+    <li>Compatible with plugin interface 1.1.0.</li>
+    <li>Provide background file checking - which requires that the
+        parameter checkFiles.parallelCount is set to an integer. If the
+        integer is non zero then other entries must be set in the
+        ids.properties file.
+    </li>
+    <li>ids.properties needs a new parameter: plugin.zipMapper.class
+        which identifies the code to define the zip file structure.
+    </li>
+</ul>
 
-	<h2>1.0.1</h2>
-	<p>Bug fix release.</p>
-	<ul>
-		<li>Files are now being closed properly to avoid running out of
-			file handles.</li>
-	</ul>
+<h2>1.0.1</h2>
+<p>Bug fix release.</p>
+<ul>
+    <li>Files are now being closed properly to avoid running out of
+        file handles.
+    </li>
+</ul>
 
-	<h2>1.0.0</h2>
-	<p>Initial public release.</p>
+<h2>1.0.0</h2>
+<p>Initial public release.</p>
 
 </body>
 </html>
