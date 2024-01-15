@@ -16,13 +16,13 @@ import jakarta.ws.rs.ext.Provider;
 @Provider
 public class IdsExceptionMapper implements ExceptionMapper<IdsException> {
 
-	@Override
-	public Response toResponse(IdsException e) {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		JsonGenerator gen = Json.createGenerator(baos);
-		gen.writeStartObject().write("code", e.getClass().getSimpleName())
-				.write("message", e.getShortMessage());
-		gen.writeEnd().close();
-		return Response.status(e.getHttpStatusCode()).entity(baos.toString()).build();
-	}
+    @Override
+    public Response toResponse(IdsException e) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonGenerator gen = Json.createGenerator(baos);
+        gen.writeStartObject().write("code", e.getClass().getSimpleName())
+                .write("message", e.getShortMessage());
+        gen.writeEnd().close();
+        return Response.status(e.getHttpStatusCode()).entity(baos.toString()).build();
+    }
 }

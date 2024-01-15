@@ -1,12 +1,12 @@
 tt, kbd, samp, pre {
-	font-family: monospace;
-	background-color: #E3DAA6
+    font-family: monospace;
+    background-color: #E3DAA6
 }
 
 p.call {
-	font-family: monospace;
-	padding: 8 0 0 0;
-	font-weight: normal;
-	font-size: 13px;
-	color: red;
+    font-family: monospace;
+    padding: 8px 0 0 0;
+    font-weight: normal;
+    font-size: 13px;
+    color: red;
 }

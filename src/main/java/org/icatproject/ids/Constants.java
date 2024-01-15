@@ -5,20 +5,20 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class Constants {
-	public static String API_VERSION;
+    public static String API_VERSION;
 
-	static {
+    static {
 
-		InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(
-				"app.properties");
-		Properties p = new Properties();
+        InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(
+                "app.properties");
+        Properties p = new Properties();
 
-		try {
-			p.load(inputStream);
-			API_VERSION = p.getProperty("project.version");
-		} catch (IOException e) {
-			// API Version will be null
-		}
+        try {
+            p.load(inputStream);
+            API_VERSION = p.getProperty("project.version");
+        } catch (IOException e) {
+            // API Version will be null
+        }
 
-	}
+    }
 }
