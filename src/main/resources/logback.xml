@@ -23,6 +23,4 @@
         <appender-ref ref="FILE"/>
     </root>
 
-    <logger name="org.icatproject.ids.FileChecker" level="INFO"/>
-
 </configuration>

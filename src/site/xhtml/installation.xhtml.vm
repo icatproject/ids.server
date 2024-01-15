@@ -242,58 +242,6 @@ please consult the documentation for your plugin(s).
 
 </dl>
 
-
-<h3>Properties for file checking</h3>
-<p>When a datafile is added to the IDS its length and checksum are
-    computed and stored in ICAT. File checking, if enabled, cycles through
-    all the stored data making sure that they can be read and that files
-    have the expected size and checksum.</p>
-<p><strong>Deprecated:</strong> the FileChecker is deprecated and slated for removal
-    along with the properties in this section in ids.server 3.0.</p>
-<dl>
-    <dt>filesCheck.parallelCount</dt>
-    <dd>
-        Optional, default zero. If non zero then the readability of the
-        data will be checked. The behaviour is dependent upon whether or not
-        archive storage has a been requested. In the case of single level
-        storage this is done in groups of files where the group size is
-        defined by this parameter. If archive storage has been requested then
-        only the archive is checked. Each file in the archive holds a
-        complete dataset and this filesCheck.parallelCount parameter then
-        defines how many dataset files will be checked in parallel.
-        <p>In the case of checking datasets in the archive storage these
-            are unzipped on the fly to compute the checksum of each file inside
-            the zip file as well as its length.</p>
-        <p>If the archive storage has a long latency then it is useful to
-            have a "large" value, however a thread is started for each stored
-            file so the value of this parameter should not be too large.</p>
-        <p>If this is set to zero then the FileChecker is disabled and all other
-            properties in this section will be ignored.</p>
-    </dd>
-    <dt>filesCheck.gapSeconds</dt>
-    <dd>the number of seconds to wait before launching a check of the
-        next batch of datafiles or datasets.
-    </dd>
-    <dt>filesCheck.lastIdFile</dt>
-    <dd>the location of a file which is used to store the id value of
-        the last datafile or dataset to be checked. This is so that if the
-        IDS is restarted it will continue checking where it left off. If this
-        file is deleted the ids will restart checking from the beginning. The
-        parameters filesCheck.parallelCount and filesCheck.gapSeconds should
-        be set so that the data are all checked with the desired frequency
-        but without excessive I/O. A nagios plugin might check that this file
-        is being written periodically and that its contents change.
-    </dd>
-    <dt>filesCheck.errorLog</dt>
-    <dd>the file with a list of errors found. The file is not kept
-        open but instead is opened in append mode each time a problem is
-        spotted and then closed. A nagios plugin might be set up to watch
-        this file. Entries in the file are data stamped and new entries are
-        simply appended without regard for the existence of an entry for the
-        same file.
-    </dd>
-</dl>
-
 <h2>Check that the ids server works</h2>
 <p>
     Enter a url of the form
