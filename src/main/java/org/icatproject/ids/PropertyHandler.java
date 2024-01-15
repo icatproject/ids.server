@@ -56,7 +56,6 @@ public class PropertyHandler {
     private Path filesCheckLastIdFile;
     private int filesCheckParallelCount;
     private ICAT icatService;
-    private long linkLifetimeMillis;
 
     private MainStorageInterface mainStorage;
 
@@ -215,11 +214,6 @@ public class PropertyHandler {
                 }
             }
 
-            if (props.has("linkLifetimeSeconds")) {
-                linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
-            } else {
-                linkLifetimeMillis = 0;
-            }
             maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
 
             /* JMS stuff */
@@ -312,10 +306,6 @@ public class PropertyHandler {
 
     public String getKey() {
         return key;
-    }
-
-    public long getLinkLifetimeMillis() {
-        return linkLifetimeMillis;
     }
 
     public Set<CallType> getLogSet() {

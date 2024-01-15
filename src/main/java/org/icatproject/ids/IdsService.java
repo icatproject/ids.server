@@ -242,39 +242,6 @@ public class IdsService {
     }
 
     /**
-     * Return a hard link to a data file.
-     * <p>
-     * This is only useful in those cases where the user has direct access to
-     * the file system where the IDS is storing data. Only read access to the
-     * file is granted.
-     *
-     * @param sessionId  A valid ICAT session ID
-     * @param datafileId the id of a data file
-     * @param username   the name of the user who will will be granted access to the
-     *                   linked file.
-     * @return the path of the created link.
-     * @throws BadRequestException
-     * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException
-     * @throws InternalException
-     * @throws NotFoundException
-     * @throws DataNotOnlineException
-     * @summary getLink
-     * @statuscode 200 To indicate success
-     */
-    @POST
-    @Path("getLink")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
-    @Deprecated
-    public String getLink(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
-                          @FormParam("datafileId") long datafileId, @FormParam("username") String username)
-            throws BadRequestException, InsufficientPrivilegesException, NotImplementedException, InternalException,
-            NotFoundException, DataNotOnlineException {
-        return idsBean.getLink(sessionId, datafileId, username, request.getRemoteAddr());
-    }
-
-    /**
      * Obtain detailed information about what the ids is doing. You need to be
      * privileged to use this call.
      *

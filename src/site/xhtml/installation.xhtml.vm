@@ -136,15 +136,6 @@ please consult the documentation for your plugin(s).
     <dt>readOnly</dt>
     <dd>If true disables write operations (put and delete).</dd>
 
-    <dt>linkLifetimeSeconds</dt>
-    <dd>Optional, default zero. The length of time in seconds to keep the links
-        established by the getLink call. If this is set to zero then the getLink
-        call is disabled.
-        <p><strong>Deprecated:</strong> the getLink call is deprecated
-            and slated for removal along with this property in
-            ids.server 3.0.</p>
-    </dd>
-
     <dt>reader</dt>
     <dd>
         Space separated icat plugin name and credentials for a user permitted
@@ -168,7 +159,7 @@ please consult the documentation for your plugin(s).
     <dt>log.list</dt>
     <dd>Optional. If present it specifies a set of call types to log
         via JMS calls. The types are specified by a space separated list of
-        values taken from READ, WRITE, LINK, MIGRATE, PREPARE and INFO.
+        values taken from READ, WRITE, MIGRATE, PREPARE and INFO.
     </dd>
 
     <dt>jms.topicConnectionFactory</dt>

@@ -126,7 +126,7 @@ public class IdsBean {
     }
 
     enum CallType {
-        INFO, PREPARE, READ, WRITE, MIGRATE, LINK
+        INFO, PREPARE, READ, WRITE, MIGRATE
     }
 
     public class RestoreDfTask implements Callable<Void> {
@@ -474,10 +474,6 @@ public class IdsBean {
     private LockManager lockManager;
 
     private ICAT icat;
-
-    private Path linkDir;
-
-    private boolean linkEnabled;
 
     private MainStorageInterface mainStorage;
 
@@ -1030,101 +1026,6 @@ public class IdsBean {
         return propertyHandler.getIcatUrl();
     }
 
-    public String getLink(String sessionId, long datafileId, String username, String ip)
-            throws BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException,
-            DataNotOnlineException, NotImplementedException {
-
-        long start = System.currentTimeMillis();
-
-        // Log and validate
-        logger.info("New webservice request: getLink datafileId=" + datafileId + " username='" + username + "'");
-
-        if (!linkEnabled) {
-            throw new NotImplementedException("Sorry getLink is not available on this IDS installation");
-        } else {
-            logger.warn("The getLink API call is deprecated and slated for removal in ids.server 3.0");
-        }
-
-        validateUUID("sessionId", sessionId);
-
-        Datafile datafile = null;
-        try {
-            datafile = (Datafile) icat.get(sessionId, "Datafile INCLUDE Dataset, Investigation, Facility", datafileId);
-        } catch (IcatException_Exception e) {
-            IcatExceptionType type = e.getFaultInfo().getType();
-            if (type == IcatExceptionType.BAD_PARAMETER) {
-                throw new BadRequestException(e.getMessage());
-            } else if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES) {
-                throw new InsufficientPrivilegesException(e.getMessage());
-            } else if (type == IcatExceptionType.INTERNAL) {
-                throw new InternalException(e.getMessage());
-            } else if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
-                throw new NotFoundException(e.getMessage());
-            } else if (type == IcatExceptionType.OBJECT_ALREADY_EXISTS) {
-                throw new InternalException(e.getClass() + " " + e.getMessage());
-            } else if (type == IcatExceptionType.SESSION) {
-                throw new InsufficientPrivilegesException(e.getMessage());
-            } else if (type == IcatExceptionType.VALIDATION) {
-                throw new BadRequestException(e.getMessage());
-            }
-        }
-        if (datafile.getLocation() == null) {
-            throw new NotFoundException("Datafile not found");
-        }
-
-        String location = getLocation(datafile.getId(), datafile.getLocation());
-        DsInfo dsInfo = new DsInfoImpl(datafile.getDataset());
-
-        try (Lock lock = lockManager.lock(dsInfo, LockType.SHARED)) {
-            if (storageUnit == StorageUnit.DATASET) {
-                Set<Long> mt = Collections.emptySet();
-                if (restoreIfOffline(dsInfo, mt)) {
-                    throw new DataNotOnlineException(
-                            "Before linking a datafile, its dataset has to be restored, restoration requested automatically");
-                }
-            } else if (storageUnit == StorageUnit.DATAFILE) {
-                DfInfoImpl dfInfo = new DfInfoImpl(datafileId, datafile.getName(), location, datafile.getCreateId(),
-                        datafile.getModId(), datafile.getDataset().getId());
-                if (restoreIfOffline(dfInfo)) {
-                    throw new DataNotOnlineException(
-                            "Before linking a datafile, it has to be restored, restoration requested automatically");
-                }
-            }
-
-            Path target = mainStorage.getPath(location, datafile.getCreateId(), datafile.getModId());
-            ShellCommand sc = new ShellCommand("setfacl", "-m", "user:" + username + ":r", target.toString());
-            if (sc.getExitValue() != 0) {
-                throw new BadRequestException(sc.getMessage() + ". Check that user '" + username + "' exists");
-            }
-            Path link = linkDir.resolve(UUID.randomUUID().toString());
-            Files.createLink(link, target);
-
-            if (logSet.contains(CallType.LINK)) {
-                try {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                        gen.write("userName", icat.getUserName(sessionId));
-                        gen.write("datafileId", datafileId);
-                        gen.writeEnd();
-                    }
-                    String body = baos.toString();
-                    transmitter.processMessage("getLink", ip, body, start);
-                } catch (IcatException_Exception e) {
-                    logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-                }
-            }
-
-            return link.toString();
-        } catch (AlreadyLockedException e) {
-            logger.debug("Could not acquire lock, getLink failed");
-            throw new DataNotOnlineException("Data is busy");
-        } catch (IOException e) {
-            logger.error("I/O error " + e.getMessage() + " linking " + location + " from MainStorage");
-            throw new InternalException(e.getClass() + " " + e.getMessage());
-        }
-
-    }
-
     public String getServiceStatus(String sessionId, String ip)
             throws InternalException, InsufficientPrivilegesException {
 
@@ -1530,8 +1431,6 @@ public class IdsBean {
                 datatypeFactory = DatatypeFactory.newInstance();
                 preparedDir = propertyHandler.getCacheDir().resolve("prepared");
                 Files.createDirectories(preparedDir);
-                linkDir = propertyHandler.getCacheDir().resolve("link");
-                Files.createDirectories(linkDir);
 
                 rootUserNames = propertyHandler.getRootUserNames();
                 readOnly = propertyHandler.getReadOnly();
@@ -1561,8 +1460,6 @@ public class IdsBean {
                         cleanDatasetCache(datasetDir);
                     }
                 }
-
-                linkEnabled = propertyHandler.getLinkLifetimeMillis() > 0;
 
                 maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
 
