@@ -51,10 +51,6 @@ public class PropertyHandler {
     private ArchiveStorageInterface archiveStorage;
     private Path cacheDir;
     private boolean enableWrite;
-    private Path filesCheckErrorLog;
-    private int filesCheckGapMillis;
-    private Path filesCheckLastIdFile;
-    private int filesCheckParallelCount;
     private ICAT icatService;
     private long linkLifetimeMillis;
 
@@ -198,23 +194,6 @@ public class PropertyHandler {
                 abort(cacheDir + " must be an existing directory");
             }
 
-            if (props.has("filesCheck.parallelCount")) {
-                filesCheckParallelCount = props.getNonNegativeInt("filesCheck.parallelCount");
-            } else {
-                filesCheckParallelCount = 0;
-            }
-            if (filesCheckParallelCount > 0) {
-                filesCheckGapMillis = props.getPositiveInt("filesCheck.gapSeconds") * 1000;
-                filesCheckLastIdFile = props.getFile("filesCheck.lastIdFile").toPath();
-                if (!Files.exists(filesCheckLastIdFile.getParent())) {
-                    abort("Directory for " + filesCheckLastIdFile + " does not exist");
-                }
-                filesCheckErrorLog = props.getFile("filesCheck.errorLog").toPath();
-                if (!Files.exists(filesCheckErrorLog.getParent())) {
-                    abort("Directory for " + filesCheckErrorLog + " does not exist");
-                }
-            }
-
             if (props.has("linkLifetimeSeconds")) {
                 linkLifetimeMillis = props.getNonNegativeLong("linkLifetimeSeconds") * 1000L;
             } else {
@@ -264,22 +243,6 @@ public class PropertyHandler {
 
     public boolean getEnableWrite() {
         return enableWrite;
-    }
-
-    public Path getFilesCheckErrorLog() {
-        return filesCheckErrorLog;
-    }
-
-    public long getFilesCheckGapMillis() {
-        return filesCheckGapMillis;
-    }
-
-    public Path getFilesCheckLastIdFile() {
-        return filesCheckLastIdFile;
-    }
-
-    public int getFilesCheckParallelCount() {
-        return filesCheckParallelCount;
     }
 
     public synchronized ICAT getIcatService() {

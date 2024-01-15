@@ -40,19 +40,6 @@ if arg == "INSTALL":
             if not (idsProperties.get("delayDatafileOperationsSeconds")):
                 abort("delayDatafileOperationsSeconds is not set in run.properties")
 
-    if int(idsProperties.get("filesCheck.parallelCount", 0)) > 0:
-        warnings.warn("The FileChecker is deprecated and slated for removal in ids.server 3.0")
-        if not idsProperties.get("filesCheck.gapSeconds"): abort("filesCheck.gapSeconds is not set in run.properties")
-        if not idsProperties.get("filesCheck.lastIdFile"): abort("filesCheck.lastIdFile is not set in run.properties")
-        parent = os.path.dirname(os.path.expandvars(idsProperties["filesCheck.lastIdFile"]))
-        if not os.path.exists(parent):
-            abort("Please create directory " + parent + " for filesCheck.lastIdFile specified in run.properties")
-        if not idsProperties.get("filesCheck.errorLog"): abort("filesCheck.errorLog is not set in run.properties")
-        parent = os.path.dirname(os.path.expandvars(idsProperties["filesCheck.errorLog"]))
-        if not os.path.exists(parent):
-            abort("Please create directory " + parent + " for filesCheck.errorLog specified in run.properties")
-        if not idsProperties.get("reader"): abort("reader is not set in run.properties")
-
     if int(idsProperties.get("linkLifetimeSeconds", 0)) > 0:
         warnings.warn("The getLink API call is deprecated and slated for removal in ids.server 3.0")
 
