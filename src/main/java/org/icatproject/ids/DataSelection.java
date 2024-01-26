@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 
 import jakarta.json.Json;
@@ -53,6 +54,7 @@ public class DataSelection {
     private Set<Long> emptyDatasets;
     private boolean dsWanted;
     private boolean dfWanted;
+    private long length;
 
 
     public enum Returns {
@@ -135,6 +137,7 @@ public class DataSelection {
                     dsInfos.put(dsid, new DsInfoImpl(ds));
                     if (dfWanted) {
                         Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
+                        length += df.getFileSize();
                         String location = IdsBean.getLocation(dfid, df.getLocation());
                         dfInfos.add(
                                 new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
@@ -315,4 +318,10 @@ public class DataSelection {
         return emptyDatasets;
     }
 
+    public OptionalLong getFileLength() {
+        if (!dfWanted || mustZip()) {
+            return OptionalLong.empty();
+        }
+        return OptionalLong.of(length);
+    }
 }

@@ -2,6 +2,8 @@ package org.icatproject.ids.integration.one;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
@@ -99,12 +101,23 @@ public class GetDataExplicitTest extends BaseTest {
     @Test
     public void correctBehaviourTestNone() throws Exception {
         try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.NONE, 0, 200)) {
+                Flag.NONE, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(nullValue()));
+                    assertThat(r.getFirstHeader("Transfer-Encoding").getValue(),
+                            is(equalToIgnoringCase("chunked")));
+                })) {
             checkZipStream(stream, datafileIds, 57L, 0);
         }
 
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.NONE, 0, 200)) {
+        var datafileId = datafileIds.get(0);
+        var fileLength = fileLength(datafileId);
+        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileId),
+                Flag.NONE, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(not(nullValue())));
+                    var contentLength = r.getFirstHeader("Content-Length").getValue();
+                    assertThat(Long.valueOf(contentLength), is(equalTo(fileLength)));
+                    assertThat(r.getFirstHeader("Transfer-Encoding"), is(nullValue()));
+                })) {
             checkStream(stream, datafileIds.get(0));
         }
     }
@@ -112,12 +125,20 @@ public class GetDataExplicitTest extends BaseTest {
     @Test
     public void correctBehaviourTestCompress() throws Exception {
         try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.COMPRESS, 0, 200)) {
+                Flag.COMPRESS, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(nullValue()));
+                    assertThat(r.getFirstHeader("Transfer-Encoding").getValue(),
+                            is(equalToIgnoringCase("chunked")));
+                })) {
             checkZipStream(stream, datafileIds, 36L, 0);
         }
 
         try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.COMPRESS, 0, 200)) {
+                Flag.COMPRESS, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(nullValue()));
+                    assertThat(r.getFirstHeader("Transfer-Encoding").getValue(),
+                            is(equalToIgnoringCase("chunked")));
+                })) {
             checkStream(stream, datafileIds.get(0));
         }
     }
@@ -125,12 +146,20 @@ public class GetDataExplicitTest extends BaseTest {
     @Test
     public void correctBehaviourTestZip() throws Exception {
         try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.ZIP, 0, 200)) {
+                Flag.ZIP, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(nullValue()));
+                    assertThat(r.getFirstHeader("Transfer-Encoding").getValue(),
+                            is(equalToIgnoringCase("chunked")));
+                })) {
             checkZipStream(stream, datafileIds, 57L, 0);
         }
 
         try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.ZIP, 0, 200)) {
+                Flag.ZIP, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(nullValue()));
+                    assertThat(r.getFirstHeader("Transfer-Encoding").getValue(),
+                            is(equalToIgnoringCase("chunked")));
+                })) {
             checkZipStream(stream, datafileIds.subList(0, 1), 57L, 0);
         }
     }
@@ -138,12 +167,20 @@ public class GetDataExplicitTest extends BaseTest {
     @Test
     public void correctBehaviourTestZipAndCompress() throws Exception {
         try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.ZIP_AND_COMPRESS, 0, 200)) {
+                Flag.ZIP_AND_COMPRESS, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(nullValue()));
+                    assertThat(r.getFirstHeader("Transfer-Encoding").getValue(),
+                            is(equalToIgnoringCase("chunked")));
+                })) {
             checkZipStream(stream, datafileIds, 36L, 0);
         }
 
         try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.ZIP_AND_COMPRESS, 0, 200)) {
+                Flag.ZIP_AND_COMPRESS, 0, 200, r -> {
+                    assertThat(r.getFirstHeader("Content-Length"), is(nullValue()));
+                    assertThat(r.getFirstHeader("Transfer-Encoding").getValue(),
+                            is(equalToIgnoringCase("chunked")));
+                })) {
             checkZipStream(stream, datafileIds.subList(0, 1), 36L, 0);
         }
     }

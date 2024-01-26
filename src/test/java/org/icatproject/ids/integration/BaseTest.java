@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.zip.CRC32;
@@ -367,6 +369,16 @@ public class BaseTest {
             }
         }
         assertTrue(found);
+    }
+
+    protected long fileLength(long id) {
+        for (Entry<String, Long> e : ids.entrySet()) {
+            if (id == e.getValue()) {
+                var fileContents = contents.get(e.getKey());
+                return fileContents.getBytes(StandardCharsets.UTF_8).length;
+            }
+        }
+        throw new NoSuchElementException("No file with id " + id);
     }
 
     protected void writeToFile(Datafile df, String content, String key)

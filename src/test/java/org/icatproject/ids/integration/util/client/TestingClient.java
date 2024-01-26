@@ -26,6 +26,7 @@ import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
+import java.util.function.Consumer;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -266,6 +267,12 @@ public class TestingClient {
     public InputStream getData(String sessionId, DataSelection data, Flag flags, long offset, Integer sc)
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, NotFoundException,
             InternalException, DataNotOnlineException {
+        return getData(sessionId, data, flags, offset, sc, null);
+    }
+
+    public InputStream getData(String sessionId, DataSelection data, Flag flags, long offset, Integer sc, Consumer<HttpResponse> responseAssertion)
+            throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, NotFoundException,
+            InternalException, DataNotOnlineException {
 
         URIBuilder uriBuilder = getUriBuilder("getData");
         uriBuilder.setParameter("sessionId", sessionId);
@@ -293,6 +300,9 @@ public class TestingClient {
             response = httpclient.execute(httpGet);
             checkStatus(response, sc);
             checkResponseConformity(response);
+            if (responseAssertion != null) {
+                responseAssertion.accept(response);
+            }
             closeNeeded = false;
             return new HttpInputStream(httpclient, response);
         } catch (IOException | InsufficientStorageException e) {
@@ -928,14 +938,14 @@ public class TestingClient {
     }
 
     private void checkResponseConformity(HttpResponse response) throws InternalException {
-        
+
         StatusLine status = response.getStatusLine();
         var statusCode = status.getStatusCode();
         if(statusCode == 200 && response.getEntity() != null) {
             //we have a status of 200 and a payload. Check for header conformity
             Boolean chunked = response.getFirstHeader("Transfer-Encoding") != null ? response.getFirstHeader("Transfer-Encoding").getValue().contains("chunked")
                                                                                         : false;
-            
+
             if ( (response.getFirstHeader("Content-Length") == null && !chunked)
                 || (response.getFirstHeader("Content-Length") != null && chunked ) ) {
 
