@@ -2,6 +2,7 @@ package org.icatproject.ids.integration.one;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import org.apache.http.HttpResponse;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
@@ -15,6 +16,8 @@ import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
 import org.icatproject.ids.integration.util.client.NotFoundException;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
+import static org.icatproject.ids.integration.util.client.TestingClient.isNotChunkedEncoded;
+import static org.icatproject.ids.integration.util.client.TestingClient.hasHeader;
 
 public class GetDataExplicitTest extends BaseTest {
 
@@ -98,25 +101,36 @@ public class GetDataExplicitTest extends BaseTest {
 
     @Test
     public void correctBehaviourTestNone() throws Exception {
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.NONE, 0, 200)) {
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded()) // assumes caching
+                .getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+                    Flag.NONE, 0, 200)) {
             checkZipStream(stream, datafileIds, 57L, 0);
         }
 
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.NONE, 0, 200)) {
+        var datafileId = datafileIds.get(0);
+        var fileLength = fileLength(datafileId);
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded(), // assumes caching
+                                       hasHeader("Content-Length", fileLength))
+                .getData(sessionId, new DataSelection().addDatafile(datafileId),
+                    Flag.NONE, 0, 200)) {
             checkStream(stream, datafileIds.get(0));
         }
     }
 
     @Test
     public void correctBehaviourTestCompress() throws Exception {
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.COMPRESS, 0, 200)) {
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded()) // assumes caching
+                .getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+                    Flag.COMPRESS, 0, 200)) {
             checkZipStream(stream, datafileIds, 36L, 0);
         }
 
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded()) // assumes caching
+                .getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
                 Flag.COMPRESS, 0, 200)) {
             checkStream(stream, datafileIds.get(0));
         }
@@ -124,26 +138,34 @@ public class GetDataExplicitTest extends BaseTest {
 
     @Test
     public void correctBehaviourTestZip() throws Exception {
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.ZIP, 0, 200)) {
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded()) // assumes caching
+                .getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+                    Flag.ZIP, 0, 200)) {
             checkZipStream(stream, datafileIds, 57L, 0);
         }
 
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.ZIP, 0, 200)) {
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded()) // assumes caching
+                .getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+                    Flag.ZIP, 0, 200)) {
             checkZipStream(stream, datafileIds.subList(0, 1), 57L, 0);
         }
     }
 
     @Test
     public void correctBehaviourTestZipAndCompress() throws Exception {
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.ZIP_AND_COMPRESS, 0, 200)) {
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded()) // assumes caching
+                .getData(sessionId, new DataSelection().addDatafiles(datafileIds),
+                    Flag.ZIP_AND_COMPRESS, 0, 200)) {
             checkZipStream(stream, datafileIds, 36L, 0);
         }
 
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.ZIP_AND_COMPRESS, 0, 200)) {
+        try (InputStream stream = testingClient
+                .assertingHttpResponse(isNotChunkedEncoded()) // assumes caching
+                .getData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+                    Flag.ZIP_AND_COMPRESS, 0, 200)) {
             checkZipStream(stream, datafileIds.subList(0, 1), 36L, 0);
         }
     }
@@ -173,5 +195,4 @@ public class GetDataExplicitTest extends BaseTest {
             checkZipStream(stream, datafileIds.subList(0, 1), 57L, 0);
         }
     }
-
 }

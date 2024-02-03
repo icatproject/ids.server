@@ -10,13 +10,17 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import static java.util.Arrays.stream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
+import static java.util.stream.Collectors.reducing;
+import java.util.function.Consumer;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
@@ -47,7 +51,12 @@ import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.Matcher;
+import static org.hamcrest.MatcherAssert.assertThat;
+import org.icatproject.ids.integration.util.HeaderMatcher;
+import static org.icatproject.ids.integration.util.LongValue.longValue;
 import static org.junit.Assert.fail;
 
 public class TestingClient {
@@ -111,6 +120,7 @@ public class TestingClient {
 
     private String basePath;
     private URI idsUri;
+    private Consumer<HttpResponse> responseAssertion = initialAssertions();
 
     public TestingClient(URL idsUrl) {
 
@@ -120,7 +130,24 @@ public class TestingClient {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    /**
+     * Some assertions that are always present.
+     */
+    private static Consumer<HttpResponse> initialAssertions() {
+        return TestingClient::checkResponseConformity;
+    }
+
+    /**
+     * Add additional assertions to the HTTP response from IDS.  Once the
+     * response is verified, the assertions are removed.
+     * @param assertions Assertions made of the HttpResponse from IDS.
+     */
+    public TestingClient assertingHttpResponse(Consumer<HttpResponse>... assertions) {
+        requireNonNull(assertions);
+        responseAssertion = stream(assertions).collect(reducing(responseAssertion, Consumer::andThen));
+        return this;
     }
 
     public void archive(String sessionId, DataSelection data, Integer sc) throws NotImplementedException,
@@ -132,7 +159,7 @@ public class TestingClient {
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(new UrlEncodedFormEntity(formparams));
             try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
@@ -223,7 +250,7 @@ public class TestingClient {
         }
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpDelete httpDelete = new HttpDelete(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpDelete)) {
                 expectNothing(response, sc);
@@ -249,10 +276,9 @@ public class TestingClient {
 
     public URL getIcatUrl(int sc) throws InternalException, ParseException, NotImplementedException {
         URI uri = getUri(getUriBuilder("getIcatUrl"));
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 return new URL(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException | BadRequestException
                      | InsufficientPrivilegesException | NotFoundException e) {
@@ -289,10 +315,9 @@ public class TestingClient {
         }
         boolean closeNeeded = true;
         try {
-            httpclient = HttpClients.createDefault();
+            httpclient = createClient();
             response = httpclient.execute(httpGet);
             checkStatus(response, sc);
-            checkResponseConformity(response);
             closeNeeded = false;
             return new HttpInputStream(httpclient, response);
         } catch (IOException | InsufficientStorageException e) {
@@ -331,10 +356,9 @@ public class TestingClient {
         }
         boolean closeNeeded = true;
         try {
-            httpclient = HttpClients.createDefault();
+            httpclient = createClient();
             response = httpclient.execute(httpGet);
             checkStatus(response, sc);
-            checkResponseConformity(response);
             closeNeeded = false;
             return new HttpInputStream(httpclient, response);
         } catch (IOException | InsufficientStorageException e) {
@@ -366,11 +390,10 @@ public class TestingClient {
         formparams.add(new BasicNameValuePair("datafileId", Long.toString(datafileId)));
         formparams.add(new BasicNameValuePair("username", username));
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(new UrlEncodedFormEntity(formparams));
             try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-                checkResponseConformity(response);
                 return Paths.get(getString(response, sc));
             } catch (InsufficientStorageException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -387,11 +410,10 @@ public class TestingClient {
         uriBuilder.setParameter("sessionId", sessionId);
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 String result = getString(response, sc);
                 try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
                     ServiceStatus serviceStatus = new ServiceStatus();
@@ -435,10 +457,9 @@ public class TestingClient {
         }
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 return Long.parseLong(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -455,7 +476,7 @@ public class TestingClient {
         uriBuilder.setParameter("preparedId", preparedId);
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
                 return Long.parseLong(getString(response, sc));
@@ -479,11 +500,10 @@ public class TestingClient {
         }
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 return Status.valueOf(getString(response, sc));
             } catch (InsufficientStorageException | DataNotOnlineException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -501,7 +521,7 @@ public class TestingClient {
         uriBuilder.setParameter("preparedId", preparedId);
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
@@ -545,11 +565,10 @@ public class TestingClient {
         uriBuilder.setParameter("preparedId", preparedId);
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 return Boolean.parseBoolean(getString(response, sc));
             } catch (InsufficientStorageException | DataNotOnlineException | InsufficientPrivilegesException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -561,10 +580,9 @@ public class TestingClient {
 
     public boolean isReadOnly(int sc) throws InternalException, NotImplementedException {
         URI uri = getUri(getUriBuilder("isReadOnly"));
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 return Boolean.parseBoolean(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException | BadRequestException
                      | InsufficientPrivilegesException | NotFoundException e) {
@@ -577,10 +595,9 @@ public class TestingClient {
 
     public boolean isTwoLevel(int sc) throws InternalException, NotImplementedException {
         URI uri = getUri(getUriBuilder("isTwoLevel"));
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 return Boolean.parseBoolean(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException | BadRequestException
                      | InsufficientPrivilegesException | NotFoundException e) {
@@ -594,10 +611,9 @@ public class TestingClient {
     public void ping(Integer sc) throws InternalException, NotFoundException, NotImplementedException {
 
         URI uri = getUri(getUriBuilder("ping"));
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 String result = getString(response, sc);
                 if (!result.equals("IdsOK")) {
                     throw new NotFoundException("Server gave invalid response: " + result);
@@ -627,12 +643,11 @@ public class TestingClient {
         if (flags == Flag.COMPRESS || flags == Flag.ZIP_AND_COMPRESS) {
             formparams.add(new BasicNameValuePair("compress", "true"));
         }
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpEntity entity = new UrlEncodedFormEntity(formparams);
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(entity);
             try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-                checkResponseConformity(response);
                 return getString(response, sc);
             } catch (InsufficientStorageException | DataNotOnlineException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -678,13 +693,12 @@ public class TestingClient {
         }
 
         URI uri = getUri(uriBuilder);
-        CloseableHttpClient httpclient = HttpClients.createDefault();
+        CloseableHttpClient httpclient = createClient();
         HttpPut httpPut = new HttpPut(uri);
         httpPut.setEntity(new InputStreamEntity(inputStream, ContentType.APPLICATION_OCTET_STREAM));
 
         try (CloseableHttpResponse response = httpclient.execute(httpPut)) {
             String result = getString(response, sc);
-            checkResponseConformity(response);
             try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
                 JsonObject rootNode = jsonReader.readObject();
                 if (rootNode.getJsonNumber("checksum").longValueExact() != crc.getValue()) {
@@ -738,12 +752,11 @@ public class TestingClient {
                 ContentType.APPLICATION_OCTET_STREAM, "unreliable");
         HttpEntity entity = reqEntityBuilder.addPart("file", body).build();
 
-        CloseableHttpClient httpclient = HttpClients.createDefault();
+        CloseableHttpClient httpclient = createClient();
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setEntity(entity);
 
         try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
-            checkResponseConformity(response);
             String result = getString(response, sc);
             String prefix = "<html><script type=\"text/javascript\">window.name='";
             String suffix = "';</script></html>";
@@ -774,7 +787,7 @@ public class TestingClient {
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpEntity entity = new UrlEncodedFormEntity(formparams);
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(entity);
@@ -795,12 +808,11 @@ public class TestingClient {
         uriBuilder.setParameter("preparedId", preparedId);
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
                 String result = getString(response, sc);
-                checkResponseConformity(response);
                 try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
 
                     JsonObject rootNode = jsonReader.readObject();
@@ -833,11 +845,10 @@ public class TestingClient {
         }
         URI uri = getUri(uriBuilder);
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
-                checkResponseConformity(response);
                 String result = getString(response, sc);
                 try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
 
@@ -868,7 +879,7 @@ public class TestingClient {
         List<NameValuePair> formparams = new ArrayList<>();
         formparams.add(new BasicNameValuePair("preparedId", preparedId));
 
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpEntity entity = new UrlEncodedFormEntity(formparams);
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(entity);
@@ -890,7 +901,7 @@ public class TestingClient {
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpEntity entity = new UrlEncodedFormEntity(formparams);
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(entity);
@@ -914,7 +925,7 @@ public class TestingClient {
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
-        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+        try (CloseableHttpClient httpclient = createClient()) {
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(new UrlEncodedFormEntity(formparams));
             try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
@@ -927,21 +938,53 @@ public class TestingClient {
         }
     }
 
-    private void checkResponseConformity(HttpResponse response) throws InternalException {
-        
+    private CloseableHttpClient createClient() {
+        return HttpClients.custom()
+                .addInterceptorLast((HttpResponse r, HttpContext c) -> {
+                             responseAssertion.accept(r);
+                             responseAssertion = initialAssertions();
+                       })
+                .build();
+    }
+
+    private static void checkResponseConformity(HttpResponse response) {
+
         StatusLine status = response.getStatusLine();
         var statusCode = status.getStatusCode();
         if(statusCode == 200 && response.getEntity() != null) {
             //we have a status of 200 and a payload. Check for header conformity
             Boolean chunked = response.getFirstHeader("Transfer-Encoding") != null ? response.getFirstHeader("Transfer-Encoding").getValue().contains("chunked")
                                                                                         : false;
-            
+
             if ( (response.getFirstHeader("Content-Length") == null && !chunked)
                 || (response.getFirstHeader("Content-Length") != null && chunked ) ) {
 
-                throw new InternalException("Responses with payload should either contain the Content-Length header or the 'Transfer-Encoding: chunked' header. It needs exactly one of them.");
+                fail("Responses with payload should either contain the Content-Length header or the 'Transfer-Encoding: chunked' header. It needs exactly one of them.");
             }
         }
     }
 
+    public static Consumer<HttpResponse> isChunkedEncoded() {
+        return hasNoHeader("Content-Length")
+                .andThen(hasHeader("Transfer-Encoding", "chunked"));
+    }
+
+    public static Consumer<HttpResponse> isNotChunkedEncoded() {
+        return hasHeaderMatching("Content-Length", longValue())
+                .andThen(hasNoHeader("Transfer-Encoding"));
+    }
+
+    public static Consumer<HttpResponse> hasNoHeader(String header) {
+        return r-> assertThat(r, HeaderMatcher.hasNoHeader(header));
+    }
+
+    public static Consumer<HttpResponse> hasHeaderMatching(String header,
+            Matcher<String> valueMatcher) {
+        return r-> assertThat(r, HeaderMatcher.hasHeaderMatching(header, valueMatcher));
+    }
+
+    public static Consumer<HttpResponse> hasHeader(String header,
+            Object expectedValue) {
+        return r-> assertThat(r, HeaderMatcher.hasHeader(header, expectedValue));
+    }
 }
