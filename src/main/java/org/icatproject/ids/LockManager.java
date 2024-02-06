@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.v3.model.DataSetInfo;
 
 @Singleton
 public class LockManager {
@@ -130,7 +131,7 @@ public class LockManager {
         logger.debug("LockManager initialized.");
     }
 
-    public Lock lock(DsInfo ds, LockType type) throws AlreadyLockedException, IOException {
+    public Lock lock(DataSetInfo ds, LockType type) throws AlreadyLockedException, IOException {
         Long id = ds.getDsId();
         assert id != null;
         synchronized (lockMap) {
@@ -155,10 +156,10 @@ public class LockManager {
         }
     }
 
-    public Lock lock(Collection<DsInfo> datasets, LockType type) throws AlreadyLockedException, IOException {
+    public Lock lock(Collection<DataSetInfo> datasets, LockType type) throws AlreadyLockedException, IOException {
         LockCollection locks = new LockCollection();
         try {
-            for (DsInfo ds : datasets) {
+            for (DataSetInfo ds : datasets) {
                 locks.add(lock(ds, type));
             }
         } catch (AlreadyLockedException | IOException e) {

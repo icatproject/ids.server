@@ -45,6 +45,8 @@ import org.icatproject.ids.thread.DfWriter;
 import org.icatproject.ids.thread.DsArchiver;
 import org.icatproject.ids.thread.DsRestorer;
 import org.icatproject.ids.thread.DsWriter;
+import org.icatproject.ids.v3.model.DataFileInfo;
+import org.icatproject.ids.v3.model.DataSetInfo;
 
 @Singleton
 @DependsOn({"LockManager"})
@@ -68,16 +70,16 @@ public class FiniteStateMachine {
                         Map<Long, Lock> restoreLocks = new HashMap<>();
                         Map<Long, Lock> deleteLocks = new HashMap<>();
 
-                        Map<DfInfoImpl, RequestedState> newOps = new HashMap<>();
-                        final Iterator<Entry<DfInfoImpl, RequestedState>> it = deferredDfOpsQueue.entrySet().iterator();
+                        Map<DataFileInfo, RequestedState> newOps = new HashMap<>();
+                        final Iterator<Entry<DataFileInfo, RequestedState>> it = deferredDfOpsQueue.entrySet().iterator();
                         while (it.hasNext()) {
-                            Entry<DfInfoImpl, RequestedState> opEntry = it.next();
-                            DfInfoImpl dfInfo = opEntry.getKey();
+                            Entry<DataFileInfo, RequestedState> opEntry = it.next();
+                            DataFileInfo dfInfo = opEntry.getKey();
                             Long dsId = dfInfo.getDsId();
-                            DsInfo dsInfo;
+                            DataSetInfo dsInfo;
                             try {
                                 Dataset ds = (Dataset) reader.get("Dataset ds INCLUDE ds.investigation.facility", dsId);
-                                dsInfo = new DsInfoImpl(ds);
+                                dsInfo = new DataSetInfo(ds);
                             } catch (Exception e) {
                                 logger.error("Could not get dsInfo {}: {}.", dsId, e.getMessage());
                                 continue;
@@ -210,11 +212,11 @@ public class FiniteStateMachine {
             try {
                 synchronized (deferredDsOpsQueue) {
                     final long now = System.currentTimeMillis();
-                    Map<DsInfo, RequestedState> newOps = new HashMap<>();
-                    final Iterator<Entry<DsInfo, RequestedState>> it = deferredDsOpsQueue.entrySet().iterator();
+                    Map<DataSetInfo, RequestedState> newOps = new HashMap<>();
+                    final Iterator<Entry<DataSetInfo, RequestedState>> it = deferredDsOpsQueue.entrySet().iterator();
                     while (it.hasNext()) {
-                        final Entry<DsInfo, RequestedState> opEntry = it.next();
-                        final DsInfo dsInfo = opEntry.getKey();
+                        final Entry<DataSetInfo, RequestedState> opEntry = it.next();
+                        final DataSetInfo dsInfo = opEntry.getKey();
                         if (!dsChanging.containsKey(dsInfo)) {
                             final RequestedState state = opEntry.getValue();
                             if (state == RequestedState.WRITE_REQUESTED
@@ -242,7 +244,7 @@ public class FiniteStateMachine {
                                 try {
                                     Lock lock = lockManager.lock(dsInfo, LockType.EXCLUSIVE);
                                     it.remove();
-                                    long dsId = dsInfo.getDsId();
+                                    long dsId = dsInfo.getId();
                                     logger.debug("Will process " + dsInfo + " with " + state);
                                     dsChanging.put(dsInfo, state);
                                     final Thread w = new Thread(
@@ -293,13 +295,13 @@ public class FiniteStateMachine {
      */
     private long processOpsDelayMillis;
 
-    private Map<DfInfoImpl, RequestedState> deferredDfOpsQueue = new HashMap<>();
+    private Map<DataFileInfo, RequestedState> deferredDfOpsQueue = new HashMap<>();
 
-    private Map<DsInfo, RequestedState> deferredDsOpsQueue = new HashMap<>();
+    private Map<DataSetInfo, RequestedState> deferredDsOpsQueue = new HashMap<>();
 
-    private Map<DfInfo, RequestedState> dfChanging = new HashMap<>();
+    private Map<DataFileInfo, RequestedState> dfChanging = new HashMap<>();
 
-    private Map<DsInfo, RequestedState> dsChanging = new HashMap<>();
+    private Map<DataSetInfo, RequestedState> dsChanging = new HashMap<>();
 
     private Path markerDir;
     private long processQueueIntervalMillis;
@@ -328,16 +330,16 @@ public class FiniteStateMachine {
     }
 
     /**
-     * Find any DfInfo which may be offline
+     * Find any DataFileInfo which may be offline
      */
-    public Set<DfInfo> getDfMaybeOffline() {
-        Map<DfInfo, RequestedState> union;
+    public Set<DataFileInfo> getDfMaybeOffline() {
+        Map<DataFileInfo, RequestedState> union;
         synchronized (deferredDfOpsQueue) {
             union = new HashMap<>(dfChanging);
             union.putAll(deferredDfOpsQueue);
         }
-        Set<DfInfo> result = new HashSet<>();
-        for (Entry<DfInfo, RequestedState> entry : union.entrySet()) {
+        Set<DataFileInfo> result = new HashSet<>();
+        for (Entry<DataFileInfo, RequestedState> entry : union.entrySet()) {
             if (entry.getValue() != RequestedState.WRITE_REQUESTED) {
                 result.add(entry.getKey());
             }
@@ -346,16 +348,16 @@ public class FiniteStateMachine {
     }
 
     /**
-     * Find any DfInfo which are being restored or are queued for restoration
+     * Find any DataFileInfo which are being restored or are queued for restoration
      */
-    public Set<DfInfo> getDfRestoring() {
-        Map<DfInfo, RequestedState> union;
+    public Set<DataFileInfo> getDfRestoring() {
+        Map<DataFileInfo, RequestedState> union;
         synchronized (deferredDfOpsQueue) {
             union = new HashMap<>(dfChanging);
             union.putAll(deferredDfOpsQueue);
         }
-        Set<DfInfo> result = new HashSet<>();
-        for (Entry<DfInfo, RequestedState> entry : union.entrySet()) {
+        Set<DataFileInfo> result = new HashSet<>();
+        for (Entry<DataFileInfo, RequestedState> entry : union.entrySet()) {
             if (entry.getValue() == RequestedState.RESTORE_REQUESTED) {
                 result.add(entry.getKey());
             }
@@ -364,16 +366,16 @@ public class FiniteStateMachine {
     }
 
     /**
-     * Find any DsInfo which may be offline
+     * Find any DataSetInfo which may be offline
      */
-    public Set<DsInfo> getDsMaybeOffline() {
-        Map<DsInfo, RequestedState> union;
+    public Set<DataSetInfo> getDsMaybeOffline() {
+        Map<DataSetInfo, RequestedState> union;
         synchronized (deferredDsOpsQueue) {
             union = new HashMap<>(dsChanging);
             union.putAll(deferredDsOpsQueue);
         }
-        Set<DsInfo> result = new HashSet<>();
-        for (Entry<DsInfo, RequestedState> entry : union.entrySet()) {
+        Set<DataSetInfo> result = new HashSet<>();
+        for (Entry<DataSetInfo, RequestedState> entry : union.entrySet()) {
             if (entry.getValue() != RequestedState.WRITE_REQUESTED) {
                 result.add(entry.getKey());
             }
@@ -384,14 +386,14 @@ public class FiniteStateMachine {
     /**
      * Find any DsInfo which are being restored or are queued for restoration
      */
-    public Set<DsInfo> getDsRestoring() {
-        Map<DsInfo, RequestedState> union;
+    public Set<DataSetInfo> getDsRestoring() {
+        Map<DataSetInfo, RequestedState> union;
         synchronized (deferredDsOpsQueue) {
             union = new HashMap<>(dsChanging);
             union.putAll(deferredDsOpsQueue);
         }
-        Set<DsInfo> result = new HashSet<>();
-        for (Entry<DsInfo, RequestedState> entry : union.entrySet()) {
+        Set<DataSetInfo> result = new HashSet<>();
+        for (Entry<DataSetInfo, RequestedState> entry : union.entrySet()) {
             if (entry.getValue() == RequestedState.RESTORE_REQUESTED) {
                 result.add(entry.getKey());
             }
@@ -473,7 +475,7 @@ public class FiniteStateMachine {
         }
     }
 
-    public void queue(DfInfoImpl dfInfo, DeferredOp deferredOp) throws InternalException {
+    public void queue(DataFileInfo dfInfo, DeferredOp deferredOp) throws InternalException {
         logger.info("Requesting " + deferredOp + " of datafile " + dfInfo);
 
         synchronized (deferredDfOpsQueue) {
@@ -488,7 +490,7 @@ public class FiniteStateMachine {
             if (state == null) {
                 if (deferredOp == DeferredOp.WRITE) {
                     try {
-                        Path marker = markerDir.resolve(Long.toString(dfInfo.getDfId()));
+                        Path marker = markerDir.resolve(Long.toString(dfInfo.getId()));
                         Files.createFile(marker);
                         logger.debug("Created marker " + marker);
                     } catch (FileAlreadyExistsException e) {
@@ -534,7 +536,7 @@ public class FiniteStateMachine {
         }
     }
 
-    public void queue(DsInfo dsInfo, DeferredOp deferredOp) throws InternalException {
+    public void queue(DataSetInfo dsInfo, DeferredOp deferredOp) throws InternalException {
         logger.info("Requesting " + deferredOp + " of dataset " + dsInfo);
 
         synchronized (deferredDsOpsQueue) {
@@ -590,9 +592,9 @@ public class FiniteStateMachine {
         }
     }
 
-    private void requestWrite(DsInfo dsInfo) throws InternalException {
+    private void requestWrite(DataSetInfo dsInfo) throws InternalException {
         try {
-            Path marker = markerDir.resolve(Long.toString(dsInfo.getDsId()));
+            Path marker = markerDir.resolve(Long.toString(dsInfo.getId()));
             Files.createFile(marker);
             logger.debug("Created marker " + marker);
         } catch (FileAlreadyExistsException e) {

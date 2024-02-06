@@ -42,7 +42,7 @@ public class DataSetInfo extends DataInfoBase implements DsInfo {
     }
 
 
-    public DataSetInfo(Long id, String name, String location, Long facilityId, String facilityName, Long investigationId, String investigationName, String visitId) {
+    public DataSetInfo(Long id, String name, String location, Long investigationId, String investigationName, String visitId, Long facilityId, String facilityName) {
         super(id, name, location);
 
         this.facilityId = facilityId;

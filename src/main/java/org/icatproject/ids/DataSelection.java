@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.crypto.Data;
+
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
@@ -28,6 +30,8 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.v3.model.DataFileInfo;
+import org.icatproject.ids.v3.model.DataSetInfo;
 
 /**
  * Class to convert 3 comma separated strings containing Investigation,
@@ -48,8 +52,8 @@ public class DataSelection {
     private List<Long> invids;
     private List<Long> dsids;
     private List<Long> dfids;
-    private Map<Long, DsInfo> dsInfos;
-    private Set<DfInfoImpl> dfInfos;
+    private Map<Long, DataSetInfo> dsInfos;
+    private Set<DataFileInfo> dfInfos;
     private Set<Long> emptyDatasets;
     private boolean dsWanted;
     private boolean dfWanted;
@@ -132,12 +136,12 @@ public class DataSelection {
                 if (dss.size() == 1) {
                     Dataset ds = (Dataset) dss.get(0);
                     long dsid = ds.getId();
-                    dsInfos.put(dsid, new DsInfoImpl(ds));
+                    dsInfos.put(dsid, new DataSetInfo(ds));
                     if (dfWanted) {
                         Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
                         String location = IdsBean.getLocation(dfid, df.getLocation());
                         dfInfos.add(
-                                new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
+                                new DataFileInfo(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
                     }
                 } else {
                     // Next line may reveal a permissions problem
@@ -148,7 +152,7 @@ public class DataSelection {
 
             for (Long dsid : dsids) {
                 Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
-                dsInfos.put(dsid, new DsInfoImpl(ds));
+                dsInfos.put(dsid, new DataSetInfo(ds));
                 // dataset access for the user has been checked so the REST session for the
                 // reader account can be used if the IDS setting to allow this is enabled
                 String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
@@ -228,7 +232,7 @@ public class DataSelection {
                 for (JsonValue tupV : result) {
                     JsonArray tup = (JsonArray) tupV;
                     long dsid = tup.getJsonNumber(0).longValueExact();
-                    dsInfos.put(dsid, new DsInfoImpl(dsid, tup.getString(1), tup.getString(2, null), invid, invName,
+                    dsInfos.put(dsid, new DataSetInfo(dsid, tup.getString(1), tup.getString(2, null), invid, invName,
                             visitId, facilityId, facilityName));
 
                     query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
@@ -276,7 +280,7 @@ public class DataSelection {
                     long dfid = tup.getJsonNumber(0).longValueExact();
                     String location = IdsBean.getLocation(dfid, tup.getString(2, null));
                     dfInfos.add(
-                            new DfInfoImpl(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
+                            new DataFileInfo(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
                 }
             } else {
                 long half = (min + max) / 2;
@@ -294,11 +298,11 @@ public class DataSelection {
         }
     }
 
-    public Map<Long, DsInfo> getDsInfo() {
+    public Map<Long, DataSetInfo> getDsInfo() {
         return dsInfos;
     }
 
-    public Set<DfInfoImpl> getDfInfo() {
+    public Set<DataFileInfo> getDfInfo() {
         return dfInfos;
     }
 

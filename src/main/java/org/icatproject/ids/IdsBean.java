@@ -79,6 +79,9 @@ import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.ids.v3.model.DataFileInfo;
+import org.icatproject.ids.v3.model.DataInfoBase;
+import org.icatproject.ids.v3.model.DataSetInfo;
 import org.icatproject.utils.IcatSecurity;
 import org.icatproject.utils.ShellCommand;
 
@@ -87,18 +90,18 @@ public class IdsBean {
 
     public class RunPrepDsCheck implements Callable<Void> {
 
-        private Collection<DsInfo> toCheck;
+        private Collection<DataSetInfo> toCheck;
         private Set<Long> emptyDatasets;
 
-        public RunPrepDsCheck(Collection<DsInfo> toCheck, Set<Long> emptyDatasets) {
+        public RunPrepDsCheck(Collection<DataSetInfo> toCheck, Set<Long> emptyDatasets) {
             this.toCheck = toCheck;
             this.emptyDatasets = emptyDatasets;
         }
 
         @Override
         public Void call() throws Exception {
-            for (DsInfo dsInfo : toCheck) {
-                fsm.checkFailure(dsInfo.getDsId());
+            for (DataSetInfo dsInfo : toCheck) {
+                fsm.checkFailure(dsInfo.getId());
                 restoreIfOffline(dsInfo, emptyDatasets);
             }
             return null;
@@ -108,16 +111,16 @@ public class IdsBean {
 
     public class RunPrepDfCheck implements Callable<Void> {
 
-        private SortedSet<DfInfoImpl> toCheck;
+        private SortedSet<DataFileInfo> toCheck;
 
-        public RunPrepDfCheck(SortedSet<DfInfoImpl> toCheck) {
+        public RunPrepDfCheck(SortedSet<DataFileInfo> toCheck) {
             this.toCheck = toCheck;
         }
 
         @Override
         public Void call() throws Exception {
-            for (DfInfoImpl dfInfo : toCheck) {
-                fsm.checkFailure(dfInfo.getDfId());
+            for (DataFileInfo dfInfo : toCheck) {
+                fsm.checkFailure(dfInfo.getId());
                 restoreIfOffline(dfInfo);
             }
             return null;
@@ -131,15 +134,15 @@ public class IdsBean {
 
     public class RestoreDfTask implements Callable<Void> {
 
-        private Set<DfInfoImpl> dfInfos;
+        private Set<DataFileInfo> dfInfos;
 
-        public RestoreDfTask(Set<DfInfoImpl> dfInfos) {
+        public RestoreDfTask(Set<DataFileInfo> dfInfos) {
             this.dfInfos = dfInfos;
         }
 
         @Override
         public Void call() throws Exception {
-            for (DfInfoImpl dfInfo : dfInfos) {
+            for (DataFileInfo dfInfo : dfInfos) {
                 restoreIfOffline(dfInfo);
             }
             return null;
@@ -148,17 +151,17 @@ public class IdsBean {
     }
 
     public class RestoreDsTask implements Callable<Void> {
-        private Collection<DsInfo> dsInfos;
+        private Collection<DataSetInfo> dsInfos;
         private Set<Long> emptyDs;
 
-        public RestoreDsTask(Collection<DsInfo> dsInfos, Set<Long> emptyDs) {
+        public RestoreDsTask(Collection<DataSetInfo> dsInfos, Set<Long> emptyDs) {
             this.dsInfos = dsInfos;
             this.emptyDs = emptyDs;
         }
 
         @Override
         public Void call() throws Exception {
-            for (DsInfo dsInfo : dsInfos) {
+            for (DataSetInfo dsInfo : dsInfos) {
                 restoreIfOffline(dsInfo, emptyDs);
             }
             return null;
@@ -169,15 +172,15 @@ public class IdsBean {
 
         private long offset;
         private boolean zip;
-        private Map<Long, DsInfo> dsInfos;
+        private Map<Long, DataSetInfo> dsInfos;
         private Lock lock;
         private boolean compress;
-        private Set<DfInfoImpl> dfInfos;
+        private Set<DataFileInfo> dfInfos;
         private String ip;
         private long start;
         private Long transferId;
 
-        SO(Map<Long, DsInfo> dsInfos, Set<DfInfoImpl> dfInfos, long offset, boolean zip, boolean compress,
+        SO(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, long offset, boolean zip, boolean compress,
            Lock lock, Long transferId, String ip, long start) {
             this.offset = offset;
             this.zip = zip;
@@ -204,7 +207,7 @@ public class IdsBean {
                         zos.setLevel(0); // Otherwise use default compression
                     }
 
-                    for (DfInfoImpl dfInfo : dfInfos) {
+                    for (DataFileInfo dfInfo : dfInfos) {
                         logger.debug("Adding " + dfInfo + " to zip");
                         transfer = dfInfo;
                         DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
@@ -227,7 +230,7 @@ public class IdsBean {
                     }
                     zos.close();
                 } else {
-                    DfInfoImpl dfInfo = dfInfos.iterator().next();
+                    DataFileInfo dfInfo = dfInfos.iterator().next();
                     transfer = dfInfo;
                     InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
                             dfInfo.getModId());
@@ -357,17 +360,17 @@ public class IdsBean {
         }
     }
 
-    static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DsInfo> dsInfos,
-                     Set<DfInfoImpl> dfInfos, Set<Long> emptyDatasets) {
+    static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataSetInfo> dsInfos,
+                     Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets) {
         JsonGenerator gen = Json.createGenerator(stream);
         gen.writeStartObject();
         gen.write("zip", zip);
         gen.write("compress", compress);
 
         gen.writeStartArray("dsInfo");
-        for (DsInfo dsInfo : dsInfos.values()) {
+        for (DataSetInfo dsInfo : dsInfos.values()) {
             logger.debug("dsInfo " + dsInfo);
-            gen.writeStartObject().write("dsId", dsInfo.getDsId())
+            gen.writeStartObject().write("dsId", dsInfo.getId())
 
                     .write("dsName", dsInfo.getDsName()).write("facilityId", dsInfo.getFacilityId())
                     .write("facilityName", dsInfo.getFacilityName()).write("invId", dsInfo.getInvId())
@@ -382,9 +385,9 @@ public class IdsBean {
         gen.writeEnd();
 
         gen.writeStartArray("dfInfo");
-        for (DfInfoImpl dfInfo : dfInfos) {
-            DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-            gen.writeStartObject().write("dsId", dsInfo.getDsId()).write("dfId", dfInfo.getDfId())
+        for (DataFileInfo dfInfo : dfInfos) {
+            DataSetInfo dsInfo = dsInfos.get(dfInfo.getDsId());
+            gen.writeStartObject().write("dsId", dsInfo.getId()).write("dfId", dfInfo.getId())
                     .write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
                     .write("modId", dfInfo.getModId());
             if (dfInfo.getDfLocation() != null) {
@@ -415,14 +418,14 @@ public class IdsBean {
         }
         prepared.zip = pd.getBoolean("zip");
         prepared.compress = pd.getBoolean("compress");
-        SortedMap<Long, DsInfo> dsInfos = new TreeMap<>();
-        SortedSet<DfInfoImpl> dfInfos = new TreeSet<>();
+        SortedMap<Long, DataSetInfo> dsInfos = new TreeMap<>();
+        SortedSet<DataFileInfo> dfInfos = new TreeSet<>();
         Set<Long> emptyDatasets = new HashSet<>();
 
         for (JsonValue itemV : pd.getJsonArray("dfInfo")) {
             JsonObject item = (JsonObject) itemV;
             String dfLocation = item.isNull("dfLocation") ? null : item.getString("dfLocation");
-            dfInfos.add(new DfInfoImpl(item.getJsonNumber("dfId").longValueExact(), item.getString("dfName"),
+            dfInfos.add(new DataFileInfo(item.getJsonNumber("dfId").longValueExact(), item.getString("dfName"),
                     dfLocation, item.getString("createId"), item.getString("modId"),
                     item.getJsonNumber("dsId").longValueExact()));
 
@@ -433,7 +436,7 @@ public class IdsBean {
             JsonObject item = (JsonObject) itemV;
             long dsId = item.getJsonNumber("dsId").longValueExact();
             String dsLocation = item.isNull("dsLocation") ? null : item.getString("dsLocation");
-            dsInfos.put(dsId, new DsInfoImpl(dsId, item.getString("dsName"), dsLocation,
+            dsInfos.put(dsId, new DataSetInfo(dsId, item.getString("dsName"), dsLocation,
                     item.getJsonNumber("invId").longValueExact(), item.getString("invName"), item.getString("visitId"),
                     item.getJsonNumber("facilityId").longValueExact(), item.getString("facilityName")));
         }
@@ -502,7 +505,7 @@ public class IdsBean {
 
     class PreparedStatus {
         public ReentrantLock lock = new ReentrantLock();
-        public DfInfoImpl fromDfElement;
+        public DataFileInfo fromDfElement;
         public Future<?> future;
         public Long fromDsElement;
     }
@@ -550,15 +553,15 @@ public class IdsBean {
         if (storageUnit == StorageUnit.DATASET) {
             DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
                     investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-            Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-            for (DsInfo dsInfo : dsInfos.values()) {
+            Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
+            for (DataSetInfo dsInfo : dsInfos.values()) {
                 fsm.queue(dsInfo, DeferredOp.ARCHIVE);
             }
         } else if (storageUnit == StorageUnit.DATAFILE) {
             DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
                     investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-            Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-            for (DfInfoImpl dfInfo : dfInfos) {
+            Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
+            for (DataFileInfo dfInfo : dfInfos) {
                 fsm.queue(dfInfo, DeferredOp.ARCHIVE);
             }
         } else {
@@ -581,16 +584,16 @@ public class IdsBean {
         }
     }
 
-    private void checkDatafilesPresent(Set<? extends DfInfo> dfInfos)
+    private void checkDatafilesPresent(Set<? extends DataFileInfo> dfInfos)
             throws NotFoundException, InternalException {
         /* Check that datafiles have not been deleted before locking */
         int n = 0;
         StringBuffer sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
-        for (DfInfo dfInfo : dfInfos) {
+        for (DataFileInfo dfInfo : dfInfos) {
             if (n != 0) {
                 sb.append(',');
             }
-            sb.append(dfInfo.getDfId());
+            sb.append(dfInfo.getId());
             if (++n == maxIdsInQuery) {
                 try {
                     if (((Long) reader.search(sb.append("))").toString()).get(0)).intValue() != n) {
@@ -615,12 +618,12 @@ public class IdsBean {
 
     }
 
-    private void checkOnline(Collection<DsInfo> dsInfos, Set<Long> emptyDatasets,
-                             Set<DfInfoImpl> dfInfos)
+    private void checkOnline(Collection<DataSetInfo> dsInfos, Set<Long> emptyDatasets,
+                             Set<DataFileInfo> dfInfos)
             throws InternalException, DataNotOnlineException {
         if (storageUnit == StorageUnit.DATASET) {
             boolean maybeOffline = false;
-            for (DsInfo dsInfo : dsInfos) {
+            for (DataSetInfo dsInfo : dsInfos) {
                 if (restoreIfOffline(dsInfo, emptyDatasets)) {
                     maybeOffline = true;
                 }
@@ -631,7 +634,7 @@ public class IdsBean {
             }
         } else if (storageUnit == StorageUnit.DATAFILE) {
             boolean maybeOffline = false;
-            for (DfInfoImpl dfInfo : dfInfos) {
+            for (DataFileInfo dfInfo : dfInfos) {
                 if (restoreIfOffline(dfInfo)) {
                     maybeOffline = true;
                 }
@@ -662,8 +665,8 @@ public class IdsBean {
                 investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
         // Do it
-        Collection<DsInfo> dsInfos = dataSelection.getDsInfo().values();
-        Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+        Collection<DataSetInfo> dsInfos = dataSelection.getDsInfo().values();
+        Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
 
         try (Lock lock = lockManager.lock(dsInfos, LockType.EXCLUSIVE)) {
             if (storageUnit == StorageUnit.DATASET) {
@@ -672,9 +675,9 @@ public class IdsBean {
 
             /* Now delete from ICAT */
             List<EntityBaseBean> dfs = new ArrayList<>();
-            for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
+            for (DataFileInfo dfInfo : dataSelection.getDfInfo()) {
                 Datafile df = new Datafile();
-                df.setId(dfInfo.getDfId());
+                df.setId(dfInfo.getId());
                 dfs.add(df);
             }
             try {
@@ -696,7 +699,7 @@ public class IdsBean {
              * been removed from ICAT so will not be accessible to any
              * subsequent IDS calls.
              */
-            for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
+            for (DataFileInfo dfInfo : dataSelection.getDfInfo()) {
                 String location = dfInfo.getDfLocation();
                 try {
                     if ((long) reader
@@ -719,7 +722,7 @@ public class IdsBean {
             }
 
             if (storageUnit == StorageUnit.DATASET) {
-                for (DsInfo dsInfo : dsInfos) {
+                for (DataSetInfo dsInfo : dsInfos) {
                     fsm.queue(dsInfo, DeferredOp.WRITE);
                 }
             }
@@ -771,8 +774,8 @@ public class IdsBean {
 
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
-        final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
-        final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
+        final Set<DataFileInfo> dfInfos = prepared.dfInfos;
+        final Map<Long, DataSetInfo> dsInfos = prepared.dsInfos;
         Set<Long> emptyDatasets = prepared.emptyDatasets;
 
         Lock lock = null;
@@ -853,8 +856,8 @@ public class IdsBean {
                 investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
         // Do it
-        Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-        Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+        Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
+        Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
 
         Lock lock = null;
         try {
@@ -947,15 +950,15 @@ public class IdsBean {
 
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
-        final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
+        final Set<DataFileInfo> dfInfos = prepared.dfInfos;
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
             gen.write("zip", zip);
             gen.write("compress", compress);
             gen.writeStartArray("ids");
-            for (DfInfoImpl dfInfo : dfInfos) {
-                gen.write(dfInfo.getDfId());
+            for (DataFileInfo dfInfo : dfInfos) {
+                gen.write(dfInfo.getId());
             }
             gen.writeEnd().writeEnd().close();
         }
@@ -990,12 +993,12 @@ public class IdsBean {
                 investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
 
         // Do it
-        Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+        Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
             gen.writeStartArray("ids");
-            for (DfInfoImpl dfInfo : dfInfos) {
-                gen.write(dfInfo.getDfId());
+            for (DataFileInfo dfInfo : dfInfos) {
+                gen.write(dfInfo.getId());
             }
             gen.writeEnd().writeEnd().close();
         }
@@ -1083,7 +1086,7 @@ public class IdsBean {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
+        final Set<DataFileInfo> dfInfos = prepared.dfInfos;
 
         // Note that the "fast computation for the simple case" (see the other getSize() implementation) is not
         // available when calling getSize() with a preparedId.
@@ -1098,11 +1101,11 @@ public class IdsBean {
 
         StringBuilder sb = new StringBuilder();
         int n = 0;
-        for (DfInfoImpl df : dfInfos) {
+        for (DataFileInfo df : dfInfos) {
             if (sb.length() != 0) {
                 sb.append(',');
             }
-            sb.append(df.getDfId());
+            sb.append(df.getId());
             if (n++ == 500) {
                 size += getSizeFor(sessionId, sb);
                 sb = new StringBuilder();
@@ -1172,11 +1175,11 @@ public class IdsBean {
 
             StringBuilder sb = new StringBuilder();
             int n = 0;
-            for (DfInfoImpl df : dataSelection.getDfInfo()) {
+            for (DataFileInfo df : dataSelection.getDfInfo()) {
                 if (sb.length() != 0) {
                     sb.append(',');
                 }
-                sb.append(df.getDfId());
+                sb.append(df.getId());
                 if (n++ == 500) {
                     size += getSizeFor(sessionId, sb);
                     sb = new StringBuilder();
@@ -1273,32 +1276,32 @@ public class IdsBean {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        final Set<DfInfoImpl> dfInfos = prepared.dfInfos;
-        final Map<Long, DsInfo> dsInfos = prepared.dsInfos;
+        final Set<DataFileInfo> dfInfos = prepared.dfInfos;
+        final Map<Long, DataSetInfo> dsInfos = prepared.dsInfos;
         Set<Long> emptyDatasets = prepared.emptyDatasets;
 
         Status status = Status.ONLINE;
 
         if (storageUnit == StorageUnit.DATASET) {
-            Set<DsInfo> restoring = fsm.getDsRestoring();
-            Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
-            for (DsInfo dsInfo : dsInfos.values()) {
-                fsm.checkFailure(dsInfo.getDsId());
+            Set<DataSetInfo> restoring = fsm.getDsRestoring();
+            Set<DataSetInfo> maybeOffline = fsm.getDsMaybeOffline();
+            for (DataSetInfo dsInfo : dsInfos.values()) {
+                fsm.checkFailure(dsInfo.getId());
                 if (restoring.contains(dsInfo)) {
                     status = Status.RESTORING;
                 } else if (maybeOffline.contains(dsInfo)) {
                     status = Status.ARCHIVED;
                     break;
-                } else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+                } else if (!emptyDatasets.contains(dsInfo.getId()) && !mainStorage.exists(dsInfo)) {
                     status = Status.ARCHIVED;
                     break;
                 }
             }
         } else if (storageUnit == StorageUnit.DATAFILE) {
-            Set<DfInfo> restoring = fsm.getDfRestoring();
-            Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
-            for (DfInfo dfInfo : dfInfos) {
-                fsm.checkFailure(dfInfo.getDfId());
+            Set<DataFileInfo> restoring = fsm.getDfRestoring();
+            Set<DataFileInfo> maybeOffline = fsm.getDfMaybeOffline();
+            for (DataFileInfo dfInfo : dfInfos) {
+                fsm.checkFailure(dfInfo.getId());
                 if (restoring.contains(dfInfo)) {
                     status = Status.RESTORING;
                 } else if (maybeOffline.contains(dfInfo)) {
@@ -1353,19 +1356,19 @@ public class IdsBean {
         if (storageUnit == StorageUnit.DATASET) {
             DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
                     investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-            Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+            Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
 
-            Set<DsInfo> restoring = fsm.getDsRestoring();
-            Set<DsInfo> maybeOffline = fsm.getDsMaybeOffline();
+            Set<DataSetInfo> restoring = fsm.getDsRestoring();
+            Set<DataSetInfo> maybeOffline = fsm.getDsMaybeOffline();
             Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
-            for (DsInfo dsInfo : dsInfos.values()) {
-                fsm.checkFailure(dsInfo.getDsId());
+            for (DataSetInfo dsInfo : dsInfos.values()) {
+                fsm.checkFailure(dsInfo.getId());
                 if (restoring.contains(dsInfo)) {
                     status = Status.RESTORING;
                 } else if (maybeOffline.contains(dsInfo)) {
                     status = Status.ARCHIVED;
                     break;
-                } else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+                } else if (!emptyDatasets.contains(dsInfo.getId()) && !mainStorage.exists(dsInfo)) {
                     status = Status.ARCHIVED;
                     break;
                 }
@@ -1373,12 +1376,12 @@ public class IdsBean {
         } else if (storageUnit == StorageUnit.DATAFILE) {
             DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
                     investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-            Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+            Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
 
-            Set<DfInfo> restoring = fsm.getDfRestoring();
-            Set<DfInfo> maybeOffline = fsm.getDfMaybeOffline();
-            for (DfInfo dfInfo : dfInfos) {
-                fsm.checkFailure(dfInfo.getDfId());
+            Set<DataFileInfo> restoring = fsm.getDfRestoring();
+            Set<DataFileInfo> maybeOffline = fsm.getDfMaybeOffline();
+            for (DataFileInfo dfInfo : dfInfos) {
+                fsm.checkFailure(dfInfo.getId());
                 if (restoring.contains(dfInfo)) {
                     status = Status.RESTORING;
                 } else if (maybeOffline.contains(dfInfo)) {
@@ -1525,14 +1528,14 @@ public class IdsBean {
             }
 
             if (storageUnit == StorageUnit.DATASET) {
-                Collection<DsInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
+                Collection<DataSetInfo> toCheck = status.fromDsElement == null ? preparedJson.dsInfos.values()
                         : preparedJson.dsInfos.tailMap(status.fromDsElement).values();
                 logger.debug("Will check online status of {} entries", toCheck.size());
-                for (DsInfo dsInfo : toCheck) {
-                    fsm.checkFailure(dsInfo.getDsId());
+                for (DataSetInfo dsInfo : toCheck) {
+                    fsm.checkFailure(dsInfo.getId());
                     if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
                         prepared = false;
-                        status.fromDsElement = dsInfo.getDsId();
+                        status.fromDsElement = dsInfo.getId();
                         toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
                         logger.debug("Will check in background status of {} entries", toCheck.size());
                         status.future = threadPool.submit(new RunPrepDsCheck(toCheck, preparedJson.emptyDatasets));
@@ -1543,19 +1546,19 @@ public class IdsBean {
                     toCheck = status.fromDsElement == null ? Collections.emptySet()
                             : preparedJson.dsInfos.headMap(status.fromDsElement).values();
                     logger.debug("Will check finally online status of {} entries", toCheck.size());
-                    for (DsInfo dsInfo : toCheck) {
-                        fsm.checkFailure(dsInfo.getDsId());
+                    for (DataSetInfo dsInfo : toCheck) {
+                        fsm.checkFailure(dsInfo.getId());
                         if (restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
                             prepared = false;
                         }
                     }
                 }
             } else if (storageUnit == StorageUnit.DATAFILE) {
-                SortedSet<DfInfoImpl> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
+                SortedSet<DataFileInfo> toCheck = status.fromDfElement == null ? preparedJson.dfInfos
                         : preparedJson.dfInfos.tailSet(status.fromDfElement);
                 logger.debug("Will check online status of {} entries", toCheck.size());
-                for (DfInfoImpl dfInfo : toCheck) {
-                    fsm.checkFailure(dfInfo.getDfId());
+                for (DataFileInfo dfInfo : toCheck) {
+                    fsm.checkFailure(dfInfo.getId());
                     if (restoreIfOffline(dfInfo)) {
                         prepared = false;
                         status.fromDfElement = dfInfo;
@@ -1569,8 +1572,8 @@ public class IdsBean {
                     toCheck = status.fromDfElement == null ? new TreeSet<>()
                             : preparedJson.dfInfos.headSet(status.fromDfElement);
                     logger.debug("Will check finally online status of {} entries", toCheck.size());
-                    for (DfInfoImpl dfInfo : toCheck) {
-                        fsm.checkFailure(dfInfo.getDfId());
+                    for (DataFileInfo dfInfo : toCheck) {
+                        fsm.checkFailure(dfInfo.getId());
                         if (restoreIfOffline(dfInfo)) {
                             prepared = false;
                         }
@@ -1629,19 +1632,19 @@ public class IdsBean {
         // Do it
         String preparedId = UUID.randomUUID().toString();
 
-        Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
+        Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
         Set<Long> emptyDs = dataSelection.getEmptyDatasets();
-        Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+        Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
 
         if (storageUnit == StorageUnit.DATASET) {
-            for (DsInfo dsInfo : dsInfos.values()) {
-                fsm.recordSuccess(dsInfo.getDsId());
+            for (DataSetInfo dsInfo : dsInfos.values()) {
+                fsm.recordSuccess(dsInfo.getId());
             }
             threadPool.submit(new RestoreDsTask(dsInfos.values(), emptyDs));
 
         } else if (storageUnit == StorageUnit.DATAFILE) {
-            for (DfInfo dfInfo : dfInfos) {
-                fsm.recordSuccess(dfInfo.getDfId());
+            for (DataFileInfo dfInfo : dfInfos) {
+                fsm.recordSuccess(dfInfo.getId());
             }
             threadPool.submit(new RestoreDfTask(dfInfos));
         }
@@ -1755,16 +1758,16 @@ public class IdsBean {
                 throw new InternalException(type + " " + e.getMessage());
             }
 
-            DsInfo dsInfo = new DsInfoImpl(ds);
+            DataSetInfo dsInfo = new DataSetInfo(ds);
             try (Lock lock = lockManager.lock(dsInfo, LockType.SHARED)) {
                 if (storageUnit == StorageUnit.DATASET) {
-                    Set<DfInfoImpl> dfInfos = Collections.emptySet();
+                    Set<DataFileInfo> dfInfos = Collections.emptySet();
                     Set<Long> emptyDatasets = new HashSet<>();
                     try {
                         List<Object> counts = icat.search(sessionId,
-                                "COUNT(Datafile) <-> Dataset [id=" + dsInfo.getDsId() + "]");
+                                "COUNT(Datafile) <-> Dataset [id=" + dsInfo.getId() + "]");
                         if ((Long) counts.get(0) == 0) {
-                            emptyDatasets.add(dsInfo.getDsId());
+                            emptyDatasets.add(dsInfo.getId());
                         }
                     } catch (IcatException_Exception e) {
                         IcatExceptionType type = e.getFaultInfo().getType();
@@ -1776,7 +1779,7 @@ public class IdsBean {
                         }
                         throw new InternalException(type + " " + e.getMessage());
                     }
-                    Set<DsInfo> dsInfos = new HashSet<>();
+                    Set<DataSetInfo> dsInfos = new HashSet<>();
                     dsInfos.add(dsInfo);
                     checkOnline(dsInfos, emptyDatasets, dfInfos);
                 }
@@ -1820,7 +1823,7 @@ public class IdsBean {
                     } catch (IcatException_Exception e) {
                         throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
                     }
-                    fsm.queue(new DfInfoImpl(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getDsId()),
+                    fsm.queue(new DataFileInfo(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getId()),
                             DeferredOp.WRITE);
                 }
 
@@ -1951,12 +1954,12 @@ public class IdsBean {
         }
 
         if (storageUnit == StorageUnit.DATASET) {
-            for (DsInfo dsInfo : preparedJson.dsInfos.values()) {
-                fsm.recordSuccess(dsInfo.getDsId());
+            for (DataSetInfo dsInfo : preparedJson.dsInfos.values()) {
+                fsm.recordSuccess(dsInfo.getId());
             }
         } else if (storageUnit == StorageUnit.DATAFILE) {
-            for (DfInfoImpl dfInfo : preparedJson.dfInfos) {
-                fsm.recordSuccess(dfInfo.getDfId());
+            for (DataFileInfo dfInfo : preparedJson.dfInfos) {
+                fsm.recordSuccess(dfInfo.getId());
             }
         }
 
@@ -1986,12 +1989,12 @@ public class IdsBean {
 
         // Do it
         if (storageUnit == StorageUnit.DATASET) {
-            for (DsInfo dsInfo : dataSelection.getDsInfo().values()) {
-                fsm.recordSuccess(dsInfo.getDsId());
+            for (DataInfoBase dsInfo : dataSelection.getDsInfo().values()) {
+                fsm.recordSuccess(dsInfo.getId());
             }
         } else if (storageUnit == StorageUnit.DATAFILE) {
-            for (DfInfoImpl dfInfo : dataSelection.getDfInfo()) {
-                fsm.recordSuccess(dfInfo.getDfId());
+            for (DataInfoBase dfInfo : dataSelection.getDfInfo()) {
+                fsm.recordSuccess(dfInfo.getId());
             }
         }
 
@@ -2020,7 +2023,7 @@ public class IdsBean {
                     Dataset ds = null;
                     try {
                         ds = (Dataset) reader.get("Dataset ds INCLUDE ds.investigation.facility", dsid);
-                        DsInfo dsInfo = new DsInfoImpl(ds);
+                        DataSetInfo dsInfo = new DataSetInfo(ds);
                         fsm.queue(dsInfo, DeferredOp.WRITE);
                         logger.info("Queued dataset with id " + dsid + " " + dsInfo
                                 + " to be written as it was not written out previously by IDS");
@@ -2039,7 +2042,7 @@ public class IdsBean {
                     try {
                         df = (Datafile) reader.get("Datafile ds INCLUDE ds.dataset", dfid);
                         String location = getLocation(df.getId(), df.getLocation());
-                        DfInfoImpl dfInfo = new DfInfoImpl(dfid, df.getName(), location, df.getCreateId(),
+                        DataFileInfo dfInfo = new DataFileInfo(dfid, df.getName(), location, df.getCreateId(),
                                 df.getModId(), df.getDataset().getId());
                         fsm.queue(dfInfo, DeferredOp.WRITE);
                         logger.info("Queued datafile with id " + dfid + " " + dfInfo
@@ -2076,15 +2079,15 @@ public class IdsBean {
         if (storageUnit == StorageUnit.DATASET) {
             DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
                     investigationIds, datasetIds, datafileIds, Returns.DATASETS);
-            Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-            for (DsInfo dsInfo : dsInfos.values()) {
+            Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
+            for (DataSetInfo dsInfo : dsInfos.values()) {
                 fsm.queue(dsInfo, DeferredOp.RESTORE);
             }
         } else if (storageUnit == StorageUnit.DATAFILE) {
             DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
                     investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
-            Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
-            for (DfInfoImpl dfInfo : dfInfos) {
+            Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
+            for (DataFileInfo dfInfo : dfInfos) {
                 fsm.queue(dfInfo, DeferredOp.RESTORE);
             }
         } else {
@@ -2106,7 +2109,7 @@ public class IdsBean {
         }
     }
 
-    private boolean restoreIfOffline(DfInfoImpl dfInfo) throws InternalException {
+    private boolean restoreIfOffline(DataFileInfo dfInfo) throws InternalException {
         boolean maybeOffline = false;
         if (fsm.getDfMaybeOffline().contains(dfInfo)) {
             maybeOffline = true;
@@ -2117,11 +2120,11 @@ public class IdsBean {
         return maybeOffline;
     }
 
-    private boolean restoreIfOffline(DsInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
+    private boolean restoreIfOffline(DataSetInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
         boolean maybeOffline = false;
         if (fsm.getDsMaybeOffline().contains(dsInfo)) {
             maybeOffline = true;
-        } else if (!emptyDatasets.contains(dsInfo.getDsId()) && !mainStorage.exists(dsInfo)) {
+        } else if (!emptyDatasets.contains(dsInfo.getId()) && !mainStorage.exists(dsInfo)) {
             fsm.queue(dsInfo, DeferredOp.RESTORE);
             maybeOffline = true;
         }
@@ -2148,21 +2151,21 @@ public class IdsBean {
                 investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
         // Do it
-        Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
-        Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+        Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
+        Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
 
         try (Lock lock = lockManager.lock(dsInfos.values(), LockType.SHARED)) {
             if (twoLevel) {
                 boolean maybeOffline = false;
                 if (storageUnit == StorageUnit.DATASET) {
-                    for (DsInfo dsInfo : dsInfos.values()) {
-                        if (!dataSelection.getEmptyDatasets().contains(dsInfo.getDsId()) &&
+                    for (DataSetInfo dsInfo : dsInfos.values()) {
+                        if (!dataSelection.getEmptyDatasets().contains(dsInfo.getId()) &&
                                 !mainStorage.exists(dsInfo)) {
                             maybeOffline = true;
                         }
                     }
                 } else if (storageUnit == StorageUnit.DATAFILE) {
-                    for (DfInfoImpl dfInfo : dfInfos) {
+                    for (DataFileInfo dfInfo : dfInfos) {
                         if (!mainStorage.exists(dfInfo.getDfLocation())) {
                             maybeOffline = true;
                         }
@@ -2174,11 +2177,11 @@ public class IdsBean {
             }
 
             if (storageUnit == StorageUnit.DATASET) {
-                for (DsInfo dsInfo : dsInfos.values()) {
+                for (DataSetInfo dsInfo : dsInfos.values()) {
                     fsm.queue(dsInfo, DeferredOp.WRITE);
                 }
             } else if (storageUnit == StorageUnit.DATAFILE) {
-                for (DfInfoImpl dfInfo : dfInfos) {
+                for (DataFileInfo dfInfo : dfInfos) {
                     fsm.queue(dfInfo, DeferredOp.WRITE);
                 }
             } else {

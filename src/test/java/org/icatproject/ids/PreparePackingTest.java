@@ -16,9 +16,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.junit.Test;
 
-import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.v3.model.DataFileInfo;
+import org.icatproject.ids.v3.model.DataSetInfo;
+import org.junit.Test;
 
 public class PreparePackingTest {
 
@@ -26,22 +27,22 @@ public class PreparePackingTest {
     public void packAndUnpack() throws Exception {
         boolean zip = true;
         boolean compress = false;
-        Map<Long, DsInfo> dsInfos = new HashMap<>();
-        Set<DfInfoImpl> dfInfos = new HashSet<>();
+        Map<Long, DataSetInfo> dsInfos = new HashMap<>();
+        Set<DataFileInfo> dfInfos = new HashSet<>();
         Set<Long> emptyDatasets = new HashSet<>();
 
         long dsid1 = 17L;
         long dsid2 = 18L;
         long invId = 15L;
         long facilityId = 45L;
-        dfInfos.add(new DfInfoImpl(5L, "dfName", "dfLocation", "createId", "modId", dsid1));
+        dfInfos.add(new DataFileInfo(5L, "dfName", "dfLocation", "createId", "modId", dsid1));
 
-        dfInfos.add(new DfInfoImpl(51L, "dfName2", null, "createId", "modId", dsid1));
+        dfInfos.add(new DataFileInfo(51L, "dfName2", null, "createId", "modId", dsid1));
 
-        dsInfos.put(dsid1, new DsInfoImpl(dsid1, "dsName", "dsLocation", invId, "invName",
+        dsInfos.put(dsid1, new DataSetInfo(dsid1, "dsName", "dsLocation", invId, "invName",
                 "visitId", facilityId, "facilityName"));
 
-        dsInfos.put(dsid2, new DsInfoImpl(dsid2, "dsName2", null, invId, "invName", "visitId",
+        dsInfos.put(dsid2, new DataSetInfo(dsid2, "dsName2", null, invId, "invName", "visitId",
                 facilityId, "facilityName"));
 
         emptyDatasets.add(dsid2);
@@ -55,7 +56,7 @@ public class PreparePackingTest {
         Prepared prepared = IdsBean.unpack(stream);
         assertTrue(prepared.zip);
         assertFalse(prepared.compress);
-        for (DfInfoImpl dfInfo : prepared.dfInfos) {
+        for (DataFileInfo dfInfo : prepared.dfInfos) {
             if (dfInfo.getDfId() == 5L) {
                 assertEquals("dfName", dfInfo.getDfName());
                 assertEquals("dfLocation", dfInfo.getDfLocation());
@@ -69,9 +70,9 @@ public class PreparePackingTest {
             assertEquals("modId", dfInfo.getModId());
             assertEquals(dsid1, dfInfo.getDsId());
         }
-        for (Entry<Long, DsInfo> entry : prepared.dsInfos.entrySet()) {
+        for (Entry<Long, DataSetInfo> entry : prepared.dsInfos.entrySet()) {
             Long key = entry.getKey();
-            DsInfo value = entry.getValue();
+            DataSetInfo value = entry.getValue();
             assertEquals((Long) key, (Long) value.getDsId());
             if (value.getDsId() == dsid1) {
                 assertEquals("dsName", value.getDsName());

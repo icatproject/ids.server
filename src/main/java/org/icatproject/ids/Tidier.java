@@ -29,6 +29,8 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.v3.model.DataFileInfo;
+import org.icatproject.ids.v3.model.DataSetInfo;
 
 @Singleton
 @Startup
@@ -71,7 +73,7 @@ public class Tidier {
                                     List<Object> os = reader.search(query);
                                     logger.debug(query + " returns " + os.size() + " datasets");
                                     for (Object o : os) {
-                                        DsInfoImpl dsInfoImpl = new DsInfoImpl((Dataset) o);
+                                        DataSetInfo dsInfoImpl = new DataSetInfo((Dataset) o);
                                         logger.debug(
                                                 "Requesting archive of " + dsInfoImpl + " to recover main storage");
                                         fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
@@ -123,7 +125,7 @@ public class Tidier {
                                     logger.debug(query + " returns " + os.size() + " datafiles");
                                     for (Object o : os) {
                                         Datafile df = (Datafile) o;
-                                        DfInfoImpl dfInfoImpl = new DfInfoImpl(df.getId(), df.getName(),
+                                        DataFileInfo dfInfoImpl = new DataFileInfo(df.getId(), df.getName(),
 
                                                 IdsBean.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
                                                 df.getModId(), df.getDataset().getId());

@@ -6,11 +6,11 @@ package org.icatproject.ids.v3.model;
  */
 public abstract class DataInfoBase {
 
-    protected Long id;
+    protected long id;
     protected String name;
     protected String location;
 
-    protected DataInfoBase(Long id, String name, String location){
+    protected DataInfoBase(long id, String name, String location){
         this.name = name;
         this.id = id;
         this.location = location;

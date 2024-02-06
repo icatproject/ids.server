@@ -9,7 +9,7 @@ public class DataFileInfo extends DataInfoBase implements Comparable<DataFileInf
 
     protected String createId;
     protected String modId; 
-    protected Long datasId;
+    protected long datasId;
 
     public DataFileInfo(Long id, String name, String location, String createId, String modId, Long datasId) {
         super(id, name, location);
@@ -27,7 +27,7 @@ public class DataFileInfo extends DataInfoBase implements Comparable<DataFileInf
         return this.modId;
     }
 
-    public Long getDsId() {
+    public long getDsId() {
         return this.datasId;
     }
 
