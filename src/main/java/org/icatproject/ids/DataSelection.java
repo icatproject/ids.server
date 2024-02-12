@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.crypto.Data;
-
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
@@ -29,9 +27,8 @@ import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
-import org.icatproject.ids.plugin.DsInfo;
-import org.icatproject.ids.v3.model.DataFileInfo;
-import org.icatproject.ids.v3.model.DataSetInfo;
+import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataSetInfo;
 
 /**
  * Class to convert 3 comma separated strings containing Investigation,

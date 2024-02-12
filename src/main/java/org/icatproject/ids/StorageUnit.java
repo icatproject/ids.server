@@ -1,5 +1,5 @@
 package org.icatproject.ids;
 
-enum StorageUnit {
+public enum StorageUnit {
     DATASET, DATAFILE
 }

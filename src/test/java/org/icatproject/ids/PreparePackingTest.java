@@ -17,8 +17,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.icatproject.ids.v3.model.DataFileInfo;
-import org.icatproject.ids.v3.model.DataSetInfo;
+import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataSetInfo;
 import org.junit.Test;
 
 public class PreparePackingTest {

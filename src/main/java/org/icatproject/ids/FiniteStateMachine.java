@@ -45,8 +45,8 @@ import org.icatproject.ids.thread.DfWriter;
 import org.icatproject.ids.thread.DsArchiver;
 import org.icatproject.ids.thread.DsRestorer;
 import org.icatproject.ids.thread.DsWriter;
-import org.icatproject.ids.v3.model.DataFileInfo;
-import org.icatproject.ids.v3.model.DataSetInfo;
+import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataSetInfo;
 
 @Singleton
 @DependsOn({"LockManager"})

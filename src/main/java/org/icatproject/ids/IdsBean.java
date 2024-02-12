@@ -79,9 +79,10 @@ import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
-import org.icatproject.ids.v3.model.DataFileInfo;
-import org.icatproject.ids.v3.model.DataInfoBase;
-import org.icatproject.ids.v3.model.DataSetInfo;
+import org.icatproject.ids.v3.enums.CallType;
+import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
+import org.icatproject.ids.v3.models.DataSetInfo;
 import org.icatproject.utils.IcatSecurity;
 import org.icatproject.utils.ShellCommand;
 
@@ -126,10 +127,6 @@ public class IdsBean {
             return null;
         }
 
-    }
-
-    enum CallType {
-        INFO, PREPARE, READ, WRITE, MIGRATE
     }
 
     public class RestoreDfTask implements Callable<Void> {

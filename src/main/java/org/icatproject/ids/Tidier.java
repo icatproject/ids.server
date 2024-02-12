@@ -29,8 +29,8 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.v3.model.DataFileInfo;
-import org.icatproject.ids.v3.model.DataSetInfo;
+import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataSetInfo;
 
 @Singleton
 @Startup

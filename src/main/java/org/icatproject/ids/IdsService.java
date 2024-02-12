@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +40,10 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.v3.RequestHandlerServiceBase;
+import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.v3.enums.RequestType;
+import org.icatproject.ids.v3.models.ValueContainer;
 
 @Path("/")
 @Stateless
@@ -49,7 +54,24 @@ public class IdsService {
     @EJB
     private IdsBean idsBean;
 
-    private Pattern rangeRe;
+    @EJB
+    Transmitter transmitter;
+
+    @EJB
+    private FiniteStateMachine fsm;
+
+    @EJB
+    private LockManager lockManager;
+
+    @EJB
+    private IcatReader reader;
+
+    private RequestHandlerServiceBase requestHandler;
+
+
+    public IdsService() {
+        this.requestHandler = new RequestHandlerServiceBase();
+    }
 
     /**
      * Archive data specified by the investigationIds, datasetIds and
@@ -170,26 +192,21 @@ public class IdsService {
                             @QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
                             @QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
             NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
-        Response response = null;
 
-        long offset = 0;
-        if (range != null) {
 
-            Matcher m = rangeRe.matcher(range);
-            if (!m.matches()) {
-                throw new BadRequestException("The range must match " + rangeRe.pattern());
-            }
-            offset = Long.parseLong(m.group(1));
-            logger.debug("Range " + range + " -> offset " + offset);
-        }
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put( "request",          new ValueContainer(request) );
+        parameters.put( "preparedId",       new ValueContainer(preparedId) );
+        parameters.put( "sessionId",        new ValueContainer(sessionId) );
+        parameters.put( "investigationIds", new ValueContainer(investigationIds) );
+        parameters.put( "datasetIds",       new ValueContainer(datasetIds) );
+        parameters.put( "datafileIds",      new ValueContainer(datafileIds) );
+        parameters.put( "compress",         new ValueContainer(compress) );
+        parameters.put( "zip",              new ValueContainer(zip) );
+        parameters.put( "outname",          new ValueContainer(outname) );
+        parameters.put( "Range",            new ValueContainer(range) );
 
-        if (preparedId != null) {
-            response = idsBean.getData(preparedId, outname, offset, request.getRemoteAddr());
-        } else {
-            response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname,
-                    offset, request.getRemoteAddr());
-        }
-        return response;
+        return this.requestHandler.handle(RequestType.GETDATA, parameters).getResponse();
     }
 
     /**
@@ -334,7 +351,7 @@ public class IdsService {
     @PostConstruct
     private void init() {
         logger.info("creating IdsService");
-        rangeRe = Pattern.compile("bytes=(\\d+)-");
+        this.requestHandler.init(this.transmitter, this.lockManager, this.fsm, this.reader);
         logger.info("created IdsService");
     }
 

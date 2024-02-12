@@ -22,10 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.IdsBean.CallType;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
 
@@ -345,7 +345,7 @@ public class PropertyHandler {
         return stopArchivingLevel;
     }
 
-    StorageUnit getStorageUnit() {
+    public StorageUnit getStorageUnit() {
         return storageUnit;
     }
 

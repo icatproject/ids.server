@@ -4,14 +4,14 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-import org.icatproject.ids.v3.model.DataFileInfo;
-import org.icatproject.ids.v3.model.DataSetInfo;
+import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataSetInfo;
 
 /* This is a POJO with only package access so don't make data private */
-class Prepared {
-    boolean zip;
-    boolean compress;
-    SortedSet<DataFileInfo> dfInfos;
-    SortedMap<Long, DataSetInfo> dsInfos;
-    Set<Long> emptyDatasets;
+public class Prepared {
+    public boolean zip;
+    public boolean compress;
+    public SortedSet<DataFileInfo> dfInfos;
+    public SortedMap<Long, DataSetInfo> dsInfos;
+    public Set<Long> emptyDatasets;
 }
