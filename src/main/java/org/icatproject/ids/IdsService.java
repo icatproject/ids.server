@@ -66,12 +66,9 @@ public class IdsService {
     @EJB
     private IcatReader reader;
 
-    private RequestHandlerServiceBase requestHandler;
+    private RequestHandlerServiceBase requestHandler = null;
 
-
-    public IdsService() {
-        this.requestHandler = new RequestHandlerServiceBase();
-    }
+    private Pattern rangeRe;
 
     /**
      * Archive data specified by the investigationIds, datasetIds and
@@ -207,6 +204,27 @@ public class IdsService {
         parameters.put( "Range",            new ValueContainer(range) );
 
         return this.requestHandler.handle(RequestType.GETDATA, parameters).getResponse();
+
+        // Response response = null;
+
+        // long offset = 0;
+        // if (range != null) {
+
+        //     Matcher m = rangeRe.matcher(range);
+        //     if (!m.matches()) {
+        //         throw new BadRequestException("The range must match " + rangeRe.pattern());
+        //     }
+        //     offset = Long.parseLong(m.group(1));
+        //     logger.debug("Range " + range + " -> offset " + offset);
+        // }
+
+        // if (preparedId != null) {
+        //     response = idsBean.getData(preparedId, outname, offset, request.getRemoteAddr());
+        // } else {
+        //     response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname,
+        //             offset, request.getRemoteAddr());
+        // }
+        // return response;
     }
 
     /**
@@ -351,6 +369,8 @@ public class IdsService {
     @PostConstruct
     private void init() {
         logger.info("creating IdsService");
+        this.rangeRe = Pattern.compile("bytes=(\\d+)-");
+        this.requestHandler = new RequestHandlerServiceBase();
         this.requestHandler.init(this.transmitter, this.lockManager, this.fsm, this.reader);
         logger.info("created IdsService");
     }

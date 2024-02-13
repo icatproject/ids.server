@@ -7,7 +7,6 @@ import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +19,6 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.DataSelection;
 import org.icatproject.ids.Prepared;
 import org.icatproject.ids.DataSelection.Returns;
-import org.icatproject.ids.LockManager;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.StorageUnit;
@@ -48,7 +46,7 @@ public class GetDataHandler extends RequestHandlerBase {
     private static AtomicLong atomicLong = new AtomicLong();
 
     public GetDataHandler() {
-        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET} );
+        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null} );
     }
 
     public void init() {
@@ -73,7 +71,7 @@ public class GetDataHandler extends RequestHandlerBase {
         }
 
         var preparedId = parameters.get("preparedId");
-        if (preparedId != null) {
+        if (preparedId.getString() != null) {
             response = this.getData(preparedId.getString(), 
                                     parameters.getOrDefault("outname", ValueContainer.getInvalid()).getString(), 
                                     offset, 
