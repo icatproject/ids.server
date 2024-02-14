@@ -68,6 +68,8 @@ public abstract class RequestHandlerBase {
 
     public void init() throws InternalException {
 
+        //logger.info("Initialize RequestHandlerBase...");
+
         var serviceProvider = ServiceProvider.getInstance();
         var propertyHandler = serviceProvider.getPropertyHandler();
         this.preparedDir = propertyHandler.getCacheDir().resolve("prepared");
@@ -76,6 +78,8 @@ public abstract class RequestHandlerBase {
 
         var archiveStorage = propertyHandler.getArchiveStorage();
         this.twoLevel = archiveStorage != null;
+
+        //logger.info("RequestHandlerBase initialized");
     }
 
     public abstract ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException;

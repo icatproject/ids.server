@@ -49,8 +49,11 @@ public class GetDataHandler extends RequestHandlerBase {
         super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null} );
     }
 
-    public void init() {
+    public void init() throws InternalException {
+        logger.info("Initializing GetDataHandler...");
+        super.init();        
         this.rangeRe = Pattern.compile("bytes=(\\d+)-");
+        logger.info("GetDataHandler initialized");
     }
 
     @Override

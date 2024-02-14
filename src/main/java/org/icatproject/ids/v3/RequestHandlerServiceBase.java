@@ -113,9 +113,11 @@ public class RequestHandlerServiceBase {
 
                 // logSet = propertyHandler.getLogSet();
 
+                logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
                 for(RequestHandlerBase handler : this.handlers.values()) {
                     handler.init();
                 }
+                logger.info("RequestHandlers initialized");
 
                 inited = true;
 
