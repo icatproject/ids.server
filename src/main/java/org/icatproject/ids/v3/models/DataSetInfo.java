@@ -1,10 +1,15 @@
 package org.icatproject.ids.v3.models;
 
+import java.util.Set;
+
 import org.icatproject.Dataset;
 import org.icatproject.Facility;
 import org.icatproject.Investigation;
+import org.icatproject.ids.DeferredOp;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.v3.ServiceProvider;
 
 /**
  * Contains information about a Dataset. Replaces DsInfo in v3.
@@ -56,6 +61,18 @@ public class DataSetInfo extends DataInfoBase implements DsInfo {
     public String toString() {
         return this.investigationId + "/" + this.id + " (" + this.facilityName + "/" + this.investigationName + "/" + this.visitId + "/"
                 + this.name + ")";
+    }
+
+    public boolean restoreIfOffline(Set<Long> emptyDatasets) throws InternalException {
+        boolean maybeOffline = false;
+        var serviceProvider = ServiceProvider.getInstance();
+        if (serviceProvider.getFsm().getDsMaybeOffline().contains(this)) {
+            maybeOffline = true;
+        } else if (!emptyDatasets.contains(this.getId()) && !serviceProvider.getMainStorage().exists(this)) {
+            serviceProvider.getFsm().queue(this, DeferredOp.RESTORE);
+            maybeOffline = true;
+        }
+        return maybeOffline;
     }
 
     public Long getFacilityId() {

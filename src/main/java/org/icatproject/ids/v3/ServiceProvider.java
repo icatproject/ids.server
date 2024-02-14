@@ -17,7 +17,6 @@ public class ServiceProvider {
     private FiniteStateMachine fsm;
     private LockManager lockManager;
     private IcatReader icatReader;
-    private ICAT icat;
 
     private ServiceProvider(Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
         this.transmitter = transmitter;

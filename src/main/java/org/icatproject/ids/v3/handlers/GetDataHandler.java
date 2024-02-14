@@ -117,11 +117,11 @@ public class GetDataHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
+        DataSelection dataSelection = new DataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets);
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
         final Set<DataFileInfo> dfInfos = prepared.dfInfos;
         final Map<Long, DataSetInfo> dsInfos = prepared.dsInfos;
-        Set<Long> emptyDatasets = prepared.emptyDatasets;
 
         Lock lock = null;
         try {
@@ -129,7 +129,7 @@ public class GetDataHandler extends RequestHandlerBase {
             lock = serviceProvider.getLockManager().lock(dsInfos.values(), LockType.SHARED);
 
             if (twoLevel) {
-                checkOnline(dsInfos.values(), emptyDatasets, dfInfos);
+                dataSelection.checkOnline();
             }
             checkDatafilesPresent(dfInfos);
 
@@ -214,7 +214,7 @@ public class GetDataHandler extends RequestHandlerBase {
             lock = serviceProvider.getLockManager().lock(dsInfos.values(), LockType.SHARED);
 
             if (twoLevel) {
-                checkOnline(dsInfos.values(), dataSelection.getEmptyDatasets(), dfInfos);
+                dataSelection.checkOnline();
             }
             checkDatafilesPresent(dfInfos);
 

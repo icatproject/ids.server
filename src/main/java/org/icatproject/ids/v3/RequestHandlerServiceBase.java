@@ -3,9 +3,6 @@ package org.icatproject.ids.v3;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.concurrent.Executors;
-
-import javax.xml.datatype.DatatypeFactory;
 
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.IcatReader;

@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -41,7 +39,6 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.RequestHandlerServiceBase;
-import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.ValueContainer;
 
@@ -67,8 +64,6 @@ public class IdsService {
     private IcatReader reader;
 
     private RequestHandlerServiceBase requestHandler = null;
-
-    private Pattern rangeRe;
 
     /**
      * Archive data specified by the investigationIds, datasetIds and
@@ -348,7 +343,6 @@ public class IdsService {
     @PostConstruct
     private void init() {
         logger.info("creating IdsService");
-        this.rangeRe = Pattern.compile("bytes=(\\d+)-");
         this.requestHandler = new RequestHandlerServiceBase();
         this.requestHandler.init(this.transmitter, this.lockManager, this.fsm, this.reader);
         logger.info("created IdsService");

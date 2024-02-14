@@ -1,11 +1,8 @@
 package org.icatproject.ids.v3.handlers;
 
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +28,6 @@ import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 
 import org.icatproject.ids.DataSelection;
-import org.icatproject.ids.DeferredOp;
 import org.icatproject.ids.Prepared;
 import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -128,59 +124,6 @@ public abstract class RequestHandlerBase {
         prepared.emptyDatasets = emptyDatasets;
 
         return prepared;
-    }
-
-    //maybo should be moved somewhere else? To DataSelection?
-    protected void checkOnline(Collection<DataSetInfo> dsInfos, Set<Long> emptyDatasets,
-                             Set<DataFileInfo> dfInfos)
-            throws InternalException, DataNotOnlineException {
-        if (storageUnit == StorageUnit.DATASET) {
-            boolean maybeOffline = false;
-            for (DataSetInfo dsInfo : dsInfos) {
-                if (restoreIfOffline(dsInfo, emptyDatasets)) {
-                    maybeOffline = true;
-                }
-            }
-            if (maybeOffline) {
-                throw new DataNotOnlineException(
-                        "Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
-            }
-        } else if (storageUnit == StorageUnit.DATAFILE) {
-            boolean maybeOffline = false;
-            for (DataFileInfo dfInfo : dfInfos) {
-                if (restoreIfOffline(dfInfo)) {
-                    maybeOffline = true;
-                }
-            }
-            if (maybeOffline) {
-                throw new DataNotOnlineException(
-                        "Before getting a datafile, it must be restored, restoration requested automatically");
-            }
-        }
-    }
-
-    private boolean restoreIfOffline(DataFileInfo dfInfo) throws InternalException {
-        boolean maybeOffline = false;
-        var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getDfMaybeOffline().contains(dfInfo)) {
-            maybeOffline = true;
-        } else if (!serviceProvider.getMainStorage().exists(dfInfo.getDfLocation())) {
-            serviceProvider.getFsm().queue(dfInfo, DeferredOp.RESTORE);
-            maybeOffline = true;
-        }
-        return maybeOffline;
-    }
-
-    private boolean restoreIfOffline(DataSetInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
-        boolean maybeOffline = false;
-        var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getDsMaybeOffline().contains(dsInfo)) {
-            maybeOffline = true;
-        } else if (!emptyDatasets.contains(dsInfo.getId()) && !serviceProvider.getMainStorage().exists(dsInfo)) {
-            serviceProvider.getFsm().queue(dsInfo, DeferredOp.RESTORE);
-            maybeOffline = true;
-        }
-        return maybeOffline;
     }
 
     protected void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)

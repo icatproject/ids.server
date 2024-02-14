@@ -1,6 +1,5 @@
 package org.icatproject.ids.v3.models;
 
-
 /**
  * A Base class for Data objct types. like Datasets or Datafiles
  */
@@ -16,7 +15,6 @@ public abstract class DataInfoBase {
         this.location = location;
     }
 
-    @Override
     public abstract String toString();
 
     public Long getId() {
@@ -31,12 +29,10 @@ public abstract class DataInfoBase {
         return location;
     }
 
-    @Override
     public int hashCode() {
         return (int) (this.id ^ (this.id >>> 32));
     }
 
-    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;

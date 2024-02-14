@@ -24,9 +24,11 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.icat.client.IcatException;
 import org.icatproject.icat.client.Session;
 import org.icatproject.ids.exceptions.BadRequestException;
+import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
+import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
@@ -90,6 +92,12 @@ public class DataSelection {
 
         logger.debug("dfids: {} dsids: {} invids: {}", dfids, dsids, invids);
         resolveDatasetIds();
+    }
+
+    public DataSelection(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets) {
+        this.dfInfos = dfInfos;
+        this.emptyDatasets = emptyDatasets;
+        this.dsInfos = dsInfos;
     }
 
     /**
@@ -314,6 +322,35 @@ public class DataSelection {
 
     public Set<Long> getEmptyDatasets() {
         return emptyDatasets;
+    }
+
+    //maybo should be moved somewhere else? To DataSelection?
+    public void checkOnline()
+            throws InternalException, DataNotOnlineException {
+        StorageUnit storageUnit = ServiceProvider.getInstance().getPropertyHandler().getStorageUnit();
+        if (storageUnit == StorageUnit.DATASET) {
+            boolean maybeOffline = false;
+            for (DataSetInfo dsInfo : dsInfos.values()) {
+                if (dsInfo.restoreIfOffline(emptyDatasets)) {
+                    maybeOffline = true;
+                }
+            }
+            if (maybeOffline) {
+                throw new DataNotOnlineException(
+                        "Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
+            }
+        } else if (storageUnit == StorageUnit.DATAFILE) {
+            boolean maybeOffline = false;
+            for (DataFileInfo dfInfo : dfInfos) {
+                if (dfInfo.restoreIfOffline()) {
+                    maybeOffline = true;
+                }
+            }
+            if (maybeOffline) {
+                throw new DataNotOnlineException(
+                        "Before getting a datafile, it must be restored, restoration requested automatically");
+            }
+        }
     }
 
 }
