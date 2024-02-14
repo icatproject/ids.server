@@ -62,7 +62,7 @@ public class GetDataHandler extends RequestHandlerBase {
 
         long offset = 0;
         var range = parameters.get("range");
-        if ( range != null) {
+        if ( range != null && range.getString() != null) {
             var rangeValue = range.getString();
 
             Matcher m = rangeRe.matcher(rangeValue);

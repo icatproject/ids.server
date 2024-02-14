@@ -201,30 +201,9 @@ public class IdsService {
         parameters.put( "compress",         new ValueContainer(compress) );
         parameters.put( "zip",              new ValueContainer(zip) );
         parameters.put( "outname",          new ValueContainer(outname) );
-        parameters.put( "Range",            new ValueContainer(range) );
+        parameters.put( "range",            new ValueContainer(range) );
 
         return this.requestHandler.handle(RequestType.GETDATA, parameters).getResponse();
-
-        // Response response = null;
-
-        // long offset = 0;
-        // if (range != null) {
-
-        //     Matcher m = rangeRe.matcher(range);
-        //     if (!m.matches()) {
-        //         throw new BadRequestException("The range must match " + rangeRe.pattern());
-        //     }
-        //     offset = Long.parseLong(m.group(1));
-        //     logger.debug("Range " + range + " -> offset " + offset);
-        // }
-
-        // if (preparedId != null) {
-        //     response = idsBean.getData(preparedId, outname, offset, request.getRemoteAddr());
-        // } else {
-        //     response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname,
-        //             offset, request.getRemoteAddr());
-        // }
-        // return response;
     }
 
     /**
