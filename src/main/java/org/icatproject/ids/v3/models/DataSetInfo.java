@@ -63,18 +63,6 @@ public class DataSetInfo extends DataInfoBase implements DsInfo {
                 + this.name + ")";
     }
 
-    public boolean restoreIfOffline(Set<Long> emptyDatasets) throws InternalException {
-        boolean maybeOffline = false;
-        var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getDsMaybeOffline().contains(this)) {
-            maybeOffline = true;
-        } else if (!emptyDatasets.contains(this.getId()) && !serviceProvider.getMainStorage().exists(this)) {
-            serviceProvider.getFsm().queue(this, DeferredOp.RESTORE);
-            maybeOffline = true;
-        }
-        return maybeOffline;
-    }
-
     public Long getFacilityId() {
         return facilityId;
     }

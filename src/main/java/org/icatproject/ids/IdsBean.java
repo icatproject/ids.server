@@ -102,7 +102,7 @@ public class IdsBean {
         public Void call() throws Exception {
             for (DataSetInfo dsInfo : toCheck) {
                 fsm.checkFailure(dsInfo.getId());
-                dsInfo.restoreIfOffline(emptyDatasets);
+                DataSelection.restoreIfOffline(dsInfo, emptyDatasets);
             }
             return null;
         }
@@ -121,7 +121,7 @@ public class IdsBean {
         public Void call() throws Exception {
             for (DataFileInfo dfInfo : toCheck) {
                 fsm.checkFailure(dfInfo.getId());
-                dfInfo.restoreIfOffline();
+                DataSelection.restoreIfOffline(dfInfo);
             }
             return null;
         }
@@ -139,7 +139,7 @@ public class IdsBean {
         @Override
         public Void call() throws Exception {
             for (DataFileInfo dfInfo : dfInfos) {
-                dfInfo.restoreIfOffline();
+                DataSelection.restoreIfOffline(dfInfo);
             }
             return null;
         }
@@ -158,7 +158,7 @@ public class IdsBean {
         @Override
         public Void call() throws Exception {
             for (DataSetInfo dsInfo : dsInfos) {
-                dsInfo.restoreIfOffline(emptyDs);
+                DataSelection.restoreIfOffline(dsInfo, emptyDs);
             }
             return null;
         }
@@ -1283,7 +1283,7 @@ public class IdsBean {
                 logger.debug("Will check online status of {} entries", toCheck.size());
                 for (DataSetInfo dsInfo : toCheck) {
                     fsm.checkFailure(dsInfo.getId());
-                    if (dsInfo.restoreIfOffline(preparedJson.emptyDatasets)) {
+                    if (DataSelection.restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
                         prepared = false;
                         status.fromDsElement = dsInfo.getId();
                         toCheck = preparedJson.dsInfos.tailMap(status.fromDsElement).values();
@@ -1298,7 +1298,7 @@ public class IdsBean {
                     logger.debug("Will check finally online status of {} entries", toCheck.size());
                     for (DataSetInfo dsInfo : toCheck) {
                         fsm.checkFailure(dsInfo.getId());
-                        if (dsInfo.restoreIfOffline(preparedJson.emptyDatasets)) {
+                        if (DataSelection.restoreIfOffline(dsInfo, preparedJson.emptyDatasets)) {
                             prepared = false;
                         }
                     }
@@ -1309,7 +1309,7 @@ public class IdsBean {
                 logger.debug("Will check online status of {} entries", toCheck.size());
                 for (DataFileInfo dfInfo : toCheck) {
                     fsm.checkFailure(dfInfo.getId());
-                    if (dfInfo.restoreIfOffline()) {
+                    if (DataSelection.restoreIfOffline(dfInfo)) {
                         prepared = false;
                         status.fromDfElement = dfInfo;
                         toCheck = preparedJson.dfInfos.tailSet(status.fromDfElement);
@@ -1324,7 +1324,7 @@ public class IdsBean {
                     logger.debug("Will check finally online status of {} entries", toCheck.size());
                     for (DataFileInfo dfInfo : toCheck) {
                         fsm.checkFailure(dfInfo.getId());
-                        if (dfInfo.restoreIfOffline()) {
+                        if (DataSelection.restoreIfOffline(dfInfo)) {
                             prepared = false;
                         }
                     }

@@ -1,8 +1,6 @@
 package org.icatproject.ids.v3.models;
-import org.icatproject.ids.DeferredOp;
-import org.icatproject.ids.exceptions.InternalException;
+
 import org.icatproject.ids.plugin.DfInfo;
-import org.icatproject.ids.v3.ServiceProvider;
 
 /**
  * Contains information about a Datafile. Replaces DsInfo in v3
@@ -48,18 +46,6 @@ public class DataFileInfo extends DataInfoBase implements Comparable<DataFileInf
             return -1;
         }
         return 0;
-    }
-
-    public boolean restoreIfOffline() throws InternalException {
-        boolean maybeOffline = false;
-        var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getDfMaybeOffline().contains(this)) {
-            maybeOffline = true;
-        } else if (!serviceProvider.getMainStorage().exists(this.getDfLocation())) {
-            serviceProvider.getFsm().queue(this, DeferredOp.RESTORE);
-            maybeOffline = true;
-        }
-        return maybeOffline;
     }
 
     // implementing DfInfo

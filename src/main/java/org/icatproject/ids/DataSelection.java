@@ -331,7 +331,7 @@ public class DataSelection {
         if (storageUnit == StorageUnit.DATASET) {
             boolean maybeOffline = false;
             for (DataSetInfo dsInfo : dsInfos.values()) {
-                if (dsInfo.restoreIfOffline(emptyDatasets)) {
+                if (this.restoreIfOffline(dsInfo, emptyDatasets)) {
                     maybeOffline = true;
                 }
             }
@@ -342,7 +342,7 @@ public class DataSelection {
         } else if (storageUnit == StorageUnit.DATAFILE) {
             boolean maybeOffline = false;
             for (DataFileInfo dfInfo : dfInfos) {
-                if (dfInfo.restoreIfOffline()) {
+                if (DataSelection.restoreIfOffline(dfInfo)) {
                     maybeOffline = true;
                 }
             }
@@ -351,6 +351,32 @@ public class DataSelection {
                         "Before getting a datafile, it must be restored, restoration requested automatically");
             }
         }
+    }
+
+
+    public static boolean restoreIfOffline(DataFileInfo dfInfo) throws InternalException {
+        boolean maybeOffline = false;
+        var serviceProvider = ServiceProvider.getInstance();
+        if (serviceProvider.getFsm().getDfMaybeOffline().contains(dfInfo)) {
+            maybeOffline = true;
+        } else if (!serviceProvider.getMainStorage().exists(dfInfo.getDfLocation())) {
+            serviceProvider.getFsm().queue(dfInfo, DeferredOp.RESTORE);
+            maybeOffline = true;
+        }
+        return maybeOffline;
+    }
+
+
+    public static boolean restoreIfOffline(DataSetInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
+        boolean maybeOffline = false;
+        var serviceProvider = ServiceProvider.getInstance();
+        if (serviceProvider.getFsm().getDsMaybeOffline().contains(dsInfo)) {
+            maybeOffline = true;
+        } else if (!emptyDatasets.contains(dsInfo.getId()) && !serviceProvider.getMainStorage().exists(dsInfo)) {
+            serviceProvider.getFsm().queue(dsInfo, DeferredOp.RESTORE);
+            maybeOffline = true;
+        }
+        return maybeOffline;
     }
 
 }

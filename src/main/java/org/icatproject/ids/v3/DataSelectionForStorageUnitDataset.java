@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.icatproject.ids.DeferredOp;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.v3.models.DataFileInfo;
@@ -22,7 +23,7 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
 
         boolean maybeOffline = false;
         for (DataSetInfo dsInfo : dsInfos.values()) {
-            if (dsInfo.restoreIfOffline(emptyDatasets)) {
+            if (this.restoreIfOffline(dsInfo, emptyDatasets)) {
                 maybeOffline = true;
             }
         }
@@ -30,6 +31,19 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
             throw new DataNotOnlineException(
                     "Before putting, getting or deleting a datafile, its dataset has to be restored, restoration requested automatically");
         }
+    }
+
+
+    public boolean restoreIfOffline(DataSetInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
+        boolean maybeOffline = false;
+        var serviceProvider = ServiceProvider.getInstance();
+        if (serviceProvider.getFsm().getDsMaybeOffline().contains(dsInfo)) {
+            maybeOffline = true;
+        } else if (!emptyDatasets.contains(dsInfo.getId()) && !serviceProvider.getMainStorage().exists(dsInfo)) {
+            serviceProvider.getFsm().queue(dsInfo, DeferredOp.RESTORE);
+            maybeOffline = true;
+        }
+        return maybeOffline;
     }
 
 }
