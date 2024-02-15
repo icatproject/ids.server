@@ -7,6 +7,7 @@ import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,9 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.DataSelection;
 import org.icatproject.ids.Prepared;
-import org.icatproject.ids.DataSelection.Returns;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.StorageUnit;
@@ -29,7 +28,10 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.v3.DataSelectionFactory;
+import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.v3.DataSelectionFactory.Returns;
 import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.ids.v3.helper.SO;
 import org.icatproject.ids.v3.models.DataFileInfo;
@@ -45,9 +47,11 @@ public class GetDataHandler extends RequestHandlerBase {
     private Pattern rangeRe;
     private static AtomicLong atomicLong = new AtomicLong();
 
+
     public GetDataHandler() {
         super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null} );
     }
+
 
     public void init() throws InternalException {
         logger.info("Initializing GetDataHandler...");
@@ -55,6 +59,7 @@ public class GetDataHandler extends RequestHandlerBase {
         this.rangeRe = Pattern.compile("bytes=(\\d+)-");
         logger.info("GetDataHandler initialized");
     }
+
 
     @Override
     public ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException  {
@@ -95,7 +100,6 @@ public class GetDataHandler extends RequestHandlerBase {
     }
 
 
-
     private Response getData(String preparedId, String outname, final long offset, String ip) throws BadRequestException,
             NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
 
@@ -117,7 +121,7 @@ public class GetDataHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        DataSelection dataSelection = new DataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets);
+        DataSelectionV3Base dataSelection = DataSelectionFactory.get((Map<Long, DataSetInfo>) prepared.dsInfos, (Set<DataFileInfo>) prepared.dfInfos,  (Set<Long>) prepared.emptyDatasets);
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
         final Set<DataFileInfo> dfInfos = prepared.dfInfos;
@@ -201,9 +205,7 @@ public class GetDataHandler extends RequestHandlerBase {
 
         var serviceProvider = ServiceProvider.getInstance();
 
-        // TODO: change constructor of DataSelection and receive PropertyHandler and IcatReader from ServiceProvider within
-        final DataSelection dataSelection = new DataSelection(serviceProvider.getPropertyHandler(), serviceProvider.getIcatReader(), sessionId,
-                investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
+        final DataSelectionV3Base dataSelection = DataSelectionFactory.get(sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
         // Do it
         Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
