@@ -331,7 +331,7 @@ public class DataSelection {
         if (storageUnit == StorageUnit.DATASET) {
             boolean maybeOffline = false;
             for (DataSetInfo dsInfo : dsInfos.values()) {
-                if (this.restoreIfOffline(dsInfo, emptyDatasets)) {
+                if (DataSelection.restoreIfOffline(dsInfo, emptyDatasets)) {
                     maybeOffline = true;
                 }
             }

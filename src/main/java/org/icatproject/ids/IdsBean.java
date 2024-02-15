@@ -11,11 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,13 +31,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipOutputStream;
 import javax.xml.datatype.DatatypeFactory;
 
 import jakarta.annotation.PostConstruct;
@@ -52,7 +46,6 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +69,6 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.v3.enums.CallType;
@@ -163,109 +155,6 @@ public class IdsBean {
             return null;
         }
     }
-
-    private class SO implements StreamingOutput {
-
-        private long offset;
-        private boolean zip;
-        private Map<Long, DataSetInfo> dsInfos;
-        private Lock lock;
-        private boolean compress;
-        private Set<DataFileInfo> dfInfos;
-        private String ip;
-        private long start;
-        private Long transferId;
-
-        SO(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, long offset, boolean zip, boolean compress,
-           Lock lock, Long transferId, String ip, long start) {
-            this.offset = offset;
-            this.zip = zip;
-            this.dsInfos = dsInfos;
-            this.dfInfos = dfInfos;
-            this.lock = lock;
-            this.compress = compress;
-            this.transferId = transferId;
-            this.ip = ip;
-            this.start = start;
-        }
-
-        @Override
-        public void write(OutputStream output) throws IOException {
-            Object transfer = "??";
-            try {
-                if (offset != 0) { // Wrap the stream if needed
-                    output = new RangeOutputStream(output, offset, null);
-                }
-                byte[] bytes = new byte[BUFSIZ];
-                if (zip) {
-                    ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
-                    if (!compress) {
-                        zos.setLevel(0); // Otherwise use default compression
-                    }
-
-                    for (DataFileInfo dfInfo : dfInfos) {
-                        logger.debug("Adding " + dfInfo + " to zip");
-                        transfer = dfInfo;
-                        DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-                        String entryName = zipMapper.getFullEntryName(dsInfo, dfInfo);
-                        InputStream stream = null;
-                        try {
-                            zos.putNextEntry(new ZipEntry(entryName));
-                            stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(), dfInfo.getModId());
-                            int length;
-                            while ((length = stream.read(bytes)) >= 0) {
-                                zos.write(bytes, 0, length);
-                            }
-                        } catch (ZipException e) {
-                            logger.debug("Skipped duplicate");
-                        }
-                        zos.closeEntry();
-                        if (stream != null) {
-                            stream.close();
-                        }
-                    }
-                    zos.close();
-                } else {
-                    DataFileInfo dfInfo = dfInfos.iterator().next();
-                    transfer = dfInfo;
-                    InputStream stream = mainStorage.get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
-                            dfInfo.getModId());
-                    int length;
-                    while ((length = stream.read(bytes)) >= 0) {
-                        output.write(bytes, 0, length);
-                    }
-                    output.close();
-                    stream.close();
-                }
-
-                if (transferId != null) {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                        gen.write("transferId", transferId);
-                        gen.writeEnd();
-                    }
-                    transmitter.processMessage("getData", ip, baos.toString(), start);
-                }
-
-            } catch (IOException e) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                    gen.write("transferId", transferId);
-                    gen.write("exceptionClass", e.getClass().toString());
-                    gen.write("exceptionMessage", e.getMessage());
-                    gen.writeEnd();
-                }
-                transmitter.processMessage("getData", ip, baos.toString(), start);
-                logger.error("Failed to stream " + transfer + " due to " + e.getMessage());
-                throw e;
-            } finally {
-                lock.release();
-            }
-        }
-
-    }
-
-    private static final int BUFSIZ = 2048;
 
     private static Boolean inited = false;
 
@@ -488,8 +377,6 @@ public class IdsBean {
     private Set<String> rootUserNames;
 
     private StorageUnit storageUnit;
-
-    private ZipMapperInterface zipMapper;
 
     private boolean twoLevel;
 
@@ -1179,7 +1066,6 @@ public class IdsBean {
             synchronized (inited) {
                 logger.info("creating IdsBean");
                 propertyHandler = PropertyHandler.getInstance();
-                zipMapper = propertyHandler.getZipMapper();
                 mainStorage = propertyHandler.getMainStorage();
                 archiveStorage = propertyHandler.getArchiveStorage();
                 twoLevel = archiveStorage != null;

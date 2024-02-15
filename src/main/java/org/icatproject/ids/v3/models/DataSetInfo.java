@@ -1,15 +1,10 @@
 package org.icatproject.ids.v3.models;
 
-import java.util.Set;
-
 import org.icatproject.Dataset;
 import org.icatproject.Facility;
 import org.icatproject.Investigation;
-import org.icatproject.ids.DeferredOp;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DsInfo;
-import org.icatproject.ids.v3.ServiceProvider;
 
 /**
  * Contains information about a Dataset. Replaces DsInfo in v3.
