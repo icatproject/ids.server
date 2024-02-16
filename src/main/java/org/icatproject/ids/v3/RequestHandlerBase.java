@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.handlers;
+package org.icatproject.ids.v3;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -13,7 +14,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.icatproject.ids.v3.models.ValueContainer;
@@ -35,6 +36,7 @@ import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
+import org.icatproject.ids.exceptions.NotImplementedException;
 
 public abstract class RequestHandlerBase {
 
@@ -43,6 +45,7 @@ public abstract class RequestHandlerBase {
     protected Path preparedDir;
     protected boolean twoLevel;
     protected StorageUnit storageUnit;
+    protected RequestType requestType;
 
     /**
      * matches standard UUID format of 8-4-4-4-12 hexadecimal digits
@@ -50,16 +53,32 @@ public abstract class RequestHandlerBase {
     public static final Pattern uuidRegExp = Pattern
             .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
-    protected RequestHandlerBase(StorageUnit[] supportedStorageUnitsArray ) {
+    protected RequestHandlerBase(StorageUnit[] supportedStorageUnitsArray, RequestType requestType ) {
         this.supportedStorageUnits = Arrays.asList(supportedStorageUnitsArray);
+        this.requestType = requestType;
     }
 
-    protected RequestHandlerBase(StorageUnit supportedStorageUnit) {
-        this(new StorageUnit[]{supportedStorageUnit});
+    protected RequestHandlerBase(StorageUnit supportedStorageUnit, RequestType requestType) {
+        this(new StorageUnit[]{supportedStorageUnit}, requestType);
     }
 
     public boolean supportsStorageUnit(StorageUnit neededStorageUnit) {
         return this.supportedStorageUnits.contains(neededStorageUnit);
+    }
+
+    public RequestType getRequestType() {
+        return this.requestType;
+    }
+
+    public DataSelectionV3Base getDataSelection(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets) throws InternalException {
+
+        return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, this.getRequestType());
+    }
+
+    public DataSelectionV3Base getDataSelection(String userSessionId, String investigationIds, String datasetIds, String datafileIds) 
+                                    throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
+
+        return DataSelectionFactory.get(userSessionId, investigationIds, datasetIds, datafileIds, this.getRequestType());
     }
 
     public void init() throws InternalException {
@@ -78,7 +97,7 @@ public abstract class RequestHandlerBase {
         //logger.info("RequestHandlerBase initialized");
     }
 
-    public abstract ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException;
+    public abstract ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
 
 
     protected static void validateUUID(String thing, String id) throws BadRequestException {

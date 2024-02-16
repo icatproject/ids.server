@@ -26,14 +26,16 @@ import org.icatproject.ids.exceptions.IdsException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
+import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.v3.DataSelectionFactory;
 import org.icatproject.ids.v3.DataSelectionV3Base;
+import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
-import org.icatproject.ids.v3.DataSelectionFactory.Returns;
 import org.icatproject.ids.v3.enums.CallType;
+import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.helper.SO;
 import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.icatproject.ids.v3.models.ValueContainer;
 
@@ -48,7 +50,7 @@ public class GetDataHandler extends RequestHandlerBase {
 
 
     public GetDataHandler() {
-        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null} );
+        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.GETDATA );
     }
 
 
@@ -61,7 +63,7 @@ public class GetDataHandler extends RequestHandlerBase {
 
 
     @Override
-    public ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException  {
+    public ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException  {
         Response response = null;
 
         long offset = 0;
@@ -120,7 +122,7 @@ public class GetDataHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        DataSelectionV3Base dataSelection = DataSelectionFactory.get((Map<Long, DataSetInfo>) prepared.dsInfos, (Set<DataFileInfo>) prepared.dfInfos,  (Set<Long>) prepared.emptyDatasets);
+        DataSelectionV3Base dataSelection = this.getDataSelection((Map<Long, DataSetInfo>) prepared.dsInfos, (Set<DataFileInfo>) prepared.dfInfos,  (Set<Long>) prepared.emptyDatasets);
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
         final Set<DataFileInfo> dfInfos = prepared.dfInfos;
@@ -192,7 +194,7 @@ public class GetDataHandler extends RequestHandlerBase {
     private Response getData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
                             final boolean compress, boolean zip, String outname, final long offset, String ip)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
-            DataNotOnlineException {
+            DataNotOnlineException, NotImplementedException {
 
         long start = System.currentTimeMillis();
 
@@ -204,7 +206,7 @@ public class GetDataHandler extends RequestHandlerBase {
 
         var serviceProvider = ServiceProvider.getInstance();
 
-        final DataSelectionV3Base dataSelection = DataSelectionFactory.get(sessionId, investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
+        final DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 
         // Do it
         Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
@@ -279,7 +281,7 @@ public class GetDataHandler extends RequestHandlerBase {
         }
     }
 
-    private void checkDatafilesPresent(Set<? extends DataFileInfo> dfInfos)
+    private void checkDatafilesPresent(Set<DataFileInfo> dfInfos)
             throws NotFoundException, InternalException {
 
         var serviceProvider = ServiceProvider.getInstance();

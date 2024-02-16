@@ -1,5 +1,7 @@
 package org.icatproject.ids.v3;
 
+import java.util.Set;
+
 import org.icatproject.ICAT;
 import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.IcatReader;
@@ -8,6 +10,7 @@ import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.Transmitter;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.v3.enums.CallType;
 
 public class ServiceProvider {
 
@@ -65,6 +68,10 @@ public class ServiceProvider {
 
     public ICAT getIcat() {
         return this.getPropertyHandler().getIcatService();
+    }
+
+    public Set<CallType> getLogSet() {
+        return PropertyHandler.getInstance().getLogSet();
     }
 
 

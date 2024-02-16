@@ -7,15 +7,17 @@ import java.util.Set;
 import org.icatproject.ids.DeferredOp;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
 public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
 
     protected DataSelectionForStorageUnitDataset(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos,
-            Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids) {
+            Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
 
-        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids);
+        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
     }
 
     @Override
@@ -45,5 +47,14 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
         }
         return maybeOffline;
     }
+
+    @Override
+    protected void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException {
+
+        for (DataSetInfo dsInfo : dsInfos.values()) {
+            ServiceProvider.getInstance().getFsm().queue(dsInfo, operation);
+        }
+    }
+      
 
 }

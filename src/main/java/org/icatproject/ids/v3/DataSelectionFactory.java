@@ -24,6 +24,8 @@ import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
+import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.slf4j.Logger;
@@ -32,8 +34,6 @@ import org.slf4j.LoggerFactory;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
-
-
 
 public class DataSelectionFactory {
 
@@ -46,6 +46,7 @@ public class DataSelectionFactory {
     private IcatReader icatReader;
     private org.icatproject.icat.client.ICAT restIcat;
     private int maxEntities;
+    private HashMap<RequestType, Returns> requestTypeToReturnsMapping;
 
     public enum Returns {
         DATASETS, DATASETS_AND_DATAFILES, DATAFILES
@@ -58,21 +59,21 @@ public class DataSelectionFactory {
         return instance;
     }
 
-    public static DataSelectionV3Base get(String userSessionId,
-                            String investigationIds, String datasetIds, String datafileIds, Returns returns) throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException {
+    protected static DataSelectionV3Base get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+                                            throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
-        return DataSelectionFactory.getInstance().getSelection(userSessionId, investigationIds, datasetIds, datafileIds, returns);
+        return DataSelectionFactory.getInstance().getSelection(userSessionId, investigationIds, datasetIds, datafileIds, requestType);
     }
 
 
     
-    public static DataSelectionV3Base get(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets) throws InternalException {
+    protected static DataSelectionV3Base get(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
         List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
         for(DataFileInfo dfInfo: dfInfos) {
             dfids.add(dfInfo.getId());
         }
-        return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, new ArrayList<Long>(), dsids, dfids);
+        return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, new ArrayList<Long>(), dsids, dfids, requestType);
     }
 
     private DataSelectionFactory() throws InternalException
@@ -83,32 +84,37 @@ public class DataSelectionFactory {
         this.icatReader = ServiceProvider.getInstance().getIcatReader();
         this.restIcat = propertyHandler.getRestIcat();
         this.maxEntities = propertyHandler.getMaxEntities();
+
+        this.createRequestTypeToReturnsMapping();
+
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionV3Base createSelection(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids) throws InternalException {
+    private DataSelectionV3Base createSelection(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) throws InternalException {
 
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
         if(storageUnit == null )
-            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids);
+            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
 
         else if (storageUnit == StorageUnit.DATAFILE)
-            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids);
+            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
 
         else if(storageUnit == StorageUnit.DATASET)
-            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids);
+            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
 
         else throw new InternalException("StorageUnit " + storageUnit + " unknown. Maybe you forgot to handle a new StorageUnit here?");
 
     }
 
-    private DataSelectionV3Base getSelection( String userSessionId,
-                         String investigationIds, String datasetIds, String datafileIds, Returns returns) throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException {
+    private DataSelectionV3Base getSelection( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+                                    throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
         
         List<Long> dfids = getValidIds("datafileIds", datafileIds);
         List<Long> dsids = getValidIds("datasetIds", datasetIds);
         List<Long> invids = getValidIds("investigationIds", investigationIds);
+
+        Returns returns = this.getReturns(requestType);
         boolean dfWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATAFILES;
         boolean dsWanted = returns == Returns.DATASETS_AND_DATAFILES || returns == Returns.DATASETS;
 
@@ -129,12 +135,12 @@ public class DataSelectionFactory {
 
         logger.debug("dfids: {} dsids: {} invids: {}", dfids, dsids, invids);
 
-        return prepareFromIds(dfWanted, dsWanted, dfids, dsids, invids, userSessionId, restSessionToUse, userRestSession);
+        return prepareFromIds(dfWanted, dsWanted, dfids, dsids, invids, userSessionId, restSessionToUse, userRestSession, requestType);
     }
 
     
 
-    private DataSelectionV3Base prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession)
+    private DataSelectionV3Base prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
             throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
         var dsInfos = new HashMap<Long, DataSetInfo>();
         var emptyDatasets = new HashSet<Long>();
@@ -221,7 +227,7 @@ public class DataSelectionFactory {
             emptyDatasets = null;
         }
 
-        return this.createSelection(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids);
+        return this.createSelection(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, requestType);
     }
 
     /**
@@ -339,6 +345,54 @@ public class DataSelectionFactory {
             }
         }
 
+    }
+
+    private void createRequestTypeToReturnsMapping() throws InternalException {
+
+        this.requestTypeToReturnsMapping = new HashMap<RequestType, Returns>();
+        StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
+
+        //commented out entries: uncomment when you create the new hendlers for the RequestTypes during the current redesign
+
+        //this.requestTypeToReturnsMapping.put(RequestType.DELETE, Returns.DATASETS_AND_DATAFILES);
+        //this.requestTypeToReturnsMapping.put(RequestType.GETDATAFILEIDS, Returns.DATAFILES);
+        //this.requestTypeToReturnsMapping.put(RequestType.GETSIZE, Returns.DATASETS_AND_DATAFILES);
+        //this.requestTypeToReturnsMapping.put(RequestType.PREPAREDATA, Returns.DATASETS_AND_DATAFILES);
+        //this.requestTypeToReturnsMapping.put(RequestType.RESET, Returns.DATASETS_AND_DATAFILES);
+        //this.requestTypeToReturnsMapping.put(RequestType.WRITE, Returns.DATASETS_AND_DATAFILES);
+        this.requestTypeToReturnsMapping.put(RequestType.GETDATA, Returns.DATASETS_AND_DATAFILES);
+
+        if(storageUnit == null ) {
+            //this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
+        }
+            
+
+        else if (storageUnit == StorageUnit.DATAFILE) {
+            //this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATAFILES);
+            //this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATAFILES);
+            this.requestTypeToReturnsMapping.put(RequestType.ARCHIVE, Returns.DATAFILES);
+        }
+
+
+        else if(storageUnit == StorageUnit.DATASET) {
+            //this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
+            //this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATASETS);
+            this.requestTypeToReturnsMapping.put(RequestType.ARCHIVE, Returns.DATASETS);
+        }
+
+
+        else throw new InternalException("StorageUnit " + storageUnit + " unknown. Maybe you forgot to handle a new StorageUnit here?");
+    }
+
+    private Returns getReturns(RequestType requestType) throws NotImplementedException {
+
+        if(this.requestTypeToReturnsMapping.containsKey(requestType))
+            return this.requestTypeToReturnsMapping.get(requestType);
+
+        
+        if(this.propertyHandler.getStorageUnit() == null) throw new NotImplementedException("This operation is unavailable for single level storage");
+
+        throw new NotImplementedException("There is to mapping for RequestType." + requestType + " and StorageUnit." + this.propertyHandler.getStorageUnit() + " defined. Did you forgot to register it in createRequestTypeToReturnsMapping()?");
     }
 
 }

@@ -80,6 +80,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
+     * @throws DataNotOnlineException 
      * @summary archive
      * @statuscode 200 To indicate success
      */
@@ -90,8 +91,17 @@ public class IdsService {
                         @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                         @FormParam("datafileIds") String datafileIds)
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-            NotFoundException {
-        idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+            NotFoundException, DataNotOnlineException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("request", new ValueContainer(request));
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("investigationIds", new ValueContainer(investigationIds));
+        parameters.put("datasetIds", new ValueContainer(datasetIds));
+        parameters.put("datafileIds", new ValueContainer(datafileIds));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        this.requestHandler.handle(RequestType.ARCHIVE, parameters);
     }
 
     /**
@@ -172,6 +182,7 @@ public class IdsService {
      * @throws InternalException
      * @throws InsufficientPrivilegesException
      * @throws DataNotOnlineException
+     * @throws NotImplementedException 
      * @summary getData
      * @statuscode 200 To indicate success
      */
@@ -183,7 +194,7 @@ public class IdsService {
                             @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds,
                             @QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
                             @QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
-            NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
+            NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
 
         var parameters = new HashMap<String, ValueContainer>();

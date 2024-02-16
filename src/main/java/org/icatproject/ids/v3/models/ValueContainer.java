@@ -32,8 +32,16 @@ public class ValueContainer {
         return new ValueContainer();
     }
 
+    public static ValueContainer getVoid() {
+        return new ValueContainer((Void) null);
+    }
+
     private ValueContainer() {
         this(null, ValueContainerType.INVALID);
+    }
+
+    private ValueContainer(Void value) {
+        this(null, ValueContainerType.VOID);
     }
 
     /**

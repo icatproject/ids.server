@@ -14,14 +14,16 @@ import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
+import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.v3.enums.RequestType;
+import org.icatproject.ids.v3.handlers.ArchiveHandler;
 import org.icatproject.ids.v3.handlers.GetDataHandler;
-import org.icatproject.ids.v3.handlers.RequestHandlerBase;
 import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//TODO: rename to RequestHandlerService
 public class RequestHandlerServiceBase {
 
     private HashMap<RequestType, RequestHandlerBase> handlers;
@@ -43,23 +45,27 @@ public class RequestHandlerServiceBase {
         this.unfinishedWorkService = new UnfinishedWorkServiceBase();
 
         this.handlers = new HashMap<RequestType, RequestHandlerBase>();
-        this.registerHandler(RequestType.GETDATA, new GetDataHandler());      
+        this.registerHandler(new GetDataHandler()); 
+        this.registerHandler(new ArchiveHandler());     
     }
 
-    private void registerHandler(RequestType requestType, RequestHandlerBase requestHandler) {
+
+    private void registerHandler(RequestHandlerBase requestHandler) {
 
         //use only the handlers that supports the configured StorageUnit
         if( requestHandler.supportsStorageUnit(this.propertyHandler.getStorageUnit()) )
-            this.handlers.put(requestType, requestHandler);
+            this.handlers.put(requestHandler.getRequestType(), requestHandler);
     }
 
-    public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException {
+
+    public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         if(this.handlers.containsKey(requestType))
             return this.handlers.get(requestType).handle(parameters);
         else
             throw new InternalException("No handler found for RequestType " + requestType + " and StorageUnit " + this.propertyHandler.getStorageUnit() + " in RequestHandlerService. Do you forgot to register?");
     }
+    
 
     public void init(Transmitter transmitter, LockManager lockManager , FiniteStateMachine fsm, IcatReader reader) {
         try {
