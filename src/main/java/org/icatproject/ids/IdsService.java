@@ -38,7 +38,7 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.v3.RequestHandlerServiceBase;
+import org.icatproject.ids.v3.RequestHandlerService;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.ValueContainer;
 
@@ -63,7 +63,7 @@ public class IdsService {
     @EJB
     private IcatReader reader;
 
-    private RequestHandlerServiceBase requestHandler = null;
+    private RequestHandlerService requestService = null;
 
     /**
      * Archive data specified by the investigationIds, datasetIds and
@@ -101,7 +101,7 @@ public class IdsService {
         parameters.put("datafileIds", new ValueContainer(datafileIds));
         parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
 
-        this.requestHandler.handle(RequestType.ARCHIVE, parameters);
+        this.requestService.handle(RequestType.ARCHIVE, parameters);
     }
 
     /**
@@ -209,7 +209,7 @@ public class IdsService {
         parameters.put( "outname",          new ValueContainer(outname) );
         parameters.put( "range",            new ValueContainer(range) );
 
-        return this.requestHandler.handle(RequestType.GETDATA, parameters).getResponse();
+        return this.requestService.handle(RequestType.GETDATA, parameters).getResponse();
     }
 
     /**
@@ -252,13 +252,23 @@ public class IdsService {
      * obtained.
      *
      * @return the url of the icat server
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getIcatUrl")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getIcatUrl(@Context HttpServletRequest request) {
-        return idsBean.getIcatUrl(request.getRemoteAddr());
+    public String getIcatUrl(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("ip",new ValueContainer(request.getRemoteAddr()) );
+        
+        return this.requestService.handle(RequestType.GETICATURL, parameters).getString();
     }
 
     /**
@@ -354,8 +364,8 @@ public class IdsService {
     @PostConstruct
     private void init() {
         logger.info("creating IdsService");
-        this.requestHandler = new RequestHandlerServiceBase();
-        this.requestHandler.init(this.transmitter, this.lockManager, this.fsm, this.reader);
+        this.requestService = new RequestHandlerService();
+        this.requestService.init(this.transmitter, this.lockManager, this.fsm, this.reader);
         logger.info("created IdsService");
     }
 

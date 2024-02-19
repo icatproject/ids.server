@@ -19,12 +19,13 @@ import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.handlers.ArchiveHandler;
 import org.icatproject.ids.v3.handlers.GetDataHandler;
+import org.icatproject.ids.v3.handlers.GetIcatUrlHandler;
 import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 //TODO: rename to RequestHandlerService
-public class RequestHandlerServiceBase {
+public class RequestHandlerService {
 
     private HashMap<RequestType, RequestHandlerBase> handlers;
     private PropertyHandler propertyHandler;
@@ -39,14 +40,15 @@ public class RequestHandlerServiceBase {
     private UnfinishedWorkServiceBase unfinishedWorkService;
 
 
-    public RequestHandlerServiceBase() {
+    public RequestHandlerService() {
 
         this.propertyHandler = PropertyHandler.getInstance();
         this.unfinishedWorkService = new UnfinishedWorkServiceBase();
 
         this.handlers = new HashMap<RequestType, RequestHandlerBase>();
         this.registerHandler(new GetDataHandler()); 
-        this.registerHandler(new ArchiveHandler());     
+        this.registerHandler(new ArchiveHandler()); 
+        this.registerHandler(new GetIcatUrlHandler());    
     }
 
 

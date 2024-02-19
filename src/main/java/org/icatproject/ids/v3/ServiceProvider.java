@@ -12,6 +12,10 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.v3.enums.CallType;
 
+/**
+ * This class serves the developer with multiple services.
+ * Maybe it is just for the redesign for version 3 and will later be replaced with dependency injection, when it will be more clear where which service is used.
+ */
 public class ServiceProvider {
 
     private static ServiceProvider instance = null;

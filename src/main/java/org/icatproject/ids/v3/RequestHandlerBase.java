@@ -81,6 +81,11 @@ public abstract class RequestHandlerBase {
         return DataSelectionFactory.get(userSessionId, investigationIds, datasetIds, datafileIds, this.getRequestType());
     }
 
+    /**
+     * This method initializes the base class part of the RequestHandler.
+     * You can overload it, but please don't overwrite it, because this base class part has also to be initialized
+     * @throws InternalException
+     */
     public void init() throws InternalException {
 
         //logger.info("Initialize RequestHandlerBase...");
