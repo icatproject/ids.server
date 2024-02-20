@@ -18,6 +18,7 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.handlers.ArchiveHandler;
+import org.icatproject.ids.v3.handlers.GetDataFileIdsHandler;
 import org.icatproject.ids.v3.handlers.GetDataHandler;
 import org.icatproject.ids.v3.handlers.GetIcatUrlHandler;
 import org.icatproject.ids.v3.models.ValueContainer;
@@ -48,7 +49,8 @@ public class RequestHandlerService {
         this.handlers = new HashMap<RequestType, RequestHandlerBase>();
         this.registerHandler(new GetDataHandler()); 
         this.registerHandler(new ArchiveHandler()); 
-        this.registerHandler(new GetIcatUrlHandler());    
+        this.registerHandler(new GetIcatUrlHandler());
+        this.registerHandler(new GetDataFileIdsHandler());    
     }
 
 

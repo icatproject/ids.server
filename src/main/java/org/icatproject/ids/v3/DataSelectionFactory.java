@@ -355,7 +355,7 @@ public class DataSelectionFactory {
         //commented out entries: uncomment when you create the new hendlers for the RequestTypes during the current redesign
 
         //this.requestTypeToReturnsMapping.put(RequestType.DELETE, Returns.DATASETS_AND_DATAFILES);
-        //this.requestTypeToReturnsMapping.put(RequestType.GETDATAFILEIDS, Returns.DATAFILES);
+        this.requestTypeToReturnsMapping.put(RequestType.GETDATAFILEIDS, Returns.DATAFILES);
         //this.requestTypeToReturnsMapping.put(RequestType.GETSIZE, Returns.DATASETS_AND_DATAFILES);
         //this.requestTypeToReturnsMapping.put(RequestType.PREPAREDATA, Returns.DATASETS_AND_DATAFILES);
         //this.requestTypeToReturnsMapping.put(RequestType.RESET, Returns.DATASETS_AND_DATAFILES);

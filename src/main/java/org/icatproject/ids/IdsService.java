@@ -228,6 +228,8 @@ public class IdsService {
      * @throws InternalException
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @summary getDatafileIds
      * @statuscode 200 To indicate success
      */
@@ -237,13 +239,24 @@ public class IdsService {
     public String getDatafileIds(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
                                  @QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
                                  @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
-        if (preparedId != null) {
-            return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
-        } else {
-            return idsBean.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds,
-                    request.getRemoteAddr());
-        }
+            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("preparedId", new ValueContainer(preparedId));
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("investigationIds", new ValueContainer(investigationIds));
+        parameters.put("datasetIds", new ValueContainer(datasetIds));
+        parameters.put("datafileIds", new ValueContainer(datafileIds));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.GETDATAFILEIDS, parameters).getString();
+
+        // if (preparedId != null) {
+        //     return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
+        // } else {
+        //     return idsBean.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds,
+        //             request.getRemoteAddr());
+        // }
     }
 
     /**

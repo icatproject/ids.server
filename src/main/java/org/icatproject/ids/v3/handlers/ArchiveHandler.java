@@ -43,9 +43,7 @@ public class ArchiveHandler extends RequestHandlerBase {
         logger.info("New webservice request: archive " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
                 + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
-        //TODO: move that into base class
         validateUUID("sessionId", sessionId);
-
         
         // Do it
         DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
