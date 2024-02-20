@@ -250,13 +250,6 @@ public class IdsService {
         parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.GETDATAFILEIDS, parameters).getString();
-
-        // if (preparedId != null) {
-        //     return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
-        // } else {
-        //     return idsBean.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds,
-        //             request.getRemoteAddr());
-        // }
     }
 
     /**
@@ -293,6 +286,10 @@ public class IdsService {
      * @return a json string.
      * @throws InternalException
      * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws BadRequestException 
      * @summary getServiceStatus
      * @statuscode 200 To indicate success
      */
@@ -300,8 +297,13 @@ public class IdsService {
     @Path("getServiceStatus")
     @Produces(MediaType.APPLICATION_JSON)
     public String getServiceStatus(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId)
-            throws InternalException, InsufficientPrivilegesException {
-        return idsBean.getServiceStatus(sessionId, request.getRemoteAddr());
+            throws InternalException, InsufficientPrivilegesException, BadRequestException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.GETSERVICESTATUS, parameters).getString();
     }
 
     /**

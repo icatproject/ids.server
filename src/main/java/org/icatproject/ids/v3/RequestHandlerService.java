@@ -21,6 +21,7 @@ import org.icatproject.ids.v3.handlers.ArchiveHandler;
 import org.icatproject.ids.v3.handlers.GetDataFileIdsHandler;
 import org.icatproject.ids.v3.handlers.GetDataHandler;
 import org.icatproject.ids.v3.handlers.GetIcatUrlHandler;
+import org.icatproject.ids.v3.handlers.GetServiceStatusHandler;
 import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,8 @@ public class RequestHandlerService {
         this.registerHandler(new GetDataHandler()); 
         this.registerHandler(new ArchiveHandler()); 
         this.registerHandler(new GetIcatUrlHandler());
-        this.registerHandler(new GetDataFileIdsHandler());    
+        this.registerHandler(new GetDataFileIdsHandler());  
+        this.registerHandler(new GetServiceStatusHandler());  
     }
 
 

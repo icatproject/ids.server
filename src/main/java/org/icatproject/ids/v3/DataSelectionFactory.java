@@ -390,7 +390,8 @@ public class DataSelectionFactory {
             return this.requestTypeToReturnsMapping.get(requestType);
 
         
-        if(this.propertyHandler.getStorageUnit() == null) throw new NotImplementedException("This operation is unavailable for single level storage");
+        // is this needed here?
+        //if(this.propertyHandler.getStorageUnit() == null) throw new NotImplementedException("This operation is unavailable for single level storage");
 
         throw new NotImplementedException("There is to mapping for RequestType." + requestType + " and StorageUnit." + this.propertyHandler.getStorageUnit() + " defined. Did you forgot to register it in createRequestTypeToReturnsMapping()?");
     }
