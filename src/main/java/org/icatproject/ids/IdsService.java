@@ -321,6 +321,8 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @summary getSize
      * @statuscode 200 To indicate success
      */
@@ -330,12 +332,18 @@ public class IdsService {
     public long getSize(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
                         @QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
                         @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-        if (preparedId != null) {
-            return idsBean.getSize(preparedId, request.getRemoteAddr());
-        } else {
-            return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
-        }
+            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
+
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("preparedId", new ValueContainer(preparedId));
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("investigationIds", new ValueContainer(investigationIds));
+        parameters.put("datasetIds", new ValueContainer(datasetIds));
+        parameters.put("datafileIds", new ValueContainer(datafileIds));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.GETSIZE, parameters).getLong();
     }
 
     /**

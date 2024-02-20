@@ -53,6 +53,14 @@ public class ValueContainer {
     }
 
     /**
+     * Creates a ValueContainer of type long
+     * @param value the value contained by the container
+     */
+    public ValueContainer(long value) {
+        this(value, ValueContainerType.LONG);
+    }
+
+    /**
      * Creates a ValueContainer of type String
      * @param value the value contained by the container
      */
@@ -100,6 +108,16 @@ public class ValueContainer {
     public int getInt() throws InternalException {
         this.checkType(ValueContainerType.INT);
         return (int) this.value;
+    }
+
+    /**
+     * Tries to return the value of the type long.
+     * @return
+     * @throws InternalException if the container has another type an exception will be thrown
+     */
+    public long getLong() throws InternalException {
+        this.checkType(ValueContainerType.LONG);
+        return (long) this.value;
     }
 
     /**
