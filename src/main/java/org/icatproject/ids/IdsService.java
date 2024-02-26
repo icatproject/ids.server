@@ -39,6 +39,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.RequestHandlerService;
+import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.ValueContainer;
 
@@ -388,7 +389,7 @@ public class IdsService {
     private void init() {
         logger.info("creating IdsService");
 
-        FiniteStateMachine.createInstance(reader, lockManager);
+        FiniteStateMachine.createInstance(reader, lockManager, PropertyHandler.getInstance().getStorageUnit());
         this.fsm = FiniteStateMachine.getInstance();
         this.fsm.init();
 
@@ -426,7 +427,7 @@ public class IdsService {
     }
 
     /**
-     * An ids server can be configured to be read only. This returns the
+     * An ids server can be configured to be read only. This returns thenew DfProcessQueue()
      * readOnly status of the server.
      *
      * @return true if readonly, else false

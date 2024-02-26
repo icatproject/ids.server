@@ -5,12 +5,11 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
+import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 
 /**
  * Delete datafiles from archive

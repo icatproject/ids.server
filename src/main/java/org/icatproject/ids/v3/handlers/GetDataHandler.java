@@ -35,7 +35,6 @@ import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.helper.SO;
 import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.icatproject.ids.v3.models.ValueContainer;
 

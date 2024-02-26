@@ -4,7 +4,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import org.icatproject.ids.FiniteStateMachine;
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.LockManager;
 import org.icatproject.ids.PropertyHandler;
@@ -16,6 +15,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
+import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.handlers.ArchiveHandler;
 import org.icatproject.ids.v3.handlers.GetDataFileIdsHandler;

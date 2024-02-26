@@ -29,6 +29,8 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
@@ -217,6 +219,9 @@ public class Tidier {
     @EJB
     IcatReader reader;
 
+    @EJB
+    private LockManager lockManager;
+
     private long sizeCheckIntervalMillis;
     private long startArchivingLevel;
     private long stopArchivingLevel;
@@ -239,8 +244,12 @@ public class Tidier {
     @PostConstruct
     public void init() {
         try {
-            this.fsm = FiniteStateMachine.getInstance();
+
             PropertyHandler propertyHandler = PropertyHandler.getInstance();
+            FiniteStateMachine.createInstance(reader, lockManager, propertyHandler.getStorageUnit());
+            this.fsm = FiniteStateMachine.getInstance();
+            this.fsm.init(); //if not yet initialized by IdsService do it now
+            
             sizeCheckIntervalMillis = propertyHandler.getSizeCheckIntervalMillis();
             preparedCount = propertyHandler.getPreparedCount();
             preparedDir = propertyHandler.getCacheDir().resolve("prepared");
