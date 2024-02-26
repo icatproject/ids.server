@@ -6,6 +6,8 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.models.DataInfoBase;
 
+import jakarta.json.stream.JsonGenerator;
+
 public class FiniteStateMachineForSingleLevelStorage extends FiniteStateMachine {
 
     protected FiniteStateMachineForSingleLevelStorage(IcatReader reader, LockManager lockManager) {
@@ -22,6 +24,12 @@ public class FiniteStateMachineForSingleLevelStorage extends FiniteStateMachine 
     @Override
     protected void scheduleTimer() {
         //nothing to do here for single level storage
+    }
+
+
+    @Override
+    protected void addDataInfoJson(JsonGenerator gen) {
+        gen.writeStartArray("opsQueue").writeEnd();
     }
 
 }

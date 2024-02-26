@@ -38,7 +38,7 @@ public class DataSelectionForStorageUnitDatafile extends DataSelectionV3Base {
     public boolean restoreIfOffline(DataFileInfo dfInfo) throws InternalException {
         boolean maybeOffline = false;
         var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getDfMaybeOffline().contains(dfInfo)) {
+        if (serviceProvider.getFsm().getMaybeOffline().contains(dfInfo)) {
             maybeOffline = true;
         } else if (!serviceProvider.getMainStorage().exists(dfInfo.getDfLocation())) {
             serviceProvider.getFsm().queue(dfInfo, DeferredOp.RESTORE);

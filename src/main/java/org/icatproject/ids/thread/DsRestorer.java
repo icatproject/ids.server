@@ -21,10 +21,10 @@ import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.v3.models.DataSetInfo;
 
 /*
  * Restores datafiles from the slow to the fast storage.
@@ -33,7 +33,7 @@ public class DsRestorer implements Runnable {
 
     private final static Logger logger = LoggerFactory.getLogger(DsRestorer.class);
 
-    private DsInfo dsInfo;
+    private DataSetInfo dsInfo;
 
     private MainStorageInterface mainStorageInterface;
     private ArchiveStorageInterface archiveStorageInterface;
@@ -46,7 +46,7 @@ public class DsRestorer implements Runnable {
     private ZipMapperInterface zipMapper;
     private Lock lock;
 
-    public DsRestorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
+    public DsRestorer(DataSetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         zipMapper = propertyHandler.getZipMapper();

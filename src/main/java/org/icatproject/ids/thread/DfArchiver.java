@@ -9,9 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
-import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.v3.models.DataFileInfo;
 
 /*
  * Removes datafiles from the fast storage (doesn't write them to archive storage)
@@ -21,11 +21,11 @@ public class DfArchiver implements Runnable {
 
     private MainStorageInterface mainStorageInterface;
     private FiniteStateMachine fsm;
-    private List<DfInfo> dfInfos;
+    private List<DataFileInfo> dfInfos;
     private Path markerDir;
     private Collection<Lock> locks;
 
-    public DfArchiver(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
+    public DfArchiver(List<DataFileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
         this.dfInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -36,7 +36,7 @@ public class DfArchiver implements Runnable {
     @Override
     public void run() {
         try {
-            for (DfInfo dfInfo : dfInfos) {
+            for (DataFileInfo dfInfo : dfInfos) {
                 try {
                     if (Files.exists(markerDir.resolve(Long.toString(dfInfo.getDfId())))) {
                         logger.error("Archive of " + dfInfo

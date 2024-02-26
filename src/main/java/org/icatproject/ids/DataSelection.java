@@ -358,7 +358,7 @@ public class DataSelection {
     public static boolean restoreIfOffline(DataFileInfo dfInfo) throws InternalException {
         boolean maybeOffline = false;
         var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getDfMaybeOffline().contains(dfInfo)) {
+        if (serviceProvider.getFsm().getMaybeOffline().contains(dfInfo)) {
             maybeOffline = true;
         } else if (!serviceProvider.getMainStorage().exists(dfInfo.getDfLocation())) {
             serviceProvider.getFsm().queue(dfInfo, DeferredOp.RESTORE);
@@ -371,7 +371,7 @@ public class DataSelection {
     public static boolean restoreIfOffline(DataSetInfo dsInfo, Set<Long> emptyDatasets) throws InternalException {
         boolean maybeOffline = false;
         var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getDsMaybeOffline().contains(dsInfo)) {
+        if (serviceProvider.getFsm().getMaybeOffline().contains(dsInfo)) {
             maybeOffline = true;
         } else if (!emptyDatasets.contains(dsInfo.getId()) && !serviceProvider.getMainStorage().exists(dsInfo)) {
             serviceProvider.getFsm().queue(dsInfo, DeferredOp.RESTORE);

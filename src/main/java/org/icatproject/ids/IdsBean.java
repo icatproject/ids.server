@@ -923,8 +923,8 @@ public class IdsBean {
         Status status = Status.ONLINE;
 
         if (storageUnit == StorageUnit.DATASET) {
-            Set<DataSetInfo> restoring = fsm.getDsRestoring();
-            Set<DataSetInfo> maybeOffline = fsm.getDsMaybeOffline();
+            Set<DataInfoBase> restoring = fsm.getRestoring();
+            Set<DataInfoBase> maybeOffline = fsm.getMaybeOffline();
             for (DataSetInfo dsInfo : dsInfos.values()) {
                 fsm.checkFailure(dsInfo.getId());
                 if (restoring.contains(dsInfo)) {
@@ -938,8 +938,8 @@ public class IdsBean {
                 }
             }
         } else if (storageUnit == StorageUnit.DATAFILE) {
-            Set<DataFileInfo> restoring = fsm.getDfRestoring();
-            Set<DataFileInfo> maybeOffline = fsm.getDfMaybeOffline();
+            Set<DataInfoBase> restoring = fsm.getRestoring();
+            Set<DataInfoBase> maybeOffline = fsm.getMaybeOffline();
             for (DataFileInfo dfInfo : dfInfos) {
                 fsm.checkFailure(dfInfo.getId());
                 if (restoring.contains(dfInfo)) {
@@ -998,8 +998,8 @@ public class IdsBean {
                     investigationIds, datasetIds, datafileIds, Returns.DATASETS);
             Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
 
-            Set<DataSetInfo> restoring = fsm.getDsRestoring();
-            Set<DataSetInfo> maybeOffline = fsm.getDsMaybeOffline();
+            Set<DataInfoBase> restoring = fsm.getRestoring();
+            Set<DataInfoBase> maybeOffline = fsm.getMaybeOffline();
             Set<Long> emptyDatasets = dataSelection.getEmptyDatasets();
             for (DataSetInfo dsInfo : dsInfos.values()) {
                 fsm.checkFailure(dsInfo.getId());
@@ -1018,8 +1018,8 @@ public class IdsBean {
                     investigationIds, datasetIds, datafileIds, Returns.DATAFILES);
             Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
 
-            Set<DataFileInfo> restoring = fsm.getDfRestoring();
-            Set<DataFileInfo> maybeOffline = fsm.getDfMaybeOffline();
+            Set<DataInfoBase> restoring = fsm.getRestoring();
+            Set<DataInfoBase> maybeOffline = fsm.getMaybeOffline();
             for (DataFileInfo dfInfo : dfInfos) {
                 fsm.checkFailure(dfInfo.getId());
                 if (restoring.contains(dfInfo)) {

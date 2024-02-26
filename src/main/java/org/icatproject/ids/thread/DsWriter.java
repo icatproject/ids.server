@@ -20,10 +20,10 @@ import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.v3.models.DataSetInfo;
 
 /**
  * Copies dataset from main to archive
@@ -32,7 +32,7 @@ public class DsWriter implements Runnable {
 
     private final static Logger logger = LoggerFactory.getLogger(DsWriter.class);
     private static final int BUFSIZ = 1024;
-    private DsInfo dsInfo;
+    private DataSetInfo dsInfo;
 
     private FiniteStateMachine fsm;
     private MainStorageInterface mainStorageInterface;
@@ -43,7 +43,7 @@ public class DsWriter implements Runnable {
     private ZipMapperInterface zipMapper;
     private Lock lock;
 
-    public DsWriter(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
+    public DsWriter(DataSetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         this.zipMapper = propertyHandler.getZipMapper();

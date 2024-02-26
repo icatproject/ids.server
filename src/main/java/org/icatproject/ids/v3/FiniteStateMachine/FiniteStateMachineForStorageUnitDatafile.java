@@ -21,7 +21,6 @@ import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.thread.DfArchiver;
 import org.icatproject.ids.thread.DfDeleter;
 import org.icatproject.ids.thread.DfRestorer;
@@ -30,6 +29,8 @@ import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
+
+import jakarta.json.stream.JsonGenerator;
 
 public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine {
 
@@ -46,6 +47,12 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
     }
 
 
+    @Override
+    protected void addDataInfoJson(JsonGenerator gen) {
+        this.addDataInfoJsonFromDeferredOpsQueue(gen);
+    }
+
+
     public void queue(DataInfoBase dataInfo, DeferredOp deferredOp) throws InternalException {
 
         var dfInfo = (DataFileInfo) dataInfo;
@@ -53,7 +60,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
 
         logger.info("Requesting " + deferredOp + " of datafile " + dfInfo);
 
-        synchronized (deferredDfOpsQueue) {
+        synchronized (deferredOpsQueue) {
 
             if (processOpsTime == null) {
                 processOpsTime = System.currentTimeMillis() + processOpsDelayMillis;
@@ -61,7 +68,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                 logger.debug("Requesting delay operations till " + d);
             }
 
-            final RequestedState state = this.deferredDfOpsQueue.get(dfInfo);
+            final RequestedState state = this.deferredOpsQueue.get(dfInfo);
             if (state == null) {
                 if (deferredOp == DeferredOp.WRITE) {
                     try {
@@ -73,39 +80,39 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                     } catch (IOException e) {
                         throw new InternalException(e.getClass() + " " + e.getMessage());
                     }
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.WRITE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.WRITE_REQUESTED);
                 } else if (deferredOp == DeferredOp.ARCHIVE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
                 } else if (deferredOp == DeferredOp.RESTORE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.RESTORE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.RESTORE_REQUESTED);
                 } else if (deferredOp == DeferredOp.DELETE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
                 }
             } else if (state == RequestedState.ARCHIVE_REQUESTED) {
                 if (deferredOp == DeferredOp.RESTORE) {
-                    deferredDfOpsQueue.remove(dfInfo);
+                    deferredOpsQueue.remove(dfInfo);
                 } else if (deferredOp == DeferredOp.DELETE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
                 }
             } else if (state == RequestedState.DELETE_REQUESTED) {
                 // No way out
             } else if (state == RequestedState.RESTORE_REQUESTED) {
                 if (deferredOp == DeferredOp.DELETE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
                 } else if (deferredOp == DeferredOp.ARCHIVE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
                 }
             } else if (state == RequestedState.WRITE_REQUESTED) {
                 if (deferredOp == DeferredOp.DELETE) {
-                    deferredDfOpsQueue.remove(dfInfo);
+                    deferredOpsQueue.remove(dfInfo);
                 } else if (deferredOp == DeferredOp.ARCHIVE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
                 }
             } else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
                 if (deferredOp == DeferredOp.DELETE) {
-                    deferredDfOpsQueue.remove(dfInfo);
+                    deferredOpsQueue.remove(dfInfo);
                 } else if (deferredOp == DeferredOp.RESTORE) {
-                    deferredDfOpsQueue.put(dfInfo, RequestedState.WRITE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo, RequestedState.WRITE_REQUESTED);
                 }
             }
         }
@@ -117,24 +124,27 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
         @Override
         public void run() {
             try {
-                synchronized (deferredDfOpsQueue) {
-                    if (processOpsTime != null && System.currentTimeMillis() > processOpsTime && !deferredDfOpsQueue.isEmpty()) {
+                synchronized (deferredOpsQueue) {
+                    if (processOpsTime != null && System.currentTimeMillis() > processOpsTime && !deferredOpsQueue.isEmpty()) {
                         processOpsTime = null;
-                        logger.debug("deferredDfOpsQueue has " + deferredDfOpsQueue.size() + " entries");
-                        List<DfInfo> writes = new ArrayList<>();
-                        List<DfInfo> archives = new ArrayList<>();
-                        List<DfInfo> restores = new ArrayList<>();
-                        List<DfInfo> deletes = new ArrayList<>();
+                        logger.debug("deferredDfOpsQueue has " + deferredOpsQueue.size() + " entries");
+                        List<DataFileInfo> writes = new ArrayList<>();
+                        List<DataFileInfo> archives = new ArrayList<>();
+                        List<DataFileInfo> restores = new ArrayList<>();
+                        List<DataFileInfo> deletes = new ArrayList<>();
                         Map<Long, Lock> writeLocks = new HashMap<>();
                         Map<Long, Lock> archiveLocks = new HashMap<>();
                         Map<Long, Lock> restoreLocks = new HashMap<>();
                         Map<Long, Lock> deleteLocks = new HashMap<>();
 
-                        Map<DataFileInfo, RequestedState> newOps = new HashMap<>();
-                        final Iterator<Entry<DataFileInfo, RequestedState>> it = deferredDfOpsQueue.entrySet().iterator();
+                        Map<DataInfoBase, RequestedState> newOps = new HashMap<>();
+                        final Iterator<Entry<DataInfoBase, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
                         while (it.hasNext()) {
-                            Entry<DataFileInfo, RequestedState> opEntry = it.next();
-                            DataFileInfo dfInfo = opEntry.getKey();
+                            Entry<DataInfoBase, RequestedState> opEntry = it.next();
+                            var dfInfo = (DataFileInfo) opEntry.getKey();
+
+                            if(dfInfo == null) throw new RuntimeException("Could not cast DataInfoBase to DataFileInfo. Did you handed over another sub type?");
+
                             Long dsId = dfInfo.getDsId();
                             DataSetInfo dsInfo;
                             try {
@@ -144,7 +154,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                 logger.error("Could not get dsInfo {}: {}.", dsId, e.getMessage());
                                 continue;
                             }
-                            if (!dfChanging.containsKey(dfInfo)) {
+                            if (!dataInfoChanging.containsKey(dfInfo)) {
                                 final RequestedState state = opEntry.getValue();
                                 logger.debug(dfInfo + " " + state);
                                 if (state == RequestedState.WRITE_REQUESTED) {
@@ -160,7 +170,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                         }
                                     }
                                     it.remove();
-                                    dfChanging.put(dfInfo, state);
+                                    dataInfoChanging.put(dfInfo, state);
                                     writes.add(dfInfo);
                                 } else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
                                     if (!writeLocks.containsKey(dsId)) {
@@ -175,7 +185,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                         }
                                     }
                                     it.remove();
-                                    dfChanging.put(dfInfo, RequestedState.WRITE_REQUESTED);
+                                    dataInfoChanging.put(dfInfo, RequestedState.WRITE_REQUESTED);
                                     writes.add(dfInfo);
                                     newOps.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
                                 } else if (state == RequestedState.ARCHIVE_REQUESTED) {
@@ -191,7 +201,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                         }
                                     }
                                     it.remove();
-                                    dfChanging.put(dfInfo, state);
+                                    dataInfoChanging.put(dfInfo, state);
                                     archives.add(dfInfo);
                                 } else if (state == RequestedState.RESTORE_REQUESTED) {
                                     if (!restoreLocks.containsKey(dsId)) {
@@ -206,7 +216,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                         }
                                     }
                                     it.remove();
-                                    dfChanging.put(dfInfo, state);
+                                    dataInfoChanging.put(dfInfo, state);
                                     restores.add(dfInfo);
                                 } else if (state == RequestedState.DELETE_REQUESTED) {
                                     if (!deleteLocks.containsKey(dsId)) {
@@ -221,7 +231,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                         }
                                     }
                                     it.remove();
-                                    dfChanging.put(dfInfo, state);
+                                    dataInfoChanging.put(dfInfo, state);
                                     deletes.add(dfInfo);
                                 } else {
                                     throw new AssertionError("Impossible state");
@@ -229,10 +239,10 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                             }
                         }
                         if (!newOps.isEmpty()) {
-                            deferredDfOpsQueue.putAll(newOps);
+                            deferredOpsQueue.putAll(newOps);
                             logger.debug("Adding {} operations to be scheduled next time round", newOps.size());
                         }
-                        if (!deferredDfOpsQueue.isEmpty()) {
+                        if (!deferredOpsQueue.isEmpty()) {
                             processOpsTime = 0L;
                         }
                         if (!writes.isEmpty()) {
