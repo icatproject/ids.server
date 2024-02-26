@@ -19,11 +19,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.ejb.DependsOn;
-import jakarta.ejb.EJB;
-import jakarta.ejb.Singleton;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 
@@ -48,9 +43,33 @@ import org.icatproject.ids.thread.DsWriter;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
-@Singleton
-@DependsOn({"LockManager"})
 public class FiniteStateMachine {
+
+
+    private static FiniteStateMachine instance;
+
+    private FiniteStateMachine(IcatReader reader, LockManager lockManager) {
+        this.reader = reader;
+        this.lockManager = lockManager;
+    }
+
+    public static void createInstance(IcatReader reader, LockManager lockManager) {
+
+        if(instance == null) {
+            instance = new FiniteStateMachine(reader, lockManager);
+        }
+    }
+
+    public static FiniteStateMachine getInstance() {
+        if(instance != null) {
+            return instance;
+        }
+
+        // If this assert was executed: Instance of FiniteStateMachine is not created. At First createInstance() has to be called at least once.
+        assert(false);
+        return null;
+        
+    }
 
     private class DfProcessQueue extends TimerTask {
 
@@ -307,10 +326,10 @@ public class FiniteStateMachine {
     private long processQueueIntervalMillis;
 
     private PropertyHandler propertyHandler;
-    @EJB
+
     IcatReader reader;
 
-    @EJB
+
     private LockManager lockManager;
 
     private StorageUnit storageUnit;
@@ -323,8 +342,7 @@ public class FiniteStateMachine {
 
     private Set<Long> failures = ConcurrentHashMap.newKeySet();
 
-    @PreDestroy
-    private void exit() {
+    public void exit() {
         timer.cancel();
         logger.info("Cancelled timer");
     }
@@ -453,8 +471,7 @@ public class FiniteStateMachine {
         return baos.toString();
     }
 
-    @PostConstruct
-    private void init() {
+    public void init() {
         try {
             propertyHandler = PropertyHandler.getInstance();
             processQueueIntervalMillis = propertyHandler.getProcessQueueIntervalSeconds() * 1000L;

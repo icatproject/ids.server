@@ -55,13 +55,12 @@ public class IdsService {
     Transmitter transmitter;
 
     @EJB
-    private FiniteStateMachine fsm;
-
-    @EJB
     private LockManager lockManager;
 
     @EJB
     private IcatReader reader;
+
+    private FiniteStateMachine fsm = null;
 
     private RequestHandlerService requestService = null;
 
@@ -133,6 +132,7 @@ public class IdsService {
 
     @PreDestroy
     private void exit() {
+        this.fsm.exit();
         logger.info("destroyed IdsService");
     }
 
@@ -387,8 +387,14 @@ public class IdsService {
     @PostConstruct
     private void init() {
         logger.info("creating IdsService");
+
+        FiniteStateMachine.createInstance(reader, lockManager);
+        this.fsm = FiniteStateMachine.getInstance();
+        this.fsm.init();
+
         this.requestService = new RequestHandlerService();
         this.requestService.init(this.transmitter, this.lockManager, this.fsm, this.reader);
+
         logger.info("created IdsService");
     }
 

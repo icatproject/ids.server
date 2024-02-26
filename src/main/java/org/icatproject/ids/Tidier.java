@@ -208,8 +208,7 @@ public class Tidier {
         }
     }
 
-    @EJB
-    private FiniteStateMachine fsm;
+    private FiniteStateMachine fsm = null;
 
     private MainStorageInterface mainStorage;
 
@@ -240,6 +239,7 @@ public class Tidier {
     @PostConstruct
     public void init() {
         try {
+            this.fsm = FiniteStateMachine.getInstance();
             PropertyHandler propertyHandler = PropertyHandler.getInstance();
             sizeCheckIntervalMillis = propertyHandler.getSizeCheckIntervalMillis();
             preparedCount = propertyHandler.getPreparedCount();

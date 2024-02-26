@@ -353,8 +353,7 @@ public class IdsBean {
 
     private boolean enableWrite;
 
-    @EJB
-    private FiniteStateMachine fsm;
+    private FiniteStateMachine fsm = null;
 
     @EJB
     private LockManager lockManager;
@@ -1065,6 +1064,8 @@ public class IdsBean {
         try {
             synchronized (inited) {
                 logger.info("creating IdsBean");
+
+                this.fsm = FiniteStateMachine.getInstance();
                 propertyHandler = PropertyHandler.getInstance();
                 mainStorage = propertyHandler.getMainStorage();
                 archiveStorage = propertyHandler.getArchiveStorage();
