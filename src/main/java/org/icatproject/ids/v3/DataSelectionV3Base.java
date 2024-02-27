@@ -1,25 +1,26 @@
 package org.icatproject.ids.v3;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.icatproject.ids.Status;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.enums.RequestType;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataSetInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 
 public abstract class DataSelectionV3Base {
 
-    protected Map<Long, DataSetInfo> dsInfos;
-    protected Set<DataFileInfo> dfInfos;
+    protected Map<Long, DataInfoBase> dsInfos;
+    protected Map<Long, DataInfoBase> dfInfos;
     protected Set<Long> emptyDatasets;
     protected List<Long> invids;
     protected List<Long> dsids;
@@ -27,7 +28,7 @@ public abstract class DataSelectionV3Base {
     protected RequestType requestType;
     protected HashMap<RequestType, DeferredOp> requestTypeToDeferredOpMapping;
 
-    protected DataSelectionV3Base(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
+    protected DataSelectionV3Base(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
 
         this.dsInfos = dsInfos;
         this.dfInfos = dfInfos;
@@ -47,13 +48,21 @@ public abstract class DataSelectionV3Base {
 
     protected abstract void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException;
 
+    /**
+     * Should it be better to have a get
+     * @return
+     */
+    protected abstract Collection<DataInfoBase> getDataInfosForStatusCheck();
 
-    public Map<Long, DataSetInfo> getDsInfo() {
+    protected abstract boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException;
+
+
+    public Map<Long, DataInfoBase> getDsInfo() {
         return dsInfos;
     }
 
 
-    public Set<DataFileInfo> getDfInfo() {
+    public Map<Long, DataInfoBase> getDfInfo() {
         return dfInfos;
     }
 
@@ -108,6 +117,28 @@ public abstract class DataSelectionV3Base {
             // ... or did you forget to add an entry for your new RequestType in this.requestTypeToDeferredOpMapping (constructor)?
 
         this.scheduleTask(operation);
+    }
+
+    public Status getStatus() throws InternalException {
+        Status status = Status.ONLINE;
+        var serviceProvider = ServiceProvider.getInstance();
+
+        Set<DataInfoBase> restoring = serviceProvider.getFsm().getRestoring();
+        Set<DataInfoBase> maybeOffline = serviceProvider.getFsm().getMaybeOffline();
+        for (DataInfoBase dataInfo : this.getDataInfosForStatusCheck()) {
+            serviceProvider.getFsm().checkFailure(dataInfo.getId());
+            if (restoring.contains(dataInfo)) {
+                status = Status.RESTORING;
+            } else if (maybeOffline.contains(dataInfo)) {
+                status = Status.ARCHIVED;
+                break;
+            } else if (!this.existsInMainStorage(dataInfo)) {
+                status = Status.ARCHIVED;
+                break;
+            }
+        }
+
+        return status;
     }
 
 }

@@ -39,9 +39,9 @@ public class ServiceProvider {
         instance = new ServiceProvider(transmitter, fsm, lockManager, reader);
     }
 
-    public static ServiceProvider getInstance() throws InternalException {
+    public static ServiceProvider getInstance() {
         if(instance == null) {
-            throw new InternalException("ServiceProvider is not yet instantiated, please call createInstance at first.");
+            throw new RuntimeException("ServiceProvider is not yet instantiated, please call createInstance at first.");
         }
         return instance;
     }

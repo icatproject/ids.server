@@ -1,5 +1,7 @@
 package org.icatproject.ids.v3;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -9,12 +11,11 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.enums.RequestType;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataSetInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 
 public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
 
-    protected DataSelectionForSingleLevelStorage(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos,
+    protected DataSelectionForSingleLevelStorage(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos,
             Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
                 
         super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
@@ -30,7 +31,20 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
     @Override
     protected void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException {
 
-        throw new NotImplementedException("This operation is unavailable for single level storage");
+        throw new InternalException("This operation is unavailable for single level storage");
+    }
+
+
+    @Override
+    protected Collection<DataInfoBase> getDataInfosForStatusCheck() {
+        return new ArrayList<DataInfoBase>();
+    }
+
+
+    @Override
+    protected boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
+        
+        throw new InternalException("This operation is unavailable for single level storage");
     }
 
 

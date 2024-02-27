@@ -9,13 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
@@ -70,7 +69,7 @@ public abstract class RequestHandlerBase {
         return this.requestType;
     }
 
-    public DataSelectionV3Base getDataSelection(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets) throws InternalException {
+    public DataSelectionV3Base getDataSelection(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) throws InternalException {
 
         return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, this.getRequestType());
     }
@@ -110,22 +109,23 @@ public abstract class RequestHandlerBase {
             throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
     }
 
-    protected static Prepared unpack(InputStream stream) throws InternalException {
-        Prepared prepared = new Prepared();
+    protected static PreparedV3 unpack(InputStream stream) throws InternalException {
+        PreparedV3 prepared = new PreparedV3();
         JsonObject pd;
         try (JsonReader jsonReader = Json.createReader(stream)) {
             pd = jsonReader.readObject();
         }
         prepared.zip = pd.getBoolean("zip");
         prepared.compress = pd.getBoolean("compress");
-        SortedMap<Long, DataSetInfo> dsInfos = new TreeMap<>();
-        SortedSet<DataFileInfo> dfInfos = new TreeSet<>();
+        SortedMap<Long, DataInfoBase> dsInfos = new TreeMap<>();
+        SortedMap<Long, DataInfoBase> dfInfos = new TreeMap<>();
         Set<Long> emptyDatasets = new HashSet<>();
 
         for (JsonValue itemV : pd.getJsonArray("dfInfo")) {
             JsonObject item = (JsonObject) itemV;
             String dfLocation = item.isNull("dfLocation") ? null : item.getString("dfLocation");
-            dfInfos.add(new DataFileInfo(item.getJsonNumber("dfId").longValueExact(), item.getString("dfName"),
+            long dfid = item.getJsonNumber("dfId").longValueExact();
+            dfInfos.put(dfid, new DataFileInfo(dfid, item.getString("dfName"),
                     dfLocation, item.getString("createId"), item.getString("modId"),
                     item.getJsonNumber("dsId").longValueExact()));
 

@@ -27,6 +27,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,11 +68,13 @@ public class DataSelectionFactory {
 
 
     
-    protected static DataSelectionV3Base get(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
+    protected static DataSelectionV3Base get(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
         List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
-        for(DataFileInfo dfInfo: dfInfos) {
+        var dataFileInfos = new HashMap<Long, DataInfoBase>();
+        for(DataInfoBase dfInfo: dfInfos.values()) {
             dfids.add(dfInfo.getId());
+            dataFileInfos.put(dfInfo.getId(), dfInfo);
         }
         return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, new ArrayList<Long>(), dsids, dfids, requestType);
     }
@@ -90,7 +93,7 @@ public class DataSelectionFactory {
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionV3Base createSelection(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) throws InternalException {
+    private DataSelectionV3Base createSelection(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) throws InternalException {
 
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
@@ -142,11 +145,11 @@ public class DataSelectionFactory {
 
     private DataSelectionV3Base prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
             throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
-        var dsInfos = new HashMap<Long, DataSetInfo>();
+        var dsInfos = new HashMap<Long, DataInfoBase>();
         var emptyDatasets = new HashSet<Long>();
-        var dfInfos = new HashSet<DataFileInfo>();
-        if (dfWanted) {
-            dfInfos = new HashSet<>();
+        var dfInfos = new HashMap<Long, DataInfoBase>();
+        if (dfWanted) { //redundant ?
+            dfInfos = new HashMap<Long, DataInfoBase>();
         }
 
         try {
@@ -162,7 +165,7 @@ public class DataSelectionFactory {
                     if (dfWanted) {
                         Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
                         String location = IdsBean.getLocation(dfid, df.getLocation());
-                        dfInfos.add(
+                        dfInfos.put( df.getId(),
                                 new DataFileInfo(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
                     }
                 } else {
@@ -255,7 +258,7 @@ public class DataSelectionFactory {
         return result;
     }
 
-    private void manyDfs(HashSet<DataFileInfo> dfInfos, long dsid, Session restSessionToUse, JsonArray result)
+    private void manyDfs(Map<Long, DataInfoBase> dfInfos, long dsid, Session restSessionToUse, JsonArray result)
             throws IcatException, InsufficientPrivilegesException, InternalException {
         // dataset access for the user has been checked so the REST session for the
         // reader account can be used if the IDS setting to allow this is enabled
@@ -272,7 +275,7 @@ public class DataSelectionFactory {
                     JsonArray tup = (JsonArray) tupV;
                     long dfid = tup.getJsonNumber(0).longValueExact();
                     String location = IdsBean.getLocation(dfid, tup.getString(2, null));
-                    dfInfos.add(
+                    dfInfos.put(dfid,
                             new DataFileInfo(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
                 }
             } else {
@@ -291,7 +294,7 @@ public class DataSelectionFactory {
         }
     }
 
-    private void manyDss(HashMap<Long, DataSetInfo> dsInfos, HashSet<Long> emptyDatasets, HashSet<DataFileInfo> dfInfos, Long invid, boolean dfWanted, Session userRestSession, Session restSessionToUseForDfs, JsonArray result)
+    private void manyDss(Map<Long, DataInfoBase> dsInfos, HashSet<Long> emptyDatasets, Map<Long, DataInfoBase> dfInfos, Long invid, boolean dfWanted, Session userRestSession, Session restSessionToUseForDfs, JsonArray result)
             throws IcatException, InsufficientPrivilegesException, InternalException {
         long min = result.getJsonNumber(0).longValueExact();
         long max = result.getJsonNumber(1).longValueExact();
@@ -363,19 +366,19 @@ public class DataSelectionFactory {
         this.requestTypeToReturnsMapping.put(RequestType.GETDATA, Returns.DATASETS_AND_DATAFILES);
 
         if(storageUnit == null ) {
-            //this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
+            this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
         }
             
 
         else if (storageUnit == StorageUnit.DATAFILE) {
-            //this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATAFILES);
+            this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATAFILES);
             //this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATAFILES);
             this.requestTypeToReturnsMapping.put(RequestType.ARCHIVE, Returns.DATAFILES);
         }
 
 
         else if(storageUnit == StorageUnit.DATASET) {
-            //this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
+            this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
             //this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATASETS);
             this.requestTypeToReturnsMapping.put(RequestType.ARCHIVE, Returns.DATASETS);
         }

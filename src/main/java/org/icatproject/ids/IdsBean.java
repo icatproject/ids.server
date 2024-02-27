@@ -483,7 +483,12 @@ public class IdsBean {
                 investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
         // Do it
-        Collection<DataSetInfo> dsInfos = dataSelection.getDsInfo().values();
+        Collection<DataInfoBase> dsInfos = new ArrayList<DataInfoBase>();
+
+        //this is just a workaround during the v3 redesign
+        for(DataInfoBase dataInfo : dataSelection.getDsInfo().values()) {
+            dsInfos.add(dataInfo);
+        }
 
         try (Lock lock = lockManager.lock(dsInfos, LockType.EXCLUSIVE)) {
             if (storageUnit == StorageUnit.DATASET) {
@@ -539,7 +544,7 @@ public class IdsBean {
             }
 
             if (storageUnit == StorageUnit.DATASET) {
-                for (DataSetInfo dsInfo : dsInfos) {
+                for (DataInfoBase dsInfo : dsInfos) {
                     fsm.queue(dsInfo, DeferredOp.WRITE);
                 }
             }
@@ -1749,6 +1754,7 @@ public class IdsBean {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void write(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
@@ -1769,16 +1775,21 @@ public class IdsBean {
                 investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
 
         // Do it
-        Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
         Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
 
-        try (Lock lock = lockManager.lock(dsInfos.values(), LockType.SHARED)) {
+        //this is only a workaround during the V3 redesign
+        var dsInfos = new ArrayList<DataInfoBase>();
+        for(DataSetInfo dataSetInfo : dataSelection.getDsInfo().values()) {
+            dsInfos.add(dataSetInfo);
+        }
+
+        try (Lock lock = lockManager.lock(dsInfos, LockType.SHARED)) {
             if (twoLevel) {
                 boolean maybeOffline = false;
                 if (storageUnit == StorageUnit.DATASET) {
-                    for (DataSetInfo dsInfo : dsInfos.values()) {
+                    for (DataInfoBase dsInfo : dsInfos) {
                         if (!dataSelection.getEmptyDatasets().contains(dsInfo.getId()) &&
-                                !mainStorage.exists(dsInfo)) {
+                                !mainStorage.exists((DataSetInfo)dsInfo)) {
                             maybeOffline = true;
                         }
                     }
@@ -1795,7 +1806,7 @@ public class IdsBean {
             }
 
             if (storageUnit == StorageUnit.DATASET) {
-                for (DataSetInfo dsInfo : dsInfos.values()) {
+                for (DataInfoBase dsInfo : dsInfos) {
                     fsm.queue(dsInfo, DeferredOp.WRITE);
                 }
             } else if (storageUnit == StorageUnit.DATAFILE) {

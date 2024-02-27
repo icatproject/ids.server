@@ -7,16 +7,15 @@ import java.net.HttpURLConnection;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.Prepared;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.StorageUnit;
@@ -29,13 +28,13 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.v3.DataSelectionV3Base;
+import org.icatproject.ids.v3.PreparedV3;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.helper.SO;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataSetInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.ValueContainer;
 
 import jakarta.json.Json;
@@ -112,7 +111,7 @@ public class GetDataHandler extends RequestHandlerBase {
         validateUUID("preparedId", preparedId);
 
         // Do it
-        Prepared prepared;
+        PreparedV3 prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             prepared = unpack(stream);
         } catch (NoSuchFileException e) {
@@ -121,11 +120,11 @@ public class GetDataHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        DataSelectionV3Base dataSelection = this.getDataSelection((Map<Long, DataSetInfo>) prepared.dsInfos, (Set<DataFileInfo>) prepared.dfInfos,  (Set<Long>) prepared.emptyDatasets);
+        DataSelectionV3Base dataSelection = this.getDataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets);
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
-        final Set<DataFileInfo> dfInfos = prepared.dfInfos;
-        final Map<Long, DataSetInfo> dsInfos = prepared.dsInfos;
+        final Map<Long, DataInfoBase> dfInfos = prepared.dfInfos;
+        final Map<Long, DataInfoBase> dsInfos = prepared.dsInfos;
 
         Lock lock = null;
         try {
@@ -135,7 +134,7 @@ public class GetDataHandler extends RequestHandlerBase {
             if (twoLevel) {
                 dataSelection.checkOnline();
             }
-            checkDatafilesPresent(dfInfos);
+            checkDatafilesPresent(dfInfos.values());
 
             /* Construct the name to include in the headers */
             String name;
@@ -143,7 +142,7 @@ public class GetDataHandler extends RequestHandlerBase {
                 if (zip) {
                     name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
                 } else {
-                    name = dfInfos.iterator().next().getDfName();
+                    name = dfInfos.values().iterator().next().getName();
                 }
             } else {
                 if (zip) {
@@ -208,8 +207,8 @@ public class GetDataHandler extends RequestHandlerBase {
         final DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 
         // Do it
-        Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
-        Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
+        Map<Long, DataInfoBase> dsInfos = dataSelection.getDsInfo();
+        Map<Long, DataInfoBase> dfInfos = dataSelection.getDfInfo();
 
         Lock lock = null;
         try {
@@ -218,7 +217,7 @@ public class GetDataHandler extends RequestHandlerBase {
             if (twoLevel) {
                 dataSelection.checkOnline();
             }
-            checkDatafilesPresent(dfInfos);
+            checkDatafilesPresent(dfInfos.values());
 
             final boolean finalZip = zip ? true : dataSelection.mustZip();
 
@@ -228,7 +227,7 @@ public class GetDataHandler extends RequestHandlerBase {
                 if (finalZip) {
                     name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
                 } else {
-                    name = dataSelection.getDfInfo().iterator().next().getDfName();
+                    name = dataSelection.getDfInfo().values().iterator().next().getName();
                 }
             } else {
                 if (finalZip) {
@@ -280,14 +279,14 @@ public class GetDataHandler extends RequestHandlerBase {
         }
     }
 
-    private void checkDatafilesPresent(Set<DataFileInfo> dfInfos)
+    private void checkDatafilesPresent(Collection<DataInfoBase> dfInfos)
             throws NotFoundException, InternalException {
 
         var serviceProvider = ServiceProvider.getInstance();
         /* Check that datafiles have not been deleted before locking */
         int n = 0;
         StringBuffer sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
-        for (DataFileInfo dfInfo : dfInfos) {
+        for (DataInfoBase dfInfo : dfInfos) {
             if (n != 0) {
                 sb.append(',');
             }

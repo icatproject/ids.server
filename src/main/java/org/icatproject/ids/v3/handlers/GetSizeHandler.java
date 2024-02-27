@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.icatproject.Datafile;
 import org.icatproject.IcatException_Exception;
@@ -20,11 +20,12 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.DataSelectionV3Base;
+import org.icatproject.ids.v3.PreparedV3;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.ids.v3.enums.RequestType;
-import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.ValueContainer;
 
 import jakarta.json.Json;
@@ -68,7 +69,7 @@ public class GetSizeHandler extends RequestHandlerBase {
         validateUUID("preparedId", preparedId);
 
         // Do it
-        Prepared prepared;
+        PreparedV3 prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             prepared = unpack(stream);
         } catch (NoSuchFileException e) {
@@ -77,7 +78,7 @@ public class GetSizeHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        final Set<DataFileInfo> dfInfos = prepared.dfInfos;
+        final Map<Long, DataInfoBase> dfInfos = prepared.dfInfos;
 
         // Note that the "fast computation for the simple case" (see the other getSize() implementation) is not
         // available when calling getSize() with a preparedId.
@@ -92,7 +93,7 @@ public class GetSizeHandler extends RequestHandlerBase {
 
         StringBuilder sb = new StringBuilder();
         int n = 0;
-        for (DataFileInfo df : dfInfos) {
+        for (DataInfoBase df : dfInfos.values()) {
             if (sb.length() != 0) {
                 sb.append(',');
             }
@@ -166,7 +167,7 @@ public class GetSizeHandler extends RequestHandlerBase {
 
             StringBuilder sb = new StringBuilder();
             int n = 0;
-            for (DataFileInfo df : dataSelection.getDfInfo()) {
+            for (DataInfoBase df : dataSelection.getDfInfo().values()) {
                 if (sb.length() != 0) {
                     sb.append(',');
                 }

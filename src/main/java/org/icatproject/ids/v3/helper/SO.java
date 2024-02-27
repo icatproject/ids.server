@@ -5,17 +5,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import org.icatproject.ids.RangeOutputStream;
 import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,10 +28,10 @@ public class SO implements StreamingOutput {
 
     private long offset;
     private boolean zip;
-    private Map<Long, DataSetInfo> dsInfos;
+    private Map<Long, DataInfoBase> dsInfos;
     private Lock lock;
     private boolean compress;
-    private Set<DataFileInfo> dfInfos;
+    private Map<Long, DataInfoBase> dfInfos;
     private String ip;
     private long start;
     private Long transferId;
@@ -40,7 +40,7 @@ public class SO implements StreamingOutput {
     private static final int BUFSIZ = 2048;
     private final static Logger logger = LoggerFactory.getLogger(SO.class);
 
-    public SO(Map<Long, DataSetInfo> dsInfos, Set<DataFileInfo> dfInfos, long offset, boolean zip, boolean compress,
+    public SO(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, long offset, boolean zip, boolean compress,
        Lock lock, Long transferId, String ip, long start, ServiceProvider serviceProvider) {
         this.offset = offset;
         this.zip = zip;
@@ -69,15 +69,16 @@ public class SO implements StreamingOutput {
                     zos.setLevel(0); // Otherwise use default compression
                 }
 
-                for (DataFileInfo dfInfo : dfInfos) {
+                for ( DataInfoBase  dataInfo : dfInfos.values()) {
+                    var dfInfo = (DataFileInfo) dataInfo;
                     logger.debug("Adding " + dfInfo + " to zip");
                     transfer = dfInfo;
-                    DsInfo dsInfo = dsInfos.get(dfInfo.getDsId());
-                    String entryName = this.serviceProvider.getPropertyHandler().getZipMapper().getFullEntryName(dsInfo, dfInfo);
+                    DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId() );
+                    String entryName = this.serviceProvider.getPropertyHandler().getZipMapper().getFullEntryName((DataSetInfo)dsInfo, (DataFileInfo)dfInfo);
                     InputStream stream = null;
                     try {
                         zos.putNextEntry(new ZipEntry(entryName));
-                        stream = this.serviceProvider.getMainStorage().get(dfInfo.getDfLocation(), dfInfo.getCreateId(), dfInfo.getModId());
+                        stream = this.serviceProvider.getMainStorage().get(dfInfo.getLocation(), dfInfo.getCreateId(), dfInfo.getModId());
                         int length;
                         while ((length = stream.read(bytes)) >= 0) {
                             zos.write(bytes, 0, length);
@@ -92,7 +93,7 @@ public class SO implements StreamingOutput {
                 }
                 zos.close();
             } else {
-                DataFileInfo dfInfo = dfInfos.iterator().next();
+                DataFileInfo dfInfo = (DataFileInfo) dfInfos.values().iterator().next();
                 transfer = dfInfo;
                 InputStream stream = this.serviceProvider.getMainStorage().get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
                         dfInfo.getModId());

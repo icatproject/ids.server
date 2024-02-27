@@ -11,9 +11,10 @@ import jakarta.ejb.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
 @Singleton
@@ -155,10 +156,12 @@ public class LockManager {
         }
     }
 
-    public Lock lock(Collection<DataSetInfo> datasets, LockType type) throws AlreadyLockedException, IOException {
+    public Lock lock(Collection<DataInfoBase> datasets, LockType type) throws AlreadyLockedException, IOException, InternalException {
         LockCollection locks = new LockCollection();
         try {
-            for (DataSetInfo ds : datasets) {
+            for (DataInfoBase dataInfo : datasets) {
+                DataSetInfo ds = (DataSetInfo) dataInfo;
+                if(ds == null) throw new InternalException("Could not cast " + dataInfo.getClass() + " to DataSetInfo. Did you handed over another sub type of DataInfoBase? ");
                 locks.add(lock(ds, type));
             }
         } catch (AlreadyLockedException | IOException e) {
