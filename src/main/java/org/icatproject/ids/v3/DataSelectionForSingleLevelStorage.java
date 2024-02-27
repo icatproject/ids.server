@@ -23,12 +23,6 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
 
 
     @Override
-    public void checkOnline() throws InternalException, DataNotOnlineException {
-        // nothing to do here for single level storage
-    }
-
-
-    @Override
     protected void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException {
 
         throw new InternalException("This operation is unavailable for single level storage");
@@ -36,7 +30,7 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
 
 
     @Override
-    protected Collection<DataInfoBase> getDataInfosForStatusCheck() {
+    public Collection<DataInfoBase> getPrimaryDataInfos() {
         return new ArrayList<DataInfoBase>();
     }
 

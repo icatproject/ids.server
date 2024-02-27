@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.icatproject.ids.v3.enums.RequestType;
@@ -44,6 +46,8 @@ public abstract class RequestHandlerBase {
     protected boolean twoLevel;
     protected StorageUnit storageUnit;
     protected RequestType requestType;
+
+    protected ExecutorService threadPool;
 
     /**
      * matches standard UUID format of 8-4-4-4-12 hexadecimal digits
@@ -96,6 +100,8 @@ public abstract class RequestHandlerBase {
 
         var archiveStorage = propertyHandler.getArchiveStorage();
         this.twoLevel = archiveStorage != null;
+
+        this.threadPool = Executors.newCachedThreadPool();
 
         //logger.info("RequestHandlerBase initialized");
     }

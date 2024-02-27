@@ -538,6 +538,7 @@ public class IdsBean {
                 preparedDir = propertyHandler.getCacheDir().resolve("prepared");
                 Files.createDirectories(preparedDir);
 
+
                 readOnly = propertyHandler.getReadOnly();
                 enableWrite = propertyHandler.getEnableWrite();
 

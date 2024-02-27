@@ -44,15 +44,13 @@ public abstract class DataSelectionV3Base {
     }
 
 
-    public abstract void checkOnline() throws InternalException, DataNotOnlineException;
-
     protected abstract void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException;
 
     /**
-     * Should it be better to have a get
+     * To get the DataInfos whom are primary worked on, depending on StorageUnit
      * @return
      */
-    protected abstract Collection<DataInfoBase> getDataInfosForStatusCheck();
+    public abstract Collection<DataInfoBase> getPrimaryDataInfos();
 
     protected abstract boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException;
 
@@ -125,7 +123,7 @@ public abstract class DataSelectionV3Base {
 
         Set<DataInfoBase> restoring = serviceProvider.getFsm().getRestoring();
         Set<DataInfoBase> maybeOffline = serviceProvider.getFsm().getMaybeOffline();
-        for (DataInfoBase dataInfo : this.getDataInfosForStatusCheck()) {
+        for (DataInfoBase dataInfo : this.getPrimaryDataInfos()) {
             serviceProvider.getFsm().checkFailure(dataInfo.getId());
             if (restoring.contains(dataInfo)) {
                 status = Status.RESTORING;
@@ -139,6 +137,33 @@ public abstract class DataSelectionV3Base {
         }
 
         return status;
+    }
+
+    public boolean restoreIfOffline(DataInfoBase dataInfo) throws InternalException {
+        boolean maybeOffline = false;
+        var serviceProvider = ServiceProvider.getInstance();
+        if (serviceProvider.getFsm().getMaybeOffline().contains(dataInfo)) {
+            maybeOffline = true;
+        } else if (!this.existsInMainStorage(dataInfo)) {
+            serviceProvider.getFsm().queue(dataInfo, DeferredOp.RESTORE);
+            maybeOffline = true;
+        }
+        return maybeOffline;
+    }
+
+
+    public void checkOnline()throws InternalException, DataNotOnlineException {
+
+        boolean maybeOffline = false;
+        for (DataInfoBase dfInfo : this.getPrimaryDataInfos()) {
+            if (this.restoreIfOffline(dfInfo)) {
+                maybeOffline = true;
+            }
+        }
+        if (maybeOffline) {
+            throw new DataNotOnlineException(
+                    "Before getting, putting, etc.  a datafile or dataset, it must be restored, restoration requested automatically");
+        }
     }
 
 }

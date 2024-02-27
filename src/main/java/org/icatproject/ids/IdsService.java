@@ -422,6 +422,9 @@ public class IdsService {
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws InsufficientPrivilegesException 
      * @summary isPrepared
      * @statuscode 200 To indicate success
      */
@@ -429,8 +432,15 @@ public class IdsService {
     @Path("isPrepared")
     @Produces(MediaType.TEXT_PLAIN)
     public boolean isPrepared(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
-            throws BadRequestException, NotFoundException, InternalException {
-        return idsBean.isPrepared(preparedId, request.getRemoteAddr());
+            throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("preparedId", new ValueContainer(preparedId));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.ISPREPARED, parameters).getBool();
+
+        //return idsBean.isPrepared(preparedId, request.getRemoteAddr());
     }
 
     /**

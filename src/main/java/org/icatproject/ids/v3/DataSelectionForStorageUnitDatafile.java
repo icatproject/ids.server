@@ -20,32 +20,6 @@ public class DataSelectionForStorageUnitDatafile extends DataSelectionV3Base {
         super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
     }
 
-    @Override
-    public void checkOnline()throws InternalException, DataNotOnlineException {
-
-        boolean maybeOffline = false;
-        for (DataInfoBase dfInfo : dfInfos.values()) {
-            if (this.restoreIfOffline(dfInfo)) {
-                maybeOffline = true;
-            }
-        }
-        if (maybeOffline) {
-            throw new DataNotOnlineException(
-                    "Before getting a datafile, it must be restored, restoration requested automatically");
-        }
-    }
-
-    public boolean restoreIfOffline(DataInfoBase dfInfo) throws InternalException {
-        boolean maybeOffline = false;
-        var serviceProvider = ServiceProvider.getInstance();
-        if (serviceProvider.getFsm().getMaybeOffline().contains(dfInfo)) {
-            maybeOffline = true;
-        } else if (!serviceProvider.getMainStorage().exists(dfInfo.getLocation())) {
-            serviceProvider.getFsm().queue(dfInfo, DeferredOp.RESTORE);
-            maybeOffline = true;
-        }
-        return maybeOffline;
-    }
 
     @Override
     protected void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException {
@@ -56,7 +30,7 @@ public class DataSelectionForStorageUnitDatafile extends DataSelectionV3Base {
     }
 
     @Override
-    protected Collection<DataInfoBase> getDataInfosForStatusCheck() {
+    public Collection<DataInfoBase> getPrimaryDataInfos() {
         return this.dfInfos.values();
     }
 
