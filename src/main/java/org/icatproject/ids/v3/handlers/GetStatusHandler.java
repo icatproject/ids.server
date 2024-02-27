@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.Prepared;
 import org.icatproject.ids.Status;
 import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;

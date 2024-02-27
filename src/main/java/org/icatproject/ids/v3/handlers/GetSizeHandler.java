@@ -11,7 +11,6 @@ import java.util.Map;
 
 import org.icatproject.Datafile;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.Prepared;
 import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;

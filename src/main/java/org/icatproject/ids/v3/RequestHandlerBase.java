@@ -28,7 +28,6 @@ import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 
 import org.icatproject.ids.DataSelection;
-import org.icatproject.ids.Prepared;
 import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
