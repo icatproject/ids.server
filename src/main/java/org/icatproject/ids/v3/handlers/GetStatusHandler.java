@@ -6,8 +6,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.Status;
@@ -77,8 +77,8 @@ public class GetStatusHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        final Map<Long, DataInfoBase> dfInfos = prepared.dfInfos;
-        final Map<Long, DataInfoBase> dsInfos = prepared.dsInfos;
+        final SortedMap<Long, DataInfoBase> dfInfos = prepared.dfInfos;
+        final SortedMap<Long, DataInfoBase> dsInfos = prepared.dsInfos;
         Set<Long> emptyDatasets = prepared.emptyDatasets;
 
         // Do it

@@ -439,8 +439,6 @@ public class IdsService {
         parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.ISPREPARED, parameters).getBool();
-
-        //return idsBean.isPrepared(preparedId, request.getRemoteAddr());
     }
 
     /**

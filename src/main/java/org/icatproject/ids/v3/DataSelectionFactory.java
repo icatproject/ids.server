@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
@@ -68,7 +70,7 @@ public class DataSelectionFactory {
 
 
     
-    protected static DataSelectionV3Base get(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
+    protected static DataSelectionV3Base get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
         List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
         var dataFileInfos = new HashMap<Long, DataInfoBase>();
@@ -93,7 +95,7 @@ public class DataSelectionFactory {
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionV3Base createSelection(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) throws InternalException {
+    private DataSelectionV3Base createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) throws InternalException {
 
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
@@ -145,11 +147,11 @@ public class DataSelectionFactory {
 
     private DataSelectionV3Base prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
             throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
-        var dsInfos = new HashMap<Long, DataInfoBase>();
+        var dsInfos = new TreeMap<Long, DataInfoBase>();
         var emptyDatasets = new HashSet<Long>();
-        var dfInfos = new HashMap<Long, DataInfoBase>();
+        var dfInfos = new TreeMap<Long, DataInfoBase>();
         if (dfWanted) { //redundant ?
-            dfInfos = new HashMap<Long, DataInfoBase>();
+            dfInfos = new TreeMap<Long, DataInfoBase>();
         }
 
         try {

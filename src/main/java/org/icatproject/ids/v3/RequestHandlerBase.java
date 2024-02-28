@@ -6,12 +6,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.icatproject.ids.v3.enums.RequestType;
@@ -47,8 +44,6 @@ public abstract class RequestHandlerBase {
     protected StorageUnit storageUnit;
     protected RequestType requestType;
 
-    protected ExecutorService threadPool;
-
     /**
      * matches standard UUID format of 8-4-4-4-12 hexadecimal digits
      */
@@ -72,7 +67,7 @@ public abstract class RequestHandlerBase {
         return this.requestType;
     }
 
-    public DataSelectionV3Base getDataSelection(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) throws InternalException {
+    public DataSelectionV3Base getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) throws InternalException {
 
         return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, this.getRequestType());
     }
@@ -100,8 +95,6 @@ public abstract class RequestHandlerBase {
 
         var archiveStorage = propertyHandler.getArchiveStorage();
         this.twoLevel = archiveStorage != null;
-
-        this.threadPool = Executors.newCachedThreadPool();
 
         //logger.info("RequestHandlerBase initialized");
     }

@@ -1,11 +1,9 @@
 package org.icatproject.ids.v3;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 
-import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.enums.DeferredOp;
@@ -15,7 +13,7 @@ import org.icatproject.ids.v3.models.DataSetInfo;
 
 public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
 
-    protected DataSelectionForStorageUnitDataset(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos,
+    protected DataSelectionForStorageUnitDataset(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
             Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
 
         super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
@@ -31,8 +29,8 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
     }
 
     @Override
-    public Collection<DataInfoBase> getPrimaryDataInfos() {
-        return this.dsInfos.values();
+    public SortedMap<Long, DataInfoBase> getPrimaryDataInfos() {
+        return this.dsInfos;
     }
 
     @Override
@@ -42,6 +40,12 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
         if(dsInfo == null) throw new InternalException("Could not cast DataInfoBase to DataSetInfo. Did you handed over another sub type?");
         
         return emptyDatasets.contains(dataInfo.getId()) || ServiceProvider.getInstance().getMainStorage().exists(dsInfo);
+    }
+
+
+    @Override
+    public boolean isPrepared(String preparedId) throws InternalException {
+        return this.areDataInfosPrepared(preparedId);
     }
       
 

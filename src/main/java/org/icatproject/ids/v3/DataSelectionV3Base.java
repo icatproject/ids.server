@@ -7,6 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.icatproject.ids.Status;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -16,19 +23,33 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataInfoBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class DataSelectionV3Base {
 
-    protected Map<Long, DataInfoBase> dsInfos;
-    protected Map<Long, DataInfoBase> dfInfos;
+    protected final static Logger logger = LoggerFactory.getLogger(DataSelectionV3Base.class);
+
+    protected SortedMap<Long, DataInfoBase> dsInfos;
+    protected SortedMap<Long, DataInfoBase> dfInfos;
     protected Set<Long> emptyDatasets;
     protected List<Long> invids;
     protected List<Long> dsids;
     protected List<Long> dfids;
     protected RequestType requestType;
     protected HashMap<RequestType, DeferredOp> requestTypeToDeferredOpMapping;
+    protected ExecutorService threadPool;
 
-    protected DataSelectionV3Base(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
+    private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
+
+    class PreparedStatus {
+        public ReentrantLock lock = new ReentrantLock();
+        public Long fromElement;
+        public Future<?> future;
+
+    }
+
+    protected DataSelectionV3Base(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
 
         this.dsInfos = dsInfos;
         this.dfInfos = dfInfos;
@@ -41,16 +62,20 @@ public abstract class DataSelectionV3Base {
         this.requestTypeToDeferredOpMapping = new HashMap<RequestType, DeferredOp>();
         this.requestTypeToDeferredOpMapping.put(RequestType.ARCHIVE, DeferredOp.ARCHIVE);
         this.requestTypeToDeferredOpMapping.put(RequestType.GETDATA, null);
+
+        this.threadPool = Executors.newCachedThreadPool();
     }
 
 
     protected abstract void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException;
 
+    public abstract boolean isPrepared(String preparedId) throws InternalException;
+
     /**
      * To get the DataInfos whom are primary worked on, depending on StorageUnit
      * @return
      */
-    public abstract Collection<DataInfoBase> getPrimaryDataInfos();
+    public abstract SortedMap<Long, DataInfoBase> getPrimaryDataInfos();
 
     protected abstract boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException;
 
@@ -123,7 +148,7 @@ public abstract class DataSelectionV3Base {
 
         Set<DataInfoBase> restoring = serviceProvider.getFsm().getRestoring();
         Set<DataInfoBase> maybeOffline = serviceProvider.getFsm().getMaybeOffline();
-        for (DataInfoBase dataInfo : this.getPrimaryDataInfos()) {
+        for (DataInfoBase dataInfo : this.getPrimaryDataInfos().values()) {
             serviceProvider.getFsm().checkFailure(dataInfo.getId());
             if (restoring.contains(dataInfo)) {
                 status = Status.RESTORING;
@@ -155,7 +180,7 @@ public abstract class DataSelectionV3Base {
     public void checkOnline()throws InternalException, DataNotOnlineException {
 
         boolean maybeOffline = false;
-        for (DataInfoBase dfInfo : this.getPrimaryDataInfos()) {
+        for (DataInfoBase dfInfo : this.getPrimaryDataInfos().values()) {
             if (this.restoreIfOffline(dfInfo)) {
                 maybeOffline = true;
             }
@@ -164,6 +189,62 @@ public abstract class DataSelectionV3Base {
             throw new DataNotOnlineException(
                     "Before getting, putting, etc.  a datafile or dataset, it must be restored, restoration requested automatically");
         }
+    }
+
+    protected boolean areDataInfosPrepared(String preparedId) throws InternalException {
+        boolean prepared = true;
+        var serviceProvider = ServiceProvider.getInstance();
+        PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
+
+        Collection<DataInfoBase> toCheck = status.fromElement == null ? this.getPrimaryDataInfos().values()
+                        : this.getPrimaryDataInfos().tailMap(status.fromElement).values();
+        logger.debug("Will check online status of {} entries", toCheck.size());
+        for (DataInfoBase dataInfo : toCheck) {
+            serviceProvider.getFsm().checkFailure(dataInfo.getId());
+            if (this.restoreIfOffline(dataInfo)) {
+                prepared = false;
+                status.fromElement = dataInfo.getId();
+                toCheck = this.getPrimaryDataInfos().tailMap(status.fromElement).values();
+                logger.debug("Will check in background status of {} entries", toCheck.size());
+                status.future = threadPool.submit(new RunPrepDataInfoCheck(toCheck, this));
+                break;
+            }
+        }
+        if (prepared) {
+            toCheck = status.fromElement == null ? Collections.emptySet()
+                    : this.getPrimaryDataInfos().headMap(status.fromElement).values();
+            logger.debug("Will check finally online status of {} entries", toCheck.size());
+            for (DataInfoBase dataInfo : toCheck) {
+                serviceProvider.getFsm().checkFailure(dataInfo.getId());
+                if (this.restoreIfOffline(dataInfo)) {
+                    prepared = false;
+                }
+            }
+        }
+
+        return prepared;
+    }
+
+
+    private class RunPrepDataInfoCheck implements Callable<Void> {
+
+        private Collection<DataInfoBase> toCheck;
+        private DataSelectionV3Base dataselection;
+
+        public RunPrepDataInfoCheck(Collection<DataInfoBase> toCheck, DataSelectionV3Base dataSelection) {
+            this.toCheck = toCheck;
+            this.dataselection = dataSelection;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            for(DataInfoBase dataInfo : toCheck) {
+                ServiceProvider.getInstance().getFsm().checkFailure(dataInfo.getId());
+                dataselection.restoreIfOffline(dataInfo);
+            }
+            return null;
+        }
+        
     }
 
 }
