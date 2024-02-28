@@ -25,6 +25,8 @@ import org.icatproject.ids.v3.handlers.GetServiceStatusHandler;
 import org.icatproject.ids.v3.handlers.GetSizeHandler;
 import org.icatproject.ids.v3.handlers.GetStatusHandler;
 import org.icatproject.ids.v3.handlers.IsPreparedHandler;
+import org.icatproject.ids.v3.handlers.IsReadOnlyHandler;
+import org.icatproject.ids.v3.handlers.IsTwoLevelHandler;
 import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +61,8 @@ public class RequestHandlerService {
         this.registerHandler(new GetSizeHandler());
         this.registerHandler(new GetStatusHandler());
         this.registerHandler(new IsPreparedHandler());
+        this.registerHandler(new IsReadOnlyHandler());
+        this.registerHandler(new IsTwoLevelHandler());
     }
 
 

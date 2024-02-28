@@ -446,14 +446,24 @@ public class IdsService {
      * readOnly status of the server.
      *
      * @return true if readonly, else false
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @summary isReadOnly
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isReadOnly")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isReadOnly(@Context HttpServletRequest request) {
-        return idsBean.isReadOnly(request.getRemoteAddr());
+    public boolean isReadOnly(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.ISREADONLY, parameters).getBool();
     }
 
     /**
@@ -461,14 +471,24 @@ public class IdsService {
      * storage. This returns the twoLevel status of the server.
      *
      * @return true if twoLevel, else false
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @summary isTwoLevel
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isTwoLevel")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isTwoLevel(@Context HttpServletRequest request) {
-        return idsBean.isTwoLevel(request.getRemoteAddr());
+    public boolean isTwoLevel(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.ISTWOLEVEL, parameters).getBool();
     }
 
     /**

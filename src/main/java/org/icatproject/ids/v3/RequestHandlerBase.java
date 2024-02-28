@@ -43,6 +43,7 @@ public abstract class RequestHandlerBase {
     protected boolean twoLevel;
     protected StorageUnit storageUnit;
     protected RequestType requestType;
+    protected boolean readOnly;
 
     /**
      * matches standard UUID format of 8-4-4-4-12 hexadecimal digits
@@ -95,6 +96,8 @@ public abstract class RequestHandlerBase {
 
         var archiveStorage = propertyHandler.getArchiveStorage();
         this.twoLevel = archiveStorage != null;
+
+        this.readOnly = propertyHandler.getReadOnly();
 
         //logger.info("RequestHandlerBase initialized");
     }
