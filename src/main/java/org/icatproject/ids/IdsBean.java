@@ -70,9 +70,12 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.v3.DataSelectionFactory;
+import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.ids.v3.enums.DeferredOp;
+import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
@@ -123,16 +126,16 @@ public class IdsBean {
 
     public class RestoreDfTask implements Callable<Void> {
 
-        private Set<DataFileInfo> dfInfos;
+        private Collection<DataInfoBase> dfInfos;
 
-        public RestoreDfTask(Set<DataFileInfo> dfInfos) {
+        public RestoreDfTask(Collection<DataInfoBase> dfInfos) {
             this.dfInfos = dfInfos;
         }
 
         @Override
         public Void call() throws Exception {
-            for (DataFileInfo dfInfo : dfInfos) {
-                DataSelection.restoreIfOffline(dfInfo);
+            for (DataInfoBase dfInfo : dfInfos) {
+                DataSelection.restoreIfOffline((DataFileInfo)dfInfo);
             }
             return null;
         }
@@ -140,18 +143,18 @@ public class IdsBean {
     }
 
     public class RestoreDsTask implements Callable<Void> {
-        private Collection<DataSetInfo> dsInfos;
+        private Collection<DataInfoBase> dsInfos;
         private Set<Long> emptyDs;
 
-        public RestoreDsTask(Collection<DataSetInfo> dsInfos, Set<Long> emptyDs) {
+        public RestoreDsTask(Collection<DataInfoBase> dsInfos, Set<Long> emptyDs) {
             this.dsInfos = dsInfos;
             this.emptyDs = emptyDs;
         }
 
         @Override
         public Void call() throws Exception {
-            for (DataSetInfo dsInfo : dsInfos) {
-                DataSelection.restoreIfOffline(dsInfo, emptyDs);
+            for (DataInfoBase dsInfo : dsInfos) {
+                DataSelection.restoreIfOffline((DataSetInfo)dsInfo, emptyDs);
             }
             return null;
         }
@@ -246,15 +249,16 @@ public class IdsBean {
         }
     }
 
-    static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataSetInfo> dsInfos,
-                     Set<DataFileInfo> dfInfos, Set<Long> emptyDatasets) {
+    static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataInfoBase> dsInfos,
+                        Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) {
         JsonGenerator gen = Json.createGenerator(stream);
         gen.writeStartObject();
         gen.write("zip", zip);
         gen.write("compress", compress);
 
         gen.writeStartArray("dsInfo");
-        for (DataSetInfo dsInfo : dsInfos.values()) {
+        for (DataInfoBase dataInfo : dsInfos.values()) {
+            var dsInfo = (DataSetInfo)dataInfo;
             logger.debug("dsInfo " + dsInfo);
             gen.writeStartObject().write("dsId", dsInfo.getId())
 
@@ -271,8 +275,9 @@ public class IdsBean {
         gen.writeEnd();
 
         gen.writeStartArray("dfInfo");
-        for (DataFileInfo dfInfo : dfInfos) {
-            DataSetInfo dsInfo = dsInfos.get(dfInfo.getDsId());
+        for (DataInfoBase dataInfo : dfInfos.values()) {
+            var dfInfo = (DataFileInfo)dataInfo;
+            DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId());
             gen.writeStartObject().write("dsId", dsInfo.getId()).write("dfId", dfInfo.getId())
                     .write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
                     .write("modId", dfInfo.getModId());
@@ -716,7 +721,7 @@ public class IdsBean {
 
     public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
                               boolean compress, boolean zip, String ip)
-            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException {
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, NotImplementedException {
 
         long start = System.currentTimeMillis();
 
@@ -727,27 +732,27 @@ public class IdsBean {
 
         validateUUID("sessionId", sessionId);
 
-        final DataSelection dataSelection = new DataSelection(propertyHandler, reader, sessionId,
-                investigationIds, datasetIds, datafileIds, Returns.DATASETS_AND_DATAFILES);
+        final DataSelectionV3Base dataSelection = DataSelectionFactory.get(sessionId,
+                investigationIds, datasetIds, datafileIds, RequestType.PREPAREDATA);
 
         // Do it
         String preparedId = UUID.randomUUID().toString();
 
-        Map<Long, DataSetInfo> dsInfos = dataSelection.getDsInfo();
+        Map<Long, DataInfoBase> dsInfos = dataSelection.getDsInfo();
         Set<Long> emptyDs = dataSelection.getEmptyDatasets();
-        Set<DataFileInfo> dfInfos = dataSelection.getDfInfo();
+        Map<Long, DataInfoBase> dfInfos = dataSelection.getDfInfo();
 
         if (storageUnit == StorageUnit.DATASET) {
-            for (DataSetInfo dsInfo : dsInfos.values()) {
+            for (DataInfoBase dsInfo : dsInfos.values()) {
                 fsm.recordSuccess(dsInfo.getId());
             }
             threadPool.submit(new RestoreDsTask(dsInfos.values(), emptyDs));
 
         } else if (storageUnit == StorageUnit.DATAFILE) {
-            for (DataFileInfo dfInfo : dfInfos) {
+            for (DataInfoBase dfInfo : dfInfos.values()) {
                 fsm.recordSuccess(dfInfo.getId());
             }
-            threadPool.submit(new RestoreDfTask(dfInfos));
+            threadPool.submit(new RestoreDfTask(dfInfos.values()));
         }
 
         if (dataSelection.mustZip()) {

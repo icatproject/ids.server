@@ -529,6 +529,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotFoundException
      * @throws InternalException
+     * @throws NotImplementedException 
      * @summary prepareData
      * @statuscode 200 To indicate success
      */
@@ -540,7 +541,7 @@ public class IdsService {
                               @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                               @FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
                               @FormParam("zip") boolean zip)
-            throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException {
+            throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException {
         return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip,
                 request.getRemoteAddr());
     }

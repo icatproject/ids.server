@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.icatproject.ids.v3.models.DataFileInfo;
+import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 import org.junit.Test;
 
@@ -27,17 +28,17 @@ public class PreparePackingTest {
     public void packAndUnpack() throws Exception {
         boolean zip = true;
         boolean compress = false;
-        Map<Long, DataSetInfo> dsInfos = new HashMap<>();
-        Set<DataFileInfo> dfInfos = new HashSet<>();
+        Map<Long, DataInfoBase> dsInfos = new HashMap<>();
+        Map<Long, DataInfoBase> dfInfos = new HashMap<>();
         Set<Long> emptyDatasets = new HashSet<>();
 
         long dsid1 = 17L;
         long dsid2 = 18L;
         long invId = 15L;
         long facilityId = 45L;
-        dfInfos.add(new DataFileInfo(5L, "dfName", "dfLocation", "createId", "modId", dsid1));
+        dfInfos.put(5L, new DataFileInfo(5L, "dfName", "dfLocation", "createId", "modId", dsid1));
 
-        dfInfos.add(new DataFileInfo(51L, "dfName2", null, "createId", "modId", dsid1));
+        dfInfos.put(51L, new DataFileInfo(51L, "dfName2", null, "createId", "modId", dsid1));
 
         dsInfos.put(dsid1, new DataSetInfo(dsid1, "dsName", "dsLocation", invId, "invName",
                 "visitId", facilityId, "facilityName"));
