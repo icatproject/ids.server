@@ -15,7 +15,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.icatproject.ids.IdsBean.RestoreDataInfoTask;
 import org.icatproject.ids.Status;
+import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
@@ -38,7 +40,7 @@ public abstract class DataSelectionV3Base {
     protected List<Long> dfids;
     protected RequestType requestType;
     protected HashMap<RequestType, DeferredOp> requestTypeToDeferredOpMapping;
-    protected ExecutorService threadPool;
+    public ExecutorService threadPool;
 
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 
@@ -191,6 +193,18 @@ public abstract class DataSelectionV3Base {
         }
     }
 
+
+    public void restoreDataInfos() {
+
+        var dataInfos = this.getPrimaryDataInfos().values();
+        if(!dataInfos.isEmpty()) {
+            for (DataInfoBase dataInfo : dataInfos) {
+                ServiceProvider.getInstance().getFsm().recordSuccess(dataInfo.getId());
+            }
+            this.threadPool.submit(new RestoreDataInfoTask(dataInfos, this));
+        }
+    }
+
     protected boolean areDataInfosPrepared(String preparedId) throws InternalException {
         boolean prepared = true;
         var serviceProvider = ServiceProvider.getInstance();
@@ -245,6 +259,25 @@ public abstract class DataSelectionV3Base {
             return null;
         }
         
+    }
+
+    public class RestoreDataInfoTask implements Callable<Void> {
+        private Collection<DataInfoBase> dataInfos;
+        private DataSelectionV3Base dataSelection;
+
+        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionV3Base dataSelection) {
+            this.dataInfos = dataInfos;
+            this.dataSelection = dataSelection;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            for (DataInfoBase dfInfo : dataInfos) {
+                dataSelection.restoreIfOffline(dfInfo);
+            }
+            return null;
+        }
+
     }
 
 }

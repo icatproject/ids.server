@@ -72,6 +72,7 @@ import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.v3.DataSelectionFactory;
 import org.icatproject.ids.v3.DataSelectionV3Base;
+import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.ids.v3.enums.DeferredOp;
@@ -79,6 +80,7 @@ import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
+import org.icatproject.ids.v3.models.ValueContainer;
 import org.icatproject.utils.IcatSecurity;
 
 @Stateless
@@ -124,40 +126,23 @@ public class IdsBean {
 
     }
 
-    public class RestoreDfTask implements Callable<Void> {
+    public class RestoreDataInfoTask implements Callable<Void> {
+        private Collection<DataInfoBase> dataInfos;
+        private DataSelectionV3Base dataSelection;
 
-        private Collection<DataInfoBase> dfInfos;
-
-        public RestoreDfTask(Collection<DataInfoBase> dfInfos) {
-            this.dfInfos = dfInfos;
+        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionV3Base dataSelection) {
+            this.dataInfos = dataInfos;
+            this.dataSelection = dataSelection;
         }
 
         @Override
         public Void call() throws Exception {
-            for (DataInfoBase dfInfo : dfInfos) {
-                DataSelection.restoreIfOffline((DataFileInfo)dfInfo);
+            for (DataInfoBase dfInfo : dataInfos) {
+                dataSelection.restoreIfOffline(dfInfo);
             }
             return null;
         }
 
-    }
-
-    public class RestoreDsTask implements Callable<Void> {
-        private Collection<DataInfoBase> dsInfos;
-        private Set<Long> emptyDs;
-
-        public RestoreDsTask(Collection<DataInfoBase> dsInfos, Set<Long> emptyDs) {
-            this.dsInfos = dsInfos;
-            this.emptyDs = emptyDs;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            for (DataInfoBase dsInfo : dsInfos) {
-                DataSelection.restoreIfOffline((DataSetInfo)dsInfo, emptyDs);
-            }
-            return null;
-        }
     }
 
     private static Boolean inited = false;
@@ -719,11 +704,19 @@ public class IdsBean {
         return twoLevel;
     }
 
-    public String prepareData(String sessionId, String investigationIds, String datasetIds, String datafileIds,
-                              boolean compress, boolean zip, String ip)
+    public String prepareData(HashMap<String, ValueContainer> parameters)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, NotImplementedException {
 
         long start = System.currentTimeMillis();
+        var serviceProvider = ServiceProvider.getInstance();
+
+        String sessionId = parameters.get("sessionId").getString();
+        String investigationIds = parameters.get("investigationIds").getString();
+        String datasetIds = parameters.get("datasetIds").getString();
+        String datafileIds = parameters.get("datafileIds").getString();
+        boolean compress = parameters.get("compress").getBool();
+        boolean zip = parameters.get("zip").getBool();
+        String ip = parameters.get("ip").getString();
 
         // Log and validate
         logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
@@ -742,18 +735,22 @@ public class IdsBean {
         Set<Long> emptyDs = dataSelection.getEmptyDatasets();
         Map<Long, DataInfoBase> dfInfos = dataSelection.getDfInfo();
 
-        if (storageUnit == StorageUnit.DATASET) {
-            for (DataInfoBase dsInfo : dsInfos.values()) {
-                fsm.recordSuccess(dsInfo.getId());
-            }
-            threadPool.submit(new RestoreDsTask(dsInfos.values(), emptyDs));
+        dataSelection.restoreDataInfos();
 
-        } else if (storageUnit == StorageUnit.DATAFILE) {
-            for (DataInfoBase dfInfo : dfInfos.values()) {
-                fsm.recordSuccess(dfInfo.getId());
-            }
-            threadPool.submit(new RestoreDfTask(dfInfos.values()));
-        }
+        // if (storageUnit == StorageUnit.DATASET) {
+        //     logger.info("#### prepareData: 2" );
+        //     for (DataInfoBase dsInfo : dataInfos) {
+        //         serviceProvider.getFsm().recordSuccess(dsInfo.getId());
+        //     }
+        //     dataSelection.threadPool.submit(new RestoreDataInfoTask(dsInfos.values(), dataSelection));
+
+        // } else if (storageUnit == StorageUnit.DATAFILE) {
+        //     logger.info("#### prepareData: 3" );
+        //     for (DataInfoBase dfInfo : dataInfos) {
+        //         serviceProvider.getFsm().recordSuccess(dfInfo.getId());
+        //     }
+        //     dataSelection.threadPool.submit(new RestoreDataInfoTask(dfInfos.values(), dataSelection));
+        // }
 
         if (dataSelection.mustZip()) {
             zip = true;
@@ -768,17 +765,17 @@ public class IdsBean {
 
         logger.debug("preparedId is " + preparedId);
 
-        if (logSet.contains(CallType.PREPARE)) {
+        if (serviceProvider.getLogSet().contains(CallType.PREPARE)) {
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                    gen.write("userName", icat.getUserName(sessionId));
+                    gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
                     addIds(gen, investigationIds, datasetIds, datafileIds);
                     gen.write("preparedId", preparedId);
                     gen.writeEnd();
                 }
                 String body = baos.toString();
-                transmitter.processMessage("prepareData", ip, body, start);
+                serviceProvider.getTransmitter().processMessage("prepareData", ip, body, start);
             } catch (IcatException_Exception e) {
                 logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
             }

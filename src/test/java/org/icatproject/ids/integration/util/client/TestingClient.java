@@ -101,6 +101,20 @@ public class TestingClient {
             failures.add(id);
         }
 
+        @Override
+        public String toString() {
+            String result = "lockCount: " + this.lockCount + ", ";
+            result += "lockedIDs: " + lockedDs.size() + "\n";
+            for(long lockedId : lockedDs) result += "\t" + lockedId + "\n";
+            result += "opItems: " + opItems.size() + "\n";
+            for(String key : opItems.keySet()) result += "\t" + key + ": " + opItems.get(key) + "\n";
+            result += "failures: " + failures.size() + "\n";
+            for(long fail : failures) result += " " + fail;
+            result += "\n";
+
+            return result;
+        }
+
     }
 
     public enum Status {

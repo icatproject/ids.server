@@ -542,8 +542,18 @@ public class IdsService {
                               @FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
                               @FormParam("zip") boolean zip)
             throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException {
-        return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip,
-                request.getRemoteAddr());
+
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("investigationIds", new ValueContainer(investigationIds));
+        parameters.put("datasetIds", new ValueContainer(datasetIds));
+        parameters.put("datafileIds", new ValueContainer(datafileIds));
+        parameters.put("compress", new ValueContainer(compress));
+        parameters.put("zip", new ValueContainer(zip));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return idsBean.prepareData(parameters);
     }
 
     /**
