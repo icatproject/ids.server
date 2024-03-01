@@ -1,11 +1,13 @@
 package org.icatproject.ids.v3;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -108,6 +110,58 @@ public abstract class RequestHandlerBase {
     protected static void validateUUID(String thing, String id) throws BadRequestException {
         if (id == null || !uuidRegExp.matcher(id).matches())
             throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
+    }
+
+    protected static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataInfoBase> dsInfos,
+                        Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) {
+        JsonGenerator gen = Json.createGenerator(stream);
+        gen.writeStartObject();
+        gen.write("zip", zip);
+        gen.write("compress", compress);
+
+        gen.writeStartArray("dsInfo");
+        for (DataInfoBase dataInfo : dsInfos.values()) {
+            var dsInfo = (DataSetInfo)dataInfo;
+            logger.debug("dsInfo " + dsInfo);
+            gen.writeStartObject().write("dsId", dsInfo.getId())
+
+                    .write("dsName", dsInfo.getDsName()).write("facilityId", dsInfo.getFacilityId())
+                    .write("facilityName", dsInfo.getFacilityName()).write("invId", dsInfo.getInvId())
+                    .write("invName", dsInfo.getInvName()).write("visitId", dsInfo.getVisitId());
+            if (dsInfo.getDsLocation() != null) {
+                gen.write("dsLocation", dsInfo.getDsLocation());
+            } else {
+                gen.writeNull("dsLocation");
+            }
+            gen.writeEnd();
+        }
+        gen.writeEnd();
+
+        gen.writeStartArray("dfInfo");
+        for (DataInfoBase dataInfo : dfInfos.values()) {
+            var dfInfo = (DataFileInfo)dataInfo;
+            DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId());
+            gen.writeStartObject().write("dsId", dsInfo.getId()).write("dfId", dfInfo.getId())
+                    .write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
+                    .write("modId", dfInfo.getModId());
+            if (dfInfo.getDfLocation() != null) {
+                gen.write("dfLocation", dfInfo.getDfLocation());
+            } else {
+                gen.writeNull("dfLocation");
+            }
+            gen.writeEnd();
+
+        }
+        gen.writeEnd();
+
+        gen.writeStartArray("emptyDs");
+        for (Long emptyDs : emptyDatasets) {
+            gen.write(emptyDs);
+        }
+        gen.writeEnd();
+
+        gen.writeEnd().close();
+
     }
 
     protected static PreparedV3 unpack(InputStream stream) throws InternalException {

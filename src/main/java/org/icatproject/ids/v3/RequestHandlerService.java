@@ -27,6 +27,7 @@ import org.icatproject.ids.v3.handlers.GetStatusHandler;
 import org.icatproject.ids.v3.handlers.IsPreparedHandler;
 import org.icatproject.ids.v3.handlers.IsReadOnlyHandler;
 import org.icatproject.ids.v3.handlers.IsTwoLevelHandler;
+import org.icatproject.ids.v3.handlers.PrepareDataHandler;
 import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,7 @@ public class RequestHandlerService {
         this.registerHandler(new IsPreparedHandler());
         this.registerHandler(new IsReadOnlyHandler());
         this.registerHandler(new IsTwoLevelHandler());
+        this.registerHandler(new PrepareDataHandler());
     }
 
 
@@ -76,8 +78,9 @@ public class RequestHandlerService {
 
     public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        if(this.handlers.containsKey(requestType))
+        if(this.handlers.containsKey(requestType)) {
             return this.handlers.get(requestType).handle(parameters);
+        }
         else
             throw new InternalException("No handler found for RequestType " + requestType + " and StorageUnit " + this.propertyHandler.getStorageUnit() + " in RequestHandlerService. Do you forgot to register?");
     }

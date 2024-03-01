@@ -72,6 +72,7 @@ import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.v3.DataSelectionFactory;
 import org.icatproject.ids.v3.DataSelectionV3Base;
+import org.icatproject.ids.v3.RequestHandlerService;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.CallType;
@@ -704,84 +705,10 @@ public class IdsBean {
         return twoLevel;
     }
 
-    public String prepareData(HashMap<String, ValueContainer> parameters)
-            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, NotImplementedException {
+    public String prepareData(HashMap<String, ValueContainer> parameters, RequestHandlerService requestService)
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, NotImplementedException, DataNotOnlineException {
 
-        long start = System.currentTimeMillis();
-        var serviceProvider = ServiceProvider.getInstance();
-
-        String sessionId = parameters.get("sessionId").getString();
-        String investigationIds = parameters.get("investigationIds").getString();
-        String datasetIds = parameters.get("datasetIds").getString();
-        String datafileIds = parameters.get("datafileIds").getString();
-        boolean compress = parameters.get("compress").getBool();
-        boolean zip = parameters.get("zip").getBool();
-        String ip = parameters.get("ip").getString();
-
-        // Log and validate
-        logger.info("New webservice request: prepareData " + "investigationIds='" + investigationIds + "' "
-                + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "' " + "compress='" + compress
-                + "' " + "zip='" + zip + "'");
-
-        validateUUID("sessionId", sessionId);
-
-        final DataSelectionV3Base dataSelection = DataSelectionFactory.get(sessionId,
-                investigationIds, datasetIds, datafileIds, RequestType.PREPAREDATA);
-
-        // Do it
-        String preparedId = UUID.randomUUID().toString();
-
-        Map<Long, DataInfoBase> dsInfos = dataSelection.getDsInfo();
-        Set<Long> emptyDs = dataSelection.getEmptyDatasets();
-        Map<Long, DataInfoBase> dfInfos = dataSelection.getDfInfo();
-
-        dataSelection.restoreDataInfos();
-
-        // if (storageUnit == StorageUnit.DATASET) {
-        //     logger.info("#### prepareData: 2" );
-        //     for (DataInfoBase dsInfo : dataInfos) {
-        //         serviceProvider.getFsm().recordSuccess(dsInfo.getId());
-        //     }
-        //     dataSelection.threadPool.submit(new RestoreDataInfoTask(dsInfos.values(), dataSelection));
-
-        // } else if (storageUnit == StorageUnit.DATAFILE) {
-        //     logger.info("#### prepareData: 3" );
-        //     for (DataInfoBase dfInfo : dataInfos) {
-        //         serviceProvider.getFsm().recordSuccess(dfInfo.getId());
-        //     }
-        //     dataSelection.threadPool.submit(new RestoreDataInfoTask(dfInfos.values(), dataSelection));
-        // }
-
-        if (dataSelection.mustZip()) {
-            zip = true;
-        }
-
-        logger.debug("Writing to " + preparedDir.resolve(preparedId));
-        try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(preparedDir.resolve(preparedId)))) {
-            pack(stream, zip, compress, dsInfos, dfInfos, emptyDs);
-        } catch (IOException e) {
-            throw new InternalException(e.getClass() + " " + e.getMessage());
-        }
-
-        logger.debug("preparedId is " + preparedId);
-
-        if (serviceProvider.getLogSet().contains(CallType.PREPARE)) {
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                    gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
-                    addIds(gen, investigationIds, datasetIds, datafileIds);
-                    gen.write("preparedId", preparedId);
-                    gen.writeEnd();
-                }
-                String body = baos.toString();
-                serviceProvider.getTransmitter().processMessage("prepareData", ip, body, start);
-            } catch (IcatException_Exception e) {
-                logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-            }
-        }
-
-        return preparedId;
+        return requestService.handle(RequestType.PREPAREDATA, parameters).getString();
     }
 
     public Response put(InputStream body, String sessionId, String name, String datafileFormatIdString,
