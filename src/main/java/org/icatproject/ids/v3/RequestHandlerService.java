@@ -4,10 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.LockManager;
 import org.icatproject.ids.PropertyHandler;
-import org.icatproject.ids.Transmitter;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -15,7 +12,6 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.handlers.ArchiveHandler;
 import org.icatproject.ids.v3.handlers.GetDataFileIdsHandler;
@@ -32,7 +28,10 @@ import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//TODO: rename to RequestHandlerService
+import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless;
+
+@Stateless
 public class RequestHandlerService {
 
     private HashMap<RequestType, RequestHandlerBase> handlers;
@@ -46,26 +45,6 @@ public class RequestHandlerService {
     private Path datasetDir;
     private Path markerDir;
     private UnfinishedWorkServiceBase unfinishedWorkService;
-
-
-    public RequestHandlerService() {
-
-        this.propertyHandler = PropertyHandler.getInstance();
-        this.unfinishedWorkService = new UnfinishedWorkServiceBase();
-
-        this.handlers = new HashMap<RequestType, RequestHandlerBase>();
-        this.registerHandler(new GetDataHandler()); 
-        this.registerHandler(new ArchiveHandler()); 
-        this.registerHandler(new GetIcatUrlHandler());
-        this.registerHandler(new GetDataFileIdsHandler());  
-        this.registerHandler(new GetServiceStatusHandler());
-        this.registerHandler(new GetSizeHandler());
-        this.registerHandler(new GetStatusHandler());
-        this.registerHandler(new IsPreparedHandler());
-        this.registerHandler(new IsReadOnlyHandler());
-        this.registerHandler(new IsTwoLevelHandler());
-        this.registerHandler(new PrepareDataHandler());
-    }
 
 
     private void registerHandler(RequestHandlerBase requestHandler) {
@@ -85,12 +64,11 @@ public class RequestHandlerService {
             throw new InternalException("No handler found for RequestType " + requestType + " and StorageUnit " + this.propertyHandler.getStorageUnit() + " in RequestHandlerService. Do you forgot to register?");
     }
     
-
-    public void init(Transmitter transmitter, LockManager lockManager , FiniteStateMachine fsm, IcatReader reader) {
+    @PostConstruct
+    private void init() {
         try {
             synchronized (inited) {
                 logger.info("creating RequestHandlerService");
-                ServiceProvider.createInstance(transmitter, fsm, lockManager, reader);
                 propertyHandler = ServiceProvider.getInstance().getPropertyHandler();
                 // zipMapper = propertyHandler.getZipMapper();
                 // mainStorage = propertyHandler.getMainStorage();
@@ -98,7 +76,9 @@ public class RequestHandlerService {
                 twoLevel = archiveStorage != null;
                 // datatypeFactory = DatatypeFactory.newInstance();
                 preparedDir = propertyHandler.getCacheDir().resolve("prepared");
-                Files.createDirectories(preparedDir);
+
+                // TODO: As long as IdsBean exists this is done there, but then, this has to be done here
+                // Files.createDirectories(preparedDir);
 
                 // rootUserNames = propertyHandler.getRootUserNames();
                 // readOnly = propertyHandler.getReadOnly();
@@ -111,22 +91,26 @@ public class RequestHandlerService {
                     logger.info("Key is " + (key == null ? "not set" : "set"));
                 }
 
+                this.unfinishedWorkService = new UnfinishedWorkServiceBase();
+
                 if (twoLevel) {
                     // storageUnit = propertyHandler.getStorageUnit();
                     datasetDir = propertyHandler.getCacheDir().resolve("dataset");
                     markerDir = propertyHandler.getCacheDir().resolve("marker");
                     if (!inited) {
-                        Files.createDirectories(datasetDir);
-                        Files.createDirectories(markerDir);
-                        this.unfinishedWorkService.restartUnfinishedWork(markerDir, key);
+                        // TODO: As long as IdsBean exists this is done there, but then, this has to be done here
+                        // Files.createDirectories(datasetDir);
+                        // Files.createDirectories(markerDir);
+                        // this.unfinishedWorkService.restartUnfinishedWork(markerDir, key);
                     }
                 }
 
                 if (!inited) {
-                    UnfinishedWorkServiceBase.cleanPreparedDir(preparedDir);
-                    if (twoLevel) {
-                        UnfinishedWorkServiceBase.cleanDatasetCache(datasetDir);
-                    }
+                    // TODO: As long as IdsBean exists this is done there, but then, this has to be done here
+                    // UnfinishedWorkServiceBase.cleanPreparedDir(preparedDir);
+                    // if (twoLevel) {
+                    //     UnfinishedWorkServiceBase.cleanDatasetCache(datasetDir);
+                    // }
                 }
 
                 // maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
@@ -134,6 +118,21 @@ public class RequestHandlerService {
                 // threadPool = Executors.newCachedThreadPool();
 
                 // logSet = propertyHandler.getLogSet();
+
+                this.propertyHandler = PropertyHandler.getInstance();
+
+                this.handlers = new HashMap<RequestType, RequestHandlerBase>();
+                this.registerHandler(new GetDataHandler()); 
+                this.registerHandler(new ArchiveHandler()); 
+                this.registerHandler(new GetIcatUrlHandler());
+                this.registerHandler(new GetDataFileIdsHandler());  
+                this.registerHandler(new GetServiceStatusHandler());
+                this.registerHandler(new GetSizeHandler());
+                this.registerHandler(new GetStatusHandler());
+                this.registerHandler(new IsPreparedHandler());
+                this.registerHandler(new IsReadOnlyHandler());
+                this.registerHandler(new IsTwoLevelHandler());
+                this.registerHandler(new PrepareDataHandler());
 
                 logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
                 for(RequestHandlerBase handler : this.handlers.values()) {

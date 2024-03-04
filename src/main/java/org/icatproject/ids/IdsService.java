@@ -39,6 +39,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.RequestHandlerService;
+import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.ValueContainer;
@@ -61,9 +62,10 @@ public class IdsService {
     @EJB
     private IcatReader reader;
 
-    private FiniteStateMachine fsm = null;
+    @EJB
+    private RequestHandlerService requestService;
 
-    private RequestHandlerService requestService = null;
+    private FiniteStateMachine fsm = null;
 
     /**
      * Archive data specified by the investigationIds, datasetIds and
@@ -399,9 +401,7 @@ public class IdsService {
         FiniteStateMachine.createInstance(reader, lockManager, PropertyHandler.getInstance().getStorageUnit());
         this.fsm = FiniteStateMachine.getInstance();
         this.fsm.init();
-
-        this.requestService = new RequestHandlerService();
-        this.requestService.init(this.transmitter, this.lockManager, this.fsm, this.reader);
+        ServiceProvider.createInstance(transmitter, fsm, lockManager, reader);
 
         logger.info("created IdsService");
     }

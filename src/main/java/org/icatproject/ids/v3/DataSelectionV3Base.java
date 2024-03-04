@@ -15,9 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.icatproject.ids.IdsBean.RestoreDataInfoTask;
 import org.icatproject.ids.Status;
-import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
