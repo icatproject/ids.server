@@ -70,7 +70,7 @@ public class DataSelectionFactory {
 
 
     
-    protected static DataSelectionV3Base get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
+    public static DataSelectionV3Base get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
         List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
         var dataFileInfos = new HashMap<Long, DataInfoBase>();
@@ -363,7 +363,7 @@ public class DataSelectionFactory {
         this.requestTypeToReturnsMapping.put(RequestType.GETDATAFILEIDS, Returns.DATAFILES);
         this.requestTypeToReturnsMapping.put(RequestType.GETSIZE, Returns.DATASETS_AND_DATAFILES);
         this.requestTypeToReturnsMapping.put(RequestType.PREPAREDATA, Returns.DATASETS_AND_DATAFILES);
-        //this.requestTypeToReturnsMapping.put(RequestType.RESET, Returns.DATASETS_AND_DATAFILES);
+        this.requestTypeToReturnsMapping.put(RequestType.RESET, Returns.DATASETS_AND_DATAFILES);
         //this.requestTypeToReturnsMapping.put(RequestType.WRITE, Returns.DATASETS_AND_DATAFILES);
         this.requestTypeToReturnsMapping.put(RequestType.GETDATA, Returns.DATASETS_AND_DATAFILES);
 

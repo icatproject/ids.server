@@ -15,5 +15,6 @@ public enum RequestType {
     ISREADONLY, 
     ISTWOLEVEL, 
     PREPAREDATA, 
-    PUT
+    PUT,
+    RESET
 }

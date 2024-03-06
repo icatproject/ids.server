@@ -72,7 +72,7 @@ public abstract class DataSelectionV3Base {
     public abstract boolean isPrepared(String preparedId) throws InternalException;
 
     /**
-     * To get the DataInfos whom are primary worked on, depending on StorageUnit
+     * To get the DataInfos that is currently worked with, depending on StorageUnit
      * @return
      */
     public abstract SortedMap<Long, DataInfoBase> getPrimaryDataInfos();
