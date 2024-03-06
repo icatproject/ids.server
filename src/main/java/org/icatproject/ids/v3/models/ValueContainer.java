@@ -1,6 +1,9 @@
 package org.icatproject.ids.v3.models;
 
 import org.icatproject.ids.v3.enums.ValueContainerType;
+
+import java.io.InputStream;
+
 import org.icatproject.ids.exceptions.InternalException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -90,7 +93,15 @@ public class ValueContainer {
      */
     public ValueContainer(Response value) {
         this(value, ValueContainerType.RESPONSE);
-    }    
+    } 
+    
+    /**
+     * Creates a ValueContainer of type InputStream
+     * @param value the value contained by the container
+     */
+    public ValueContainer(InputStream value) {
+        this(value, ValueContainerType.INPUTSTREAM);
+    }
 
     /**
      * Informs about the type of the contained value
@@ -158,6 +169,16 @@ public class ValueContainer {
     public Response getResponse() throws InternalException {
         this.checkType(ValueContainerType.RESPONSE);
         return (Response) this.value;
+    }
+
+    /**
+     * Tries to return the value of the type InputStream.
+     * @return
+     * @throws InternalException if the container has another type an exception will be thrown
+     */
+    public InputStream getInputStream() throws InternalException {
+        this.checkType(ValueContainerType.INPUTSTREAM);
+        return (InputStream) this.value;
     }
 
     

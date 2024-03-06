@@ -23,6 +23,7 @@ import org.icatproject.ids.v3.handlers.IsPreparedHandler;
 import org.icatproject.ids.v3.handlers.IsReadOnlyHandler;
 import org.icatproject.ids.v3.handlers.IsTwoLevelHandler;
 import org.icatproject.ids.v3.handlers.PrepareDataHandler;
+import org.icatproject.ids.v3.handlers.PutHandler;
 import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,6 +133,7 @@ public class RequestHandlerService {
                 this.registerHandler(new IsReadOnlyHandler());
                 this.registerHandler(new IsTwoLevelHandler());
                 this.registerHandler(new PrepareDataHandler());
+                this.registerHandler(new PutHandler());
 
                 logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
                 for(RequestHandlerBase handler : this.handlers.values()) {

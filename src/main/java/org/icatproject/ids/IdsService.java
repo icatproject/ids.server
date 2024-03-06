@@ -591,8 +591,22 @@ public class IdsService {
                         @QueryParam("datafileCreateTime") String datafileCreateTime,
                         @QueryParam("datafileModTime") String datafileModTime) throws BadRequestException, NotFoundException,
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
-        return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description, doi, datafileCreateTime,
-                datafileModTime, false, false, request.getRemoteAddr());
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("body", new ValueContainer(body));
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("name", new ValueContainer(name));
+        parameters.put("datafileFormatId", new ValueContainer(datafileFormatId));
+        parameters.put("datasetId", new ValueContainer(datasetId));
+        parameters.put("description", new ValueContainer(description));
+        parameters.put("doi", new ValueContainer(doi));
+        parameters.put("datafileCreateTime", new ValueContainer(datafileCreateTime));
+        parameters.put("datafileModTime", new ValueContainer(datafileModTime));
+        parameters.put("wrap", new ValueContainer(false));
+        parameters.put("padding", new ValueContainer(false));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.PUT, parameters).getResponse();
     }
 
     /**
