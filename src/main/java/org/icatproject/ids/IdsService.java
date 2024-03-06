@@ -680,8 +680,22 @@ public class IdsService {
                     if (name == null) {
                         name = part.getSubmittedFileName();
                     }
-                    result = idsBean.put(stream, sessionId, name, datafileFormatId, datasetId, description, doi,
-                            datafileCreateTime, datafileModTime, wrap, padding, request.getRemoteAddr());
+
+                    var parameters = new HashMap<String, ValueContainer>();
+                    parameters.put("body", new ValueContainer(stream));
+                    parameters.put("sessionId", new ValueContainer(sessionId));
+                    parameters.put("name", new ValueContainer(name));
+                    parameters.put("datafileFormatId", new ValueContainer(datafileFormatId));
+                    parameters.put("datasetId", new ValueContainer(datasetId));
+                    parameters.put("description", new ValueContainer(description));
+                    parameters.put("doi", new ValueContainer(doi));
+                    parameters.put("datafileCreateTime", new ValueContainer(datafileCreateTime));
+                    parameters.put("datafileModTime", new ValueContainer(datafileModTime));
+                    parameters.put("wrap", new ValueContainer(wrap));
+                    parameters.put("padding", new ValueContainer(padding));
+                    parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+                    result = this.requestService.handle(RequestType.PUT, parameters).getResponse();
                 }
             }
             return result;
