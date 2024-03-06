@@ -1,6 +1,5 @@
 package org.icatproject.ids;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +23,6 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -72,6 +70,7 @@ import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.RequestHandlerService;
+import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.CallType;
 import org.icatproject.ids.v3.enums.DeferredOp;
@@ -146,7 +145,7 @@ public class IdsBean {
 
     private static Boolean inited = false;
 
-    private static String key;
+    private String key;
 
     private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
     private static String paddedPrefix;
@@ -208,6 +207,8 @@ public class IdsBean {
         if (location == null) {
             throw new InternalException("location is null");
         }
+
+        var key = ServiceProvider.getInstance().getPropertyHandler().getKey();
         if (key == null) {
             return location;
         } else {

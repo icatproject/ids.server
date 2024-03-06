@@ -544,7 +544,6 @@ public class IdsService {
                               @FormParam("zip") boolean zip)
             throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException, DataNotOnlineException {
 
-
         var parameters = new HashMap<String, ValueContainer>();
         parameters.put("sessionId", new ValueContainer(sessionId));
         parameters.put("investigationIds", new ValueContainer(investigationIds));
@@ -554,12 +553,7 @@ public class IdsService {
         parameters.put("zip", new ValueContainer(zip));
         parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
 
-        // TODO: weird - calling idsBean.prepareData() works and tests succeeding. It just calls requestService.handle().
-        // But calling requestService.handle() directly here, some tests will fail with {"code":"InternalException","message":"Restore failed"}
-        // Maybe because it is a Post Request @POST
-
-        //return this.requestService.handle(RequestType.PREPAREDATA, parameters).getString();
-        return idsBean.prepareData(parameters, this.requestService);
+        return this.requestService.handle(RequestType.PREPAREDATA, parameters).getString();
     }
 
     /**
