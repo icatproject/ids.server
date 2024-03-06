@@ -16,5 +16,6 @@ public enum RequestType {
     ISTWOLEVEL, 
     PREPAREDATA, 
     PUT,
-    RESET
+    RESET,
+    RESTORE
 }

@@ -766,6 +766,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
+     * @throws DataNotOnlineException 
      * @summary restore
      * @statuscode 200 To indicate success
      */
@@ -776,8 +777,16 @@ public class IdsService {
                         @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                         @FormParam("datafileIds") String datafileIds)
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-            NotFoundException {
-        idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+            NotFoundException, DataNotOnlineException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("investigationIds", new ValueContainer(investigationIds));
+        parameters.put("datasetIds", new ValueContainer(datasetIds));
+        parameters.put("datafileIds", new ValueContainer(datafileIds));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        this.requestService.handle(RequestType.RESTORE, parameters);
     }
 
 

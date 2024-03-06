@@ -374,14 +374,14 @@ public class DataSelectionFactory {
 
         else if (storageUnit == StorageUnit.DATAFILE) {
             this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATAFILES);
-            //this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATAFILES);
+            this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATAFILES);
             this.requestTypeToReturnsMapping.put(RequestType.ARCHIVE, Returns.DATAFILES);
         }
 
 
         else if(storageUnit == StorageUnit.DATASET) {
             this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
-            //this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATASETS);
+            this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATASETS);
             this.requestTypeToReturnsMapping.put(RequestType.ARCHIVE, Returns.DATASETS);
         }
 

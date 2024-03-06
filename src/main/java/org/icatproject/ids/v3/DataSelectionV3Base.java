@@ -62,6 +62,7 @@ public abstract class DataSelectionV3Base {
         this.requestTypeToDeferredOpMapping = new HashMap<RequestType, DeferredOp>();
         this.requestTypeToDeferredOpMapping.put(RequestType.ARCHIVE, DeferredOp.ARCHIVE);
         this.requestTypeToDeferredOpMapping.put(RequestType.GETDATA, null);
+        this.requestTypeToDeferredOpMapping.put(RequestType.RESTORE, DeferredOp.RESTORE);
 
         this.threadPool = Executors.newCachedThreadPool();
     }
