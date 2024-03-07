@@ -57,7 +57,15 @@ public class DataSelectionFactory {
 
     public static DataSelectionFactory getInstance() throws InternalException {
         if (instance == null) {
-            instance = new DataSelectionFactory();
+            var serviceProvider = ServiceProvider.getInstance();
+            instance = new DataSelectionFactory(serviceProvider.getPropertyHandler(), serviceProvider.getIcatReader());
+        }
+        return instance;
+    }
+
+    public static DataSelectionFactory getInstanceOnlyForTesting(PropertyHandler propertyHandler, IcatReader reader) throws InternalException {
+        if (instance == null) {
+            instance = new DataSelectionFactory(propertyHandler, reader);
         }
         return instance;
     }
@@ -81,12 +89,12 @@ public class DataSelectionFactory {
         return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, new ArrayList<Long>(), dsids, dfids, requestType);
     }
 
-    private DataSelectionFactory() throws InternalException
+    private DataSelectionFactory(PropertyHandler propertyHandler, IcatReader reader) throws InternalException
     {
         logger.info("### Constructing...");
-        this.propertyHandler = ServiceProvider.getInstance().getPropertyHandler();
+        this.propertyHandler = propertyHandler;
         this.icat = propertyHandler.getIcatService();
-        this.icatReader = ServiceProvider.getInstance().getIcatReader();
+        this.icatReader = reader;
         this.restIcat = propertyHandler.getRestIcat();
         this.maxEntities = propertyHandler.getMaxEntities();
 
@@ -112,7 +120,7 @@ public class DataSelectionFactory {
 
     }
 
-    private DataSelectionV3Base getSelection( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public DataSelectionV3Base getSelection( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                     throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
         
         List<Long> dfids = getValidIds("datafileIds", datafileIds);

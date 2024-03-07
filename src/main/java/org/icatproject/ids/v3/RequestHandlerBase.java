@@ -28,7 +28,6 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 
-import org.icatproject.ids.DataSelection;
 import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -209,21 +208,21 @@ public abstract class RequestHandlerBase {
             throws BadRequestException {
         if (investigationIds != null) {
             gen.writeStartArray("investigationIds");
-            for (long invid : DataSelection.getValidIds("investigationIds", investigationIds)) {
+            for (long invid : DataSelectionV3Base.getValidIds("investigationIds", investigationIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();
         }
         if (datasetIds != null) {
             gen.writeStartArray("datasetIds");
-            for (long invid : DataSelection.getValidIds("datasetIds", datasetIds)) {
+            for (long invid : DataSelectionV3Base.getValidIds("datasetIds", datasetIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();
         }
         if (datafileIds != null) {
             gen.writeStartArray("datafileIds");
-            for (long invid : DataSelection.getValidIds("datafileIds", datafileIds)) {
+            for (long invid : DataSelectionV3Base.getValidIds("datafileIds", datafileIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();

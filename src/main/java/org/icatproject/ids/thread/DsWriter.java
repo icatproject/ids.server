@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
-import org.icatproject.ids.DfInfoImpl;
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
@@ -23,6 +22,7 @@ import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.helper.LocationHelper;
+import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
 /**
@@ -77,7 +77,7 @@ public class DsWriter implements Runnable {
                     InputStream is = null;
                     try {
                         zos.putNextEntry(new ZipEntry(
-                                zipMapper.getFullEntryName(dsInfo, new DfInfoImpl(datafile.getId(), datafile.getName(),
+                                zipMapper.getFullEntryName(dsInfo, new DataFileInfo(datafile.getId(), datafile.getName(),
                                         location, datafile.getCreateId(), datafile.getModId(), 0L))));
                         is = mainStorageInterface.get(location, datafile.getCreateId(), datafile.getModId());
                         int bytesRead = 0;
