@@ -526,7 +526,7 @@ public class IdsBean {
                 twoLevel = archiveStorage != null;
                 datatypeFactory = DatatypeFactory.newInstance();
                 preparedDir = propertyHandler.getCacheDir().resolve("prepared");
-                Files.createDirectories(preparedDir);
+                //Files.createDirectories(preparedDir);
 
 
                 readOnly = propertyHandler.getReadOnly();
@@ -544,17 +544,17 @@ public class IdsBean {
                     datasetDir = propertyHandler.getCacheDir().resolve("dataset");
                     markerDir = propertyHandler.getCacheDir().resolve("marker");
                     if (!inited) {
-                        Files.createDirectories(datasetDir);
-                        Files.createDirectories(markerDir);
-                        restartUnfinishedWork();
+                        // Files.createDirectories(datasetDir);
+                        // Files.createDirectories(markerDir);
+                        // restartUnfinishedWork();
                     }
                 }
 
                 if (!inited) {
-                    cleanPreparedDir(preparedDir);
-                    if (twoLevel) {
-                        cleanDatasetCache(datasetDir);
-                    }
+                    // cleanPreparedDir(preparedDir);
+                    // if (twoLevel) {
+                    //     cleanDatasetCache(datasetDir);
+                    // }
                 }
 
                 threadPool = Executors.newCachedThreadPool();

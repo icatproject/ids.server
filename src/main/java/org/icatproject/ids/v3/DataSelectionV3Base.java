@@ -1,5 +1,6 @@
 package org.icatproject.ids.v3;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,13 +16,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.Status;
+import org.icatproject.ids.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.enums.RequestType;
+import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,6 +241,40 @@ public abstract class DataSelectionV3Base {
         }
 
         return prepared;
+    }
+
+    public abstract void queueDelete() throws NotImplementedException, InternalException;
+
+    public void delete() throws InternalException, NotImplementedException {
+
+        var serviceProvider = ServiceProvider.getInstance();
+
+        /*
+         * Delete the local copy directly rather than queueing it as it has
+         * been removed from ICAT so will not be accessible to any
+         * subsequent IDS calls.
+         */
+        for (DataInfoBase dataInfo : this.getDfInfo().values()) {
+            var dfInfo = (DataFileInfo) dataInfo;
+            String location = dataInfo.getLocation();
+            try {
+                if ((long) serviceProvider.getIcatReader()
+                        .search("SELECT COUNT(df) FROM Datafile df WHERE df.location LIKE '" + location.replaceAll("'", "''") + "%'")
+                        .get(0) == 0) {
+                    if (serviceProvider.getMainStorage().exists(location)) {
+                        logger.debug("Delete physical file " + location + " from main storage");
+                        serviceProvider.getMainStorage().delete(location, dfInfo.getCreateId(), dfInfo.getModId());
+                    }
+                }
+            } catch (IcatException_Exception e) {
+                throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+            } catch (IOException e) {
+                logger.error("I/O error " + e.getMessage() + " deleting " + dfInfo);
+                throw new InternalException(e.getClass() + " " + e.getMessage());
+            }
+        }
+
+        this.queueDelete();
     }
 
 

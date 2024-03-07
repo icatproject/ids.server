@@ -47,6 +47,12 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
     public boolean isPrepared(String preparedId) throws InternalException {
         return this.areDataInfosPrepared(preparedId);
     }
+
+
+    @Override
+    public void queueDelete() throws NotImplementedException, InternalException {
+        this.scheduleTask(DeferredOp.WRITE);
+    }
       
 
 }

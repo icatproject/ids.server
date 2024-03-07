@@ -357,9 +357,7 @@ public class DataSelectionFactory {
         this.requestTypeToReturnsMapping = new HashMap<RequestType, Returns>();
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
-        //commented out entries: uncomment when you create the new hendlers for the RequestTypes during the current redesign
-
-        //this.requestTypeToReturnsMapping.put(RequestType.DELETE, Returns.DATASETS_AND_DATAFILES);
+        this.requestTypeToReturnsMapping.put(RequestType.DELETE, Returns.DATASETS_AND_DATAFILES);
         this.requestTypeToReturnsMapping.put(RequestType.GETDATAFILEIDS, Returns.DATAFILES);
         this.requestTypeToReturnsMapping.put(RequestType.GETSIZE, Returns.DATASETS_AND_DATAFILES);
         this.requestTypeToReturnsMapping.put(RequestType.PREPAREDATA, Returns.DATASETS_AND_DATAFILES);
@@ -370,15 +368,11 @@ public class DataSelectionFactory {
         if(storageUnit == null ) {
             this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
         }
-            
-
         else if (storageUnit == StorageUnit.DATAFILE) {
             this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATAFILES);
             this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATAFILES);
             this.requestTypeToReturnsMapping.put(RequestType.ARCHIVE, Returns.DATAFILES);
         }
-
-
         else if(storageUnit == StorageUnit.DATASET) {
             this.requestTypeToReturnsMapping.put(RequestType.GETSTATUS, Returns.DATASETS);
             this.requestTypeToReturnsMapping.put(RequestType.RESTORE, Returns.DATASETS);

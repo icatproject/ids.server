@@ -18,5 +18,6 @@ public enum RequestType {
     PUT,
     RESET,
     RESTORE,
-    WRITE
+    WRITE,
+    DELETE
 }

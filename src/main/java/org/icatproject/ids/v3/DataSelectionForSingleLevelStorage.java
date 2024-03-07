@@ -46,6 +46,12 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
     }
 
 
+    @Override
+    public void queueDelete() throws NotImplementedException, InternalException {
+        //nothing todo for single level storage
+    }
+
+
     
     
 }

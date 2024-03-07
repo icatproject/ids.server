@@ -130,7 +130,15 @@ public class IdsService {
                        @QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
                        @QueryParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
             InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
-        idsBean.delete(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+
+        var parameters = new HashMap<String,ValueContainer>();
+        parameters.put("sessionId", new ValueContainer(sessionId));
+        parameters.put("investigationIds", new ValueContainer(investigationIds));
+        parameters.put("datasetIds", new ValueContainer(datasetIds));
+        parameters.put("datafileIds", new ValueContainer(datafileIds));
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        this.requestService.handle(RequestType.DELETE, parameters);
     }
 
     @PreDestroy

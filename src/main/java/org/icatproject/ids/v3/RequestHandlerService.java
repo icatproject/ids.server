@@ -1,5 +1,6 @@
 package org.icatproject.ids.v3;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
@@ -13,6 +14,7 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.handlers.ArchiveHandler;
+import org.icatproject.ids.v3.handlers.DeleteHandler;
 import org.icatproject.ids.v3.handlers.GetDataFileIdsHandler;
 import org.icatproject.ids.v3.handlers.GetDataHandler;
 import org.icatproject.ids.v3.handlers.GetIcatUrlHandler;
@@ -80,8 +82,7 @@ public class RequestHandlerService {
                 // datatypeFactory = DatatypeFactory.newInstance();
                 preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 
-                // TODO: As long as IdsBean exists this is done there, but then, this has to be done here
-                // Files.createDirectories(preparedDir);
+                Files.createDirectories(preparedDir);
 
                 // rootUserNames = propertyHandler.getRootUserNames();
                 // readOnly = propertyHandler.getReadOnly();
@@ -101,19 +102,17 @@ public class RequestHandlerService {
                     datasetDir = propertyHandler.getCacheDir().resolve("dataset");
                     markerDir = propertyHandler.getCacheDir().resolve("marker");
                     if (!inited) {
-                        // TODO: As long as IdsBean exists this is done there, but then, this has to be done here
-                        // Files.createDirectories(datasetDir);
-                        // Files.createDirectories(markerDir);
-                        // this.unfinishedWorkService.restartUnfinishedWork(markerDir, key);
+                        Files.createDirectories(datasetDir);
+                        Files.createDirectories(markerDir);
+                        this.unfinishedWorkService.restartUnfinishedWork(markerDir, key);
                     }
                 }
 
                 if (!inited) {
-                    // TODO: As long as IdsBean exists this is done there, but then, this has to be done here
-                    // UnfinishedWorkServiceBase.cleanPreparedDir(preparedDir);
-                    // if (twoLevel) {
-                    //     UnfinishedWorkServiceBase.cleanDatasetCache(datasetDir);
-                    // }
+                    UnfinishedWorkServiceBase.cleanPreparedDir(preparedDir);
+                    if (twoLevel) {
+                        UnfinishedWorkServiceBase.cleanDatasetCache(datasetDir);
+                    }
                 }
 
                 // maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
@@ -140,6 +139,7 @@ public class RequestHandlerService {
                 this.registerHandler(new ResetHandler());
                 this.registerHandler(new RestoreHandler());
                 this.registerHandler(new WriteHandler());
+                this.registerHandler(new DeleteHandler());
 
                 logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
                 for(RequestHandlerBase handler : this.handlers.values()) {
