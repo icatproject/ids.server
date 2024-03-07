@@ -17,6 +17,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.icatproject.ids.v3.PreparedV3;
+import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
@@ -50,46 +52,50 @@ public class PreparePackingTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (OutputStream stream = new BufferedOutputStream(baos)) {
-            IdsBean.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets);
+            RequestHandlerBase.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets);
         }
         System.out.println(baos.toString());
         InputStream stream = new ByteArrayInputStream(baos.toByteArray());
-        Prepared prepared = IdsBean.unpack(stream);
+        PreparedV3 prepared = RequestHandlerBase.unpack(stream);
         assertTrue(prepared.zip);
         assertFalse(prepared.compress);
-        for (DataFileInfo dfInfo : prepared.dfInfos) {
-            if (dfInfo.getDfId() == 5L) {
-                assertEquals("dfName", dfInfo.getDfName());
-                assertEquals("dfLocation", dfInfo.getDfLocation());
-            } else if (dfInfo.getDfId() == 51L) {
-                assertEquals("dfName2", dfInfo.getDfName());
-                assertNull(dfInfo.getDfLocation());
+        for (DataInfoBase dataInfo : prepared.dfInfos.values()) {
+            if (dataInfo.getId() == 5L) {
+                assertEquals("dfName", dataInfo.getName());
+                assertEquals("dfLocation", dataInfo.getLocation());
+            } else if (dataInfo.getId() == 51L) {
+                assertEquals("dfName2", dataInfo.getName());
+                assertNull(dataInfo.getLocation());
             } else {
                 fail();
             }
+            var dfInfo = (DataFileInfo) dataInfo;
             assertEquals("createId", dfInfo.getCreateId());
             assertEquals("modId", dfInfo.getModId());
             assertEquals(dsid1, dfInfo.getDsId());
         }
-        for (Entry<Long, DataSetInfo> entry : prepared.dsInfos.entrySet()) {
+        for (Entry<Long, DataInfoBase> entry : prepared.dsInfos.entrySet()) {
             Long key = entry.getKey();
-            DataSetInfo value = entry.getValue();
-            assertEquals((Long) key, (Long) value.getDsId());
-            if (value.getDsId() == dsid1) {
-                assertEquals("dsName", value.getDsName());
-                assertEquals("dsLocation", value.getDsLocation());
-            } else if (value.getDsId() == dsid2) {
-                assertEquals("dsName2", value.getDsName());
-                assertNull(value.getDsLocation());
+            DataInfoBase value = entry.getValue();
+            assertEquals((Long) key, (Long) value.getId());
+            if (value.getId() == dsid1) {
+                assertEquals("dsName", value.getName());
+                assertEquals("dsLocation", value.getLocation());
+            } else if (value.getId() == dsid2) {
+                assertEquals("dsName2", value.getName());
+                assertNull(value.getLocation());
             } else {
                 fail();
             }
-            assertEquals((Long) invId, value.getInvId());
-            assertEquals("invName", value.getInvName());
 
-            assertEquals("visitId", value.getVisitId());
-            assertEquals((Long) facilityId, value.getFacilityId());
-            assertEquals("facilityName", value.getFacilityName());
+            var dsInfo = (DataSetInfo) value;
+
+            assertEquals((Long) invId, dsInfo.getInvId());
+            assertEquals("invName", dsInfo.getInvName());
+
+            assertEquals("visitId", dsInfo.getVisitId());
+            assertEquals((Long) facilityId, dsInfo.getFacilityId());
+            assertEquals("facilityName", dsInfo.getFacilityName());
 
         }
         assertEquals(1, prepared.emptyDatasets.size());

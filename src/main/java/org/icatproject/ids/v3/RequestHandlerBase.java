@@ -107,12 +107,12 @@ public abstract class RequestHandlerBase {
     public abstract ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
 
 
-    protected static void validateUUID(String thing, String id) throws BadRequestException {
+    public static void validateUUID(String thing, String id) throws BadRequestException {
         if (id == null || !uuidRegExp.matcher(id).matches())
             throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
     }
 
-    protected static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataInfoBase> dsInfos,
+    public static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataInfoBase> dsInfos,
                         Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) {
         JsonGenerator gen = Json.createGenerator(stream);
         gen.writeStartObject();
@@ -164,7 +164,7 @@ public abstract class RequestHandlerBase {
 
     }
 
-    protected static PreparedV3 unpack(InputStream stream) throws InternalException {
+    public static PreparedV3 unpack(InputStream stream) throws InternalException {
         PreparedV3 prepared = new PreparedV3();
         JsonObject pd;
         try (JsonReader jsonReader = Json.createReader(stream)) {

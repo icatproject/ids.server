@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import org.icatproject.ids.exceptions.BadRequestException;
+import org.icatproject.ids.v3.RequestHandlerBase;
 
 public class ValidaterTest {
 
@@ -21,7 +22,7 @@ public class ValidaterTest {
 
     private void testValidUUID(boolean b, String id) {
         try {
-            IdsBean.validateUUID("testValidUUID", id);
+            RequestHandlerBase.validateUUID("testValidUUID", id);
             assertTrue(b);
         } catch (BadRequestException e) {
             System.out.println(e.getMessage());

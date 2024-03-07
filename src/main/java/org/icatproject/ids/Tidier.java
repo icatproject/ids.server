@@ -31,6 +31,7 @@ import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.v3.enums.DeferredOp;
+import org.icatproject.ids.v3.helper.LocationHelper;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
@@ -129,7 +130,7 @@ public class Tidier {
                                         Datafile df = (Datafile) o;
                                         DataFileInfo dfInfoImpl = new DataFileInfo(df.getId(), df.getName(),
 
-                                                IdsBean.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
+                                                LocationHelper.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
                                                 df.getModId(), df.getDataset().getId());
 
 

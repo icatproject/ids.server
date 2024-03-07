@@ -21,7 +21,6 @@ import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.CheckedWithSizeInputStream;
-import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.StorageUnit;
@@ -113,7 +112,7 @@ public class PutHandler extends RequestHandlerBase {
                 throw new NotImplementedException("This operation has been configured to be unavailable");
             }
 
-            IdsBean.validateUUID("sessionId", sessionId);
+            validateUUID("sessionId", sessionId);
             if (name == null) {
                 throw new BadRequestException("The name parameter must be set");
             }

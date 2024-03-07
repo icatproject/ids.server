@@ -10,7 +10,6 @@ import org.icatproject.Datafile;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.StorageUnit;
@@ -59,7 +58,7 @@ public class DeleteHandler extends RequestHandlerBase {
             throw new NotImplementedException("This operation has been configured to be unavailable");
         }
 
-        IdsBean.validateUUID("sessionId", sessionId);
+        validateUUID("sessionId", sessionId);
 
         DataSelectionV3Base dataSelection = this.getDataSelection( sessionId, investigationIds, datasetIds, datafileIds);
 

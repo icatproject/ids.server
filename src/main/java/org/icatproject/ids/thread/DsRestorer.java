@@ -17,13 +17,13 @@ import org.slf4j.LoggerFactory;
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.v3.helper.LocationHelper;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
 /*
@@ -78,7 +78,7 @@ public class DsRestorer implements Runnable {
                 if (datafile.getLocation() == null) {
                     continue;
                 }
-                nameToLocalMap.put(datafile.getName(), IdsBean.getLocation(datafile.getId(), datafile.getLocation()));
+                nameToLocalMap.put(datafile.getName(), LocationHelper.getLocation(datafile.getId(), datafile.getLocation()));
                 size += datafile.getFileSize();
                 n++;
             }

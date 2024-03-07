@@ -51,9 +51,6 @@ public class IdsService {
     private final static Logger logger = LoggerFactory.getLogger(IdsService.class);
 
     @EJB
-    private IdsBean idsBean;
-
-    @EJB
     Transmitter transmitter;
 
     @EJB

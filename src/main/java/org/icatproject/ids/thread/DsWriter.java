@@ -16,13 +16,13 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.DfInfoImpl;
 import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.IdsBean;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.v3.helper.LocationHelper;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
 /**
@@ -73,7 +73,7 @@ public class DsWriter implements Runnable {
                     if (datafile.getLocation() == null) {
                         continue;
                     }
-                    String location = IdsBean.getLocation(datafile.getId(), datafile.getLocation());
+                    String location = LocationHelper.getLocation(datafile.getId(), datafile.getLocation());
                     InputStream is = null;
                     try {
                         zos.putNextEntry(new ZipEntry(

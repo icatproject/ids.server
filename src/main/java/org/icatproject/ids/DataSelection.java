@@ -30,6 +30,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.enums.DeferredOp;
+import org.icatproject.ids.v3.helper.LocationHelper;
 import org.icatproject.ids.v3.models.DataFileInfo;
 import org.icatproject.ids.v3.models.DataSetInfo;
 
@@ -145,7 +146,7 @@ public class DataSelection {
                     dsInfos.put(dsid, new DataSetInfo(ds));
                     if (dfWanted) {
                         Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
-                        String location = IdsBean.getLocation(dfid, df.getLocation());
+                        String location = LocationHelper.getLocation(dfid, df.getLocation());
                         dfInfos.add(
                                 new DataFileInfo(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
                     }
@@ -284,7 +285,7 @@ public class DataSelection {
                 for (JsonValue tupV : result) {
                     JsonArray tup = (JsonArray) tupV;
                     long dfid = tup.getJsonNumber(0).longValueExact();
-                    String location = IdsBean.getLocation(dfid, tup.getString(2, null));
+                    String location = LocationHelper.getLocation(dfid, tup.getString(2, null));
                     dfInfos.add(
                             new DataFileInfo(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
                 }
