@@ -49,7 +49,7 @@ public class RequestHandlerService {
     private boolean twoLevel;
     private Path datasetDir;
     private Path markerDir;
-    private UnfinishedWorkServiceBase unfinishedWorkService;
+    private UnfinishedWorkService unfinishedWorkService;
 
 
     private void registerHandler(RequestHandlerBase requestHandler) {
@@ -95,7 +95,7 @@ public class RequestHandlerService {
                     logger.info("Key is " + (key == null ? "not set" : "set"));
                 }
 
-                this.unfinishedWorkService = new UnfinishedWorkServiceBase();
+                this.unfinishedWorkService = new UnfinishedWorkService();
 
                 if (twoLevel) {
                     // storageUnit = propertyHandler.getStorageUnit();
@@ -109,9 +109,9 @@ public class RequestHandlerService {
                 }
 
                 if (!inited) {
-                    UnfinishedWorkServiceBase.cleanPreparedDir(preparedDir);
+                    UnfinishedWorkService.cleanPreparedDir(preparedDir);
                     if (twoLevel) {
-                        UnfinishedWorkServiceBase.cleanDatasetCache(datasetDir);
+                        UnfinishedWorkService.cleanDatasetCache(datasetDir);
                     }
                 }
 
