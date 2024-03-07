@@ -33,7 +33,7 @@ public class DataSelectionForStorageUnitDatafile extends DataSelectionV3Base {
     }
 
     @Override
-    protected boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
+    public boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
         return ServiceProvider.getInstance().getMainStorage().exists(dataInfo.getLocation());
     }
 

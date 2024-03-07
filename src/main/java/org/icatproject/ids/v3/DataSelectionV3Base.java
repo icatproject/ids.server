@@ -63,6 +63,7 @@ public abstract class DataSelectionV3Base {
         this.requestTypeToDeferredOpMapping.put(RequestType.ARCHIVE, DeferredOp.ARCHIVE);
         this.requestTypeToDeferredOpMapping.put(RequestType.GETDATA, null);
         this.requestTypeToDeferredOpMapping.put(RequestType.RESTORE, DeferredOp.RESTORE);
+        this.requestTypeToDeferredOpMapping.put(RequestType.WRITE, DeferredOp.WRITE);
 
         this.threadPool = Executors.newCachedThreadPool();
     }
@@ -78,7 +79,7 @@ public abstract class DataSelectionV3Base {
      */
     public abstract SortedMap<Long, DataInfoBase> getPrimaryDataInfos();
 
-    protected abstract boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException;
+    public abstract boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException;
 
 
     public Map<Long, DataInfoBase> getDsInfo() {

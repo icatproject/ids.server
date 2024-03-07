@@ -23,7 +23,7 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
     @Override
     protected void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException {
 
-        throw new InternalException("This operation is unavailable for single level storage");
+        throw new NotImplementedException("This operation is unavailable for single level storage");
     }
 
 
@@ -34,7 +34,7 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
 
 
     @Override
-    protected boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
+    public boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
         
         throw new InternalException("This operation is unavailable for single level storage");
     }

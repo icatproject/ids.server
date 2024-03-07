@@ -34,7 +34,7 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
     }
 
     @Override
-    protected boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
+    public boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
 
         var dsInfo = (DataSetInfo) dataInfo;
         if(dsInfo == null) throw new InternalException("Could not cast DataInfoBase to DataSetInfo. Did you handed over another sub type?");

@@ -17,5 +17,6 @@ public enum RequestType {
     PREPAREDATA, 
     PUT,
     RESET,
-    RESTORE
+    RESTORE,
+    WRITE
 }
