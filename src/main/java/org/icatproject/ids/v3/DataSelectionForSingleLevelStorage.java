@@ -5,10 +5,10 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.icatproject.ids.enums.DeferredOp;
+import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.v3.enums.DeferredOp;
-import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataInfoBase;
 
 public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {

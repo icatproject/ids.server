@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.enums;
+package org.icatproject.ids.enums;
 
 /**
  * This enum provides all possible values of a ValueContainer

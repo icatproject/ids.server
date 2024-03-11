@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.enums;
+package org.icatproject.ids.enums;
 
 /*
  * Represents the type of action that was requested by a user.

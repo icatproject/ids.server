@@ -15,12 +15,12 @@ import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.LockManager;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
+import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.thread.DsArchiver;
 import org.icatproject.ids.thread.DsRestorer;
 import org.icatproject.ids.thread.DsWriter;
-import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 

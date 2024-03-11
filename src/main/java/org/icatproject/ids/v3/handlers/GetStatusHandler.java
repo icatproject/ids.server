@@ -10,8 +10,10 @@ import java.util.Set;
 import java.util.SortedMap;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.Status;
-import org.icatproject.ids.StorageUnit;
+import org.icatproject.ids.enums.CallType;
+import org.icatproject.ids.enums.RequestType;
+import org.icatproject.ids.enums.Status;
+import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -22,8 +24,6 @@ import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.PreparedV3;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
-import org.icatproject.ids.v3.enums.CallType;
-import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.ValueContainer;
 

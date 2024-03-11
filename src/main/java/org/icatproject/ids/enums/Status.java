@@ -1,4 +1,4 @@
-package org.icatproject.ids;
+package org.icatproject.ids.enums;
 
 /*
  *  These are the values that the getStatus methods can return.

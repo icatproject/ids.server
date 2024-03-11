@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 
+import org.icatproject.ids.enums.DeferredOp;
+import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.v3.enums.DeferredOp;
-import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.DataSetInfo;
 

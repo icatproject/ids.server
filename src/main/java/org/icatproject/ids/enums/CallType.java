@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.enums;
+package org.icatproject.ids.enums;
 
 public enum CallType {
     INFO, PREPARE, READ, WRITE, MIGRATE

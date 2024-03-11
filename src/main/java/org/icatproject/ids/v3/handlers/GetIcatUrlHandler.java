@@ -2,7 +2,9 @@ package org.icatproject.ids.v3.handlers;
 
 import java.util.HashMap;
 
-import org.icatproject.ids.StorageUnit;
+import org.icatproject.ids.enums.CallType;
+import org.icatproject.ids.enums.RequestType;
+import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -11,8 +13,6 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
-import org.icatproject.ids.v3.enums.CallType;
-import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.ValueContainer;
 
 public class GetIcatUrlHandler extends RequestHandlerBase {

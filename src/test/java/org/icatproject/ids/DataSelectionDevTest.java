@@ -22,10 +22,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.icat.client.IcatException;
+import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.v3.DataSelectionFactory;
 import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.DataSelectionFactory.Returns;
-import org.icatproject.ids.v3.enums.RequestType;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond

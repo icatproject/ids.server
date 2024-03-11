@@ -1,9 +1,8 @@
 package org.icatproject.ids.v3.models;
 
-import org.icatproject.ids.v3.enums.ValueContainerType;
-
 import java.io.InputStream;
 
+import org.icatproject.ids.enums.ValueContainerType;
 import org.icatproject.ids.exceptions.InternalException;
 
 import jakarta.servlet.http.HttpServletRequest;
