@@ -21,13 +21,6 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
 
 
     @Override
-    protected void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException {
-
-        throw new NotImplementedException("This operation is unavailable for single level storage");
-    }
-
-
-    @Override
     public SortedMap<Long, DataInfoBase> getPrimaryDataInfos() {
         return new TreeMap<Long, DataInfoBase>();
     }
@@ -49,6 +42,13 @@ public class DataSelectionForSingleLevelStorage extends DataSelectionV3Base {
     @Override
     public void queueDelete() throws NotImplementedException, InternalException {
         //nothing todo for single level storage
+    }
+    
+
+    @Override
+    public void scheduleTasks(DeferredOp operation) throws NotImplementedException, InternalException {
+
+        throw new NotImplementedException("This operation is unavailable for single level storage");
     }
 
 

@@ -20,6 +20,7 @@ import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.enums.CallType;
+import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.DataInfoBase;
 import org.icatproject.ids.v3.models.ValueContainer;
@@ -75,7 +76,9 @@ public class WriteHandler extends RequestHandlerBase {
                 }
             }
 
-            dataSelection.scheduleTask();
+            logger.info("### PreScheduleTask - StorageUnit: " + storageUnit);
+            dataSelection.scheduleTasks(DeferredOp.WRITE);
+            logger.info("### PostScheduleTask");
 
         } catch (AlreadyLockedException e) {
             logger.debug("Could not acquire lock, write failed");

@@ -15,6 +15,7 @@ import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.enums.CallType;
+import org.icatproject.ids.v3.enums.DeferredOp;
 import org.icatproject.ids.v3.enums.RequestType;
 import org.icatproject.ids.v3.models.ValueContainer;
 
@@ -49,7 +50,7 @@ public class RestoreHandler extends RequestHandlerBase {
 
         // Do it
         DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
-        dataSelection.scheduleTask();
+        dataSelection.scheduleTasks(DeferredOp.RESTORE);
 
         if (serviceProvider.getLogSet().contains(CallType.MIGRATE)) {
             try {

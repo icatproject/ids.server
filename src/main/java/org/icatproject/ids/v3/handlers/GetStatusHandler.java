@@ -83,7 +83,8 @@ public class GetStatusHandler extends RequestHandlerBase {
 
         // Do it
         var dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets);
-        Status status = dataSelection.getStatus();
+
+        Status status = this.getStatus(dataSelection);
 
         logger.debug("Status is " + status.name());
 
@@ -125,7 +126,7 @@ public class GetStatusHandler extends RequestHandlerBase {
 
         // Do it
         DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
-        Status status = dataSelection.getStatus();
+        Status status = this.getStatus(dataSelection);
 
 
         logger.debug("Status is " + status.name());
@@ -149,5 +150,28 @@ public class GetStatusHandler extends RequestHandlerBase {
 
         return status.name();
 
+    }
+
+
+    private Status getStatus(DataSelectionV3Base dataSelection) throws InternalException {
+        Status status = Status.ONLINE;
+        var serviceProvider = ServiceProvider.getInstance();
+
+        Set<DataInfoBase> restoring = serviceProvider.getFsm().getRestoring();
+        Set<DataInfoBase> maybeOffline = serviceProvider.getFsm().getMaybeOffline();
+        for (DataInfoBase dataInfo : dataSelection.getPrimaryDataInfos().values()) {
+            serviceProvider.getFsm().checkFailure(dataInfo.getId());
+            if (restoring.contains(dataInfo)) {
+                status = Status.RESTORING;
+            } else if (maybeOffline.contains(dataInfo)) {
+                status = Status.ARCHIVED;
+                break;
+            } else if (!dataSelection.existsInMainStorage(dataInfo)) {
+                status = Status.ARCHIVED;
+                break;
+            }
+        }
+
+        return status;
     }
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,7 +16,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.Status;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
@@ -40,7 +38,6 @@ public abstract class DataSelectionV3Base {
     protected List<Long> dsids;
     protected List<Long> dfids;
     protected RequestType requestType;
-    protected HashMap<RequestType, DeferredOp> requestTypeToDeferredOpMapping;
     public ExecutorService threadPool;
 
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
@@ -61,18 +58,8 @@ public abstract class DataSelectionV3Base {
         this.dsids = dsids;
         this.dfids = dfids;
         this.requestType = requestType;
-
-        this.requestTypeToDeferredOpMapping = new HashMap<RequestType, DeferredOp>();
-        this.requestTypeToDeferredOpMapping.put(RequestType.ARCHIVE, DeferredOp.ARCHIVE);
-        this.requestTypeToDeferredOpMapping.put(RequestType.GETDATA, null);
-        this.requestTypeToDeferredOpMapping.put(RequestType.RESTORE, DeferredOp.RESTORE);
-        this.requestTypeToDeferredOpMapping.put(RequestType.WRITE, DeferredOp.WRITE);
-
         this.threadPool = Executors.newCachedThreadPool();
     }
-
-
-    protected abstract void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException;
 
     public abstract boolean isPrepared(String preparedId) throws InternalException;
 
@@ -83,6 +70,10 @@ public abstract class DataSelectionV3Base {
     public abstract SortedMap<Long, DataInfoBase> getPrimaryDataInfos();
 
     public abstract boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException;
+
+    public abstract void queueDelete() throws NotImplementedException, InternalException;
+
+    public abstract void scheduleTasks(DeferredOp operation) throws NotImplementedException, InternalException;
 
 
     public Map<Long, DataInfoBase> getDsInfo() {
@@ -136,40 +127,7 @@ public abstract class DataSelectionV3Base {
     }
 
 
-    public void scheduleTask() throws NotImplementedException, InternalException {
-
-
-        DeferredOp operation = this.requestTypeToDeferredOpMapping.get(this.requestType);
-
-        if(operation == null) throw new InternalException("No DeferredOp defined for RequestType." + this.requestType);
-            // ... or did you forget to add an entry for your new RequestType in this.requestTypeToDeferredOpMapping (constructor)?
-
-        this.scheduleTask(operation);
-    }
-
-    public Status getStatus() throws InternalException {
-        Status status = Status.ONLINE;
-        var serviceProvider = ServiceProvider.getInstance();
-
-        Set<DataInfoBase> restoring = serviceProvider.getFsm().getRestoring();
-        Set<DataInfoBase> maybeOffline = serviceProvider.getFsm().getMaybeOffline();
-        for (DataInfoBase dataInfo : this.getPrimaryDataInfos().values()) {
-            serviceProvider.getFsm().checkFailure(dataInfo.getId());
-            if (restoring.contains(dataInfo)) {
-                status = Status.RESTORING;
-            } else if (maybeOffline.contains(dataInfo)) {
-                status = Status.ARCHIVED;
-                break;
-            } else if (!this.existsInMainStorage(dataInfo)) {
-                status = Status.ARCHIVED;
-                break;
-            }
-        }
-
-        return status;
-    }
-
-    public boolean restoreIfOffline(DataInfoBase dataInfo) throws InternalException {
+    private boolean restoreIfOffline(DataInfoBase dataInfo) throws InternalException {
         boolean maybeOffline = false;
         var serviceProvider = ServiceProvider.getInstance();
         if (serviceProvider.getFsm().getMaybeOffline().contains(dataInfo)) {
@@ -204,9 +162,10 @@ public abstract class DataSelectionV3Base {
             for (DataInfoBase dataInfo : dataInfos) {
                 ServiceProvider.getInstance().getFsm().recordSuccess(dataInfo.getId());
             }
-            this.threadPool.submit(new RestoreDataInfoTask(dataInfos, this));
+            this.threadPool.submit(new RestoreDataInfoTask(dataInfos, this, false));
         }
     }
+
 
     protected boolean areDataInfosPrepared(String preparedId) throws InternalException {
         boolean prepared = true;
@@ -223,7 +182,7 @@ public abstract class DataSelectionV3Base {
                 status.fromElement = dataInfo.getId();
                 toCheck = this.getPrimaryDataInfos().tailMap(status.fromElement).values();
                 logger.debug("Will check in background status of {} entries", toCheck.size());
-                status.future = threadPool.submit(new RunPrepDataInfoCheck(toCheck, this));
+                status.future = threadPool.submit(new RestoreDataInfoTask(toCheck, this, true));
                 break;
             }
         }
@@ -242,7 +201,6 @@ public abstract class DataSelectionV3Base {
         return prepared;
     }
 
-    public abstract void queueDelete() throws NotImplementedException, InternalException;
 
     public void delete() throws InternalException, NotImplementedException {
 
@@ -277,44 +235,28 @@ public abstract class DataSelectionV3Base {
     }
 
 
-    private class RunPrepDataInfoCheck implements Callable<Void> {
+    private class RestoreDataInfoTask implements Callable<Void> {
 
-        private Collection<DataInfoBase> toCheck;
+        private Collection<DataInfoBase> dataInfos;
         private DataSelectionV3Base dataselection;
+        private boolean checkFailure;
 
-        public RunPrepDataInfoCheck(Collection<DataInfoBase> toCheck, DataSelectionV3Base dataSelection) {
-            this.toCheck = toCheck;
+        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionV3Base dataSelection, boolean checkFailure) {
+            this.dataInfos = dataInfos;
             this.dataselection = dataSelection;
+            this.checkFailure = checkFailure;
         }
 
         @Override
         public Void call() throws Exception {
-            for(DataInfoBase dataInfo : toCheck) {
-                ServiceProvider.getInstance().getFsm().checkFailure(dataInfo.getId());
+            for (DataInfoBase dataInfo : dataInfos) {
+                if(checkFailure)
+                    ServiceProvider.getInstance().getFsm().checkFailure(dataInfo.getId());
                 dataselection.restoreIfOffline(dataInfo);
             }
             return null;
         }
         
-    }
-
-    public class RestoreDataInfoTask implements Callable<Void> {
-        private Collection<DataInfoBase> dataInfos;
-        private DataSelectionV3Base dataSelection;
-
-        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionV3Base dataSelection) {
-            this.dataInfos = dataInfos;
-            this.dataSelection = dataSelection;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            for (DataInfoBase dfInfo : dataInfos) {
-                dataSelection.restoreIfOffline(dfInfo);
-            }
-            return null;
-        }
-
     }
 
 }

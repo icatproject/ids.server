@@ -21,14 +21,6 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
 
 
     @Override
-    protected void scheduleTask(DeferredOp operation) throws NotImplementedException, InternalException {
-
-        for (DataInfoBase dsInfo : dsInfos.values()) {
-            ServiceProvider.getInstance().getFsm().queue(dsInfo, operation);
-        }
-    }
-
-    @Override
     public SortedMap<Long, DataInfoBase> getPrimaryDataInfos() {
         return this.dsInfos;
     }
@@ -51,7 +43,16 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionV3Base {
 
     @Override
     public void queueDelete() throws NotImplementedException, InternalException {
-        this.scheduleTask(DeferredOp.WRITE);
+        this.scheduleTasks(DeferredOp.WRITE);
+    }
+
+
+    @Override
+    public void scheduleTasks(DeferredOp operation) throws NotImplementedException, InternalException {
+
+        for (DataInfoBase dataInfo : this.getPrimaryDataInfos().values()) {
+            ServiceProvider.getInstance().getFsm().queue(dataInfo, operation);
+        }
     }
       
 
