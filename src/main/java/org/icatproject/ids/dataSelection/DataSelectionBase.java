@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3;
+package org.icatproject.ids.dataSelection;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,12 +24,13 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.v3.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DataSelectionV3Base {
+public abstract class DataSelectionBase {
 
-    protected final static Logger logger = LoggerFactory.getLogger(DataSelectionV3Base.class);
+    protected final static Logger logger = LoggerFactory.getLogger(DataSelectionBase.class);
 
     protected SortedMap<Long, DataInfoBase> dsInfos;
     protected SortedMap<Long, DataInfoBase> dfInfos;
@@ -52,7 +53,7 @@ public abstract class DataSelectionV3Base {
 
     }
 
-    protected DataSelectionV3Base(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
+    protected DataSelectionBase(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
 
         this.dsInfos = dsInfos;
         this.dfInfos = dfInfos;
@@ -240,10 +241,10 @@ public abstract class DataSelectionV3Base {
     private class RestoreDataInfoTask implements Callable<Void> {
 
         private Collection<DataInfoBase> dataInfos;
-        private DataSelectionV3Base dataselection;
+        private DataSelectionBase dataselection;
         private boolean checkFailure;
 
-        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionV3Base dataSelection, boolean checkFailure) {
+        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionBase dataSelection, boolean checkFailure) {
             this.dataInfos = dataInfos;
             this.dataselection = dataSelection;
             this.checkFailure = checkFailure;

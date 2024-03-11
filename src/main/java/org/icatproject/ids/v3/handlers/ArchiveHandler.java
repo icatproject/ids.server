@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestType;
@@ -15,7 +16,6 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 
@@ -47,7 +47,7 @@ public class ArchiveHandler extends RequestHandlerBase {
         validateUUID("sessionId", sessionId);
         
         // Do it
-        DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
+        DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
         dataSelection.scheduleTasks(DeferredOp.ARCHIVE);
 
         if (ServiceProvider.getInstance().getLogSet().contains(CallType.MIGRATE)) {

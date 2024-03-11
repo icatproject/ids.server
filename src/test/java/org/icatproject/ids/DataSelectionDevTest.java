@@ -22,10 +22,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.icat.client.IcatException;
+import org.icatproject.ids.dataSelection.DataSelectionFactory;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
+import org.icatproject.ids.dataSelection.DataSelectionFactory.Returns;
 import org.icatproject.ids.enums.RequestType;
-import org.icatproject.ids.v3.DataSelectionFactory;
-import org.icatproject.ids.v3.DataSelectionV3Base;
-import org.icatproject.ids.v3.DataSelectionFactory.Returns;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond
@@ -108,7 +108,7 @@ public class DataSelectionDevTest {
     public void testCreateDataSelection() throws Exception {
         long startMs = System.currentTimeMillis();
         var dataSelectionFactory = DataSelectionFactory.getInstanceOnlyForTesting(mockedPropertyHandler, icatReader);
-        DataSelectionV3Base dataSelection = dataSelectionFactory.getSelection(userSessionId,investigationIds, datasetIds, datafileIds, RequestType.GETSIZE);
+        DataSelectionBase dataSelection = dataSelectionFactory.getSelection(userSessionId,investigationIds, datasetIds, datafileIds, RequestType.GETSIZE);
         System.out.println("Creating DataSelection took " + (System.currentTimeMillis() - startMs) + " ms");
         System.out.println("DsInfo size: " + dataSelection.getDsInfo().size());
         System.out.println("DfInfo size: " + dataSelection.getDfInfo().size());

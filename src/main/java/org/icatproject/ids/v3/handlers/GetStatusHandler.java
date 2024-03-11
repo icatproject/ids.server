@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.SortedMap;
 
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.Status;
@@ -22,8 +23,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.v3.DataSelectionV3Base;
-import org.icatproject.ids.v3.PreparedV3;
+import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 
@@ -68,7 +68,7 @@ public class GetStatusHandler extends RequestHandlerBase {
         validateUUID("preparedId", preparedId);
 
         // Do it
-        PreparedV3 prepared;
+        Prepared prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             prepared = unpack(stream);
         } catch (NoSuchFileException e) {
@@ -125,7 +125,7 @@ public class GetStatusHandler extends RequestHandlerBase {
         }
 
         // Do it
-        DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
+        DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
         Status status = this.getStatus(dataSelection);
 
 
@@ -153,7 +153,7 @@ public class GetStatusHandler extends RequestHandlerBase {
     }
 
 
-    private Status getStatus(DataSelectionV3Base dataSelection) throws InternalException {
+    private Status getStatus(DataSelectionBase dataSelection) throws InternalException {
         Status status = Status.ONLINE;
         var serviceProvider = ServiceProvider.getInstance();
 

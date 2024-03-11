@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -31,9 +32,8 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.SO;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.v3.DataSelectionV3Base;
-import org.icatproject.ids.v3.PreparedV3;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 
@@ -111,7 +111,7 @@ public class GetDataHandler extends RequestHandlerBase {
         validateUUID("preparedId", preparedId);
 
         // Do it
-        PreparedV3 prepared;
+        Prepared prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             prepared = unpack(stream);
         } catch (NoSuchFileException e) {
@@ -120,7 +120,7 @@ public class GetDataHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        DataSelectionV3Base dataSelection = this.getDataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets);
+        DataSelectionBase dataSelection = this.getDataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets);
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
         final Map<Long, DataInfoBase> dfInfos = prepared.dfInfos;
@@ -204,7 +204,7 @@ public class GetDataHandler extends RequestHandlerBase {
 
         var serviceProvider = ServiceProvider.getInstance();
 
-        final DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
+        final DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 
         // Do it
         Map<Long, DataInfoBase> dsInfos = dataSelection.getDsInfo();

@@ -8,6 +8,8 @@ import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.dataSelection.DataSelectionFactory;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -19,9 +21,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.v3.DataSelectionFactory;
-import org.icatproject.ids.v3.DataSelectionV3Base;
-import org.icatproject.ids.v3.PreparedV3;
+import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
@@ -67,7 +67,7 @@ public class ResetHandler extends RequestHandlerBase {
         validateUUID("preparedId", preparedId);
 
         // Do it
-        PreparedV3 preparedJson;
+        Prepared preparedJson;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             preparedJson = unpack(stream);
         } catch (NoSuchFileException e) {
@@ -104,7 +104,7 @@ public class ResetHandler extends RequestHandlerBase {
 
         validateUUID("sessionId", sessionId);
 
-        final DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
+        final DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 
         // Do it
         this.recordSuccess(dataSelection, serviceProvider.getFsm());
@@ -126,7 +126,7 @@ public class ResetHandler extends RequestHandlerBase {
     }
     
 
-    private void recordSuccess(DataSelectionV3Base dataSelection, FiniteStateMachine fsm) {
+    private void recordSuccess(DataSelectionBase dataSelection, FiniteStateMachine fsm) {
         for (DataInfoBase dataInfo : dataSelection.getPrimaryDataInfos().values()) {
             fsm.recordSuccess(dataInfo.getId());
         }

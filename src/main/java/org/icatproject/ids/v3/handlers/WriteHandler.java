@@ -8,6 +8,7 @@ import java.util.Map;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestType;
@@ -21,7 +22,6 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 
@@ -58,7 +58,7 @@ public class WriteHandler extends RequestHandlerBase {
 
         validateUUID("sessionId", sessionId);
 
-        final DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
+        final DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 
         // Do it
         Map<Long, DataInfoBase> dsInfos = dataSelection.getDsInfo();

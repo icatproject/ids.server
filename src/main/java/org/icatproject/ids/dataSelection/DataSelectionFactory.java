@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3;
+package org.icatproject.ids.dataSelection;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -31,6 +31,7 @@ import org.icatproject.ids.helpers.LocationHelper;
 import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.v3.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,7 @@ public class DataSelectionFactory {
         return instance;
     }
 
-    public static DataSelectionV3Base get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public static DataSelectionBase get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                             throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
         return DataSelectionFactory.getInstance().getSelection(userSessionId, investigationIds, datasetIds, datafileIds, requestType);
@@ -78,7 +79,7 @@ public class DataSelectionFactory {
 
 
     
-    public static DataSelectionV3Base get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
+    public static DataSelectionBase get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
         List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
         var dataFileInfos = new HashMap<Long, DataInfoBase>();
@@ -103,7 +104,7 @@ public class DataSelectionFactory {
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionV3Base createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) throws InternalException {
+    private DataSelectionBase createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) throws InternalException {
 
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
@@ -120,7 +121,7 @@ public class DataSelectionFactory {
 
     }
 
-    public DataSelectionV3Base getSelection( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public DataSelectionBase getSelection( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                     throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
         
         List<Long> dfids = getValidIds("datafileIds", datafileIds);
@@ -153,7 +154,7 @@ public class DataSelectionFactory {
 
     
 
-    private DataSelectionV3Base prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
+    private DataSelectionBase prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
             throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
         var dsInfos = new TreeMap<Long, DataInfoBase>();
         var emptyDatasets = new HashSet<Long>();

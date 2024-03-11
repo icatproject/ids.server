@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
 import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
-import org.icatproject.ids.v3.PreparedV3;
+import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.junit.Test;
 
@@ -56,7 +56,7 @@ public class PreparePackingTest {
         }
         System.out.println(baos.toString());
         InputStream stream = new ByteArrayInputStream(baos.toByteArray());
-        PreparedV3 prepared = RequestHandlerBase.unpack(stream);
+        Prepared prepared = RequestHandlerBase.unpack(stream);
         assertTrue(prepared.zip);
         assertFalse(prepared.compress);
         for (DataInfoBase dataInfo : prepared.dfInfos.values()) {

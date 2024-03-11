@@ -22,6 +22,7 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestType;
@@ -39,7 +40,6 @@ import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.utils.IcatSecurity;
@@ -193,7 +193,7 @@ public class PutHandler extends RequestHandlerBase {
                     }
                     var dsInfos = new TreeMap<Long, DataInfoBase>();
                     dsInfos.put(dsInfo.getId(), dsInfo);
-                    DataSelectionV3Base dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets);
+                    DataSelectionBase dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets);
                     dataSelection.checkOnline();
                 }
 

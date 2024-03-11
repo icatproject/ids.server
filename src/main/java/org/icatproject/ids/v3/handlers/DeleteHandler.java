@@ -12,6 +12,7 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -24,7 +25,6 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 
@@ -60,7 +60,7 @@ public class DeleteHandler extends RequestHandlerBase {
 
         validateUUID("sessionId", sessionId);
 
-        DataSelectionV3Base dataSelection = this.getDataSelection( sessionId, investigationIds, datasetIds, datafileIds);
+        DataSelectionBase dataSelection = this.getDataSelection( sessionId, investigationIds, datasetIds, datafileIds);
 
         // Do it
         try (Lock lock = serviceProvider.getLockManager().lock(dataSelection.getDsInfo().values(), LockType.EXCLUSIVE)) {

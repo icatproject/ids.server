@@ -1,12 +1,10 @@
-package org.icatproject.ids.v3;
+package org.icatproject.ids.models;
 
 import java.util.Set;
 import java.util.SortedMap;
 
-import org.icatproject.ids.models.DataInfoBase;
-
 /* This is a POJO with only package access so don't make data private */
-public class PreparedV3 {
+public class Prepared {
     public boolean zip;
     public boolean compress;
     public SortedMap<Long, DataInfoBase> dfInfos;

@@ -23,6 +23,8 @@ import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 
+import org.icatproject.ids.dataSelection.DataSelectionFactory;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -35,6 +37,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.Prepared;
 
 public abstract class RequestHandlerBase {
 
@@ -69,12 +72,12 @@ public abstract class RequestHandlerBase {
         return this.requestType;
     }
 
-    public DataSelectionV3Base getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) throws InternalException {
+    public DataSelectionBase getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) throws InternalException {
 
         return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, this.getRequestType());
     }
 
-    public DataSelectionV3Base getDataSelection(String userSessionId, String investigationIds, String datasetIds, String datafileIds) 
+    public DataSelectionBase getDataSelection(String userSessionId, String investigationIds, String datasetIds, String datafileIds) 
                                     throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
         return DataSelectionFactory.get(userSessionId, investigationIds, datasetIds, datafileIds, this.getRequestType());
@@ -163,8 +166,8 @@ public abstract class RequestHandlerBase {
 
     }
 
-    public static PreparedV3 unpack(InputStream stream) throws InternalException {
-        PreparedV3 prepared = new PreparedV3();
+    public static Prepared unpack(InputStream stream) throws InternalException {
+        Prepared prepared = new Prepared();
         JsonObject pd;
         try (JsonReader jsonReader = Json.createReader(stream)) {
             pd = jsonReader.readObject();
@@ -208,21 +211,21 @@ public abstract class RequestHandlerBase {
             throws BadRequestException {
         if (investigationIds != null) {
             gen.writeStartArray("investigationIds");
-            for (long invid : DataSelectionV3Base.getValidIds("investigationIds", investigationIds)) {
+            for (long invid : DataSelectionBase.getValidIds("investigationIds", investigationIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();
         }
         if (datasetIds != null) {
             gen.writeStartArray("datasetIds");
-            for (long invid : DataSelectionV3Base.getValidIds("datasetIds", datasetIds)) {
+            for (long invid : DataSelectionBase.getValidIds("datasetIds", datasetIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();
         }
         if (datafileIds != null) {
             gen.writeStartArray("datafileIds");
-            for (long invid : DataSelectionV3Base.getValidIds("datafileIds", datafileIds)) {
+            for (long invid : DataSelectionBase.getValidIds("datafileIds", datafileIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();

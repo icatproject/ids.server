@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.icatproject.Datafile;
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -22,8 +23,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.v3.DataSelectionV3Base;
-import org.icatproject.ids.v3.PreparedV3;
+import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 
@@ -68,7 +68,7 @@ public class GetSizeHandler extends RequestHandlerBase {
         validateUUID("preparedId", preparedId);
 
         // Do it
-        PreparedV3 prepared;
+        Prepared prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             prepared = unpack(stream);
         } catch (NoSuchFileException e) {
@@ -133,9 +133,9 @@ public class GetSizeHandler extends RequestHandlerBase {
 
         validateUUID("sessionId", sessionId);
 
-        List<Long> dfids = DataSelectionV3Base.getValidIds("datafileIds", datafileIds);
-        List<Long> dsids = DataSelectionV3Base.getValidIds("datasetIds", datasetIds);
-        List<Long> invids = DataSelectionV3Base.getValidIds("investigationIds", investigationIds);
+        List<Long> dfids = DataSelectionBase.getValidIds("datafileIds", datafileIds);
+        List<Long> dsids = DataSelectionBase.getValidIds("datasetIds", datasetIds);
+        List<Long> invids = DataSelectionBase.getValidIds("investigationIds", investigationIds);
 
         long size = 0;
         if (dfids.size() + dsids.size() + invids.size() == 1) {
@@ -162,7 +162,7 @@ public class GetSizeHandler extends RequestHandlerBase {
             }
         } else {
             logger.debug("Slow computation for normal case");
-            final DataSelectionV3Base dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
+            final DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 
             StringBuilder sb = new StringBuilder();
             int n = 0;
