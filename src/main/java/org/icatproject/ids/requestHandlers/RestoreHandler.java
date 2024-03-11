@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.handlers;
+package org.icatproject.ids.requestHandlers;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;

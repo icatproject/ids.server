@@ -9,12 +9,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 
 /*
  * Restores datafiles from the slow to the fast storage.

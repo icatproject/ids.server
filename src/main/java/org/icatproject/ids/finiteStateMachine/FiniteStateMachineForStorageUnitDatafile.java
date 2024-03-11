@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.FiniteStateMachine;
+package org.icatproject.ids.finiteStateMachine;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;

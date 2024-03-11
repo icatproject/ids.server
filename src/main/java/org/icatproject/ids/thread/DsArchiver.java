@@ -6,10 +6,10 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 
 /*
  * Removes datasets from the fast storage (doesn't write them to slow storage)

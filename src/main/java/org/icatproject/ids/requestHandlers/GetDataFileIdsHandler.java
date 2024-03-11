@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.handlers;
+package org.icatproject.ids.requestHandlers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -6,9 +6,10 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedMap;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
@@ -24,113 +25,131 @@ import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
-import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 
-public class ResetHandler extends RequestHandlerBase {
+public class GetDataFileIdsHandler extends RequestHandlerBase {
 
-    public ResetHandler() {
-        super(new StorageUnit[]{StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.RESET);
+    public GetDataFileIdsHandler() {
+        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.GETDATAFILEIDS);
     }
 
     @Override
     public ValueContainer handle(HashMap<String, ValueContainer> parameters)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
-
+        
         String preparedId = parameters.get("preparedId").getString();
         String sessionId = parameters.get("sessionId").getString();
         String investigationIds = parameters.get("investigationIds").getString();
         String datasetIds = parameters.get("datasetIds").getString();
         String datafileIds = parameters.get("datafileIds").getString();
         String ip = parameters.get("ip").getString();
-        
-        if (preparedId != null) {
-            this.reset(preparedId, ip);
-        } else {
-            this.reset(sessionId, investigationIds, datasetIds, datafileIds, ip);
-        }
 
-        return ValueContainer.getVoid();
+        if (preparedId != null) {
+            return new ValueContainer(this.getDatafileIds(preparedId, ip));
+        } else {
+            return new ValueContainer(this.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds, ip));
+        }
     }
 
 
-    private void reset(String preparedId, String ip) throws BadRequestException, InternalException, NotFoundException {
+    private String getDatafileIds(String preparedId, String ip)
+            throws BadRequestException, InternalException, NotFoundException {
+
         long start = System.currentTimeMillis();
 
-        logger.info(String.format("New webservice request: reset preparedId=%s", preparedId));
-        var serviceProvider = ServiceProvider.getInstance();
+        // Log and validate
+        logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
 
-        // Validate
         validateUUID("preparedId", preparedId);
 
         // Do it
-        Prepared preparedJson;
+        Prepared prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-            preparedJson = unpack(stream);
+            prepared = unpack(stream);
         } catch (NoSuchFileException e) {
             throw new NotFoundException("The preparedId " + preparedId + " is not known");
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        var dataSelection = DataSelectionFactory.get(preparedJson.dsInfos, preparedJson.dfInfos, preparedJson.emptyDatasets, this.getRequestType());
+        final boolean zip = prepared.zip;
+        final boolean compress = prepared.compress;
+        final SortedMap<Long, DataInfoBase> dfInfos = prepared.dfInfos;
 
-        this.recordSuccess(dataSelection, serviceProvider.getFsm());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+            gen.write("zip", zip);
+            gen.write("compress", compress);
+            gen.writeStartArray("ids");
+            for (DataInfoBase dfInfo : dfInfos.values()) {
+                gen.write(dfInfo.getId());
+            }
+            gen.writeEnd().writeEnd().close();
+        }
+        String resp = baos.toString();
 
-        if (serviceProvider.getLogSet().contains(CallType.MIGRATE)) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        var serviceProvider = ServiceProvider.getInstance();
+
+        if (serviceProvider.getLogSet().contains(CallType.INFO)) {
+            baos = new ByteArrayOutputStream();
             try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
                 gen.write("preparedId", preparedId);
                 gen.writeEnd();
             }
-            String body = baos.toString();
-            serviceProvider.getTransmitter().processMessage("reset", ip, body, start);
+            serviceProvider.getTransmitter().processMessage("getDatafileIds", ip, baos.toString(), start);
         }
+
+        return resp;
     }
 
-
-    private void reset(String sessionId, String investigationIds, String datasetIds, String datafileIds, String ip)
+    private String getDatafileIds(String sessionId, String investigationIds, String datasetIds, String datafileIds,
+                                 String ip)
             throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, NotImplementedException {
 
         long start = System.currentTimeMillis();
-        var serviceProvider = ServiceProvider.getInstance();
 
         // Log and validate
-        logger.info("New webservice request: reset " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
-                + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+        logger.info(String.format(
+                "New webservice request: getDatafileIds investigationIds=%s, datasetIds=%s, datafileIds=%s",
+                investigationIds, datasetIds, datafileIds));
 
         validateUUID("sessionId", sessionId);
 
         final DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 
         // Do it
-        this.recordSuccess(dataSelection, serviceProvider.getFsm());
+        Map<Long, DataInfoBase> dfInfos = dataSelection.getDfInfo();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+            gen.writeStartArray("ids");
+            for (DataInfoBase dfInfo : dfInfos.values()) {
+                gen.write(dfInfo.getId());
+            }
+            gen.writeEnd().writeEnd().close();
+        }
+        String resp = baos.toString();
 
-        if (serviceProvider.getLogSet().contains(CallType.MIGRATE)) {
+        var serviceProvider = ServiceProvider.getInstance();
+
+        if (serviceProvider.getLogSet().contains(CallType.INFO)) {
+            baos = new ByteArrayOutputStream();
             try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
                     gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
                     addIds(gen, investigationIds, datasetIds, datafileIds);
                     gen.writeEnd();
                 }
-                String body = baos.toString();
-                serviceProvider.getTransmitter().processMessage("reset", ip, body, start);
+                serviceProvider.getTransmitter().processMessage("getDatafileIds", ip, baos.toString(), start);
             } catch (IcatException_Exception e) {
                 logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
             }
         }
-    }
-    
 
-    private void recordSuccess(DataSelectionBase dataSelection, FiniteStateMachine fsm) {
-        for (DataInfoBase dataInfo : dataSelection.getPrimaryDataInfos().values()) {
-            fsm.recordSuccess(dataInfo.getId());
-        }
+        return resp;
+
     }
 
-    
 }

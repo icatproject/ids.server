@@ -8,8 +8,8 @@ import org.icatproject.ids.LockManager;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.Transmitter;
 import org.icatproject.ids.enums.CallType;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
 
 /**
  * This class serves the developer with multiple services.

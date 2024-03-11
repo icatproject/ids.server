@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.FiniteStateMachine;
+package org.icatproject.ids.finiteStateMachine;
 
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.LockManager;
