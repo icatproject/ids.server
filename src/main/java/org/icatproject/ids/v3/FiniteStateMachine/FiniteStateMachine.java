@@ -26,7 +26,7 @@ import org.icatproject.ids.LockManager.LockInfo;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.v3.models.DataInfoBase;
+import org.icatproject.ids.models.DataInfoBase;
 
 public abstract class FiniteStateMachine {
 

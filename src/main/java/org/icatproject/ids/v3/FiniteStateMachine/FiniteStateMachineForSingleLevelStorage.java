@@ -4,7 +4,7 @@ import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.LockManager;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.v3.models.DataInfoBase;
+import org.icatproject.ids.models.DataInfoBase;
 
 import jakarta.json.stream.JsonGenerator;
 

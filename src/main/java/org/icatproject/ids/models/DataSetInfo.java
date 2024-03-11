@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.models;
+package org.icatproject.ids.models;
 
 import org.icatproject.Dataset;
 import org.icatproject.Facility;

@@ -6,7 +6,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.ids.v3.helper.LocationHelper;
+import org.icatproject.ids.helpers.LocationHelper;
 import org.icatproject.utils.IcatSecurity;
 
 public class DigestTest {

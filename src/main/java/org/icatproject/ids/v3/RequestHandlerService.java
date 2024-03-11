@@ -12,6 +12,7 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.v3.handlers.ArchiveHandler;
 import org.icatproject.ids.v3.handlers.DeleteHandler;
@@ -29,7 +30,6 @@ import org.icatproject.ids.v3.handlers.PutHandler;
 import org.icatproject.ids.v3.handlers.ResetHandler;
 import org.icatproject.ids.v3.handlers.RestoreHandler;
 import org.icatproject.ids.v3.handlers.WriteHandler;
-import org.icatproject.ids.v3.models.ValueContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

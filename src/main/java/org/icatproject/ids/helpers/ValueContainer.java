@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.models;
+package org.icatproject.ids.helpers;
 
 import java.io.InputStream;
 

@@ -38,10 +38,11 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.helpers.Constants;
+import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.v3.RequestHandlerService;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
-import org.icatproject.ids.v3.models.ValueContainer;
 
 @Path("/")
 @Stateless

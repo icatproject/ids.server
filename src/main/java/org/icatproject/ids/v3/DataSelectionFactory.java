@@ -27,10 +27,10 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.v3.helper.LocationHelper;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataInfoBase;
-import org.icatproject.ids.v3.models.DataSetInfo;
+import org.icatproject.ids.helpers.LocationHelper;
+import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.DataSetInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

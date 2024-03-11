@@ -1,4 +1,4 @@
-package org.icatproject.ids;
+package org.icatproject.ids.helpers;
 
 import java.io.FilterInputStream;
 import java.io.IOException;

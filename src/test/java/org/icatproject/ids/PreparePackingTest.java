@@ -17,11 +17,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.v3.PreparedV3;
 import org.icatproject.ids.v3.RequestHandlerBase;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataInfoBase;
-import org.icatproject.ids.v3.models.DataSetInfo;
 import org.junit.Test;
 
 public class PreparePackingTest {

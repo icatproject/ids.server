@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.models;
+package org.icatproject.ids.models;
 
 /**
  * A Base class for Data objct types. like Datasets or Datafiles

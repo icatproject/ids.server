@@ -12,10 +12,10 @@ import jakarta.ejb.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.v3.models.DataInfoBase;
-import org.icatproject.ids.v3.models.DataSetInfo;
 
 @Singleton
 public class LockManager {

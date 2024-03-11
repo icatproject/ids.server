@@ -28,13 +28,13 @@ import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.helpers.LocationHelper;
+import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
-import org.icatproject.ids.v3.helper.LocationHelper;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataSetInfo;
 
 @Singleton
 @Startup

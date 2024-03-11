@@ -22,8 +22,8 @@ import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataInfoBase;
+import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DataInfoBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

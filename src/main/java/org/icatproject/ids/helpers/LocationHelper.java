@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.helper;
+package org.icatproject.ids.helpers;
 
 import java.security.NoSuchAlgorithmException;
 

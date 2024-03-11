@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3.helper;
+package org.icatproject.ids.helpers;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -10,12 +10,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
-import org.icatproject.ids.RangeOutputStream;
 import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.v3.ServiceProvider;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataInfoBase;
-import org.icatproject.ids.v3.models.DataSetInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

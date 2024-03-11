@@ -21,14 +21,14 @@ import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.thread.DfArchiver;
 import org.icatproject.ids.thread.DfDeleter;
 import org.icatproject.ids.thread.DfRestorer;
 import org.icatproject.ids.thread.DfWriter;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataInfoBase;
-import org.icatproject.ids.v3.models.DataSetInfo;
 
 import jakarta.json.stream.JsonGenerator;
 

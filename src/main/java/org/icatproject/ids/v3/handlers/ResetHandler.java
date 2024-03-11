@@ -17,14 +17,14 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.helpers.ValueContainer;
+import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.v3.DataSelectionFactory;
 import org.icatproject.ids.v3.DataSelectionV3Base;
 import org.icatproject.ids.v3.PreparedV3;
 import org.icatproject.ids.v3.RequestHandlerBase;
 import org.icatproject.ids.v3.ServiceProvider;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
-import org.icatproject.ids.v3.models.DataInfoBase;
-import org.icatproject.ids.v3.models.ValueContainer;
 
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;

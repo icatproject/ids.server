@@ -16,14 +16,14 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.IcatReader;
 import org.icatproject.ids.LockManager.Lock;
+import org.icatproject.ids.helpers.LocationHelper;
+import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.ids.v3.FiniteStateMachine.FiniteStateMachine;
-import org.icatproject.ids.v3.helper.LocationHelper;
-import org.icatproject.ids.v3.models.DataFileInfo;
-import org.icatproject.ids.v3.models.DataSetInfo;
 
 /**
  * Copies dataset from main to archive
