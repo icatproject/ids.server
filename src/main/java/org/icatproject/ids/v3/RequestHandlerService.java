@@ -75,20 +75,11 @@ public class RequestHandlerService {
             synchronized (inited) {
                 logger.info("creating RequestHandlerService");
                 propertyHandler = ServiceProvider.getInstance().getPropertyHandler();
-                // zipMapper = propertyHandler.getZipMapper();
-                // mainStorage = propertyHandler.getMainStorage();
                 archiveStorage = propertyHandler.getArchiveStorage();
                 twoLevel = archiveStorage != null;
-                // datatypeFactory = DatatypeFactory.newInstance();
                 preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 
                 Files.createDirectories(preparedDir);
-
-                // rootUserNames = propertyHandler.getRootUserNames();
-                // readOnly = propertyHandler.getReadOnly();
-                // enableWrite = propertyHandler.getEnableWrite();
-
-                // icat = propertyHandler.getIcatService();
 
                 if (!inited) {
                     key = propertyHandler.getKey();
@@ -98,7 +89,6 @@ public class RequestHandlerService {
                 this.unfinishedWorkService = new UnfinishedWorkService();
 
                 if (twoLevel) {
-                    // storageUnit = propertyHandler.getStorageUnit();
                     datasetDir = propertyHandler.getCacheDir().resolve("dataset");
                     markerDir = propertyHandler.getCacheDir().resolve("marker");
                     if (!inited) {
@@ -114,12 +104,6 @@ public class RequestHandlerService {
                         UnfinishedWorkService.cleanDatasetCache(datasetDir);
                     }
                 }
-
-                // maxIdsInQuery = propertyHandler.getMaxIdsInQuery();
-
-                // threadPool = Executors.newCachedThreadPool();
-
-                // logSet = propertyHandler.getLogSet();
 
                 this.propertyHandler = PropertyHandler.getInstance();
 

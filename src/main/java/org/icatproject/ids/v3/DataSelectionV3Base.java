@@ -38,7 +38,10 @@ public abstract class DataSelectionV3Base {
     protected List<Long> dsids;
     protected List<Long> dfids;
     protected RequestType requestType;
-    public ExecutorService threadPool;
+
+
+    protected static ExecutorService threadPool;
+    static { threadPool = Executors.newCachedThreadPool(); }
 
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 
@@ -58,7 +61,6 @@ public abstract class DataSelectionV3Base {
         this.dsids = dsids;
         this.dfids = dfids;
         this.requestType = requestType;
-        this.threadPool = Executors.newCachedThreadPool();
     }
 
     public abstract boolean isPrepared(String preparedId) throws InternalException;
@@ -162,7 +164,7 @@ public abstract class DataSelectionV3Base {
             for (DataInfoBase dataInfo : dataInfos) {
                 ServiceProvider.getInstance().getFsm().recordSuccess(dataInfo.getId());
             }
-            this.threadPool.submit(new RestoreDataInfoTask(dataInfos, this, false));
+            threadPool.submit(new RestoreDataInfoTask(dataInfos, this, false));
         }
     }
 
