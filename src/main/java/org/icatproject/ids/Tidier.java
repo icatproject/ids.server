@@ -35,6 +35,9 @@ import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.LockManager;
+import org.icatproject.ids.services.PropertyHandler;
 
 @Singleton
 @Startup

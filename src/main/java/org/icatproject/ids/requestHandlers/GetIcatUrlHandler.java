@@ -12,8 +12,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.v3.RequestHandlerBase;
-import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.services.ServiceProvider;
 
 public class GetIcatUrlHandler extends RequestHandlerBase {
 

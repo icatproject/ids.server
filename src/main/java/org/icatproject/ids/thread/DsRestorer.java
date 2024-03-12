@@ -16,15 +16,15 @@ import org.slf4j.LoggerFactory;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
-import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.LockManager.Lock;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.LocationHelper;
 import org.icatproject.ids.models.DataSetInfo;
-import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.Lock;
 
 /*
  * Restores datafiles from the slow to the fast storage.

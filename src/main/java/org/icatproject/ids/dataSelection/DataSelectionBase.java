@@ -24,7 +24,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.services.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3;
+package org.icatproject.ids.requestHandlers;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,6 +38,7 @@ import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.models.Prepared;
+import org.icatproject.ids.services.ServiceProvider;
 
 public abstract class RequestHandlerBase {
 

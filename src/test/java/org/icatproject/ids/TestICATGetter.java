@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import org.icatproject.ICAT;
+import org.icatproject.ids.services.ICATGetter;
 
 public class TestICATGetter {
 

@@ -26,6 +26,9 @@ import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.dataSelection.DataSelectionFactory.Returns;
 import org.icatproject.ids.enums.RequestType;
+import org.icatproject.ids.services.ICATGetter;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.PropertyHandler;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond

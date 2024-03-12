@@ -41,8 +41,12 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.Constants;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.v3.RequestHandlerService;
-import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.LockManager;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.RequestHandlerService;
+import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.Transmitter;
 
 @Path("/")
 @Stateless

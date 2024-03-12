@@ -1,10 +1,10 @@
 package org.icatproject.ids.finiteStateMachine;
 
-import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.LockManager;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.LockManager;
 
 import jakarta.json.stream.JsonGenerator;
 

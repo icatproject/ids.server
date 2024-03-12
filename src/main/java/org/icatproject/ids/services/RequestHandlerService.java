@@ -1,10 +1,9 @@
-package org.icatproject.ids.v3;
+package org.icatproject.ids.services;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import org.icatproject.ids.PropertyHandler;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -27,6 +26,7 @@ import org.icatproject.ids.requestHandlers.IsReadOnlyHandler;
 import org.icatproject.ids.requestHandlers.IsTwoLevelHandler;
 import org.icatproject.ids.requestHandlers.PrepareDataHandler;
 import org.icatproject.ids.requestHandlers.PutHandler;
+import org.icatproject.ids.requestHandlers.RequestHandlerBase;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;

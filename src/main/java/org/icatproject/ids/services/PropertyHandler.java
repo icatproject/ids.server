@@ -1,4 +1,4 @@
-package org.icatproject.ids;
+package org.icatproject.ids.services;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

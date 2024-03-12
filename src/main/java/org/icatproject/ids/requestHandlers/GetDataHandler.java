@@ -16,8 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.LockManager.LockType;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
@@ -34,8 +32,9 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.v3.RequestHandlerBase;
-import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.LockManager.Lock;
+import org.icatproject.ids.services.LockManager.LockType;
 
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;

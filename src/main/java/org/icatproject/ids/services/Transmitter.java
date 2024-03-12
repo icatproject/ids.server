@@ -1,4 +1,4 @@
-package org.icatproject.ids;
+package org.icatproject.ids.services;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;

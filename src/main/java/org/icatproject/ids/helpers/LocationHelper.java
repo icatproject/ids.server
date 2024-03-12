@@ -4,7 +4,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.utils.IcatSecurity;
 
 public class LocationHelper {

@@ -18,15 +18,14 @@ import jakarta.json.stream.JsonGenerator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.LockManager;
-import org.icatproject.ids.PropertyHandler;
-import org.icatproject.ids.LockManager.LockInfo;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.LockManager;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.LockInfo;
 
 public abstract class FiniteStateMachine {
 

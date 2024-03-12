@@ -5,7 +5,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import org.icatproject.ids.exceptions.BadRequestException;
-import org.icatproject.ids.v3.RequestHandlerBase;
+import org.icatproject.ids.requestHandlers.RequestHandlerBase;
 
 public class ValidaterTest {
 

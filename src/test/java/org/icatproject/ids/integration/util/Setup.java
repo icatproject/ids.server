@@ -10,8 +10,8 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.icatproject.ICAT;
-import org.icatproject.ids.ICATGetter;
 import org.icatproject.ids.TestUtils;
+import org.icatproject.ids.services.ICATGetter;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.ShellCommand;
 

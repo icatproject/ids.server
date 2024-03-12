@@ -10,7 +10,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
-import org.icatproject.ids.v3.ServiceProvider;
+import org.icatproject.ids.services.ServiceProvider;
 
 public class DataSelectionForStorageUnitDataset extends DataSelectionBase {
 

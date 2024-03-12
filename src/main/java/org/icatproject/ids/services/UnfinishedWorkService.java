@@ -1,4 +1,4 @@
-package org.icatproject.ids.v3;
+package org.icatproject.ids.services;
 
 import java.io.File;
 import java.io.IOException;
