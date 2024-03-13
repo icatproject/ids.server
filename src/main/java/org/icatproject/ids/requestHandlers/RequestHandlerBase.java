@@ -40,9 +40,19 @@ import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.services.ServiceProvider;
 
+
+/**
+ * This base class represents all common properties and methods which are needed by each request handler.
+ * Request handlers schould be added to the internal request handler list in RequestHandlerService, to be able to be called.
+ */
 public abstract class RequestHandlerBase {
 
+    /**
+     * This List contains the possible StorageUnit values (don't forget the null here) a handler is able to work with.
+     * At the moment (13th of March in 2024) each handler is able to deal with all possible StorageUnitValues so maybe this could be removed. But maybe we need this in future.
+     */
     private List<StorageUnit> supportedStorageUnits;
+
     protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
     protected Path preparedDir;
     protected boolean twoLevel;
@@ -56,33 +66,70 @@ public abstract class RequestHandlerBase {
     public static final Pattern uuidRegExp = Pattern
             .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
+
     protected RequestHandlerBase(StorageUnit[] supportedStorageUnitsArray, RequestType requestType ) {
         this.supportedStorageUnits = Arrays.asList(supportedStorageUnitsArray);
         this.requestType = requestType;
     }
 
+
     protected RequestHandlerBase(StorageUnit supportedStorageUnit, RequestType requestType) {
         this(new StorageUnit[]{supportedStorageUnit}, requestType);
     }
 
+
+    /**
+     * Informs about if the request handler is able to work on the defined StorageUnit
+     * @param neededStorageUnit
+     * @return
+     */
     public boolean supportsStorageUnit(StorageUnit neededStorageUnit) {
         return this.supportedStorageUnits.contains(neededStorageUnit);
     }
 
+
+    /**
+     * Informs about the RequestType the handler ist providing a handling for.
+     * @return
+     */
     public RequestType getRequestType() {
         return this.requestType;
     }
 
+
+    /**
+     * Creates a DataSelection depending on the RequestType. It Uses the DataSelectionFactory which is creating the DataSelection depending on the configured StorageUnit.
+     * @param dsInfos A ready to use Map of DataSetInfos
+     * @param dfInfos A ready to use Map of DataFileInfos
+     * @param emptyDatasets A list of data set IDs of empty data sets
+     * @return
+     * @throws InternalException
+     */
     public DataSelectionBase getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) throws InternalException {
 
         return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, this.getRequestType());
     }
 
+
+    /**
+     * provides a suitable DataSelection depending on the RequestType. It Uses the DataSelectionFactory which is creating the DataSelection depending on the configured StorageUnit.
+     * @param userSessionId The current session id
+     * @param investigationIds A String which contains investigation IDs
+     * @param datasetIds A String which contains data set IDs
+     * @param datafileIds A String which contains data file IDs
+     * @return
+     * @throws InternalException
+     * @throws BadRequestException
+     * @throws NotFoundException
+     * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException
+     */
     public DataSelectionBase getDataSelection(String userSessionId, String investigationIds, String datasetIds, String datafileIds) 
                                     throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
         return DataSelectionFactory.get(userSessionId, investigationIds, datasetIds, datafileIds, this.getRequestType());
     }
+
 
     /**
      * This method initializes the base class part of the RequestHandler.
@@ -107,13 +154,32 @@ public abstract class RequestHandlerBase {
         //logger.info("RequestHandlerBase initialized");
     }
 
+
+    /**
+     * The core method of each request handler. It has to be overwritten in the concrete implementation to provide an individual request handling
+     * @param parameters A Map of parameters which where extracted from th incoming request and maybe more.
+     * @return A ValueContainer with an indiviadual result type.
+     * @throws BadRequestException
+     * @throws InternalException
+     * @throws InsufficientPrivilegesException
+     * @throws NotFoundException
+     * @throws DataNotOnlineException
+     * @throws NotImplementedException
+     */
     public abstract ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
 
 
+    /**
+     * Provides a validity check for UUIDs
+     * @param thing You can give here a name of the prameter or whatever has been checked here (to provide a qualified error message if needed).
+     * @param id The String which has to be checked if it is a valid UUID
+     * @throws BadRequestException
+     */
     public static void validateUUID(String thing, String id) throws BadRequestException {
         if (id == null || !uuidRegExp.matcher(id).matches())
             throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
     }
+
 
     public static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataInfoBase> dsInfos,
                         Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) {
@@ -167,6 +233,7 @@ public abstract class RequestHandlerBase {
 
     }
 
+
     public static Prepared unpack(InputStream stream) throws InternalException {
         Prepared prepared = new Prepared();
         JsonObject pd;
@@ -207,6 +274,7 @@ public abstract class RequestHandlerBase {
 
         return prepared;
     }
+
 
     protected void addIds(JsonGenerator gen, String investigationIds, String datasetIds, String datafileIds)
             throws BadRequestException {

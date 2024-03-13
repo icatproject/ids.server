@@ -36,6 +36,9 @@ import org.slf4j.LoggerFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless;
 
+/**
+ * This class encapsulates tha handling of all the different requests. In tries to find the right request handler and executes its handling method
+ */
 @Stateless
 public class RequestHandlerService {
 
@@ -52,14 +55,33 @@ public class RequestHandlerService {
     private UnfinishedWorkService unfinishedWorkService;
 
 
+    /**
+     * Use this mwthod to add your new handler to the internal handlers list, so that it can be called when it needs to be called.
+     * @param requestHandler The handler which shall be added to the system.
+     */
     private void registerHandler(RequestHandlerBase requestHandler) {
 
         //use only the handlers that supports the configured StorageUnit
         if( requestHandler.supportsStorageUnit(this.propertyHandler.getStorageUnit()) )
+            if(this.handlers.containsKey(requestHandler.getRequestType())) {
+                throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType.");
+            }
             this.handlers.put(requestHandler.getRequestType(), requestHandler);
     }
 
 
+    /**
+     * Call this methis if you want to handle a request. It tries to find a request handler in the internal list which is able to deal with the given RequestType.
+     * @param requestType The internal defintion of the RequestType.
+     * @param parameters The parameters which where extracted from the request. Why not handing over the request itself here? Because in some cases additional parameters are needed.
+     * @return A ValueContainer which is able to carry several types of retun values.
+     * @throws InternalException
+     * @throws BadRequestException
+     * @throws InsufficientPrivilegesException
+     * @throws NotFoundException
+     * @throws DataNotOnlineException
+     * @throws NotImplementedException
+     */
     public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         if(this.handlers.containsKey(requestType)) {

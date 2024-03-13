@@ -8,7 +8,7 @@ import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.plugin.MainStorageInterface;
 
 /**
- * This class serves the developer with multiple services.
+ * This class provides multiple services to the developer
  * Maybe it is just for the redesign for version 3 and will later be replaced with dependency injection, when it will be more clear where which service is used.
  */
 public class ServiceProvider {
@@ -27,6 +27,13 @@ public class ServiceProvider {
         this.icatReader = reader;
     }
 
+    /**
+     * At first, the ServiceProvider has to be created. Do not call getInstance() before you have called createInstande()
+     * @param transmitter
+     * @param fsm
+     * @param lockManager
+     * @param reader
+     */
     public static void createInstance(Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
 
         if(instance != null) return;
