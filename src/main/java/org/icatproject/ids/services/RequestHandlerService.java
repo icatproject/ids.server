@@ -62,11 +62,12 @@ public class RequestHandlerService {
     private void registerHandler(RequestHandlerBase requestHandler) {
 
         //use only the handlers that supports the configured StorageUnit
-        if( requestHandler.supportsStorageUnit(this.propertyHandler.getStorageUnit()) )
+        if( requestHandler.supportsStorageUnit(this.propertyHandler.getStorageUnit()) ) {
             if(this.handlers.containsKey(requestHandler.getRequestType())) {
                 throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType.");
             }
             this.handlers.put(requestHandler.getRequestType(), requestHandler);
+        }
     }
 
 
