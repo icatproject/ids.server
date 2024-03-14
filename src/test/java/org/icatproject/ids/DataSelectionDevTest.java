@@ -24,7 +24,6 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.icat.client.IcatException;
 import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
-import org.icatproject.ids.dataSelection.DataSelectionFactory.Returns;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.services.ICATGetter;
 import org.icatproject.ids.services.IcatReader;

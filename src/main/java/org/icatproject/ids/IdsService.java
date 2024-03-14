@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -97,12 +99,12 @@ public class IdsService {
             NotFoundException, DataNotOnlineException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("request", new ValueContainer(request));
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("request",           new ValueContainer(request));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         this.requestService.handle(RequestType.ARCHIVE, parameters);
     }
@@ -133,11 +135,11 @@ public class IdsService {
             InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
 
         var parameters = new HashMap<String,ValueContainer>();
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         this.requestService.handle(RequestType.DELETE, parameters);
     }
@@ -254,12 +256,12 @@ public class IdsService {
             throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("preparedId", new ValueContainer(preparedId));
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("preparedId",        new ValueContainer(preparedId));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.GETDATAFILEIDS, parameters).getString();
     }
@@ -313,7 +315,7 @@ public class IdsService {
 
         var parameters = new HashMap<String, ValueContainer>();
         parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("ip",        new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.GETSERVICESTATUS, parameters).getString();
     }
@@ -348,12 +350,12 @@ public class IdsService {
 
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("preparedId", new ValueContainer(preparedId));
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("preparedId",        new ValueContainer(preparedId));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.GETSIZE, parameters).getLong();
     }
@@ -393,12 +395,12 @@ public class IdsService {
             throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("preparedId", new ValueContainer(preparedId));
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("preparedId",        new ValueContainer(preparedId));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.GETSTATUS, parameters).getString();
     }
@@ -444,8 +446,8 @@ public class IdsService {
             throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("preparedId", new ValueContainer(preparedId));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("preparedId",    new ValueContainer(preparedId));
+        parameters.put("ip",            new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.ISPREPARED, parameters).getBool();
     }
@@ -554,13 +556,13 @@ public class IdsService {
             throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException, DataNotOnlineException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("compress", new ValueContainer(compress));
-        parameters.put("zip", new ValueContainer(zip));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("compress",          new ValueContainer(compress));
+        parameters.put("zip",               new ValueContainer(zip));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.PREPAREDATA, parameters).getString();
     }
@@ -602,18 +604,18 @@ public class IdsService {
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("body", new ValueContainer(body));
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("name", new ValueContainer(name));
-        parameters.put("datafileFormatId", new ValueContainer(datafileFormatId));
-        parameters.put("datasetId", new ValueContainer(datasetId));
-        parameters.put("description", new ValueContainer(description));
-        parameters.put("doi", new ValueContainer(doi));
-        parameters.put("datafileCreateTime", new ValueContainer(datafileCreateTime));
-        parameters.put("datafileModTime", new ValueContainer(datafileModTime));
-        parameters.put("wrap", new ValueContainer(false));
-        parameters.put("padding", new ValueContainer(false));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("body",                  new ValueContainer(body));
+        parameters.put("sessionId",             new ValueContainer(sessionId));
+        parameters.put("name",                  new ValueContainer(name));
+        parameters.put("datafileFormatId",      new ValueContainer(datafileFormatId));
+        parameters.put("datasetId",             new ValueContainer(datasetId));
+        parameters.put("description",           new ValueContainer(description));
+        parameters.put("doi",                   new ValueContainer(doi));
+        parameters.put("datafileCreateTime",    new ValueContainer(datafileCreateTime));
+        parameters.put("datafileModTime",       new ValueContainer(datafileModTime));
+        parameters.put("wrap",                  new ValueContainer(false));
+        parameters.put("padding",               new ValueContainer(false));
+        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
 
         return this.requestService.handle(RequestType.PUT, parameters).getResponse();
     }
@@ -644,70 +646,60 @@ public class IdsService {
     public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
         try {
-            String sessionId = null;
-            String name = null;
-            String datafileFormatId = null;
-            String datasetId = null;
-            String description = null;
-            String doi = null;
-            String datafileCreateTime = null;
-            String datafileModTime = null;
+
             Response result = null;
-            boolean wrap = false;
-            boolean padding = false;
+
+            List<String> requestParameterNames = Arrays.asList(new String[] {"sessionId", "name", "datafileFormatId", "datasetId", "description",
+                                                "doi", "datafileCreateTime", "datafileModTime", "wrap", "padding"});
+            List<String> booleans = Arrays.asList(new String[] {"wrap", "padding"});
+
+            var parameters = new HashMap<String, ValueContainer>();
+            parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
 
             // Parse the request
             for (Part part : request.getParts()) {
                 String fieldName = part.getName();
+
                 InputStream stream = part.getInputStream();
+                parameters.put("body", new ValueContainer(stream));
+
                 if (part.getSubmittedFileName() == null) {
                     String value = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-                    if (fieldName.equals("sessionId")) {
-                        sessionId = value;
-                    } else if (fieldName.equals("name")) {
-                        name = value;
-                    } else if (fieldName.equals("datafileFormatId")) {
-                        datafileFormatId = value;
-                    } else if (fieldName.equals("datasetId")) {
-                        datasetId = value;
-                    } else if (fieldName.equals("description")) {
-                        description = value;
-                    } else if (fieldName.equals("doi")) {
-                        doi = value;
-                    } else if (fieldName.equals("datafileCreateTime")) {
-                        datafileCreateTime = value;
-                    } else if (fieldName.equals("datafileModTime")) {
-                        datafileModTime = value;
-                    } else if (fieldName.equals("wrap")) {
-                        wrap = (value != null && value.toUpperCase().equals("TRUE"));
-                    } else if (fieldName.equals("padding")) {
-                        padding = (value != null && value.toUpperCase().equals("TRUE"));
-                    } else {
+
+                    //if parameter unknown, throw an exception
+                    if(!requestParameterNames.contains(fieldName))
                         throw new BadRequestException("Form field " + fieldName + "is not recognised");
+
+                    // if we have a boolean parameter
+                    if(booleans.contains(fieldName)) {
+                        parameters.put(fieldName, new ValueContainer(value != null && value.toUpperCase().equals("TRUE")));
                     }
-                } else {
-                    if (name == null) {
-                        name = part.getSubmittedFileName();
+                    // or a String
+                    else {
+                        parameters.put(fieldName, new ValueContainer(value));
                     }
 
-                    var parameters = new HashMap<String, ValueContainer>();
-                    parameters.put("body", new ValueContainer(stream));
-                    parameters.put("sessionId", new ValueContainer(sessionId));
-                    parameters.put("name", new ValueContainer(name));
-                    parameters.put("datafileFormatId", new ValueContainer(datafileFormatId));
-                    parameters.put("datasetId", new ValueContainer(datasetId));
-                    parameters.put("description", new ValueContainer(description));
-                    parameters.put("doi", new ValueContainer(doi));
-                    parameters.put("datafileCreateTime", new ValueContainer(datafileCreateTime));
-                    parameters.put("datafileModTime", new ValueContainer(datafileModTime));
-                    parameters.put("wrap", new ValueContainer(wrap));
-                    parameters.put("padding", new ValueContainer(padding));
-                    parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+                } else {
+                    if (parameters.get("name") == null) {
+                        parameters.replace("name", new ValueContainer(part.getSubmittedFileName()));
+                    }
+
+                    // fill parameters map with missing values
+                    for(String parameterName : requestParameterNames) {
+                        if(!parameters.containsKey(parameterName)) {
+                            if(booleans.contains(parameterName))
+                                parameters.put(parameterName, new ValueContainer( false));
+                            else
+                                parameters.put(parameterName, new ValueContainer((String) null));
+                        }
+                    }
 
                     result = this.requestService.handle(RequestType.PUT, parameters).getResponse();
                 }
             }
+
             return result;
+
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         } catch (ServletException e) {
@@ -749,12 +741,12 @@ public class IdsService {
             throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("preparedId", new ValueContainer(preparedId));
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("preparedId",        new ValueContainer(preparedId));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         this.requestService.handle(RequestType.RESET, parameters);
 
@@ -789,11 +781,11 @@ public class IdsService {
             NotFoundException, DataNotOnlineException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         this.requestService.handle(RequestType.RESTORE, parameters);
     }
@@ -828,11 +820,11 @@ public class IdsService {
             NotFoundException, DataNotOnlineException {
 
         var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("sessionId", new ValueContainer(sessionId));
-        parameters.put("investigationIds", new ValueContainer(investigationIds));
-        parameters.put("datasetIds", new ValueContainer(datasetIds));
-        parameters.put("datafileIds", new ValueContainer(datafileIds));
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+        parameters.put("sessionId",         new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
 
         this.requestService.handle(RequestType.WRITE, parameters);
     }

@@ -85,19 +85,19 @@ public class TidierTest {
     @Test
     public void testAddStringConstraint() throws Exception {
         StringBuilder sb1 = new StringBuilder();
-        boolean andNeeded = Tidier.addStringConstraint(sb1, "df.location", "/path/to/normal/file", false);
+        Tidier.addStringConstraint(sb1, "df.location", "/path/to/normal/file", false);
         assertEquals(" df.location = '/path/to/normal/file'", sb1.toString());
 
         /* Fix error where a file path contains an apostrophe */
         StringBuilder sb2 = new StringBuilder();
-        andNeeded = Tidier.addStringConstraint(sb2, "df.location", "/path/to/Person's Files/myscript.py", false);
+        Tidier.addStringConstraint(sb2, "df.location", "/path/to/Person's Files/myscript.py", false);
         assertEquals(" df.location = '/path/to/Person''s Files/myscript.py'", sb2.toString());
     }
 
     @Test
     public void testAddNumericConstraint() throws Exception {
         StringBuilder sb3 = new StringBuilder();
-        boolean andNeeded = Tidier.addNumericConstraint(sb3, "df.id", 12345L, false);
+        Tidier.addNumericConstraint(sb3, "df.id", 12345L, false);
         assertEquals(" df.id = 12345", sb3.toString());
     }
 }

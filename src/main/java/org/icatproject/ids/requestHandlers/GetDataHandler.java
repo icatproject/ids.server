@@ -176,9 +176,9 @@ public class GetDataHandler extends RequestHandlerBase {
             logger.debug("Could not acquire lock, getData failed");
             throw new DataNotOnlineException("Data is busy");
         } catch (IOException e) {
-            if (lock != null) {
-                lock.release();
-            }
+            // if (lock != null) {
+            //     lock.release();
+            // }
             logger.error("I/O error " + e.getMessage());
             throw new InternalException(e.getClass() + " " + e.getMessage());
         } catch (IdsException e) {
@@ -267,9 +267,9 @@ public class GetDataHandler extends RequestHandlerBase {
             logger.debug("Could not acquire lock, getData failed");
             throw new DataNotOnlineException("Data is busy");
         } catch (IOException e) {
-            if (lock != null) {
-                lock.release();
-            }
+            // if (lock != null) {
+            //     lock.release();
+            // }
             logger.error("I/O error " + e.getMessage());
             throw new InternalException(e.getClass() + " " + e.getMessage());
         } catch (IdsException e) {

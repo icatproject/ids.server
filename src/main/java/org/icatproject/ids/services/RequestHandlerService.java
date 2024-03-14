@@ -54,6 +54,8 @@ public class RequestHandlerService {
     private Path markerDir;
     private UnfinishedWorkService unfinishedWorkService;
 
+    private final Object lock = new Object();
+
 
     /**
      * Use this mwthod to add your new handler to the internal handlers list, so that it can be called when it needs to be called.
@@ -95,7 +97,7 @@ public class RequestHandlerService {
     @PostConstruct
     private void init() {
         try {
-            synchronized (inited) {
+            synchronized (lock) {
                 logger.info("creating RequestHandlerService");
                 propertyHandler = ServiceProvider.getInstance().getPropertyHandler();
                 archiveStorage = propertyHandler.getArchiveStorage();
