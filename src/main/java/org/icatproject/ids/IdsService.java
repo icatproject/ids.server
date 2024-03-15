@@ -66,7 +66,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @summary archive
+     * @title archive
      * @statuscode 200 To indicate success
      */
     @POST
@@ -95,7 +95,7 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InternalException
      * @throws DataNotOnlineException
-     * @summary delete
+     * @title delete
      * @statuscode 200 To indicate success
      */
     @DELETE
@@ -116,7 +116,7 @@ public class IdsService {
      * Return the version of the server
      *
      * @return json string of the form: <samp>{"version":"4.4.0"}</samp>
-     * @summary Version
+     * @title Version
      */
     @GET
     @Path("version")
@@ -158,7 +158,7 @@ public class IdsService {
      * @throws InternalException
      * @throws InsufficientPrivilegesException
      * @throws DataNotOnlineException
-     * @summary getData
+     * @title getData
      * @statuscode 200 To indicate success
      */
     @GET
@@ -208,7 +208,7 @@ public class IdsService {
      * @throws InternalException
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
-     * @summary getDatafileIds
+     * @title getDatafileIds
      * @statuscode 200 To indicate success
      */
     @GET
@@ -259,7 +259,7 @@ public class IdsService {
      * @throws InternalException
      * @throws NotFoundException
      * @throws DataNotOnlineException
-     * @summary getLink
+     * @title getLink
      * @statuscode 200 To indicate success
      */
     @POST
@@ -283,7 +283,7 @@ public class IdsService {
      * @return a json string.
      * @throws InternalException
      * @throws InsufficientPrivilegesException
-     * @summary getServiceStatus
+     * @title getServiceStatus
      * @statuscode 200 To indicate success
      */
     @GET
@@ -309,7 +309,7 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
-     * @summary getSize
+     * @title getSize
      * @statuscode 200 To indicate success
      */
     @GET
@@ -347,7 +347,7 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
-     * @summary getStatus
+     * @title getStatus
      * @statuscode 200 To indicate success
      */
     @GET
@@ -387,7 +387,7 @@ public class IdsService {
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
-     * @summary isPrepared
+     * @title isPrepared
      * @statuscode 200 To indicate success
      */
     @GET
@@ -403,7 +403,7 @@ public class IdsService {
      * readOnly status of the server.
      *
      * @return true if readonly, else false
-     * @summary isReadOnly
+     * @title isReadOnly
      * @statuscode 200 To indicate success
      */
     @GET
@@ -418,7 +418,7 @@ public class IdsService {
      * storage. This returns the twoLevel status of the server.
      *
      * @return true if twoLevel, else false
-     * @summary isTwoLevel
+     * @title isTwoLevel
      * @statuscode 200 To indicate success
      */
     @GET
@@ -432,7 +432,7 @@ public class IdsService {
      * Should return "IdsOK"
      *
      * @return "IdsOK"
-     * @summary ping
+     * @title ping
      * @statuscode 200 To indicate success
      */
     @GET
@@ -466,7 +466,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotFoundException
      * @throws InternalException
-     * @summary prepareData
+     * @title prepareData
      * @statuscode 200 To indicate success
      */
     @POST
@@ -503,7 +503,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotImplementedException
      * @throws DataNotOnlineException
-     * @summary put
+     * @title put
      * @statuscode 201 When object successfully created
      */
     @PUT
@@ -537,7 +537,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotImplementedException
      * @throws DataNotOnlineException
-     * @summary putAsPost
+     * @title putAsPost
      * @statuscode 201 When object successfully created
      */
     @POST
@@ -625,7 +625,7 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InternalException
      * @throws InsufficientPrivilegesException
-     * @summary reset
+     * @title reset
      * @statuscode 200 To indicate success
      */
     @POST
@@ -657,7 +657,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @summary restore
+     * @title restore
      * @statuscode 200 To indicate success
      */
     @POST
@@ -688,7 +688,7 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @summary write
+     * @title write
      * @statuscode 200 To indicate success
      */
     @POST
