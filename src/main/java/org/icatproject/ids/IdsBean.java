@@ -20,6 +20,7 @@ import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -50,6 +51,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
+import static jakarta.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 
@@ -855,6 +857,7 @@ public class IdsBean {
         // Do it
         Map<Long, DsInfo> dsInfos = dataSelection.getDsInfo();
         Set<DfInfoImpl> dfInfos = dataSelection.getDfInfo();
+        var length = zip ? OptionalLong.empty() : dataSelection.getFileLength();
 
         Lock lock = null;
         try {
@@ -905,11 +908,14 @@ public class IdsBean {
                 }
             }
 
-            return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
+            var response = Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
                     .entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lock,
                             transferId, ip, start))
-                    .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
-                    .build();
+                    .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes");
+            length.stream()
+                    .map(l -> Math.max(0L, l - offset))
+                    .forEach(l -> response.header(CONTENT_LENGTH, l));
+            return response.build();
         } catch (AlreadyLockedException e) {
             logger.debug("Could not acquire lock, getData failed");
             throw new DataNotOnlineException("Data is busy");

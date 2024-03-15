@@ -252,6 +252,7 @@ public class TestingClient {
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 return new URL(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException | BadRequestException
                      | InsufficientPrivilegesException | NotFoundException e) {
@@ -291,6 +292,7 @@ public class TestingClient {
             httpclient = HttpClients.createDefault();
             response = httpclient.execute(httpGet);
             checkStatus(response, sc);
+            checkResponseConformity(response);
             closeNeeded = false;
             return new HttpInputStream(httpclient, response);
         } catch (IOException | InsufficientStorageException e) {
@@ -332,6 +334,7 @@ public class TestingClient {
             httpclient = HttpClients.createDefault();
             response = httpclient.execute(httpGet);
             checkStatus(response, sc);
+            checkResponseConformity(response);
             closeNeeded = false;
             return new HttpInputStream(httpclient, response);
         } catch (IOException | InsufficientStorageException e) {
@@ -365,6 +368,7 @@ public class TestingClient {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 String result = getString(response, sc);
                 try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
                     ServiceStatus serviceStatus = new ServiceStatus();
@@ -411,6 +415,7 @@ public class TestingClient {
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 return Long.parseLong(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -455,6 +460,7 @@ public class TestingClient {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 return Status.valueOf(getString(response, sc));
             } catch (InsufficientStorageException | DataNotOnlineException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -520,6 +526,7 @@ public class TestingClient {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 return Boolean.parseBoolean(getString(response, sc));
             } catch (InsufficientStorageException | DataNotOnlineException | InsufficientPrivilegesException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -534,6 +541,7 @@ public class TestingClient {
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 return Boolean.parseBoolean(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException | BadRequestException
                      | InsufficientPrivilegesException | NotFoundException e) {
@@ -549,6 +557,7 @@ public class TestingClient {
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 return Boolean.parseBoolean(getString(response, sc));
             } catch (IOException | InsufficientStorageException | DataNotOnlineException | BadRequestException
                      | InsufficientPrivilegesException | NotFoundException e) {
@@ -565,6 +574,7 @@ public class TestingClient {
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             HttpGet httpGet = new HttpGet(uri);
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 String result = getString(response, sc);
                 if (!result.equals("IdsOK")) {
                     throw new NotFoundException("Server gave invalid response: " + result);
@@ -599,6 +609,7 @@ public class TestingClient {
             HttpPost httpPost = new HttpPost(uri);
             httpPost.setEntity(entity);
             try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+                checkResponseConformity(response);
                 return getString(response, sc);
             } catch (InsufficientStorageException | DataNotOnlineException e) {
                 throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -650,6 +661,7 @@ public class TestingClient {
 
         try (CloseableHttpResponse response = httpclient.execute(httpPut)) {
             String result = getString(response, sc);
+            checkResponseConformity(response);
             try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
                 JsonObject rootNode = jsonReader.readObject();
                 if (rootNode.getJsonNumber("checksum").longValueExact() != crc.getValue()) {
@@ -708,6 +720,7 @@ public class TestingClient {
         httpPost.setEntity(entity);
 
         try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+            checkResponseConformity(response);
             String result = getString(response, sc);
             String prefix = "<html><script type=\"text/javascript\">window.name='";
             String suffix = "';</script></html>";
@@ -764,6 +777,7 @@ public class TestingClient {
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
                 String result = getString(response, sc);
+                checkResponseConformity(response);
                 try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
 
                     JsonObject rootNode = jsonReader.readObject();
@@ -800,6 +814,7 @@ public class TestingClient {
             HttpGet httpGet = new HttpGet(uri);
 
             try (CloseableHttpResponse response = httpclient.execute(httpGet)) {
+                checkResponseConformity(response);
                 String result = getString(response, sc);
                 try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
 
@@ -886,6 +901,23 @@ public class TestingClient {
             }
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
+        }
+    }
+
+    private void checkResponseConformity(HttpResponse response) throws InternalException {
+
+        StatusLine status = response.getStatusLine();
+        var statusCode = status.getStatusCode();
+        if(statusCode == 200 && response.getEntity() != null) {
+            //we have a status of 200 and a payload. Check for header conformity
+            Boolean chunked = response.getFirstHeader("Transfer-Encoding") != null ? response.getFirstHeader("Transfer-Encoding").getValue().contains("chunked")
+                                                                                        : false;
+
+            if ( (response.getFirstHeader("Content-Length") == null && !chunked)
+                || (response.getFirstHeader("Content-Length") != null && chunked ) ) {
+
+                throw new InternalException("Responses with payload should either contain the Content-Length header or the 'Transfer-Encoding: chunked' header. It needs exactly one of them.");
+            }
         }
     }
 
