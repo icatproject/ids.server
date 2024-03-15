@@ -78,6 +78,14 @@ public abstract class DataSelectionBase {
 
     public abstract void scheduleTasks(DeferredOp operation) throws NotImplementedException, InternalException;
 
+    //TODO: maybe implementing this method here whould be the better way, than making it abstract. But we will miss the NotImplementedException for SingleLevelStorage in that case.
+    // should we change the tests and the behavior of the ids server here
+    // public void scheduleTasks(DeferredOp operation) throws NotImplementedException, InternalException {
+    //     for (DataInfoBase dataInfo : this.getPrimaryDataInfos().values()) {      // in case of SingleLevelStorage an empty map is returned and nothing will happen (even not an exception).
+    //         ServiceProvider.getInstance().getFsm().queue(dataInfo, operation);
+    //     }
+    // }
+
 
     public Map<Long, DataInfoBase> getDsInfo() {
         return dsInfos;
