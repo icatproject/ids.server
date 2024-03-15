@@ -647,8 +647,6 @@ public class IdsService {
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
         try {
 
-            Response result = null;
-
             List<String> requestParameterNames = Arrays.asList(new String[] {"sessionId", "name", "datafileFormatId", "datasetId", "description",
                                                 "doi", "datafileCreateTime", "datafileModTime", "wrap", "padding"});
             List<String> booleans = Arrays.asList(new String[] {"wrap", "padding"});
@@ -670,35 +668,30 @@ public class IdsService {
                     if(!requestParameterNames.contains(fieldName))
                         throw new BadRequestException("Form field " + fieldName + "is not recognised");
 
-                    // if we have a boolean parameter
-                    if(booleans.contains(fieldName)) {
-                        parameters.put(fieldName, new ValueContainer(value != null && value.toUpperCase().equals("TRUE")));
-                    }
-                    // or a String
-                    else {
-                        parameters.put(fieldName, new ValueContainer(value));
-                    }
+                    parameters.put(fieldName, booleans.contains(fieldName) 
+                                                ? new ValueContainer(value != null && value.toUpperCase().equals("TRUE")) // if it should be a boolean ...
+                                                : new ValueContainer(value) // ... or a String
+                    );
 
                 } else {
                     if (parameters.get("name") == null) {
-                        parameters.replace("name", new ValueContainer(part.getSubmittedFileName()));
+                        parameters.put("name", new ValueContainer(part.getSubmittedFileName()));
                     }
-
-                    // fill parameters map with missing values
-                    for(String parameterName : requestParameterNames) {
-                        if(!parameters.containsKey(parameterName)) {
-                            if(booleans.contains(parameterName))
-                                parameters.put(parameterName, new ValueContainer( false));
-                            else
-                                parameters.put(parameterName, new ValueContainer((String) null));
-                        }
-                    }
-
-                    result = this.requestService.handle(RequestType.PUT, parameters).getResponse();
                 }
             }
 
-            return result;
+            // add default values for missing parameters
+            for(String parameterName : requestParameterNames) {
+                if(!parameters.containsKey(parameterName)) {
+                    parameters.put(parameterName, booleans.contains(parameterName) 
+                                                    ? new ValueContainer( false) 
+                                                    : new ValueContainer((String) null) 
+                    );
+                }
+            }
+
+            //handle the request
+            return this.requestService.handle(RequestType.PUT, parameters).getResponse();
 
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
