@@ -56,6 +56,7 @@ public class IdsService {
      * datafileIds specified along with a sessionId. If two level storage is not
      * in use this has no effect.
      *
+     * @title archive
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds If present, a comma separated list of investigation id values
      * @param datasetIds       If present, a comma separated list of data set id values or
@@ -66,7 +67,6 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @summary archive
      * @statuscode 200 To indicate success
      */
     @POST
@@ -84,6 +84,7 @@ public class IdsService {
      * Delete data specified by the investigationIds, datasetIds and datafileIds
      * specified along with a sessionId.
      *
+     * @title delete
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds If present, a comma separated list of investigation id values
      * @param datasetIds       If present, a comma separated list of data set id values or
@@ -95,7 +96,6 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InternalException
      * @throws DataNotOnlineException
-     * @summary delete
      * @statuscode 200 To indicate success
      */
     @DELETE
@@ -115,8 +115,8 @@ public class IdsService {
     /**
      * Return the version of the server
      *
+     * @title Version
      * @return json string of the form: <samp>{"version":"4.4.0"}</samp>
-     * @summary Version
      */
     @GET
     @Path("version")
@@ -135,6 +135,7 @@ public class IdsService {
      * of which may be omitted, along with a sessionId if the preparedId is not
      * set. If preparedId is set the compress and zip arguments are not used.
      *
+     * @title getData
      * @param preparedId       A valid preparedId returned by a call to prepareData
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds A comma separated list of investigation id values.
@@ -158,7 +159,6 @@ public class IdsService {
      * @throws InternalException
      * @throws InsufficientPrivilegesException
      * @throws DataNotOnlineException
-     * @summary getData
      * @statuscode 200 To indicate success
      */
     @GET
@@ -198,6 +198,7 @@ public class IdsService {
      * and datafileIds specified along with a sessionId if the preparedId is not
      * set.
      *
+     * @title getDatafileIds
      * @param preparedId       A valid preparedId returned by a call to prepareData
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds A comma separated list of investigation id values.
@@ -208,7 +209,6 @@ public class IdsService {
      * @throws InternalException
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
-     * @summary getDatafileIds
      * @statuscode 200 To indicate success
      */
     @GET
@@ -248,6 +248,7 @@ public class IdsService {
      * the file system where the IDS is storing data. Only read access to the
      * file is granted.
      *
+     * @title getLink
      * @param sessionId  A valid ICAT session ID
      * @param datafileId the id of a data file
      * @param username   the name of the user who will will be granted access to the
@@ -259,7 +260,6 @@ public class IdsService {
      * @throws InternalException
      * @throws NotFoundException
      * @throws DataNotOnlineException
-     * @summary getLink
      * @statuscode 200 To indicate success
      */
     @POST
@@ -278,12 +278,12 @@ public class IdsService {
      * Obtain detailed information about what the ids is doing. You need to be
      * privileged to use this call.
      *
+     * @title getServiceStatus
      * @param sessionId A valid ICAT session ID of a user in the IDS rootUserNames
      *                  set.
      * @return a json string.
      * @throws InternalException
      * @throws InsufficientPrivilegesException
-     * @summary getServiceStatus
      * @statuscode 200 To indicate success
      */
     @GET
@@ -298,6 +298,7 @@ public class IdsService {
      * Return the total size of all the data files specified by the
      * investigationIds, datasetIds and datafileIds along with a sessionId.
      *
+     * @title getSize
      * @param preparedId       A valid preparedId returned by a call to prepareData
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds If present, a comma separated list of investigation id values
@@ -309,7 +310,6 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
-     * @summary getSize
      * @statuscode 200 To indicate success
      */
     @GET
@@ -330,6 +330,7 @@ public class IdsService {
      * Return the archive status of the data files specified by the
      * investigationIds, datasetIds and datafileIds along with a sessionId.
      *
+     * @title getStatus
      * @param preparedId       A valid preparedId returned by a call to prepareData
      * @param sessionId        A sessionId returned by a call to the icat server. If the
      *                         sessionId is omitted or null the ids reader account will be
@@ -347,7 +348,6 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
-     * @summary getStatus
      * @statuscode 200 To indicate success
      */
     @GET
@@ -382,12 +382,12 @@ public class IdsService {
      * the end successfully will then go through all those it did not look at
      * because it did not start at the beginning.
      *
+     * @title isPrepared
      * @param preparedId A valid preparedId returned by a call to prepareData
      * @return true if all the data files are ready to be downloaded else false.
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
-     * @summary isPrepared
      * @statuscode 200 To indicate success
      */
     @GET
@@ -402,8 +402,8 @@ public class IdsService {
      * An ids server can be configured to be read only. This returns the
      * readOnly status of the server.
      *
+     * @title isReadOnly
      * @return true if readonly, else false
-     * @summary isReadOnly
      * @statuscode 200 To indicate success
      */
     @GET
@@ -417,8 +417,8 @@ public class IdsService {
      * An ids server can be configured to support one or two levels of data
      * storage. This returns the twoLevel status of the server.
      *
+     * @title isTwoLevel
      * @return true if twoLevel, else false
-     * @summary isTwoLevel
      * @statuscode 200 To indicate success
      */
     @GET
@@ -431,8 +431,8 @@ public class IdsService {
     /**
      * Should return "IdsOK"
      *
+     * @title ping
      * @return "IdsOK"
-     * @summary ping
      * @statuscode 200 To indicate success
      */
     @GET
@@ -450,6 +450,7 @@ public class IdsService {
      * by the investigationIds, datasetIds and datafileIds, any of which may be
      * omitted, along with a sessionId.
      *
+     * @title prepareData
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds A comma separated list of investigation id values.
      * @param datasetIds       A comma separated list of data set id values.
@@ -466,7 +467,6 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotFoundException
      * @throws InternalException
-     * @summary prepareData
      * @statuscode 200 To indicate success
      */
     @POST
@@ -485,6 +485,7 @@ public class IdsService {
     /**
      * Stores a data file
      *
+     * @title put
      * @param body               The contents of the file to be stored
      * @param sessionId          A sessionId returned by a call to the icat server.
      * @param name               A name to assign to the data file
@@ -503,7 +504,6 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotImplementedException
      * @throws DataNotOnlineException
-     * @summary put
      * @statuscode 201 When object successfully created
      */
     @PUT
@@ -528,6 +528,7 @@ public class IdsService {
      * two fields will be removed shortly as they are only required by the old
      * (GWT based) topcat.
      *
+     * @title putAsPost
      * @param request
      * @return a json object with attributes of "id", "checksum", "location" and
      * "size";
@@ -537,7 +538,6 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotImplementedException
      * @throws DataNotOnlineException
-     * @summary putAsPost
      * @statuscode 201 When object successfully created
      */
     @POST
@@ -615,6 +615,7 @@ public class IdsService {
      * You must either specify a preparedId or a sessionId. If preparedId is
      * specified then investigationIds, datasetIds and datafileIds are not used.
      *
+     * @title reset
      * @param preparedId       A valid preparedId returned by a call to prepareData
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds A comma separated list of investigation id values.
@@ -625,7 +626,6 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InternalException
      * @throws InsufficientPrivilegesException
-     * @summary reset
      * @statuscode 200 To indicate success
      */
     @POST
@@ -647,6 +647,7 @@ public class IdsService {
      * datafileIds specified along with a sessionId. If two level storage is not
      * in use this has no effect.
      *
+     * @title restore
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds If present, a comma separated list of investigation id values
      * @param datasetIds       If present, a comma separated list of data set id values or
@@ -657,7 +658,6 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @summary restore
      * @statuscode 200 To indicate success
      */
     @POST
@@ -678,6 +678,7 @@ public class IdsService {
      * storage. If two level storage is not in use this has no
      * effect.
      *
+     * @title write
      * @param sessionId        A sessionId returned by a call to the icat server.
      * @param investigationIds If present, a comma separated list of investigation id values
      * @param datasetIds       If present, a comma separated list of data set id values or
@@ -688,7 +689,6 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @summary write
      * @statuscode 200 To indicate success
      */
     @POST
