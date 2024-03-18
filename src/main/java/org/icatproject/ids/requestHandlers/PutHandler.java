@@ -192,7 +192,7 @@ public class PutHandler extends RequestHandlerBase {
                     }
                     var dsInfos = new TreeMap<Long, DataInfoBase>();
                     dsInfos.put(dsInfo.getId(), dsInfo);
-                    DataSelectionBase dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets);
+                    DataSelectionBase dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets, 0);
                     dataSelection.checkOnline();
                 }
 

@@ -76,7 +76,7 @@ public class PrepareDataHandler extends RequestHandlerBase {
 
         logger.debug("Writing to " + preparedDir.resolve(preparedId));
         try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(preparedDir.resolve(preparedId)))) {
-            pack(stream, zip, compress, dsInfos, dfInfos, emptyDs);
+            pack(stream, zip, compress, dsInfos, dfInfos, emptyDs, dataSelection.getFileLength().isEmpty() ? 0 : dataSelection.getFileLength().getAsLong());
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }

@@ -75,7 +75,7 @@ public class ResetHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        var dataSelection = DataSelectionFactory.get(preparedJson.dsInfos, preparedJson.dfInfos, preparedJson.emptyDatasets, this.getRequestType());
+        var dataSelection = DataSelectionFactory.get(preparedJson.dsInfos, preparedJson.dfInfos, preparedJson.emptyDatasets, preparedJson.fileLength, this.getRequestType());
 
         this.recordSuccess(dataSelection, serviceProvider.getFsm());
 

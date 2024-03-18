@@ -81,7 +81,7 @@ public class GetStatusHandler extends RequestHandlerBase {
         Set<Long> emptyDatasets = prepared.emptyDatasets;
 
         // Do it
-        var dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets);
+        var dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets, prepared.fileLength);
 
         Status status = this.getStatus(dataSelection);
 

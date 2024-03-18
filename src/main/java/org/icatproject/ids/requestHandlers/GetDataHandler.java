@@ -121,11 +121,12 @@ public class GetDataHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        DataSelectionBase dataSelection = this.getDataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets);
+        DataSelectionBase dataSelection = this.getDataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, prepared.fileLength);
         final boolean zip = prepared.zip;
         final boolean compress = prepared.compress;
         final Map<Long, DataInfoBase> dfInfos = prepared.dfInfos;
         final Map<Long, DataInfoBase> dsInfos = prepared.dsInfos;
+        var length = zip ? OptionalLong.empty() : dataSelection.getFileLength();
 
         Lock lock = null;
         try {
@@ -170,10 +171,15 @@ public class GetDataHandler extends RequestHandlerBase {
                 serviceProvider.getTransmitter().processMessage("getDataStart", ip, baos.toString(), time);
             }
 
-            return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
+            var response = Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
                     .entity(new SO(dsInfos, dfInfos, offset, zip, compress, lock, transferId, ip, time, serviceProvider))
-                    .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
-                    .build();
+                    .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes");
+            length.stream()
+                    .map(l -> Math.max(0L, l - offset))
+                    .forEach(l -> response.header(CONTENT_LENGTH, l));
+                
+            return response.build();
+
         } catch (AlreadyLockedException e) {
             logger.debug("Could not acquire lock, getData failed");
             throw new DataNotOnlineException("Data is busy");

@@ -99,7 +99,7 @@ public abstract class DataSelectionBase {
         return dfInfos;
     }
 
-    
+
     public boolean mustZip() {
         return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty()
                 || (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty());
@@ -185,6 +185,7 @@ public abstract class DataSelectionBase {
         if (this.getDfInfo().isEmpty() || mustZip()) {
             return OptionalLong.empty();
         }
+
         return OptionalLong.of(length);
     }
 

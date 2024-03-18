@@ -78,18 +78,34 @@ public class DataSelectionFactory {
     }
 
 
-    
-    public static DataSelectionBase get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, RequestType requestType) throws InternalException {
+    /**
+     * created a DataSelectionBase object from already created data infos. That's why no infos must be loaded from ICAT.
+     * @param dsInfos
+     * @param dfInfos
+     * @param emptyDatasets
+     * @param fileLength
+     * @param requestType
+     * @return
+     * @throws InternalException
+     */
+    public static DataSelectionBase get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength, RequestType requestType) throws InternalException {
         List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
+        List<Long> invIds = new ArrayList<Long>();
         var dataFileInfos = new HashMap<Long, DataInfoBase>();
         for(DataInfoBase dfInfo: dfInfos.values()) {
             dfids.add(dfInfo.getId());
             dataFileInfos.put(dfInfo.getId(), dfInfo);
+            dfids.add(dfInfo.getId());
         }
 
-        //TODO: PROLEM here, creating empty dsids, dfids and invids lists will cause wron behavior in some DataSelection funktions like mustZip()
-        return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, new ArrayList<Long>(), dsids, dfids, 0, requestType);
+        for(DataInfoBase dsInfo : dsInfos.values()) {
+            dsids.add(dsInfo.getId());
+            invIds.add( ((DataSetInfo)dsInfo).getInvId() );
+        }
+
+        //giving -1 as length here to indicate that no length where calculated
+        return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, invIds, dsids, dfids, fileLength, requestType);
     }
 
     private DataSelectionFactory(PropertyHandler propertyHandler, IcatReader reader) throws InternalException
@@ -106,18 +122,18 @@ public class DataSelectionFactory {
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionBase createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) throws InternalException {
+    private DataSelectionBase createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) throws InternalException {
 
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
         if(storageUnit == null )
-            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, requestType);
+            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
 
         else if (storageUnit == StorageUnit.DATAFILE)
-            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, requestType);
+            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
 
         else if(storageUnit == StorageUnit.DATASET)
-            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, requestType);
+            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
 
         else throw new InternalException("StorageUnit " + storageUnit + " unknown. Maybe you forgot to handle a new StorageUnit here?");
 

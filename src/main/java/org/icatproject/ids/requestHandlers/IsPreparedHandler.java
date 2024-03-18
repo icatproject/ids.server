@@ -97,7 +97,7 @@ public class IsPreparedHandler extends RequestHandlerBase {
             }
 
             var serviceProvider = ServiceProvider.getInstance();
-            DataSelectionBase dataSelection = this.getDataSelection(preparedJson.dsInfos, preparedJson.dfInfos, preparedJson.emptyDatasets);
+            DataSelectionBase dataSelection = this.getDataSelection(preparedJson.dsInfos, preparedJson.dfInfos, preparedJson.emptyDatasets, preparedJson.fileLength);
 
             prepared = dataSelection.isPrepared(preparedId);
 

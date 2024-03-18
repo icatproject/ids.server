@@ -105,9 +105,9 @@ public abstract class RequestHandlerBase {
      * @return
      * @throws InternalException
      */
-    public DataSelectionBase getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) throws InternalException {
+    public DataSelectionBase getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength) throws InternalException {
 
-        return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, this.getRequestType());
+        return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, fileLength, this.getRequestType());
     }
 
 
@@ -182,11 +182,12 @@ public abstract class RequestHandlerBase {
 
 
     public static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataInfoBase> dsInfos,
-                        Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets) {
+                        Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength) {
         JsonGenerator gen = Json.createGenerator(stream);
         gen.writeStartObject();
         gen.write("zip", zip);
         gen.write("compress", compress);
+        gen.write("fileLength", fileLength);
 
         gen.writeStartArray("dsInfo");
         for (DataInfoBase dataInfo : dsInfos.values()) {
@@ -242,6 +243,7 @@ public abstract class RequestHandlerBase {
         }
         prepared.zip = pd.getBoolean("zip");
         prepared.compress = pd.getBoolean("compress");
+        prepared.fileLength = pd.containsKey("fileLength") ? pd.getInt("fileLength") : 0;
         SortedMap<Long, DataInfoBase> dsInfos = new TreeMap<>();
         SortedMap<Long, DataInfoBase> dfInfos = new TreeMap<>();
         Set<Long> emptyDatasets = new HashSet<>();

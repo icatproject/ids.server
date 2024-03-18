@@ -52,13 +52,14 @@ public class PreparePackingTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (OutputStream stream = new BufferedOutputStream(baos)) {
-            RequestHandlerBase.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets);
+            RequestHandlerBase.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets, 51);
         }
         System.out.println(baos.toString());
         InputStream stream = new ByteArrayInputStream(baos.toByteArray());
         Prepared prepared = RequestHandlerBase.unpack(stream);
         assertTrue(prepared.zip);
         assertFalse(prepared.compress);
+        assertEquals(prepared.fileLength, 51);
         for (DataInfoBase dataInfo : prepared.dfInfos.values()) {
             if (dataInfo.getId() == 5L) {
                 assertEquals("dfName", dataInfo.getName());
