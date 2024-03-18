@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
@@ -39,6 +40,7 @@ public abstract class DataSelectionBase {
     protected List<Long> dsids;
     protected List<Long> dfids;
     protected RequestType requestType;
+    private long length;
 
 
     protected static ExecutorService threadPool;
@@ -53,7 +55,7 @@ public abstract class DataSelectionBase {
 
     }
 
-    protected DataSelectionBase(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
+    protected DataSelectionBase(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) {
 
         this.dsInfos = dsInfos;
         this.dfInfos = dfInfos;
@@ -61,6 +63,7 @@ public abstract class DataSelectionBase {
         this.invids = invids2;
         this.dsids = dsids;
         this.dfids = dfids;
+        this.length = length;
         this.requestType = requestType;
     }
 
@@ -96,7 +99,7 @@ public abstract class DataSelectionBase {
         return dfInfos;
     }
 
-
+    
     public boolean mustZip() {
         return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty()
                 || (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty());
@@ -175,6 +178,14 @@ public abstract class DataSelectionBase {
             }
             threadPool.submit(new RestoreDataInfoTask(dataInfos, this, false));
         }
+    }
+
+
+    public OptionalLong getFileLength() {
+        if (this.getDfInfo().isEmpty() || mustZip()) {
+            return OptionalLong.empty();
+        }
+        return OptionalLong.of(length);
     }
 
 

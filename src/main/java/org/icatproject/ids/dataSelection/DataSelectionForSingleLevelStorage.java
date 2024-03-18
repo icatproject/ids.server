@@ -14,9 +14,9 @@ import org.icatproject.ids.models.DataInfoBase;
 public class DataSelectionForSingleLevelStorage extends DataSelectionBase {
 
     protected DataSelectionForSingleLevelStorage(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
-            Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, RequestType requestType) {
+            Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) {
                 
-        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, requestType);
+        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, requestType);
     }
 
 

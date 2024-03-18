@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,6 +40,7 @@ import org.icatproject.ids.services.LockManager.LockType;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.ws.rs.core.Response;
+import static jakarta.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 
 public class GetDataHandler extends RequestHandlerBase {
 
@@ -208,6 +210,7 @@ public class GetDataHandler extends RequestHandlerBase {
         // Do it
         Map<Long, DataInfoBase> dsInfos = dataSelection.getDsInfo();
         Map<Long, DataInfoBase> dfInfos = dataSelection.getDfInfo();
+        var length = zip ? OptionalLong.empty() : dataSelection.getFileLength();
 
         Lock lock = null;
         try {
@@ -258,11 +261,16 @@ public class GetDataHandler extends RequestHandlerBase {
                 }
             }
 
-            return Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
+            var response =  Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
                     .entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lock,
                             transferId, ip, start, serviceProvider))
-                    .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes")
-                    .build();
+                    .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes");
+            length.stream()
+                    .map(l -> Math.max(0L, l - offset))
+                    .forEach(l -> response.header(CONTENT_LENGTH, l));
+            
+            return response.build();
+
         } catch (AlreadyLockedException e) {
             logger.debug("Could not acquire lock, getData failed");
             throw new DataNotOnlineException("Data is busy");
