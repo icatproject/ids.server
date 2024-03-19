@@ -7,8 +7,8 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
-import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -24,7 +24,7 @@ import jakarta.json.stream.JsonGenerator;
 public class RestoreHandler extends RequestHandlerBase {
 
     public RestoreHandler() {
-        super(new StorageUnit[]{StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.RESTORE);
+        super(PreparedDataStatus.NOMATTER, RequestType.RESTORE);
     }
 
     @Override

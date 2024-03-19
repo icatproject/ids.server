@@ -12,9 +12,9 @@ import java.util.SortedMap;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.Status;
-import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -32,7 +32,7 @@ import jakarta.json.stream.JsonGenerator;
 public class GetStatusHandler extends RequestHandlerBase {
 
     public GetStatusHandler() {
-        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.GETSTATUS );
+        super(PreparedDataStatus.NOMATTER, RequestType.GETSTATUS );
     }
 
     @Override

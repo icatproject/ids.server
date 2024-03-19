@@ -23,6 +23,7 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -63,7 +64,7 @@ public class PutHandler extends RequestHandlerBase {
     }
 
     public PutHandler() {
-        super(new StorageUnit[]{StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.PUT);
+        super(PreparedDataStatus.NOMATTER, RequestType.PUT);
     }
 
     public void init() throws InternalException {

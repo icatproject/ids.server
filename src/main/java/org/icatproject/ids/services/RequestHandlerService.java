@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -16,7 +17,6 @@ import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.requestHandlers.ArchiveHandler;
 import org.icatproject.ids.requestHandlers.DeleteHandler;
 import org.icatproject.ids.requestHandlers.GetDataFileIdsHandler;
-import org.icatproject.ids.requestHandlers.GetDataHandler;
 import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
 import org.icatproject.ids.requestHandlers.GetServiceStatusHandler;
 import org.icatproject.ids.requestHandlers.GetSizeHandler;
@@ -30,6 +30,7 @@ import org.icatproject.ids.requestHandlers.RequestHandlerBase;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;
+import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,12 @@ import jakarta.ejb.Stateless;
 @Stateless
 public class RequestHandlerService {
 
-    private HashMap<RequestType, RequestHandlerBase> handlers;
+    /**
+     * For each possible PreparedDataStatus we have a HashMap which associates a RequestType to a request handler
+     */
+    private HashMap<PreparedDataStatus, HashMap<RequestType, RequestHandlerBase> > handlers;
+
+
     private PropertyHandler propertyHandler;
     protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
     private static Boolean inited = false;
@@ -63,13 +69,12 @@ public class RequestHandlerService {
      */
     private void registerHandler(RequestHandlerBase requestHandler) {
 
-        //use only the handlers that supports the configured StorageUnit
-        if( requestHandler.supportsStorageUnit(this.propertyHandler.getStorageUnit()) ) {
-            if(this.handlers.containsKey(requestHandler.getRequestType())) {
-                throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType.");
-            }
-            this.handlers.put(requestHandler.getRequestType(), requestHandler);
+
+        if(this.handlers.get(requestHandler.getSupportedDataStatus()).containsKey(requestHandler.getRequestType())) {
+            throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType " + requestHandler.getRequestType() + " for the supported PreparedDataStatus " + requestHandler.getSupportedDataStatus() + ".");
         }
+        this.handlers.get(requestHandler.getSupportedDataStatus()).put(requestHandler.getRequestType(), requestHandler);
+        
     }
 
 
@@ -87,11 +92,23 @@ public class RequestHandlerService {
      */
     public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        if(this.handlers.containsKey(requestType)) {
-            return this.handlers.get(requestType).handle(parameters);
+
+        // determine the PreparedDataStatus of this request
+        var dataStatus = PreparedDataStatus.NOMATTER;
+        if(parameters.containsKey("sessionId")) dataStatus = PreparedDataStatus.UNPREPARED;
+        else if(parameters.containsKey("preparedId")) dataStatus = PreparedDataStatus.PREPARED;
+
+        // handle
+        if(this.handlers.get(dataStatus).containsKey(requestType)) {
+            return this.handlers.get(dataStatus).get(requestType).handle(parameters);
+        }
+        else if(this.handlers.get(PreparedDataStatus.NOMATTER).containsKey(requestType)) {
+            //TODO: this is a fallback: in case the request handlers are not yet redesigned to split sub classes for Prepared data status they will support the default NOMATTER
+            logger.info("### No handler found for RequestType " + requestType + " and PreparedDataStatus " + dataStatus + " in RequestHandlerService. Trying a fallback and use the corresponding handler for PreparedDataStatus.NOMATTER. This is only possible during the redesign and should be removed later.");
+            return this.handlers.get(PreparedDataStatus.NOMATTER).get(requestType).handle(parameters);
         }
         else
-            throw new InternalException("No handler found for RequestType " + requestType + " and StorageUnit " + this.propertyHandler.getStorageUnit() + " in RequestHandlerService. Do you forgot to register?");
+            throw new InternalException("No handler found for RequestType " + requestType + " and PreparedDataStatus " + dataStatus + " in RequestHandlerService. Do you forgot to register?");
     }
     
     @PostConstruct
@@ -132,7 +149,11 @@ public class RequestHandlerService {
 
                 this.propertyHandler = PropertyHandler.getInstance();
 
-                this.handlers = new HashMap<RequestType, RequestHandlerBase>();
+                this.handlers = new HashMap<PreparedDataStatus, HashMap<RequestType, RequestHandlerBase> >();
+                for(var preparedDataStatus : PreparedDataStatus.values()) {
+                    this.handlers.put(preparedDataStatus,    new HashMap<RequestType, RequestHandlerBase>());
+                }
+
                 this.registerHandler(new GetDataHandler()); 
                 this.registerHandler(new ArchiveHandler()); 
                 this.registerHandler(new GetIcatUrlHandler());
@@ -150,9 +171,19 @@ public class RequestHandlerService {
                 this.registerHandler(new WriteHandler());
                 this.registerHandler(new DeleteHandler());
 
+                // logger.info("### registered handlers:");
+                // for(var preparedDataStatus : this.handlers.keySet()) {
+                //     logger.info("###\t" + this.handlers.get(preparedDataStatus).size() + " handlers found for PreparedDataStatus " + preparedDataStatus + ": ");
+                //     for(var handler : this.handlers.get(preparedDataStatus).values()) {
+                //         logger.info("###\t\t" + handler.getSupportedDataStatus() + "." + handler.getRequestType());
+                //     }
+                // }
+
                 logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
-                for(RequestHandlerBase handler : this.handlers.values()) {
-                    handler.init();
+                for(var handlerMap : this.handlers.values()) {
+                    for(var handler : handlerMap.values()) {
+                        handler.init();
+                    }
                 }
                 logger.info("RequestHandlers initialized");
 

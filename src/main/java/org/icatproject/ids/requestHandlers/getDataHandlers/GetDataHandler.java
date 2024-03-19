@@ -1,4 +1,4 @@
-package org.icatproject.ids.requestHandlers;
+package org.icatproject.ids.requestHandlers.getDataHandlers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,8 +19,8 @@ import java.util.regex.Pattern;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
-import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.IdsException;
@@ -33,6 +33,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.requestHandlers.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
@@ -49,7 +50,7 @@ public class GetDataHandler extends RequestHandlerBase {
 
 
     public GetDataHandler() {
-        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.GETDATA );
+        super(PreparedDataStatus.NOMATTER, RequestType.GETDATA );
     }
 
 

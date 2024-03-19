@@ -25,6 +25,7 @@ import jakarta.json.stream.JsonGenerator;
 
 import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -51,7 +52,7 @@ public abstract class RequestHandlerBase {
      * This List contains the possible StorageUnit values (don't forget the null here) a handler is able to work with.
      * At the moment (13th of March in 2024) each handler is able to deal with all possible StorageUnitValues so maybe this could be removed. But maybe we need this in future.
      */
-    private List<StorageUnit> supportedStorageUnits;
+    private PreparedDataStatus supportedDataStatus;
 
     protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
     protected Path preparedDir;
@@ -67,24 +68,19 @@ public abstract class RequestHandlerBase {
             .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
 
-    protected RequestHandlerBase(StorageUnit[] supportedStorageUnitsArray, RequestType requestType ) {
-        this.supportedStorageUnits = Arrays.asList(supportedStorageUnitsArray);
+    protected RequestHandlerBase(PreparedDataStatus supportedDataStatus, RequestType requestType ) {
+        this.supportedDataStatus = supportedDataStatus;
         this.requestType = requestType;
     }
 
 
-    protected RequestHandlerBase(StorageUnit supportedStorageUnit, RequestType requestType) {
-        this(new StorageUnit[]{supportedStorageUnit}, requestType);
-    }
-
-
     /**
-     * Informs about if the request handler is able to work on the defined StorageUnit
-     * @param neededStorageUnit
+     * Informs about if the request handler is able to work on the defined PrepareDataStatus
+     * @param neededPreparedDataStatus
      * @return
      */
-    public boolean supportsStorageUnit(StorageUnit neededStorageUnit) {
-        return this.supportedStorageUnits.contains(neededStorageUnit);
+    public boolean supportsPreparedDataStatus(PreparedDataStatus neededPreparedDataStatus) {
+        return this.supportedDataStatus == neededPreparedDataStatus;
     }
 
 
@@ -94,6 +90,15 @@ public abstract class RequestHandlerBase {
      */
     public RequestType getRequestType() {
         return this.requestType;
+    }
+
+
+    /**
+     * returns the supported PreparedDataStatus
+     * @return
+     */
+    public PreparedDataStatus getSupportedDataStatus() {
+        return this.supportedDataStatus;
     }
 
 

@@ -7,8 +7,8 @@ import java.util.Set;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.CallType;
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
-import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -26,7 +26,7 @@ public class GetServiceStatusHandler extends RequestHandlerBase {
     private Set<String> rootUserNames;
 
     public  GetServiceStatusHandler() {
-        super(new StorageUnit[] {StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.GETSERVICESTATUS);
+        super(PreparedDataStatus.NOMATTER, RequestType.GETSERVICESTATUS);
     }
 
     public void init() throws InternalException {

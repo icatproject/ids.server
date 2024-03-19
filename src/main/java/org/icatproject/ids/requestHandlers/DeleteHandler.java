@@ -12,6 +12,7 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
+import org.icatproject.ids.enums.PreparedDataStatus;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -33,7 +34,7 @@ import jakarta.json.stream.JsonGenerator;
 public class DeleteHandler extends RequestHandlerBase {
 
     public DeleteHandler() {
-        super(new StorageUnit[]{StorageUnit.DATAFILE, StorageUnit.DATASET, null}, RequestType.DELETE);
+        super(PreparedDataStatus.NOMATTER, RequestType.DELETE);
     }
 
     @Override
