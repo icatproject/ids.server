@@ -65,7 +65,7 @@ public class PutHandler extends RequestHandlerBase {
     }
 
     public PutHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.PUT);
+        super(PreparedDataStatus.UNPREPARED, RequestType.PUT);
     }
 
     public void init() throws InternalException {

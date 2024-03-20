@@ -33,7 +33,7 @@ import jakarta.json.stream.JsonGenerator;
 public class IsPreparedHandler extends RequestHandlerBase {
 
     public IsPreparedHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.ISPREPARED);
+        super(PreparedDataStatus.PREPARED, RequestType.ISPREPARED);
     }
 
     class PreparedStatus {

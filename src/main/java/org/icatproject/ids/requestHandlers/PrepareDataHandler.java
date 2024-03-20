@@ -32,7 +32,7 @@ import jakarta.json.stream.JsonGenerator;
 public class PrepareDataHandler extends RequestHandlerBase {
 
     public PrepareDataHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.PREPAREDATA);
+        super(PreparedDataStatus.UNPREPARED, RequestType.PREPAREDATA);
     }
 
     @Override

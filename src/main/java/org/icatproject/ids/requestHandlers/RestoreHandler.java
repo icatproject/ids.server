@@ -25,7 +25,7 @@ import jakarta.json.stream.JsonGenerator;
 public class RestoreHandler extends RequestHandlerBase {
 
     public RestoreHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.RESTORE);
+        super(PreparedDataStatus.UNPREPARED, RequestType.RESTORE);
     }
 
     @Override

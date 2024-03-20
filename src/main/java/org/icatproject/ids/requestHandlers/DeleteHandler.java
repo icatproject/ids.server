@@ -35,7 +35,7 @@ import jakarta.json.stream.JsonGenerator;
 public class DeleteHandler extends RequestHandlerBase {
 
     public DeleteHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.DELETE);
+        super(PreparedDataStatus.UNPREPARED, RequestType.DELETE);
     }
 
     @Override

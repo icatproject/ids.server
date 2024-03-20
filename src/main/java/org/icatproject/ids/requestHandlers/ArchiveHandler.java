@@ -25,7 +25,7 @@ import jakarta.json.stream.JsonGenerator;
 public class ArchiveHandler extends RequestHandlerBase {
 
     public ArchiveHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.ARCHIVE);
+        super(PreparedDataStatus.UNPREPARED, RequestType.ARCHIVE);
     }
 
     @Override

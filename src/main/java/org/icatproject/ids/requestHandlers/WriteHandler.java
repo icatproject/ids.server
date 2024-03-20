@@ -31,7 +31,7 @@ import jakarta.json.stream.JsonGenerator;
 public class WriteHandler extends RequestHandlerBase {
 
     public WriteHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.WRITE);
+        super(PreparedDataStatus.UNPREPARED, RequestType.WRITE);
     }
 
     @Override

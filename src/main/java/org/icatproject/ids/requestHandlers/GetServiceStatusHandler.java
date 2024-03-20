@@ -27,7 +27,7 @@ public class GetServiceStatusHandler extends RequestHandlerBase {
     private Set<String> rootUserNames;
 
     public  GetServiceStatusHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.GETSERVICESTATUS);
+        super(PreparedDataStatus.UNPREPARED, RequestType.GETSERVICESTATUS);
     }
 
     public void init() throws InternalException {
