@@ -31,6 +31,8 @@ import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;
 import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandler;
+import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForPreparedData;
+import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForUnpreparedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,11 +94,11 @@ public class RequestHandlerService {
      */
     public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-
+        
         // determine the PreparedDataStatus of this request
         var dataStatus = PreparedDataStatus.NOMATTER;
-        if(parameters.containsKey("sessionId")) dataStatus = PreparedDataStatus.UNPREPARED;
-        else if(parameters.containsKey("preparedId")) dataStatus = PreparedDataStatus.PREPARED;
+        if(parameters.containsKey("sessionId") && !parameters.get("sessionId").isNull()) dataStatus = PreparedDataStatus.UNPREPARED;
+        else if(parameters.containsKey("preparedId") && !parameters.get("preparedId").isNull()) dataStatus = PreparedDataStatus.PREPARED;
 
         // handle
         if(this.handlers.get(dataStatus).containsKey(requestType)) {
@@ -154,7 +156,9 @@ public class RequestHandlerService {
                     this.handlers.put(preparedDataStatus,    new HashMap<RequestType, RequestHandlerBase>());
                 }
 
-                this.registerHandler(new GetDataHandler()); 
+                this.registerHandler(new GetDataHandlerForPreparedData()); 
+                this.registerHandler(new GetDataHandlerForUnpreparedData());
+
                 this.registerHandler(new ArchiveHandler()); 
                 this.registerHandler(new GetIcatUrlHandler());
                 this.registerHandler(new GetDataFileIdsHandler());  
@@ -170,14 +174,6 @@ public class RequestHandlerService {
                 this.registerHandler(new RestoreHandler());
                 this.registerHandler(new WriteHandler());
                 this.registerHandler(new DeleteHandler());
-
-                // logger.info("### registered handlers:");
-                // for(var preparedDataStatus : this.handlers.keySet()) {
-                //     logger.info("###\t" + this.handlers.get(preparedDataStatus).size() + " handlers found for PreparedDataStatus " + preparedDataStatus + ": ");
-                //     for(var handler : this.handlers.get(preparedDataStatus).values()) {
-                //         logger.info("###\t\t" + handler.getSupportedDataStatus() + "." + handler.getRequestType());
-                //     }
-                // }
 
                 logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
                 for(var handlerMap : this.handlers.values()) {
