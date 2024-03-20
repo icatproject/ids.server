@@ -19,7 +19,6 @@ import org.icatproject.ids.requestHandlers.ArchiveHandler;
 import org.icatproject.ids.requestHandlers.DeleteHandler;
 import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
 import org.icatproject.ids.requestHandlers.GetServiceStatusHandler;
-import org.icatproject.ids.requestHandlers.GetSizeHandler;
 import org.icatproject.ids.requestHandlers.GetStatusHandler;
 import org.icatproject.ids.requestHandlers.IsPreparedHandler;
 import org.icatproject.ids.requestHandlers.IsReadOnlyHandler;
@@ -34,6 +33,8 @@ import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIds
 import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIdsHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForUnpreparedData;
+import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPreparedData;
+import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,10 +164,12 @@ public class RequestHandlerService {
                 this.registerHandler(new GetDataFileIdsHandlerForPreparedData());
                 this.registerHandler(new GetDataFileIdsHandlerForUnpreparedData());
 
+                this.registerHandler(new GetSizeHandlerForPreparedData());
+                this.registerHandler(new GetSizeHandlerForUnpreparedData());
+
                 this.registerHandler(new ArchiveHandler()); 
                 this.registerHandler(new GetIcatUrlHandler()); 
                 this.registerHandler(new GetServiceStatusHandler());
-                this.registerHandler(new GetSizeHandler());
                 this.registerHandler(new GetStatusHandler());
                 this.registerHandler(new IsPreparedHandler());
                 this.registerHandler(new IsReadOnlyHandler());
