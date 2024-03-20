@@ -8,6 +8,7 @@ import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -43,7 +44,7 @@ public class GetServiceStatusHandler extends RequestHandlerBase {
         
         long start = System.currentTimeMillis();
 
-        String sessionId = parameters.get("sessionId").getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         var serviceProvider = ServiceProvider.getInstance();
 
         // Log and validate

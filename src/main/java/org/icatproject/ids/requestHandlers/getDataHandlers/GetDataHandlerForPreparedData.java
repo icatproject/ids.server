@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
@@ -27,13 +28,13 @@ public class GetDataHandlerForPreparedData extends GetDataHandler{
     @Override
     protected DataSelectionBase provideDataSelection(HashMap<String, ValueContainer> parameters, long offset) throws BadRequestException, InternalException, NotFoundException {
 
-        String preparedId = parameters.get("preparedId").getString();
+        String preparedId = parameters.get(RequestIdNames.preparedId).getString();
         
         // Log and validate
         logger.info("New webservice request: getData preparedId = '" + preparedId + "' outname = '" + parameters.get("outname").getString()
                 + "' offset = " + offset);
 
-        validateUUID("preparedId", preparedId);
+        validateUUID(RequestIdNames.preparedId, preparedId);
 
         // Do it
         Prepared prepared;
@@ -56,7 +57,7 @@ public class GetDataHandlerForPreparedData extends GetDataHandler{
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
             gen.write("transferId", transferId);
-            gen.write("preparedId", parameters.get("preparedId").getString());
+            gen.write(RequestIdNames.preparedId, parameters.get(RequestIdNames.preparedId).getString());
             gen.writeEnd();
         }
 

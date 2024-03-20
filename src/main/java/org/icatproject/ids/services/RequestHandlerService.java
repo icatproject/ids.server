@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -30,7 +31,6 @@ import org.icatproject.ids.requestHandlers.RequestHandlerBase;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;
-import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandler;
 import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForUnpreparedData;
 import org.slf4j.Logger;
@@ -97,8 +97,8 @@ public class RequestHandlerService {
         
         // determine the PreparedDataStatus of this request
         var dataStatus = PreparedDataStatus.NOMATTER;
-        if(parameters.containsKey("sessionId") && !parameters.get("sessionId").isNull()) dataStatus = PreparedDataStatus.UNPREPARED;
-        else if(parameters.containsKey("preparedId") && !parameters.get("preparedId").isNull()) dataStatus = PreparedDataStatus.PREPARED;
+        if(parameters.containsKey(RequestIdNames.sessionId) && !parameters.get(RequestIdNames.sessionId).isNull()) dataStatus = PreparedDataStatus.UNPREPARED;
+        else if(parameters.containsKey(RequestIdNames.preparedId) && !parameters.get(RequestIdNames.preparedId).isNull()) dataStatus = PreparedDataStatus.PREPARED;
 
         // handle
         if(this.handlers.get(dataStatus).containsKey(requestType)) {

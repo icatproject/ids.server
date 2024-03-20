@@ -13,6 +13,7 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.Status;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -40,8 +41,8 @@ public class GetStatusHandler extends RequestHandlerBase {
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
-        String preparedId = parameters.get("preparedId").getString();
-        String sessionId = parameters.get("sessionId").getString();
+        String preparedId = parameters.get(RequestIdNames.preparedId).getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         String investigationIds = parameters.get("investigationIds").getString();
         String datasetIds = parameters.get("datasetIds").getString();
         String datafileIds = parameters.get("datafileIds").getString();
@@ -64,7 +65,7 @@ public class GetStatusHandler extends RequestHandlerBase {
 
         // Log and validate
         logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
-        validateUUID("preparedId", preparedId);
+        validateUUID(RequestIdNames.preparedId, preparedId);
 
         // Do it
         Prepared prepared;
@@ -90,7 +91,7 @@ public class GetStatusHandler extends RequestHandlerBase {
         if (serviceProvider.getLogSet().contains(CallType.INFO)) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                gen.write("preparedId", preparedId);
+                gen.write(RequestIdNames.preparedId, preparedId);
                 gen.writeEnd();
             }
             String body = baos.toString();
@@ -120,7 +121,7 @@ public class GetStatusHandler extends RequestHandlerBase {
                 throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
             }
         } else {
-            validateUUID("sessionId", sessionId);
+            validateUUID(RequestIdNames.sessionId, sessionId);
         }
 
         // Do it

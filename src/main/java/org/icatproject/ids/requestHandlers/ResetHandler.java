@@ -12,6 +12,7 @@ import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -39,8 +40,8 @@ public class ResetHandler extends RequestHandlerBase {
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
-        String preparedId = parameters.get("preparedId").getString();
-        String sessionId = parameters.get("sessionId").getString();
+        String preparedId = parameters.get(RequestIdNames.preparedId).getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         String investigationIds = parameters.get("investigationIds").getString();
         String datasetIds = parameters.get("datasetIds").getString();
         String datafileIds = parameters.get("datafileIds").getString();
@@ -63,7 +64,7 @@ public class ResetHandler extends RequestHandlerBase {
         var serviceProvider = ServiceProvider.getInstance();
 
         // Validate
-        validateUUID("preparedId", preparedId);
+        validateUUID(RequestIdNames.preparedId, preparedId);
 
         // Do it
         Prepared preparedJson;
@@ -82,7 +83,7 @@ public class ResetHandler extends RequestHandlerBase {
         if (serviceProvider.getLogSet().contains(CallType.MIGRATE)) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                gen.write("preparedId", preparedId);
+                gen.write(RequestIdNames.preparedId, preparedId);
                 gen.writeEnd();
             }
             String body = baos.toString();
@@ -101,7 +102,7 @@ public class ResetHandler extends RequestHandlerBase {
         logger.info("New webservice request: reset " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
                 + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
-        validateUUID("sessionId", sessionId);
+        validateUUID(RequestIdNames.sessionId, sessionId);
 
         final DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 

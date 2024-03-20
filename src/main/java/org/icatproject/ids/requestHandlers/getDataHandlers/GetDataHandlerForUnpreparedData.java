@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
@@ -27,7 +28,7 @@ public class GetDataHandlerForUnpreparedData extends GetDataHandler {
     protected DataSelectionBase provideDataSelection(HashMap<String, ValueContainer> parameters, long offset)
             throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
-            String sessionId = parameters.getOrDefault("sessionId", ValueContainer.getInvalid()).getString(); 
+            String sessionId = parameters.getOrDefault(RequestIdNames.sessionId, ValueContainer.getInvalid()).getString(); 
             String investigationIds = parameters.getOrDefault("investigationIds", ValueContainer.getInvalid()).getString();
             String datasetIds = parameters.getOrDefault("datasetIds", ValueContainer.getInvalid()).getString();
             String datafileIds = parameters.getOrDefault("datafileIds", ValueContainer.getInvalid()).getString();
@@ -36,7 +37,7 @@ public class GetDataHandlerForUnpreparedData extends GetDataHandler {
         logger.info(String.format("New webservice request: getData investigationIds=%s, datasetIds=%s, datafileIds=%s",
                 investigationIds, datasetIds, datafileIds));
 
-        validateUUID("sessionId", sessionId);
+        validateUUID(RequestIdNames.sessionId, sessionId);
 
         return this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
     }
@@ -48,7 +49,7 @@ public class GetDataHandlerForUnpreparedData extends GetDataHandler {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
             gen.write("transferId", transferId);
-            gen.write("userName", ServiceProvider.getInstance().getIcat().getUserName(parameters.get("sessionId").getString()));
+            gen.write("userName", ServiceProvider.getInstance().getIcat().getUserName(parameters.get(RequestIdNames.sessionId).getString()));
             addIds( gen, 
                     parameters.getOrDefault("investigationIds", ValueContainer.getInvalid()).getString(), 
                     parameters.getOrDefault("datasetIds", ValueContainer.getInvalid()).getString(), 

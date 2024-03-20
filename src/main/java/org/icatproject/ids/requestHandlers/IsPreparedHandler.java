@@ -15,6 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -51,13 +52,13 @@ public class IsPreparedHandler extends RequestHandlerBase {
         
         long start = System.currentTimeMillis();
 
-        String preparedId = parameters.get("preparedId").getString();
+        String preparedId = parameters.get(RequestIdNames.preparedId).getString();
         String ip = parameters.get("ip").getString();
 
         logger.info(String.format("New webservice request: isPrepared preparedId=%s", preparedId));
 
         // Validate
-        validateUUID("preparedId", preparedId);
+        validateUUID(RequestIdNames.preparedId, preparedId);
 
         // Do it
         boolean prepared = true;
@@ -104,7 +105,7 @@ public class IsPreparedHandler extends RequestHandlerBase {
             if (serviceProvider.getLogSet().contains(CallType.INFO)) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                    gen.write("preparedId", preparedId);
+                    gen.write(RequestIdNames.preparedId, preparedId);
                     gen.writeEnd();
                 }
                 String body = baos.toString();

@@ -8,6 +8,7 @@ import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -33,7 +34,7 @@ public class ArchiveHandler extends RequestHandlerBase {
         
         long start = System.currentTimeMillis();
 
-        String sessionId = parameters.get("sessionId").getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         String investigationIds = parameters.get("investigationIds").getString();
         String datasetIds = parameters.get("datasetIds").getString();
         String datafileIds = parameters.get("datafileIds").getString();
@@ -43,7 +44,7 @@ public class ArchiveHandler extends RequestHandlerBase {
         logger.info("New webservice request: archive " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
                 + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
-        validateUUID("sessionId", sessionId);
+        validateUUID(RequestIdNames.sessionId, sessionId);
         
         // Do it
         DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);

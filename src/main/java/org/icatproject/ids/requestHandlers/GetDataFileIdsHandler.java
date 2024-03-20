@@ -13,6 +13,7 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -39,8 +40,8 @@ public class GetDataFileIdsHandler extends RequestHandlerBase {
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
         
-        String preparedId = parameters.get("preparedId").getString();
-        String sessionId = parameters.get("sessionId").getString();
+        String preparedId = parameters.get(RequestIdNames.preparedId).getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         String investigationIds = parameters.get("investigationIds").getString();
         String datasetIds = parameters.get("datasetIds").getString();
         String datafileIds = parameters.get("datafileIds").getString();
@@ -62,7 +63,7 @@ public class GetDataFileIdsHandler extends RequestHandlerBase {
         // Log and validate
         logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
 
-        validateUUID("preparedId", preparedId);
+        validateUUID(RequestIdNames.preparedId, preparedId);
 
         // Do it
         Prepared prepared;
@@ -95,7 +96,7 @@ public class GetDataFileIdsHandler extends RequestHandlerBase {
         if (serviceProvider.getLogSet().contains(CallType.INFO)) {
             baos = new ByteArrayOutputStream();
             try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                gen.write("preparedId", preparedId);
+                gen.write(RequestIdNames.preparedId, preparedId);
                 gen.writeEnd();
             }
             serviceProvider.getTransmitter().processMessage("getDatafileIds", ip, baos.toString(), start);
@@ -115,7 +116,7 @@ public class GetDataFileIdsHandler extends RequestHandlerBase {
                 "New webservice request: getDatafileIds investigationIds=%s, datasetIds=%s, datafileIds=%s",
                 investigationIds, datasetIds, datafileIds));
 
-        validateUUID("sessionId", sessionId);
+        validateUUID(RequestIdNames.sessionId, sessionId);
 
         final DataSelectionBase dataSelection = this.getDataSelection(sessionId, investigationIds, datasetIds, datafileIds);
 

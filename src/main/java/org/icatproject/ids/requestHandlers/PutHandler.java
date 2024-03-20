@@ -24,6 +24,7 @@ import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -88,7 +89,7 @@ public class PutHandler extends RequestHandlerBase {
         long start = System.currentTimeMillis();
         var serviceProvider = ServiceProvider.getInstance();
 
-        String sessionId = parameters.get("sessionId").getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         InputStream body = parameters.get("body").getInputStream();
         String name = parameters.get("name").getString();
         String datafileFormatIdString = parameters.get("datafileFormatId").getString();
@@ -112,7 +113,7 @@ public class PutHandler extends RequestHandlerBase {
                 throw new NotImplementedException("This operation has been configured to be unavailable");
             }
 
-            validateUUID("sessionId", sessionId);
+            validateUUID(RequestIdNames.sessionId, sessionId);
             if (name == null) {
                 throw new BadRequestException("The name parameter must be set");
             }

@@ -13,6 +13,7 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -45,7 +46,7 @@ public class DeleteHandler extends RequestHandlerBase {
         long start = System.currentTimeMillis();
         var serviceProvider = ServiceProvider.getInstance();
 
-        String sessionId = parameters.get("sessionId").getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         String investigationIds = parameters.get("investigationIds").getString();
         String datasetIds = parameters.get("datasetIds").getString();
         String datafileIds = parameters.get("datafileIds").getString();
@@ -58,7 +59,7 @@ public class DeleteHandler extends RequestHandlerBase {
             throw new NotImplementedException("This operation has been configured to be unavailable");
         }
 
-        validateUUID("sessionId", sessionId);
+        validateUUID(RequestIdNames.sessionId, sessionId);
 
         DataSelectionBase dataSelection = this.getDataSelection( sessionId, investigationIds, datasetIds, datafileIds);
 

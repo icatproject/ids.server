@@ -14,6 +14,7 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -43,7 +44,7 @@ public class PrepareDataHandler extends RequestHandlerBase {
         long start = System.currentTimeMillis();
         var serviceProvider = ServiceProvider.getInstance();
 
-        String sessionId = parameters.get("sessionId").getString();
+        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
         String investigationIds = parameters.get("investigationIds").getString();
         String datasetIds = parameters.get("datasetIds").getString();
         String datafileIds = parameters.get("datafileIds").getString();
@@ -56,7 +57,7 @@ public class PrepareDataHandler extends RequestHandlerBase {
                 + "datasetIds='" + datasetIds + "' " + "datafileIds='" + datafileIds + "' " + "compress='" + compress
                 + "' " + "zip='" + zip + "'");
 
-        validateUUID("sessionId", sessionId);
+        validateUUID(RequestIdNames.sessionId, sessionId);
 
         final DataSelectionBase dataSelection = this.getDataSelection(sessionId,
                 investigationIds, datasetIds, datafileIds);
@@ -89,7 +90,7 @@ public class PrepareDataHandler extends RequestHandlerBase {
                 try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
                     gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
                     addIds(gen, investigationIds, datasetIds, datafileIds);
-                    gen.write("preparedId", preparedId);
+                    gen.write(RequestIdNames.preparedId, preparedId);
                     gen.writeEnd();
                 }
                 String body = baos.toString();
