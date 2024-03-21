@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -20,8 +20,8 @@ import org.icatproject.ids.services.ServiceProvider;
 
 public abstract class GetSizeHandler extends RequestHandlerBase {
 
-    public GetSizeHandler(PreparedDataStatus dataStatus) {
-        super(dataStatus, RequestType.GETSIZE);
+    public GetSizeHandler(OperationIdTypes operationIdType) {
+        super(operationIdType, RequestType.GETSIZE);
     }
 
     @Override

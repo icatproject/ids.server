@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -42,8 +42,8 @@ public abstract class GetDataHandler extends RequestHandlerBase {
     private static AtomicLong atomicLong = new AtomicLong();
 
 
-    public GetDataHandler(PreparedDataStatus preparedDataStatus) {
-        super(preparedDataStatus, RequestType.GETDATA );
+    public GetDataHandler(OperationIdTypes operationIdType) {
+        super(operationIdType, RequestType.GETDATA );
     }
 
 

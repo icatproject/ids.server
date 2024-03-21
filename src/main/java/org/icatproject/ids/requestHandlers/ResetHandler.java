@@ -11,7 +11,7 @@ import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -32,7 +32,7 @@ import jakarta.json.stream.JsonGenerator;
 public class ResetHandler extends RequestHandlerBase {
 
     public ResetHandler() {
-        super(PreparedDataStatus.NOMATTER, RequestType.RESET);
+        super(OperationIdTypes.ANONYMOUS, RequestType.RESET);
     }
 
     @Override

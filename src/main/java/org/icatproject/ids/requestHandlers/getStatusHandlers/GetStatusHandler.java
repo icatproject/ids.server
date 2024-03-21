@@ -7,7 +7,7 @@ import java.util.Set;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.Status;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -23,8 +23,8 @@ import org.icatproject.ids.services.ServiceProvider;
 
 public abstract class GetStatusHandler extends RequestHandlerBase {
 
-    public GetStatusHandler(PreparedDataStatus[] dataStati) {
-        super(dataStati, RequestType.GETSTATUS );
+    public GetStatusHandler(OperationIdTypes[] operationIdTypes) {
+        super(operationIdTypes, RequestType.GETSTATUS );
     }
 
     @Override

@@ -8,7 +8,7 @@ import org.icatproject.Datafile;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -24,7 +24,7 @@ import jakarta.json.stream.JsonGenerator;
 public class GetSizeHandlerForUnpreparedData extends GetSizeHandler {
 
     public GetSizeHandlerForUnpreparedData() {
-        super(PreparedDataStatus.UNPREPARED);
+        super(OperationIdTypes.SESSIONID);
     }
 
     @Override

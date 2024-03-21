@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -33,7 +33,7 @@ import jakarta.json.stream.JsonGenerator;
 public class IsPreparedHandler extends RequestHandlerBase {
 
     public IsPreparedHandler() {
-        super(PreparedDataStatus.PREPARED, RequestType.ISPREPARED);
+        super(OperationIdTypes.PREPAREDID, RequestType.ISPREPARED);
     }
 
     class PreparedStatus {

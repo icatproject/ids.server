@@ -6,7 +6,7 @@ import java.util.HashMap;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -24,8 +24,8 @@ import jakarta.json.stream.JsonGenerator;
 
 public abstract class GetDataFileIdsHandler extends RequestHandlerBase {
 
-    public GetDataFileIdsHandler(PreparedDataStatus dataStatus) {
-        super(dataStatus, RequestType.GETDATAFILEIDS);
+    public GetDataFileIdsHandler(OperationIdTypes operationIdType) {
+        super(operationIdType, RequestType.GETDATAFILEIDS);
     }
 
     @Override

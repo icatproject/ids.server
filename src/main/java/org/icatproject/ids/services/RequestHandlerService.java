@@ -4,7 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -49,9 +49,9 @@ import jakarta.ejb.Stateless;
 public class RequestHandlerService {
 
     /**
-     * For each possible PreparedDataStatus we have a HashMap which associates a RequestType to a request handler
+     * For each possible OperationIdTypes we have a HashMap which associates a RequestType to a request handler
      */
-    private HashMap<PreparedDataStatus, HashMap<RequestType, RequestHandlerBase> > handlers;
+    private HashMap<OperationIdTypes, HashMap<RequestType, RequestHandlerBase> > handlers;
 
 
     private PropertyHandler propertyHandler;
@@ -74,10 +74,10 @@ public class RequestHandlerService {
      */
     private void registerHandler(RequestHandlerBase requestHandler) {
 
-        for(PreparedDataStatus supportedDataStatus : requestHandler.getSupportedDataStati())
+        for(OperationIdTypes supportedDataStatus : requestHandler.getSupportedOperationIdTypes())
         {
             if(this.handlers.get(supportedDataStatus).containsKey(requestHandler.getRequestType())) {
-                throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType " + requestHandler.getRequestType() + " for the supported PreparedDataStatus " + supportedDataStatus + ".");
+                throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType " + requestHandler.getRequestType() + " for the supported OperationIdTypes " + supportedDataStatus + ".");
             }
             this.handlers.get(supportedDataStatus).put(requestHandler.getRequestType(), requestHandler);
         }
@@ -98,22 +98,22 @@ public class RequestHandlerService {
      */
     public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
         
-        // determine the PreparedDataStatus of this request
-        var dataStatus = PreparedDataStatus.NOMATTER;
-        if(parameters.containsKey(RequestIdNames.sessionId) && !parameters.get(RequestIdNames.sessionId).isNull()) dataStatus = PreparedDataStatus.UNPREPARED;
-        else if(parameters.containsKey(RequestIdNames.preparedId) && !parameters.get(RequestIdNames.preparedId).isNull()) dataStatus = PreparedDataStatus.PREPARED;
+        // determine the OperationIdTypes of this request
+        var dataStatus = OperationIdTypes.ANONYMOUS;
+        if(parameters.containsKey(RequestIdNames.sessionId) && !parameters.get(RequestIdNames.sessionId).isNull()) dataStatus = OperationIdTypes.SESSIONID;
+        else if(parameters.containsKey(RequestIdNames.preparedId) && !parameters.get(RequestIdNames.preparedId).isNull()) dataStatus = OperationIdTypes.PREPAREDID;
 
         // handle
         if(this.handlers.get(dataStatus).containsKey(requestType)) {
             return this.handlers.get(dataStatus).get(requestType).handle(parameters);
         }
-        else if(this.handlers.get(PreparedDataStatus.NOMATTER).containsKey(requestType)) {
+        else if(this.handlers.get(OperationIdTypes.ANONYMOUS).containsKey(requestType)) {
             //TODO: this is a fallback: in case the request handlers are not yet redesigned to split sub classes for Prepared data status they will support the default NOMATTER
-            logger.info("### No handler found for RequestType " + requestType + " and PreparedDataStatus " + dataStatus + " in RequestHandlerService. Trying a fallback and use the corresponding handler for PreparedDataStatus.NOMATTER. This is only possible during the redesign and should be removed later.");
-            return this.handlers.get(PreparedDataStatus.NOMATTER).get(requestType).handle(parameters);
+            logger.info("### No handler found for RequestType " + requestType + " and OperationIdType " + dataStatus + " in RequestHandlerService. Trying a fallback and use the corresponding handler for OperationIdTypes.NOMATTER. This is only possible during the redesign and should be removed later.");
+            return this.handlers.get(OperationIdTypes.ANONYMOUS).get(requestType).handle(parameters);
         }
         else {
-            throw new NotFoundException("No handler found for RequestType " + requestType + " and PreparedDataStatus " + dataStatus + " in RequestHandlerService. Do you forgot to register?");
+            throw new NotFoundException("No handler found for RequestType " + requestType + " and OperationIdType " + dataStatus + " in RequestHandlerService. Do you forgot to register?");
         }
     }
     
@@ -155,8 +155,8 @@ public class RequestHandlerService {
 
                 this.propertyHandler = PropertyHandler.getInstance();
 
-                this.handlers = new HashMap<PreparedDataStatus, HashMap<RequestType, RequestHandlerBase> >();
-                for(var preparedDataStatus : PreparedDataStatus.values()) {
+                this.handlers = new HashMap<OperationIdTypes, HashMap<RequestType, RequestHandlerBase> >();
+                for(var preparedDataStatus : OperationIdTypes.values()) {
                     this.handlers.put(preparedDataStatus,    new HashMap<RequestType, RequestHandlerBase>());
                 }
 

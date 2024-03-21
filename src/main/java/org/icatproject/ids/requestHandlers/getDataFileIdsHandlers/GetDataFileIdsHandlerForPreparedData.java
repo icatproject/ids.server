@@ -8,7 +8,7 @@ import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 
 import org.icatproject.ids.dataSelection.DataSelectionBase;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InternalException;
@@ -22,7 +22,7 @@ import jakarta.json.stream.JsonGenerator;
 public class GetDataFileIdsHandlerForPreparedData extends GetDataFileIdsHandler {
 
     public GetDataFileIdsHandlerForPreparedData() {
-        super(PreparedDataStatus.PREPARED);
+        super(OperationIdTypes.PREPAREDID);
     }
 
     @Override

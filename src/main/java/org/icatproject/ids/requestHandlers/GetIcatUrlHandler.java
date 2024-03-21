@@ -3,7 +3,7 @@ package org.icatproject.ids.requestHandlers;
 import java.util.HashMap;
 
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -17,7 +17,7 @@ import org.icatproject.ids.services.ServiceProvider;
 public class GetIcatUrlHandler extends RequestHandlerBase {
 
     public GetIcatUrlHandler() {
-        super( PreparedDataStatus.NOMATTER, RequestType.GETICATURL);
+        super( OperationIdTypes.ANONYMOUS, RequestType.GETICATURL);
     }
 
     @Override

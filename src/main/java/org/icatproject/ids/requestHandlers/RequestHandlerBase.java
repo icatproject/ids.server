@@ -25,7 +25,7 @@ import jakarta.json.stream.JsonGenerator;
 
 import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.dataSelection.DataSelectionBase;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -52,7 +52,7 @@ public abstract class RequestHandlerBase {
      * This List contains the possible StorageUnit values (don't forget the null here) a handler is able to work with.
      * At the moment (13th of March in 2024) each handler is able to deal with all possible StorageUnitValues so maybe this could be removed. But maybe we need this in future.
      */
-    private List<PreparedDataStatus> supportedDataStati;
+    private List<OperationIdTypes> supportedOperationIdTypes;
 
     protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
     protected Path preparedDir;
@@ -68,23 +68,23 @@ public abstract class RequestHandlerBase {
             .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
 
-    protected RequestHandlerBase(PreparedDataStatus supportedDataStatus, RequestType requestType ) {
-        this(new PreparedDataStatus[] {supportedDataStatus}, requestType);
+    protected RequestHandlerBase(OperationIdTypes supportedDataStatus, RequestType requestType ) {
+        this(new OperationIdTypes[] {supportedDataStatus}, requestType);
     }
 
-    protected RequestHandlerBase(PreparedDataStatus[] supportedDataStati, RequestType requestType ) {
-        this.supportedDataStati = Arrays.asList(supportedDataStati);
+    protected RequestHandlerBase(OperationIdTypes[] supportedOperationIdTypes, RequestType requestType ) {
+        this.supportedOperationIdTypes = Arrays.asList(supportedOperationIdTypes);
         this.requestType = requestType;
     }
 
 
     /**
      * Informs about if the request handler is able to work on the defined PrepareDataStatus
-     * @param neededPreparedDataStatus
+     * @param neededOperationIdTypes
      * @return
      */
-    public boolean supportsPreparedDataStatus(PreparedDataStatus neededPreparedDataStatus) {
-        return this.supportedDataStati.contains(neededPreparedDataStatus);
+    public boolean supportsOperationIdType(OperationIdTypes supportedOperationIdType) {
+        return this.supportedOperationIdTypes.contains(supportedOperationIdType);
     }
 
 
@@ -98,11 +98,11 @@ public abstract class RequestHandlerBase {
 
 
     /**
-     * returns the supported PreparedDataStatus
+     * returns the supported OperationIdTypes
      * @return
      */
-    public List<PreparedDataStatus> getSupportedDataStati() {
-        return this.supportedDataStati;
+    public List<OperationIdTypes> getSupportedOperationIdTypes() {
+        return this.supportedOperationIdTypes;
     }
 
 

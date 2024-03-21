@@ -7,7 +7,7 @@ import java.util.Set;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.PreparedDataStatus;
+import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -27,7 +27,7 @@ public class GetServiceStatusHandler extends RequestHandlerBase {
     private Set<String> rootUserNames;
 
     public  GetServiceStatusHandler() {
-        super(PreparedDataStatus.UNPREPARED, RequestType.GETSERVICESTATUS);
+        super(OperationIdTypes.SESSIONID, RequestType.GETSERVICESTATUS);
     }
 
     public void init() throws InternalException {
