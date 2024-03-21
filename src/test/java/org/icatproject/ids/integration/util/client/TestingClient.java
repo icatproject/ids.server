@@ -46,6 +46,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.icatproject.ids.enums.RequestIdNames;
+
 import static org.junit.Assert.fail;
 
 public class TestingClient {
@@ -140,7 +142,7 @@ public class TestingClient {
 
         URI uri = getUri(getUriBuilder("archive"));
         List<NameValuePair> formparams = new ArrayList<>();
-        formparams.add(new BasicNameValuePair("sessionId", sessionId));
+        formparams.add(new BasicNameValuePair(RequestIdNames.sessionId, sessionId));
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
@@ -229,7 +231,7 @@ public class TestingClient {
             NotFoundException, DataNotOnlineException {
 
         URIBuilder uriBuilder = getUriBuilder("delete");
-        uriBuilder.addParameter("sessionId", sessionId);
+        uriBuilder.addParameter(RequestIdNames.sessionId, sessionId);
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             uriBuilder.addParameter(entry.getKey(), entry.getValue());
         }
@@ -280,7 +282,7 @@ public class TestingClient {
             InternalException, DataNotOnlineException {
 
         URIBuilder uriBuilder = getUriBuilder("getData");
-        uriBuilder.setParameter("sessionId", sessionId);
+        uriBuilder.setParameter(RequestIdNames.sessionId, sessionId);
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             uriBuilder.setParameter(entry.getKey(), entry.getValue());
         }
@@ -332,7 +334,7 @@ public class TestingClient {
             InternalException, DataNotOnlineException {
 
         URIBuilder uriBuilder = getUriBuilder("getData");
-        uriBuilder.setParameter("preparedId", preparedId);
+        uriBuilder.setParameter(RequestIdNames.preparedId, preparedId);
         URI uri = getUri(uriBuilder);
 
         CloseableHttpResponse response = null;
@@ -373,7 +375,7 @@ public class TestingClient {
             throws InternalException, InsufficientPrivilegesException, NotImplementedException {
 
         URIBuilder uriBuilder = getUriBuilder("getServiceStatus");
-        uriBuilder.setParameter("sessionId", sessionId);
+        uriBuilder.setParameter(RequestIdNames.sessionId, sessionId);
         URI uri = getUri(uriBuilder);
 
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -418,7 +420,7 @@ public class TestingClient {
             InsufficientPrivilegesException, InternalException, NotImplementedException {
 
         URIBuilder uriBuilder = getUriBuilder("getSize");
-        uriBuilder.setParameter("sessionId", sessionId);
+        uriBuilder.setParameter(RequestIdNames.sessionId, sessionId);
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             uriBuilder.setParameter(entry.getKey(), entry.getValue());
         }
@@ -441,7 +443,7 @@ public class TestingClient {
             InsufficientPrivilegesException, InternalException, NotImplementedException {
 
         URIBuilder uriBuilder = getUriBuilder("getSize");
-        uriBuilder.setParameter("preparedId", preparedId);
+        uriBuilder.setParameter(RequestIdNames.preparedId, preparedId);
         URI uri = getUri(uriBuilder);
 
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -461,7 +463,7 @@ public class TestingClient {
 
         URIBuilder uriBuilder = getUriBuilder("getStatus");
         if (sessionId != null) {
-            uriBuilder.setParameter("sessionId", sessionId);
+            uriBuilder.setParameter(RequestIdNames.sessionId, sessionId);
         }
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             uriBuilder.setParameter(entry.getKey(), entry.getValue());
@@ -487,7 +489,7 @@ public class TestingClient {
             NotFoundException, InsufficientPrivilegesException, InternalException, NotImplementedException {
 
         URIBuilder uriBuilder = getUriBuilder("getStatus");
-        uriBuilder.setParameter("preparedId", preparedId);
+        uriBuilder.setParameter(RequestIdNames.preparedId, preparedId);
         URI uri = getUri(uriBuilder);
 
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -531,7 +533,7 @@ public class TestingClient {
             throws BadRequestException, NotFoundException, InternalException, NotImplementedException {
 
         URIBuilder uriBuilder = getUriBuilder("isPrepared");
-        uriBuilder.setParameter("preparedId", preparedId);
+        uriBuilder.setParameter(RequestIdNames.preparedId, preparedId);
         URI uri = getUri(uriBuilder);
 
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -606,7 +608,7 @@ public class TestingClient {
 
         URI uri = getUri(getUriBuilder("prepareData"));
         List<NameValuePair> formparams = new ArrayList<>();
-        formparams.add(new BasicNameValuePair("sessionId", sessionId));
+        formparams.add(new BasicNameValuePair(RequestIdNames.sessionId, sessionId));
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
@@ -650,7 +652,7 @@ public class TestingClient {
         CRC32 crc = new CRC32();
         inputStream = new CheckedInputStream(inputStream, crc);
         URIBuilder uriBuilder = getUriBuilder("put");
-        uriBuilder.setParameter("sessionId", sessionId).setParameter("name", name)
+        uriBuilder.setParameter(RequestIdNames.sessionId, sessionId).setParameter("name", name)
                 .setParameter("datafileFormatId", Long.toString(datafileFormatId))
                 .setParameter("datasetId", Long.toString(datasetId));
         if (description != null) {
@@ -702,7 +704,7 @@ public class TestingClient {
         URI uri = getUri(getUriBuilder("put"));
 
         MultipartEntityBuilder reqEntityBuilder = MultipartEntityBuilder.create()
-                .addPart("sessionId", new StringBody(sessionId, ContentType.TEXT_PLAIN))
+                .addPart(RequestIdNames.sessionId, new StringBody(sessionId, ContentType.TEXT_PLAIN))
                 .addPart("datafileFormatId", new StringBody(Long.toString(datafileFormatId), ContentType.TEXT_PLAIN))
                 .addPart("name", new StringBody(name, ContentType.TEXT_PLAIN))
                 .addPart("datasetId", new StringBody(Long.toString(datasetId), ContentType.TEXT_PLAIN));
@@ -759,7 +761,7 @@ public class TestingClient {
 
         URI uri = getUri(getUriBuilder("restore"));
         List<NameValuePair> formparams = new ArrayList<>();
-        formparams.add(new BasicNameValuePair("sessionId", sessionId));
+        formparams.add(new BasicNameValuePair(RequestIdNames.sessionId, sessionId));
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
@@ -781,7 +783,7 @@ public class TestingClient {
             throws InternalException, BadRequestException, NotFoundException {
 
         URIBuilder uriBuilder = getUriBuilder("getDatafileIds");
-        uriBuilder.setParameter("preparedId", preparedId);
+        uriBuilder.setParameter(RequestIdNames.preparedId, preparedId);
         URI uri = getUri(uriBuilder);
 
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
@@ -816,7 +818,7 @@ public class TestingClient {
     public List<Long> getDatafileIds(String sessionId, DataSelection data, Integer sc)
             throws InternalException, BadRequestException, ParseException, NotFoundException {
         URIBuilder uriBuilder = getUriBuilder("getDatafileIds");
-        uriBuilder.setParameter("sessionId", sessionId);
+        uriBuilder.setParameter(RequestIdNames.sessionId, sessionId);
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             uriBuilder.setParameter(entry.getKey(), entry.getValue());
         }
@@ -855,7 +857,7 @@ public class TestingClient {
             InsufficientPrivilegesException, NotImplementedException, NotFoundException {
         URI uri = getUri(getUriBuilder("reset"));
         List<NameValuePair> formparams = new ArrayList<>();
-        formparams.add(new BasicNameValuePair("preparedId", preparedId));
+        formparams.add(new BasicNameValuePair(RequestIdNames.preparedId, preparedId));
 
         try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
             HttpEntity entity = new UrlEncodedFormEntity(formparams);
@@ -875,7 +877,7 @@ public class TestingClient {
             ParseException, InsufficientPrivilegesException, NotImplementedException, NotFoundException {
         URI uri = getUri(getUriBuilder("reset"));
         List<NameValuePair> formparams = new ArrayList<>();
-        formparams.add(new BasicNameValuePair("sessionId", sessionId));
+        formparams.add(new BasicNameValuePair(RequestIdNames.sessionId, sessionId));
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
@@ -899,7 +901,7 @@ public class TestingClient {
 
         URI uri = getUri(getUriBuilder("write"));
         List<NameValuePair> formparams = new ArrayList<>();
-        formparams.add(new BasicNameValuePair("sessionId", sessionId));
+        formparams.add(new BasicNameValuePair(RequestIdNames.sessionId, sessionId));
         for (Entry<String, String> entry : data.getParameters().entrySet()) {
             formparams.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }

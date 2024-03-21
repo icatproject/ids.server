@@ -180,6 +180,25 @@ public class ValueContainer {
         return (InputStream) this.value;
     }
 
+    @Override
+    public String toString() {
+        switch(this.type) {
+            case INVALID: return ""+ValueContainerType.INVALID; 
+            case VOID: return ""+ValueContainerType.VOID;
+            case INT: return ""+this.value;
+            case LONG: return ""+this.value;
+            case BOOL: return ((boolean)this.value ? "true" : "false"); 
+            case STRING: return (String)this.value; 
+            case REQUEST: return "HttpServletRequest: " + ((HttpServletRequest) this.value).getQueryString();
+            case RESPONSE: return "Response " + ((Response) this.value).toString();
+            case INPUTSTREAM: return "An InputStream which will be printed here to prevent it from closing (and maybe it is too long).";
+            default:
+                throw new RuntimeException("Doesn't know how to make a String vom ValueContainer of type " + this.type + ". Please implement a new case is ValueContainer.toString().");
+        }
+    }
+
+    public boolean isNull() { return this.value == null; }
+
     
 
 
