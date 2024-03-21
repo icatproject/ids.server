@@ -1,4 +1,4 @@
-package org.icatproject.ids.requestHandlers.getDataFileIdsHandlers;
+package org.icatproject.ids.requestHandlers.getStatusHandlers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,23 +19,21 @@ import org.icatproject.ids.models.Prepared;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 
-public class GetDataFileIdsHandlerForPreparedData extends GetDataFileIdsHandler {
+public class GetStatusHandlerForPreparedData extends GetStatusHandler {
 
-    public GetDataFileIdsHandlerForPreparedData() {
-        super(PreparedDataStatus.PREPARED);
+    public GetStatusHandlerForPreparedData() {
+        super(new PreparedDataStatus[]{PreparedDataStatus.PREPARED});
     }
 
     @Override
     protected DataSelectionBase provideDataSelection(HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, NotFoundException {
-
-        String preparedId = parameters.get(RequestIdNames.preparedId).getString();
+        
+         String preparedId = parameters.get(RequestIdNames.preparedId).getString();
 
         // Log and validate
-        logger.info("New webservice request: getDatafileIds preparedId = '" + preparedId);
-
+        logger.info("New webservice request: getSize preparedId = '{}'", preparedId);
         validateUUID(RequestIdNames.preparedId, preparedId);
 
-        // Do it
         Prepared prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             prepared = unpack(stream);
@@ -44,9 +42,6 @@ public class GetDataFileIdsHandlerForPreparedData extends GetDataFileIdsHandler 
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
-
-        parameters.put("zip", new ValueContainer(prepared.zip));
-        parameters.put("compress", new ValueContainer(prepared.compress));
 
         return this.getDataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, prepared.fileLength);
     }
@@ -61,12 +56,6 @@ public class GetDataFileIdsHandlerForPreparedData extends GetDataFileIdsHandler 
         }
 
         return baos;
-    }
-
-    @Override
-    protected void addIndividualParametersToResponseStream(JsonGenerator gen, HashMap<String, ValueContainer> parameters) throws InternalException {
-                gen.write("zip", parameters.get("zip").getBool());
-                gen.write("compress", parameters.get("compress").getBool());
     }
     
 }

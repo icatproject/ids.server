@@ -3,8 +3,10 @@ package org.icatproject.ids.requestHandlers;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -50,7 +52,7 @@ public abstract class RequestHandlerBase {
      * This List contains the possible StorageUnit values (don't forget the null here) a handler is able to work with.
      * At the moment (13th of March in 2024) each handler is able to deal with all possible StorageUnitValues so maybe this could be removed. But maybe we need this in future.
      */
-    private PreparedDataStatus supportedDataStatus;
+    private List<PreparedDataStatus> supportedDataStati;
 
     protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
     protected Path preparedDir;
@@ -67,7 +69,11 @@ public abstract class RequestHandlerBase {
 
 
     protected RequestHandlerBase(PreparedDataStatus supportedDataStatus, RequestType requestType ) {
-        this.supportedDataStatus = supportedDataStatus;
+        this(new PreparedDataStatus[] {supportedDataStatus}, requestType);
+    }
+
+    protected RequestHandlerBase(PreparedDataStatus[] supportedDataStati, RequestType requestType ) {
+        this.supportedDataStati = Arrays.asList(supportedDataStati);
         this.requestType = requestType;
     }
 
@@ -78,7 +84,7 @@ public abstract class RequestHandlerBase {
      * @return
      */
     public boolean supportsPreparedDataStatus(PreparedDataStatus neededPreparedDataStatus) {
-        return this.supportedDataStatus == neededPreparedDataStatus;
+        return this.supportedDataStati.contains(neededPreparedDataStatus);
     }
 
 
@@ -95,8 +101,8 @@ public abstract class RequestHandlerBase {
      * returns the supported PreparedDataStatus
      * @return
      */
-    public PreparedDataStatus getSupportedDataStatus() {
-        return this.supportedDataStatus;
+    public List<PreparedDataStatus> getSupportedDataStati() {
+        return this.supportedDataStati;
     }
 
 

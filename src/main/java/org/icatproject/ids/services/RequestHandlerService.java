@@ -19,7 +19,6 @@ import org.icatproject.ids.requestHandlers.ArchiveHandler;
 import org.icatproject.ids.requestHandlers.DeleteHandler;
 import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
 import org.icatproject.ids.requestHandlers.GetServiceStatusHandler;
-import org.icatproject.ids.requestHandlers.GetStatusHandler;
 import org.icatproject.ids.requestHandlers.IsPreparedHandler;
 import org.icatproject.ids.requestHandlers.IsReadOnlyHandler;
 import org.icatproject.ids.requestHandlers.IsTwoLevelHandler;
@@ -35,6 +34,8 @@ import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForPrep
 import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
+import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForPreparedData;
+import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForUnpreparedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,12 +74,13 @@ public class RequestHandlerService {
      */
     private void registerHandler(RequestHandlerBase requestHandler) {
 
-
-        if(this.handlers.get(requestHandler.getSupportedDataStatus()).containsKey(requestHandler.getRequestType())) {
-            throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType " + requestHandler.getRequestType() + " for the supported PreparedDataStatus " + requestHandler.getSupportedDataStatus() + ".");
+        for(PreparedDataStatus supportedDataStatus : requestHandler.getSupportedDataStati())
+        {
+            if(this.handlers.get(supportedDataStatus).containsKey(requestHandler.getRequestType())) {
+                throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType " + requestHandler.getRequestType() + " for the supported PreparedDataStatus " + supportedDataStatus + ".");
+            }
+            this.handlers.get(supportedDataStatus).put(requestHandler.getRequestType(), requestHandler);
         }
-        this.handlers.get(requestHandler.getSupportedDataStatus()).put(requestHandler.getRequestType(), requestHandler);
-        
     }
 
 
@@ -95,7 +97,6 @@ public class RequestHandlerService {
      * @throws NotImplementedException
      */
     public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
-
         
         // determine the PreparedDataStatus of this request
         var dataStatus = PreparedDataStatus.NOMATTER;
@@ -111,8 +112,9 @@ public class RequestHandlerService {
             logger.info("### No handler found for RequestType " + requestType + " and PreparedDataStatus " + dataStatus + " in RequestHandlerService. Trying a fallback and use the corresponding handler for PreparedDataStatus.NOMATTER. This is only possible during the redesign and should be removed later.");
             return this.handlers.get(PreparedDataStatus.NOMATTER).get(requestType).handle(parameters);
         }
-        else
-            throw new InternalException("No handler found for RequestType " + requestType + " and PreparedDataStatus " + dataStatus + " in RequestHandlerService. Do you forgot to register?");
+        else {
+            throw new NotFoundException("No handler found for RequestType " + requestType + " and PreparedDataStatus " + dataStatus + " in RequestHandlerService. Do you forgot to register?");
+        }
     }
     
     @PostConstruct
@@ -167,10 +169,12 @@ public class RequestHandlerService {
                 this.registerHandler(new GetSizeHandlerForPreparedData());
                 this.registerHandler(new GetSizeHandlerForUnpreparedData());
 
+                this.registerHandler(new GetStatusHandlerForPreparedData());
+                this.registerHandler(new GetStatusHandlerForUnpreparedData());
+
                 this.registerHandler(new ArchiveHandler()); 
                 this.registerHandler(new GetIcatUrlHandler()); 
                 this.registerHandler(new GetServiceStatusHandler());
-                this.registerHandler(new GetStatusHandler());
                 this.registerHandler(new IsPreparedHandler());
                 this.registerHandler(new IsReadOnlyHandler());
                 this.registerHandler(new IsTwoLevelHandler());
