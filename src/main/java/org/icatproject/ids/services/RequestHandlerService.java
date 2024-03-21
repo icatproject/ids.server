@@ -25,7 +25,6 @@ import org.icatproject.ids.requestHandlers.IsTwoLevelHandler;
 import org.icatproject.ids.requestHandlers.PrepareDataHandler;
 import org.icatproject.ids.requestHandlers.PutHandler;
 import org.icatproject.ids.requestHandlers.RequestHandlerBase;
-import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;
 import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIdsHandlerForPreparedData;
@@ -36,6 +35,9 @@ import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPrep
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForUnpreparedData;
+import org.icatproject.ids.requestHandlers.restHandlers.ResetHandler;
+import org.icatproject.ids.requestHandlers.restHandlers.ResetHandlerForPreparedData;
+import org.icatproject.ids.requestHandlers.restHandlers.ResetHandlerForUnpreparedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,6 +174,9 @@ public class RequestHandlerService {
                 this.registerHandler(new GetStatusHandlerForPreparedData());
                 this.registerHandler(new GetStatusHandlerForUnpreparedData());
 
+                this.registerHandler(new ResetHandlerForPreparedData());
+                this.registerHandler(new ResetHandlerForUnpreparedData());
+
                 this.registerHandler(new ArchiveHandler()); 
                 this.registerHandler(new GetIcatUrlHandler()); 
                 this.registerHandler(new GetServiceStatusHandler());
@@ -180,7 +185,6 @@ public class RequestHandlerService {
                 this.registerHandler(new IsTwoLevelHandler());
                 this.registerHandler(new PrepareDataHandler());
                 this.registerHandler(new PutHandler());
-                this.registerHandler(new ResetHandler());
                 this.registerHandler(new RestoreHandler());
                 this.registerHandler(new WriteHandler());
                 this.registerHandler(new DeleteHandler());
