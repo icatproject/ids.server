@@ -35,7 +35,6 @@ import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPrep
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForUnpreparedData;
-import org.icatproject.ids.requestHandlers.restHandlers.ResetHandler;
 import org.icatproject.ids.requestHandlers.restHandlers.ResetHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.restHandlers.ResetHandlerForUnpreparedData;
 import org.slf4j.Logger;
@@ -76,12 +75,12 @@ public class RequestHandlerService {
      */
     private void registerHandler(RequestHandlerBase requestHandler) {
 
-        for(OperationIdTypes supportedDataStatus : requestHandler.getSupportedOperationIdTypes())
+        for(OperationIdTypes supportedOperationIdType : requestHandler.getSupportedOperationIdTypes())
         {
-            if(this.handlers.get(supportedDataStatus).containsKey(requestHandler.getRequestType())) {
-                throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType " + requestHandler.getRequestType() + " for the supported OperationIdTypes " + supportedDataStatus + ".");
+            if(this.handlers.get(supportedOperationIdType).containsKey(requestHandler.getRequestType())) {
+                throw new RuntimeException("You tried to add a request handler, but it alreay exists a handler which handles the same RequestType " + requestHandler.getRequestType() + " for the supported OperationIdType " + supportedOperationIdType + ".");
             }
-            this.handlers.get(supportedDataStatus).put(requestHandler.getRequestType(), requestHandler);
+            this.handlers.get(supportedOperationIdType).put(requestHandler.getRequestType(), requestHandler);
         }
     }
 
@@ -101,21 +100,16 @@ public class RequestHandlerService {
     public ValueContainer handle(RequestType requestType, HashMap<String, ValueContainer> parameters) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
         
         // determine the OperationIdTypes of this request
-        var dataStatus = OperationIdTypes.ANONYMOUS;
-        if(parameters.containsKey(RequestIdNames.sessionId) && !parameters.get(RequestIdNames.sessionId).isNull()) dataStatus = OperationIdTypes.SESSIONID;
-        else if(parameters.containsKey(RequestIdNames.preparedId) && !parameters.get(RequestIdNames.preparedId).isNull()) dataStatus = OperationIdTypes.PREPAREDID;
+        var operationIdType = OperationIdTypes.ANONYMOUS;
+        if(parameters.containsKey(RequestIdNames.sessionId) && !parameters.get(RequestIdNames.sessionId).isNull()) operationIdType = OperationIdTypes.SESSIONID;
+        else if(parameters.containsKey(RequestIdNames.preparedId) && !parameters.get(RequestIdNames.preparedId).isNull()) operationIdType = OperationIdTypes.PREPAREDID;
 
         // handle
-        if(this.handlers.get(dataStatus).containsKey(requestType)) {
-            return this.handlers.get(dataStatus).get(requestType).handle(parameters);
-        }
-        else if(this.handlers.get(OperationIdTypes.ANONYMOUS).containsKey(requestType)) {
-            //TODO: this is a fallback: in case the request handlers are not yet redesigned to split sub classes for Prepared data status they will support the default NOMATTER
-            logger.info("### No handler found for RequestType " + requestType + " and OperationIdType " + dataStatus + " in RequestHandlerService. Trying a fallback and use the corresponding handler for OperationIdTypes.NOMATTER. This is only possible during the redesign and should be removed later.");
-            return this.handlers.get(OperationIdTypes.ANONYMOUS).get(requestType).handle(parameters);
+        if(this.handlers.get(operationIdType).containsKey(requestType)) {
+            return this.handlers.get(operationIdType).get(requestType).handle(parameters);
         }
         else {
-            throw new NotFoundException("No handler found for RequestType " + requestType + " and OperationIdType " + dataStatus + " in RequestHandlerService. Do you forgot to register?");
+            throw new NotFoundException("No handler found for RequestType " + requestType + " and OperationIdType " + operationIdType + " in RequestHandlerService. Do you forgot to register?");
         }
     }
     
@@ -158,8 +152,8 @@ public class RequestHandlerService {
                 this.propertyHandler = PropertyHandler.getInstance();
 
                 this.handlers = new HashMap<OperationIdTypes, HashMap<RequestType, RequestHandlerBase> >();
-                for(var preparedDataStatus : OperationIdTypes.values()) {
-                    this.handlers.put(preparedDataStatus,    new HashMap<RequestType, RequestHandlerBase>());
+                for(var operationIdType : OperationIdTypes.values()) {
+                    this.handlers.put(operationIdType, new HashMap<RequestType, RequestHandlerBase>());
                 }
 
                 this.registerHandler(new GetDataHandlerForPreparedData()); 
