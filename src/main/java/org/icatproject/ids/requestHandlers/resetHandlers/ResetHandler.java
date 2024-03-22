@@ -1,4 +1,4 @@
-package org.icatproject.ids.requestHandlers.restHandlers;
+package org.icatproject.ids.requestHandlers.resetHandlers;
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;

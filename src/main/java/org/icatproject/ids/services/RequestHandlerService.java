@@ -35,8 +35,8 @@ import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPrep
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForUnpreparedData;
-import org.icatproject.ids.requestHandlers.restHandlers.ResetHandlerForPreparedData;
-import org.icatproject.ids.requestHandlers.restHandlers.ResetHandlerForUnpreparedData;
+import org.icatproject.ids.requestHandlers.resetHandlers.ResetHandlerForPreparedData;
+import org.icatproject.ids.requestHandlers.resetHandlers.ResetHandlerForUnpreparedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
