@@ -47,13 +47,13 @@ import org.icatproject.Investigation;
 import org.icatproject.InvestigationType;
 import org.icatproject.icat.client.ICAT;
 import org.icatproject.icat.client.Session;
-import org.icatproject.ids.ICATGetter;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.TestingClient;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
 import org.icatproject.ids.integration.util.client.TestingClient.ServiceStatus;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
+import org.icatproject.ids.services.ICATGetter;
 
 public class BaseTest {
 

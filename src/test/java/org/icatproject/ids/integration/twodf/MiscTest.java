@@ -43,7 +43,10 @@ public class MiscTest extends BaseTest {
         String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
                 Flag.NONE, 200);
 
-        assertFalse(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
+        var status = testingClient.getServiceStatus(sessionId, 200);
+        //System.out.println("### twodf.MiscTest.correctBehaviourNoOffsetTest - status: " + status.toString());
+
+        assertFalse(status.getOpItems().isEmpty());
 
         while (!testingClient.isPrepared(preparedId, 200)) {
             Thread.sleep(1000);

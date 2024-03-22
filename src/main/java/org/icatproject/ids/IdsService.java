@@ -4,8 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -32,13 +33,23 @@ import jakarta.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.icatproject.ids.enums.RequestIdNames;
+import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.helpers.Constants;
+import org.icatproject.ids.helpers.ValueContainer;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.LockManager;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.RequestHandlerService;
+import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.Transmitter;
 
 @Path("/")
 @Stateless
@@ -47,9 +58,18 @@ public class IdsService {
     private final static Logger logger = LoggerFactory.getLogger(IdsService.class);
 
     @EJB
-    private IdsBean idsBean;
+    Transmitter transmitter;
 
-    private Pattern rangeRe;
+    @EJB
+    private LockManager lockManager;
+
+    @EJB
+    private IcatReader reader;
+
+    @EJB
+    private RequestHandlerService requestService;
+
+    private FiniteStateMachine fsm = null;
 
     /**
      * Archive data specified by the investigationIds, datasetIds and
@@ -67,17 +87,27 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("archive")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public void archive(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
+    public void archive(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
                         @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                         @FormParam("datafileIds") String datafileIds)
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-            NotFoundException {
-        idsBean.archive(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+            NotFoundException, DataNotOnlineException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("request",           new ValueContainer(request));
+        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
+
+        this.requestService.handle(RequestType.ARCHIVE, parameters);
     }
 
     /**
@@ -100,15 +130,24 @@ public class IdsService {
      */
     @DELETE
     @Path("delete")
-    public void delete(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId,
+    public void delete(@Context HttpServletRequest request, @QueryParam(RequestIdNames.sessionId) String sessionId,
                        @QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
                        @QueryParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
             InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
-        idsBean.delete(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+
+        var parameters = new HashMap<String,ValueContainer>();
+        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
+
+        this.requestService.handle(RequestType.DELETE, parameters);
     }
 
     @PreDestroy
     private void exit() {
+        this.fsm.exit();
         logger.info("destroyed IdsService");
     }
 
@@ -159,37 +198,33 @@ public class IdsService {
      * @throws InternalException
      * @throws InsufficientPrivilegesException
      * @throws DataNotOnlineException
+     * @throws NotImplementedException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getData")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public Response getData(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
-                            @QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+    public Response getData(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                            @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                             @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds,
                             @QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
                             @QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
-            NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException {
-        Response response = null;
+            NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        long offset = 0;
-        if (range != null) {
 
-            Matcher m = rangeRe.matcher(range);
-            if (!m.matches()) {
-                throw new BadRequestException("The range must match " + rangeRe.pattern());
-            }
-            offset = Long.parseLong(m.group(1));
-            logger.debug("Range " + range + " -> offset " + offset);
-        }
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put( "request",              new ValueContainer(request) );
+        parameters.put( RequestIdNames.preparedId,  new ValueContainer(preparedId) );
+        parameters.put( RequestIdNames.sessionId,   new ValueContainer(sessionId) );
+        parameters.put( "investigationIds",     new ValueContainer(investigationIds) );
+        parameters.put( "datasetIds",           new ValueContainer(datasetIds) );
+        parameters.put( "datafileIds",          new ValueContainer(datafileIds) );
+        parameters.put( "compress",             new ValueContainer(compress) );
+        parameters.put( "zip",                  new ValueContainer(zip) );
+        parameters.put( "outname",              new ValueContainer(outname) );
+        parameters.put( "range",                new ValueContainer(range) );
 
-        if (preparedId != null) {
-            response = idsBean.getData(preparedId, outname, offset, request.getRemoteAddr());
-        } else {
-            response = idsBean.getData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname,
-                    offset, request.getRemoteAddr());
-        }
-        return response;
+        return this.requestService.handle(RequestType.GETDATA, parameters).getResponse();
     }
 
     /**
@@ -209,21 +244,27 @@ public class IdsService {
      * @throws InternalException
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getDatafileIds")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getDatafileIds(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
-                                 @QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+    public String getDatafileIds(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                                 @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                                  @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
-        if (preparedId != null) {
-            return idsBean.getDatafileIds(preparedId, request.getRemoteAddr());
-        } else {
-            return idsBean.getDatafileIds(sessionId, investigationIds, datasetIds, datafileIds,
-                    request.getRemoteAddr());
-        }
+            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.preparedId,       new ValueContainer(preparedId));
+        parameters.put(RequestIdNames.sessionId,        new ValueContainer(sessionId));
+        parameters.put("investigationIds",          new ValueContainer(investigationIds));
+        parameters.put("datasetIds",                new ValueContainer(datasetIds));
+        parameters.put("datafileIds",               new ValueContainer(datafileIds));
+        parameters.put("ip",                        new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.GETDATAFILEIDS, parameters).getString();
     }
 
     /**
@@ -232,13 +273,23 @@ public class IdsService {
      * obtained.
      *
      * @return the url of the icat server
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getIcatUrl")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getIcatUrl(@Context HttpServletRequest request) {
-        return idsBean.getIcatUrl(request.getRemoteAddr());
+    public String getIcatUrl(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("ip",new ValueContainer(request.getRemoteAddr()) );
+        
+        return this.requestService.handle(RequestType.GETICATURL, parameters).getString();
     }
 
     /**
@@ -251,14 +302,23 @@ public class IdsService {
      * @return a json string.
      * @throws InternalException
      * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws BadRequestException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getServiceStatus")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getServiceStatus(@Context HttpServletRequest request, @QueryParam("sessionId") String sessionId)
-            throws InternalException, InsufficientPrivilegesException {
-        return idsBean.getServiceStatus(sessionId, request.getRemoteAddr());
+    public String getServiceStatus(@Context HttpServletRequest request, @QueryParam(RequestIdNames.sessionId) String sessionId)
+            throws InternalException, InsufficientPrivilegesException, BadRequestException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.sessionId, new ValueContainer(sessionId));
+        parameters.put("ip",        new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.GETSERVICESTATUS, parameters).getString();
     }
 
     /**
@@ -277,20 +337,28 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getSize")
     @Produces(MediaType.TEXT_PLAIN)
-    public long getSize(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
-                        @QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+    public long getSize(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                        @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                         @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-        if (preparedId != null) {
-            return idsBean.getSize(preparedId, request.getRemoteAddr());
-        } else {
-            return idsBean.getSize(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
-        }
+            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
+
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
+        parameters.put(RequestIdNames.sessionId,    new ValueContainer(sessionId));
+        parameters.put("investigationIds",      new ValueContainer(investigationIds));
+        parameters.put("datasetIds",            new ValueContainer(datasetIds));
+        parameters.put("datafileIds",           new ValueContainer(datafileIds));
+        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.GETSIZE, parameters).getLong();
     }
 
     /**
@@ -315,26 +383,38 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getStatus")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getStatus(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId,
-                            @QueryParam("sessionId") String sessionId, @QueryParam("investigationIds") String investigationIds,
+    public String getStatus(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                            @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                             @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException {
-        if (preparedId != null) {
-            return idsBean.getStatus(preparedId, request.getRemoteAddr());
-        } else {
-            return idsBean.getStatus(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
-        }
+            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
+        parameters.put(RequestIdNames.sessionId,    new ValueContainer(sessionId));
+        parameters.put("investigationIds",      new ValueContainer(investigationIds));
+        parameters.put("datasetIds",            new ValueContainer(datasetIds));
+        parameters.put("datafileIds",           new ValueContainer(datafileIds));
+        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.GETSTATUS, parameters).getString();
     }
 
     @PostConstruct
     private void init() {
         logger.info("creating IdsService");
-        rangeRe = Pattern.compile("bytes=(\\d+)-");
+
+        FiniteStateMachine.createInstance(reader, lockManager, PropertyHandler.getInstance().getStorageUnit());
+        this.fsm = FiniteStateMachine.getInstance();
+        this.fsm.init();
+        ServiceProvider.createInstance(transmitter, fsm, lockManager, reader);
+
         logger.info("created IdsService");
     }
 
@@ -355,29 +435,47 @@ public class IdsService {
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws InsufficientPrivilegesException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isPrepared")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isPrepared(@Context HttpServletRequest request, @QueryParam("preparedId") String preparedId)
-            throws BadRequestException, NotFoundException, InternalException {
-        return idsBean.isPrepared(preparedId, request.getRemoteAddr());
+    public boolean isPrepared(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId)
+            throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
+        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.ISPREPARED, parameters).getBool();
     }
 
     /**
-     * An ids server can be configured to be read only. This returns the
+     * An ids server can be configured to be read only. This returns thenew DfProcessQueue()
      * readOnly status of the server.
      *
      * @title isReadOnly
      * @return true if readonly, else false
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isReadOnly")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isReadOnly(@Context HttpServletRequest request) {
-        return idsBean.isReadOnly(request.getRemoteAddr());
+    public boolean isReadOnly(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.ISREADONLY, parameters).getBool();
     }
 
     /**
@@ -386,13 +484,23 @@ public class IdsService {
      *
      * @title isTwoLevel
      * @return true if twoLevel, else false
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isTwoLevel")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isTwoLevel(@Context HttpServletRequest request) {
-        return idsBean.isTwoLevel(request.getRemoteAddr());
+    public boolean isTwoLevel(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.ISTWOLEVEL, parameters).getBool();
     }
 
     /**
@@ -434,19 +542,30 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws NotFoundException
      * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("prepareData")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
-    public String prepareData(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
+    public String prepareData(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
                               @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                               @FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
                               @FormParam("zip") boolean zip)
-            throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException {
-        return idsBean.prepareData(sessionId, investigationIds, datasetIds, datafileIds, compress, zip,
-                request.getRemoteAddr());
+            throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException, DataNotOnlineException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("compress",          new ValueContainer(compress));
+        parameters.put("zip",               new ValueContainer(zip));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.PREPAREDATA, parameters).getString();
     }
 
     /**
@@ -478,14 +597,28 @@ public class IdsService {
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Produces(MediaType.APPLICATION_JSON)
     public Response put(@Context HttpServletRequest request, InputStream body,
-                        @QueryParam("sessionId") String sessionId, @QueryParam("name") String name,
+                        @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("name") String name,
                         @QueryParam("datafileFormatId") String datafileFormatId, @QueryParam("datasetId") String datasetId,
                         @QueryParam("description") String description, @QueryParam("doi") String doi,
                         @QueryParam("datafileCreateTime") String datafileCreateTime,
                         @QueryParam("datafileModTime") String datafileModTime) throws BadRequestException, NotFoundException,
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
-        return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description, doi, datafileCreateTime,
-                datafileModTime, false, false, request.getRemoteAddr());
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put("body",                  new ValueContainer(body));
+        parameters.put(RequestIdNames.sessionId,    new ValueContainer(sessionId));
+        parameters.put("name",                  new ValueContainer(name));
+        parameters.put("datafileFormatId",      new ValueContainer(datafileFormatId));
+        parameters.put("datasetId",             new ValueContainer(datasetId));
+        parameters.put("description",           new ValueContainer(description));
+        parameters.put("doi",                   new ValueContainer(doi));
+        parameters.put("datafileCreateTime",    new ValueContainer(datafileCreateTime));
+        parameters.put("datafileModTime",       new ValueContainer(datafileModTime));
+        parameters.put("wrap",                  new ValueContainer(false));
+        parameters.put("padding",               new ValueContainer(false));
+        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+
+        return this.requestService.handle(RequestType.PUT, parameters).getResponse();
     }
 
     /**
@@ -514,56 +647,53 @@ public class IdsService {
     public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
         try {
-            String sessionId = null;
-            String name = null;
-            String datafileFormatId = null;
-            String datasetId = null;
-            String description = null;
-            String doi = null;
-            String datafileCreateTime = null;
-            String datafileModTime = null;
-            Response result = null;
-            boolean wrap = false;
-            boolean padding = false;
+
+            List<String> requestParameterNames = Arrays.asList(new String[] {RequestIdNames.sessionId, "name", "datafileFormatId", "datasetId", "description",
+                                                "doi", "datafileCreateTime", "datafileModTime", "wrap", "padding"});
+            List<String> booleans = Arrays.asList(new String[] {"wrap", "padding"});
+
+            var parameters = new HashMap<String, ValueContainer>();
+            parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
 
             // Parse the request
             for (Part part : request.getParts()) {
                 String fieldName = part.getName();
+
                 InputStream stream = part.getInputStream();
+                parameters.put("body", new ValueContainer(stream));
+
                 if (part.getSubmittedFileName() == null) {
                     String value = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-                    if (fieldName.equals("sessionId")) {
-                        sessionId = value;
-                    } else if (fieldName.equals("name")) {
-                        name = value;
-                    } else if (fieldName.equals("datafileFormatId")) {
-                        datafileFormatId = value;
-                    } else if (fieldName.equals("datasetId")) {
-                        datasetId = value;
-                    } else if (fieldName.equals("description")) {
-                        description = value;
-                    } else if (fieldName.equals("doi")) {
-                        doi = value;
-                    } else if (fieldName.equals("datafileCreateTime")) {
-                        datafileCreateTime = value;
-                    } else if (fieldName.equals("datafileModTime")) {
-                        datafileModTime = value;
-                    } else if (fieldName.equals("wrap")) {
-                        wrap = (value != null && value.toUpperCase().equals("TRUE"));
-                    } else if (fieldName.equals("padding")) {
-                        padding = (value != null && value.toUpperCase().equals("TRUE"));
-                    } else {
+
+                    //if parameter unknown, throw an exception
+                    if(!requestParameterNames.contains(fieldName))
                         throw new BadRequestException("Form field " + fieldName + "is not recognised");
-                    }
+
+                    parameters.put(fieldName, booleans.contains(fieldName) 
+                                                ? new ValueContainer(value != null && value.toUpperCase().equals("TRUE")) // if it should be a boolean ...
+                                                : new ValueContainer(value) // ... or a String
+                    );
+
                 } else {
-                    if (name == null) {
-                        name = part.getSubmittedFileName();
+                    if (parameters.get("name") == null) {
+                        parameters.put("name", new ValueContainer(part.getSubmittedFileName()));
                     }
-                    result = idsBean.put(stream, sessionId, name, datafileFormatId, datasetId, description, doi,
-                            datafileCreateTime, datafileModTime, wrap, padding, request.getRemoteAddr());
                 }
             }
-            return result;
+
+            // add default values for missing parameters
+            for(String parameterName : requestParameterNames) {
+                if(!parameters.containsKey(parameterName)) {
+                    parameters.put(parameterName, booleans.contains(parameterName) 
+                                                    ? new ValueContainer( false) 
+                                                    : new ValueContainer((String) null) 
+                    );
+                }
+            }
+
+            //handle the request
+            return this.requestService.handle(RequestType.PUT, parameters).getResponse();
+
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         } catch (ServletException e) {
@@ -593,19 +723,26 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InternalException
      * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("reset")
-    public void reset(@Context HttpServletRequest request, @FormParam("preparedId") String preparedId,
-                      @FormParam("sessionId") String sessionId, @FormParam("investigationIds") String investigationIds,
+    public void reset(@Context HttpServletRequest request, @FormParam(RequestIdNames.preparedId) String preparedId,
+                      @FormParam(RequestIdNames.sessionId) String sessionId, @FormParam("investigationIds") String investigationIds,
                       @FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
-            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException {
-        if (preparedId != null) {
-            idsBean.reset(preparedId, request.getRemoteAddr());
-        } else {
-            idsBean.reset(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
-        }
+            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
+        parameters.put(RequestIdNames.sessionId,    new ValueContainer(sessionId));
+        parameters.put("investigationIds",      new ValueContainer(investigationIds));
+        parameters.put("datasetIds",            new ValueContainer(datasetIds));
+        parameters.put("datafileIds",           new ValueContainer(datafileIds));
+        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+
+        this.requestService.handle(RequestType.RESET, parameters);
 
     }
 
@@ -625,17 +762,26 @@ public class IdsService {
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("restore")
     @Consumes("application/x-www-form-urlencoded")
-    public void restore(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
+    public void restore(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
                         @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                         @FormParam("datafileIds") String datafileIds)
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-            NotFoundException {
-        idsBean.restore(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+            NotFoundException, DataNotOnlineException {
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
+
+        this.requestService.handle(RequestType.RESTORE, parameters);
     }
 
 
@@ -661,11 +807,19 @@ public class IdsService {
     @POST
     @Path("write")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public void write(@Context HttpServletRequest request, @FormParam("sessionId") String sessionId,
+    public void write(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
                       @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                       @FormParam("datafileIds") String datafileIds)
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
-        idsBean.write(sessionId, investigationIds, datasetIds, datafileIds, request.getRemoteAddr());
+
+        var parameters = new HashMap<String, ValueContainer>();
+        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
+        parameters.put("investigationIds",  new ValueContainer(investigationIds));
+        parameters.put("datasetIds",        new ValueContainer(datasetIds));
+        parameters.put("datafileIds",       new ValueContainer(datafileIds));
+        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
+
+        this.requestService.handle(RequestType.WRITE, parameters);
     }
 }
