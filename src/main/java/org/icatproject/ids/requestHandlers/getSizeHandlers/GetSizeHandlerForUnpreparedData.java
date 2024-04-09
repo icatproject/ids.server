@@ -46,6 +46,7 @@ public class GetSizeHandlerForUnpreparedData extends GetSizeHandler {
 
         validateUUID(RequestIdNames.sessionId, sessionId);
 
+        //these lists could be provided by the DataSelection object, but it is done this way to be faster, i guess
         List<Long> dfids = DataSelectionBase.getValidIds("datafileIds", datafileIds);
         List<Long> dsids = DataSelectionBase.getValidIds("datasetIds", datasetIds);
         List<Long> invids = DataSelectionBase.getValidIds("investigationIds", investigationIds);
