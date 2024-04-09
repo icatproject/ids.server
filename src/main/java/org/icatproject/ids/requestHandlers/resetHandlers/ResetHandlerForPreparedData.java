@@ -8,7 +8,6 @@ import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 
 import org.icatproject.ids.dataSelection.DataSelectionBase;
-import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -37,16 +36,16 @@ public class ResetHandlerForPreparedData extends ResetHandler {
         validateUUID(RequestIdNames.preparedId, preparedId);
 
         // Do it
-        Prepared preparedJson;
+        Prepared prepared;
         try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-            preparedJson = unpack(stream);
+            prepared = unpack(stream);
         } catch (NoSuchFileException e) {
             throw new NotFoundException("The preparedId " + preparedId + " is not known");
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        return DataSelectionFactory.get(preparedJson.dsInfos, preparedJson.dfInfos, preparedJson.emptyDatasets, preparedJson.fileLength, this.getRequestType());
+        return this.getDataSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, prepared.fileLength);
     }
 
     @Override
