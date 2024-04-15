@@ -1,9 +1,13 @@
 package org.icatproject.ids.services;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
+import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.dataSelection.DataSelectionBase;
+import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
@@ -42,6 +46,8 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless;
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
 
 /**
  * This class encapsulates tha handling of all the different requests. In tries to find the right request handler and executes its handling method
@@ -101,16 +107,38 @@ public class RequestHandlerService {
         
         // determine the OperationIdTypes of this request
         var operationIdType = OperationIdTypes.ANONYMOUS;
-        if(parameters.containsKey(RequestIdNames.sessionId) && !parameters.get(RequestIdNames.sessionId).isNull()) operationIdType = OperationIdTypes.SESSIONID;
-        else if(parameters.containsKey(RequestIdNames.preparedId) && !parameters.get(RequestIdNames.preparedId).isNull()) operationIdType = OperationIdTypes.PREPAREDID;
+        if(parameters.containsKey(RequestIdNames.sessionId) && !parameters.get(RequestIdNames.sessionId).isNull()) 
+            operationIdType = OperationIdTypes.SESSIONID;
+        else if(parameters.containsKey(RequestIdNames.preparedId) && !parameters.get(RequestIdNames.preparedId).isNull()) 
+            operationIdType = OperationIdTypes.PREPAREDID;
 
-        // handle
+
         if(this.handlers.get(operationIdType).containsKey(requestType)) {
-            return this.handlers.get(operationIdType).get(requestType).handle(parameters);
+
+            RequestHandlerBase handler = this.handlers.get(operationIdType).get(requestType);
+
+            //pre processing
+            long start = System.currentTimeMillis();
+            logger.info("New webservice request: " + requestType + " ... ");
+            validateUUID(operationIdType, parameters);
+            //not yet realized: providing DataSelection
+
+
+            //handle
+            ValueContainer result = handler.handle(parameters);
+
+
+            //post processing
+            this.transmit(start, handler.getCallType(), parameters);
+
+            return result;
+
         }
         else {
             throw new NotFoundException("No handler found for RequestType " + requestType + " and OperationIdType " + operationIdType + " in RequestHandlerService. Do you forgot to register?");
         }
+
+
     }
     
     @PostConstruct
@@ -198,6 +226,40 @@ public class RequestHandlerService {
         } catch (Throwable e) {
             logger.error("Won't start ", e);
             throw new RuntimeException("RequestHandlerService reports " + e.getClass() + " " + e.getMessage());
+        }
+    }
+
+    private void transmit(long startTime, CallType callType, HashMap<String, ValueContainer> parameters) throws BadRequestException, InternalException {
+
+        if (ServiceProvider.getInstance().getLogSet().contains(callType)) {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+
+                    for(var parameterKey : parameters.keySet())
+                    {
+                        if(parameterKey.equals(RequestIdNames.sessionId)) {
+                            gen.write("userName", ServiceProvider.getInstance().getIcat().getUserName(parameters.get(parameterKey).getString()));
+                        }
+                        else if (parameterKey.equals("investigationIds") || parameterKey.equals("datasetIds") || parameterKey.equals("datafileIds")){
+                            gen.writeStartArray(parameterKey);
+                            for (long invid : DataSelectionBase.getValidIds(parameterKey, parameters.get(parameterKey).getString())) {
+                                gen.write(invid);
+                            }
+                            gen.writeEnd();
+                        }
+                        else {
+                            gen.write(parameterKey, parameters.get(parameterKey).toString()); 
+                        }
+                    }
+
+                    gen.writeEnd();
+                }
+                String body = baos.toString();
+                ServiceProvider.getInstance().getTransmitter().processMessage("archive", parameters.get("ip").getString(), body, startTime);
+            } catch (IcatException_Exception e) {
+                logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+            }
         }
     }
 
