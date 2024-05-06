@@ -21,7 +21,7 @@ import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.models.Prepared;
-import org.icatproject.ids.requestHandlers.RequestHandlerBase;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.junit.Test;
 
 public class PreparePackingTest {

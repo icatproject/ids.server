@@ -40,6 +40,7 @@ import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;

@@ -44,6 +44,7 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.Constants;
 import org.icatproject.ids.helpers.ValueContainer;
+import org.icatproject.ids.requestHandlers.ArchiveHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
@@ -99,15 +100,8 @@ public class IdsService {
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("request",           new ValueContainer(request));
-        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
-        parameters.put("investigationIds",  new ValueContainer(investigationIds));
-        parameters.put("datasetIds",        new ValueContainer(datasetIds));
-        parameters.put("datafileIds",       new ValueContainer(datafileIds));
-        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
-
-        this.requestService.handle(RequestType.ARCHIVE, parameters);
+        var handler = new ArchiveHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
+        handler.handle();
     }
 
     /**

@@ -17,6 +17,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 
 import jakarta.json.Json;

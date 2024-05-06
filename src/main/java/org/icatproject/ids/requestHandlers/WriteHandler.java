@@ -21,6 +21,7 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;

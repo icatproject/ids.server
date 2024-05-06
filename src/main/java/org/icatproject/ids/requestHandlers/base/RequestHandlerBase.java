@@ -1,4 +1,4 @@
-package org.icatproject.ids.requestHandlers;
+package org.icatproject.ids.requestHandlers.base;
 
 import java.io.InputStream;
 import java.io.OutputStream;

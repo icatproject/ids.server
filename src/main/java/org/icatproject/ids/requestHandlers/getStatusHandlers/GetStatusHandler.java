@@ -18,7 +18,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.requestHandlers.RequestHandlerBase;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 
 public abstract class GetStatusHandler extends RequestHandlerBase {
