@@ -30,8 +30,6 @@ import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIds
 import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIdsHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
-import org.icatproject.ids.requestHandlers.resetHandlers.ResetHandlerForPreparedData;
-import org.icatproject.ids.requestHandlers.resetHandlers.ResetHandlerForUnpreparedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,9 +154,6 @@ public class RequestHandlerService {
 
                 this.registerHandler(new GetSizeHandlerForPreparedData());
                 this.registerHandler(new GetSizeHandlerForUnpreparedData());
-
-                this.registerHandler(new ResetHandlerForPreparedData());
-                this.registerHandler(new ResetHandlerForUnpreparedData());
 
                 this.registerHandler(new GetIcatUrlHandler()); 
                 this.registerHandler(new GetServiceStatusHandler());

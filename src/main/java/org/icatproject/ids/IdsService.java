@@ -48,6 +48,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.ArchiveHandler;
 import org.icatproject.ids.requestHandlers.GetDataHandler;
 import org.icatproject.ids.requestHandlers.GetStatusHandler;
+import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
@@ -737,15 +738,15 @@ public class IdsService {
                       @FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
             throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
-        parameters.put(RequestIdNames.sessionId,    new ValueContainer(sessionId));
-        parameters.put("investigationIds",      new ValueContainer(investigationIds));
-        parameters.put("datasetIds",            new ValueContainer(datasetIds));
-        parameters.put("datafileIds",           new ValueContainer(datafileIds));
-        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+        ResetHandler handler;
+        if(sessionId != null) {
+            handler = new ResetHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
+        }
+        else {
+            handler = new ResetHandler(request.getRemoteAddr(), preparedId);
+        }
 
-        this.requestService.handle(RequestType.RESET, parameters);
+        handler.handle();
 
     }
 
