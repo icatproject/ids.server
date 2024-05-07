@@ -46,26 +46,29 @@ public class GetDataHandler extends DataRequestHandler {
     Long transferId;
 
 
-    public GetDataHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds, boolean compress, boolean zip, String outname, String range) {
+    public GetDataHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds, Boolean compress, Boolean zip, String outname, String range) {
         super(RequestType.GETDATA, ip, sessionId, investigationIds, datasetIds, datafileIds );
 
-        this.initializeAdditionallParameters(outname, range);
-        this.compress = compress;
-        this.zip = zip;
+        this.initializeAdditionallParameters(sessionId, compress, zip, outname, range);
     }
 
-    public GetDataHandler(String ip, String preparedId, String outname, String range) {
-        super(RequestType.GETDATA, ip, preparedId );
+    public GetDataHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds, Boolean compress, Boolean zip, String outname, String range) {
+        super(RequestType.GETDATA, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds );
 
-        this.initializeAdditionallParameters(outname, range);
+        this.initializeAdditionallParameters(sessionId, compress, zip, outname, range);
     }
 
-    private void initializeAdditionallParameters(String outname, String range) {
+    private void initializeAdditionallParameters(String sessionId, Boolean compress, Boolean zip, String outname, String range) {
         
         this.outname = outname;
         this.range = range;
         this.transferId = null;
         this.rangeRe = Pattern.compile("bytes=(\\d+)-");
+
+        if(sessionId != null) {
+            this.compress = compress;
+            this.zip = zip;
+        }
     }
 
 

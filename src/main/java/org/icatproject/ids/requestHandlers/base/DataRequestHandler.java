@@ -26,10 +26,14 @@ public abstract class DataRequestHandler extends RequestHandlerBase2 {
 
     }
 
-    protected DataRequestHandler(RequestType requestType, String ip, String preparedId) {
+    protected DataRequestHandler(RequestType requestType, String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
         super(requestType, ip);
 
-        this.dataController = new PreparedDataController(preparedId);
+        if(sessionId != null) {
+            this.dataController = new UnpreparedDataController(sessionId, investigationIds, datasetIds, datafileIds);
+        } else {
+            this.dataController = new PreparedDataController(preparedId);
+        }
 
     }
 

@@ -18,8 +18,8 @@ import org.icatproject.ids.services.ServiceProvider;
 
 public class ResetHandler extends DataRequestHandler {
 
-    public ResetHandler(String ip, String preparedId) {
-        super(RequestType.RESET, ip, preparedId);
+    public ResetHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+        super(RequestType.RESET, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
     public ResetHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {

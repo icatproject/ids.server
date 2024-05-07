@@ -19,8 +19,8 @@ import org.icatproject.ids.services.ServiceProvider;
 
 public class GetStatusHandler extends DataRequestHandler {
 
-    public GetStatusHandler(String ip, String preparedId) {
-        super(RequestType.GETSTATUS, ip, preparedId);
+    public GetStatusHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+        super(RequestType.GETSTATUS, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
     public GetStatusHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {

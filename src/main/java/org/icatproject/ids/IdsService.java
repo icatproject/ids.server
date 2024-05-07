@@ -209,15 +209,7 @@ public class IdsService {
                             @QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
             NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-
-        GetDataHandler handler;
-        if(sessionId != null) {
-            handler = new GetDataHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname, range);
-        }
-        else {
-            handler = new GetDataHandler(request.getRemoteAddr(), preparedId, outname, range);
-        }
-
+        var handler = new GetDataHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds, compress, zip,  outname, range);
         return handler.handle().getResponse();
     }
 
@@ -398,15 +390,7 @@ public class IdsService {
             }
         }
 
-        // handle
-        GetStatusHandler handler;
-        if(sessionId != null) {
-            handler = new GetStatusHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
-        }
-        else {
-            handler = new GetStatusHandler(request.getRemoteAddr(), preparedId);
-        }
-
+        var handler = new GetStatusHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
         return handler.handle().getString();
     }
 
@@ -738,14 +722,7 @@ public class IdsService {
                       @FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
             throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        ResetHandler handler;
-        if(sessionId != null) {
-            handler = new ResetHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
-        }
-        else {
-            handler = new ResetHandler(request.getRemoteAddr(), preparedId);
-        }
-
+        var handler = new ResetHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
 
     }
