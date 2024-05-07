@@ -45,6 +45,7 @@ import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.Constants;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.ArchiveHandler;
+import org.icatproject.ids.requestHandlers.GetDataHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
@@ -206,19 +207,15 @@ public class IdsService {
             NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put( "request",              new ValueContainer(request) );
-        parameters.put( RequestIdNames.preparedId,  new ValueContainer(preparedId) );
-        parameters.put( RequestIdNames.sessionId,   new ValueContainer(sessionId) );
-        parameters.put( "investigationIds",     new ValueContainer(investigationIds) );
-        parameters.put( "datasetIds",           new ValueContainer(datasetIds) );
-        parameters.put( "datafileIds",          new ValueContainer(datafileIds) );
-        parameters.put( "compress",             new ValueContainer(compress) );
-        parameters.put( "zip",                  new ValueContainer(zip) );
-        parameters.put( "outname",              new ValueContainer(outname) );
-        parameters.put( "range",                new ValueContainer(range) );
+        GetDataHandler handler;
+        if(sessionId != null) {
+            handler = new GetDataHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds, compress, zip, outname, range);
+        }
+        else {
+            handler = new GetDataHandler(request.getRemoteAddr(), preparedId, outname, range);
+        }
 
-        return this.requestService.handle(RequestType.GETDATA, parameters).getResponse();
+        return handler.handle().getResponse();
     }
 
     /**

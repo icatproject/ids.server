@@ -29,6 +29,7 @@ import org.icatproject.ids.helpers.LocationHelper;
 import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.PropertyHandler;
 import org.icatproject.ids.services.ServiceProvider;
@@ -89,23 +90,28 @@ public class DataSelectionFactory {
      * @throws InternalException
      */
     public static DataSelectionBase get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength, RequestType requestType) throws InternalException {
-        List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
+
+        var prepared = new Prepared(dsInfos, dfInfos, emptyDatasets, fileLength);
+        return DataSelectionFactory.get(prepared, requestType);
+    }
+
+    public static DataSelectionBase get(Prepared prepared, RequestType requestType) throws InternalException {
+        List<Long> dsids = new ArrayList<Long>(prepared.dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
         List<Long> invIds = new ArrayList<Long>();
         var dataFileInfos = new HashMap<Long, DataInfoBase>();
-        for(DataInfoBase dfInfo: dfInfos.values()) {
+        for(DataInfoBase dfInfo: prepared.dfInfos.values()) {
             dfids.add(dfInfo.getId());
             dataFileInfos.put(dfInfo.getId(), dfInfo);
             dfids.add(dfInfo.getId());
         }
 
-        for(DataInfoBase dsInfo : dsInfos.values()) {
+        for(DataInfoBase dsInfo : prepared.dsInfos.values()) {
             dsids.add(dsInfo.getId());
             invIds.add( ((DataSetInfo)dsInfo).getInvId() );
         }
 
-        //giving -1 as length here to indicate that no length where calculated
-        return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, invIds, dsids, dfids, fileLength, requestType);
+        return DataSelectionFactory.getInstance().createSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, invIds, dsids, dfids, prepared.fileLength, prepared.zip, prepared.compress, requestType);
     }
 
     private DataSelectionFactory(PropertyHandler propertyHandler, IcatReader reader) throws InternalException
@@ -122,18 +128,21 @@ public class DataSelectionFactory {
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionBase createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) throws InternalException {
+    private DataSelectionBase createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, 
+                                        Set<Long> emptyDatasets, List<Long> invids, List<Long> dsids,
+                                        List<Long> dfids, long length, Boolean zip, Boolean compress, 
+                                        RequestType requestType) throws InternalException {
 
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
         if(storageUnit == null )
-            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else if (storageUnit == StorageUnit.DATAFILE)
-            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else if(storageUnit == StorageUnit.DATASET)
-            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else throw new InternalException("StorageUnit " + storageUnit + " unknown. Maybe you forgot to handle a new StorageUnit here?");
 
@@ -263,7 +272,7 @@ public class DataSelectionFactory {
             emptyDatasets = null;
         }
 
-        return this.createSelection(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+        return this.createSelection(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, false, false, requestType);
     }
     
 

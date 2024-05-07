@@ -25,9 +25,11 @@ public abstract class DataControllerBase {
 
     public abstract void validateUUID() throws BadRequestException;
 
-    public abstract void logRequestParameters();
+    public abstract String getRequestParametersLogString();
 
     public abstract void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException;
+
+    public abstract boolean mustZip(boolean zip, DataSelectionBase dataSelection);
 
     /**
      * Provides a validity check for UUIDs

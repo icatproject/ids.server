@@ -10,14 +10,10 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.services.ServiceProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import jakarta.json.stream.JsonGenerator;
 
 public class UnpreparedDataController extends DataControllerBase {
-
-    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
 
     String sessionId;
     String investigationIds;
@@ -37,9 +33,9 @@ public class UnpreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public void logRequestParameters() {
-        logger.info("Request parameters: investigationIds='" + investigationIds + "' " + "datasetIds='"
-        + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
+    public String getRequestParametersLogString() {
+        return "investigationIds='" + investigationIds + "' " + "datasetIds='"
+        + datasetIds + "' " + "datafileIds='" + datafileIds + "'";
     }
 
     @Override
@@ -51,7 +47,6 @@ public class UnpreparedDataController extends DataControllerBase {
     public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
         gen.write("userName", ServiceProvider.getInstance().getIcat().getUserName(sessionId));
         addIds(gen, investigationIds, datasetIds, datafileIds);
-        gen.writeEnd();
     }
 
 
@@ -79,5 +74,10 @@ public class UnpreparedDataController extends DataControllerBase {
             }
             gen.writeEnd();
         }
+    }
+
+    @Override
+    public boolean mustZip(boolean zip, DataSelectionBase dataSelection) {
+        return zip ? true : dataSelection.mustZip();
     }
 }

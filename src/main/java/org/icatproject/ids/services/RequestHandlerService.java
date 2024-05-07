@@ -28,8 +28,6 @@ import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;
 import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIdsHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIdsHandlerForUnpreparedData;
-import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForPreparedData;
-import org.icatproject.ids.requestHandlers.getDataHandlers.GetDataHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getStatusHandlers.GetStatusHandlerForPreparedData;
@@ -154,9 +152,6 @@ public class RequestHandlerService {
                 for(var operationIdType : OperationIdTypes.values()) {
                     this.handlers.put(operationIdType, new HashMap<RequestType, RequestHandlerBase>());
                 }
-
-                this.registerHandler(new GetDataHandlerForPreparedData()); 
-                this.registerHandler(new GetDataHandlerForUnpreparedData());
 
                 this.registerHandler(new GetDataFileIdsHandlerForPreparedData());
                 this.registerHandler(new GetDataFileIdsHandlerForUnpreparedData());

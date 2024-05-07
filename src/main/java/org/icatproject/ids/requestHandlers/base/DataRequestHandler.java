@@ -16,7 +16,7 @@ import jakarta.json.stream.JsonGenerator;
 
 public abstract class DataRequestHandler extends RequestHandlerBase2 {
 
-    private DataControllerBase dataController;
+    protected DataControllerBase dataController;
 
     
     protected DataRequestHandler(RequestType requestType, String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
@@ -26,10 +26,16 @@ public abstract class DataRequestHandler extends RequestHandlerBase2 {
 
     }
 
+    protected DataRequestHandler(RequestType requestType, String ip, String preparedId) {
+        super(requestType, ip);
+
+        this.dataController = new PreparedDataController(preparedId);
+
+    }
+
     @Override
     public ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        this.dataController.logRequestParameters();
         this.dataController.validateUUID();
 
         DataSelectionBase dataSelection = this.dataController.provideDataSelection(this.requestType);
@@ -45,11 +51,20 @@ public abstract class DataRequestHandler extends RequestHandlerBase2 {
         this.addCustomParametersToTransmitterJSON(gen);
     }
 
-    public abstract ValueContainer handleDataRequest(DataSelectionBase dataSelection) throws NotImplementedException, InternalException;
+    public abstract ValueContainer handleDataRequest(DataSelectionBase dataSelection) throws NotImplementedException, InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException;
+
+    public String getRequestParametersLogString() {
+        return this.dataController.getRequestParametersLogString() + " " + this.getCustomRequestParametersLogString();
+    }
 
     /**
      * Override this method in your concrete DataRequestHandler to add custom parameters to the JSON which will be transmitted.
      * @param gen
      */
     public void addCustomParametersToTransmitterJSON(JsonGenerator gen) {}
+
+    /**
+     * Override this method in your concrete DataRequestHandler to add custom parameters to the log output.
+     */
+    public String getCustomRequestParametersLogString() { return "";}
 }

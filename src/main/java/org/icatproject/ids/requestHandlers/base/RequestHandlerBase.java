@@ -245,14 +245,13 @@ public abstract class RequestHandlerBase {
 
 
     public static Prepared unpack(InputStream stream) throws InternalException {
-        Prepared prepared = new Prepared();
         JsonObject pd;
         try (JsonReader jsonReader = Json.createReader(stream)) {
             pd = jsonReader.readObject();
         }
-        prepared.zip = pd.getBoolean("zip");
-        prepared.compress = pd.getBoolean("compress");
-        prepared.fileLength = pd.containsKey("fileLength") ? pd.getInt("fileLength") : 0;
+        var zip = pd.getBoolean("zip");
+        var compress = pd.getBoolean("compress");
+        var fileLength = pd.containsKey("fileLength") ? pd.getInt("fileLength") : 0;
         SortedMap<Long, DataInfoBase> dsInfos = new TreeMap<>();
         SortedMap<Long, DataInfoBase> dfInfos = new TreeMap<>();
         Set<Long> emptyDatasets = new HashSet<>();
@@ -266,7 +265,6 @@ public abstract class RequestHandlerBase {
                     item.getJsonNumber("dsId").longValueExact()));
 
         }
-        prepared.dfInfos = dfInfos;
 
         for (JsonValue itemV : pd.getJsonArray("dsInfo")) {
             JsonObject item = (JsonObject) itemV;
@@ -276,14 +274,12 @@ public abstract class RequestHandlerBase {
                     item.getJsonNumber("invId").longValueExact(), item.getString("invName"), item.getString("visitId"),
                     item.getJsonNumber("facilityId").longValueExact(), item.getString("facilityName")));
         }
-        prepared.dsInfos = dsInfos;
 
         for (JsonValue itemV : pd.getJsonArray("emptyDs")) {
             emptyDatasets.add(((JsonNumber) itemV).longValueExact());
         }
-        prepared.emptyDatasets = emptyDatasets;
 
-        return prepared;
+        return new Prepared(dsInfos, dfInfos, emptyDatasets, fileLength, zip, compress);
     }
 
 

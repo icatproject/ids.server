@@ -40,6 +40,8 @@ public abstract class DataSelectionBase {
     protected List<Long> dsids;
     protected List<Long> dfids;
     protected RequestType requestType;
+    protected Boolean zip;
+    protected Boolean compress;
     private long length;
 
 
@@ -55,7 +57,8 @@ public abstract class DataSelectionBase {
 
     }
 
-    protected DataSelectionBase(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) {
+    protected DataSelectionBase(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, 
+        List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, Boolean zip, Boolean compress, RequestType requestType) {
 
         this.dsInfos = dsInfos;
         this.dfInfos = dfInfos;
@@ -65,6 +68,8 @@ public abstract class DataSelectionBase {
         this.dfids = dfids;
         this.length = length;
         this.requestType = requestType;
+        this.zip = zip;
+        this.compress = compress;
     }
 
     public abstract boolean isPrepared(String preparedId) throws InternalException;
@@ -99,10 +104,22 @@ public abstract class DataSelectionBase {
         return dfInfos;
     }
 
+    public Boolean getZip() {
+        return this.zip;
+    }
+
+    public Boolean getCompress() {
+        return this.compress;
+    }
+
 
     public boolean mustZip() {
-        return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty()
-                || (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty());
+        // if(this.zip == null) {
+            return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty()
+                    || (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty());
+        // }
+
+        // return this.zip;
     }
 
     public boolean isSingleDataset() {

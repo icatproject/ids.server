@@ -41,7 +41,7 @@ public abstract class RequestHandlerBase2 {
     protected StorageUnit storageUnit;
     protected RequestType requestType;
     protected boolean readOnly;
-    String ip;
+    protected String ip;
 
     /**
      * matches standard UUID format of 8-4-4-4-12 hexadecimal digits
@@ -53,6 +53,14 @@ public abstract class RequestHandlerBase2 {
     protected RequestHandlerBase2(RequestType requestType, String ip ) {
         this.requestType = requestType;
         this.ip = ip;
+
+        var serviceProvider = ServiceProvider.getInstance();
+        var propertyHandler = serviceProvider.getPropertyHandler();
+        this.preparedDir = propertyHandler.getCacheDir().resolve("prepared");
+        this.storageUnit = propertyHandler.getStorageUnit();
+        var archiveStorage = propertyHandler.getArchiveStorage();
+        this.twoLevel = archiveStorage != null;
+        this.readOnly = propertyHandler.getReadOnly();
     }
 
 
@@ -100,30 +108,6 @@ public abstract class RequestHandlerBase2 {
 
 
     /**
-     * This method initializes the base class part of the RequestHandler.
-     * You can overload it, but please don't overwrite it, because this base class part has also to be initialized
-     * @throws InternalException
-     */
-    public void init() throws InternalException {
-
-        //logger.info("Initialize RequestHandlerBase...");
-
-        var serviceProvider = ServiceProvider.getInstance();
-        var propertyHandler = serviceProvider.getPropertyHandler();
-        this.preparedDir = propertyHandler.getCacheDir().resolve("prepared");
-
-        this.storageUnit = propertyHandler.getStorageUnit();
-
-        var archiveStorage = propertyHandler.getArchiveStorage();
-        this.twoLevel = archiveStorage != null;
-
-        this.readOnly = propertyHandler.getReadOnly();
-
-        //logger.info("RequestHandlerBase initialized");
-    }
-
-
-    /**
      * The core method of each request handler. It has to be overwritten in the concrete implementation to provide an individual request handling
      * @return A ValueContainer with an indiviadual result type.
      * @throws BadRequestException
@@ -137,7 +121,7 @@ public abstract class RequestHandlerBase2 {
 
         // some preprocessing
         long start = System.currentTimeMillis();
-        logger.info("New webservice request: " + this.requestType.toString().toLowerCase());
+        logger.info("New webservice request: " + this.requestType.toString().toLowerCase() + " " + this.getRequestParametersLogString());
 
         // Do it
         ValueContainer result = this.handleRequest();
@@ -148,6 +132,7 @@ public abstract class RequestHandlerBase2 {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
                     this.addParametersToTransmitterJSON(gen);
+                    gen.writeEnd();
                 }
                 String body = baos.toString();
                 ServiceProvider.getInstance().getTransmitter().processMessage("archive", ip, body, start);
@@ -174,6 +159,8 @@ public abstract class RequestHandlerBase2 {
     public abstract ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
 
     public abstract CallType getCallType();
+
+    public abstract String getRequestParametersLogString();
 
     public abstract void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException;
 
