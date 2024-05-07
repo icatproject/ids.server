@@ -50,6 +50,7 @@ import org.icatproject.ids.requestHandlers.DeleteHandler;
 import org.icatproject.ids.requestHandlers.GetDataFileIdsHandler;
 import org.icatproject.ids.requestHandlers.GetDataHandler;
 import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
+import org.icatproject.ids.requestHandlers.GetServiceStatusHandler;
 import org.icatproject.ids.requestHandlers.GetStatusHandler;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.services.IcatReader;
@@ -288,11 +289,8 @@ public class IdsService {
     public String getServiceStatus(@Context HttpServletRequest request, @QueryParam(RequestIdNames.sessionId) String sessionId)
             throws InternalException, InsufficientPrivilegesException, BadRequestException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.sessionId, new ValueContainer(sessionId));
-        parameters.put("ip",        new ValueContainer(request.getRemoteAddr()));
-
-        return this.requestService.handle(RequestType.GETSERVICESTATUS, parameters).getString();
+        var handler = new GetServiceStatusHandler(request.getRemoteAddr(), sessionId);
+        return handler.handle().getString();
     }
 
     /**
