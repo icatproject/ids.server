@@ -26,8 +26,6 @@ import org.icatproject.ids.requestHandlers.PutHandler;
 import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;
-import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIdsHandlerForPreparedData;
-import org.icatproject.ids.requestHandlers.getDataFileIdsHandlers.GetDataFileIdsHandlerForUnpreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.slf4j.Logger;
@@ -148,9 +146,6 @@ public class RequestHandlerService {
                 for(var operationIdType : OperationIdTypes.values()) {
                     this.handlers.put(operationIdType, new HashMap<RequestType, RequestHandlerBase>());
                 }
-
-                this.registerHandler(new GetDataFileIdsHandlerForPreparedData());
-                this.registerHandler(new GetDataFileIdsHandlerForUnpreparedData());
 
                 this.registerHandler(new GetSizeHandlerForPreparedData());
                 this.registerHandler(new GetSizeHandlerForUnpreparedData());

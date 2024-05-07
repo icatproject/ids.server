@@ -45,13 +45,6 @@ public class GetDataHandler extends DataRequestHandler {
     String range;
     Long transferId;
 
-
-    public GetDataHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds, Boolean compress, Boolean zip, String outname, String range) {
-        super(RequestType.GETDATA, ip, sessionId, investigationIds, datasetIds, datafileIds );
-
-        this.initializeAdditionallParameters(sessionId, compress, zip, outname, range);
-    }
-
     public GetDataHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds, Boolean compress, Boolean zip, String outname, String range) {
         super(RequestType.GETDATA, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds );
 

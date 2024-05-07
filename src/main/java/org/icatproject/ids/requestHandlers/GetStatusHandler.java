@@ -23,10 +23,6 @@ public class GetStatusHandler extends DataRequestHandler {
         super(RequestType.GETSTATUS, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
-    public GetStatusHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
-        super(RequestType.GETSTATUS, ip, sessionId, investigationIds, datasetIds, datafileIds);
-    }
-
     @Override
     public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,

@@ -22,10 +22,6 @@ public class ResetHandler extends DataRequestHandler {
         super(RequestType.RESET, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
-    public ResetHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
-        super(RequestType.RESET, ip, sessionId, investigationIds, datasetIds, datafileIds);
-    }
-
     @Override
     public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
