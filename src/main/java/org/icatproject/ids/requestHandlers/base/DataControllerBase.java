@@ -31,6 +31,8 @@ public abstract class DataControllerBase {
 
     public abstract boolean mustZip(boolean zip, DataSelectionBase dataSelection);
 
+    public abstract String getOperationId();
+
     /**
      * Provides a validity check for UUIDs
      * @param thing You can give here a name of the prameter or whatever has been checked here (to provide a qualified error message if needed).

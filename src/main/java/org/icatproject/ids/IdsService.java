@@ -46,6 +46,7 @@ import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.Constants;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.ArchiveHandler;
+import org.icatproject.ids.requestHandlers.DeleteHandler;
 import org.icatproject.ids.requestHandlers.GetDataFileIdsHandler;
 import org.icatproject.ids.requestHandlers.GetDataHandler;
 import org.icatproject.ids.requestHandlers.GetStatusHandler;
@@ -134,14 +135,8 @@ public class IdsService {
                        @QueryParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
             InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
 
-        var parameters = new HashMap<String,ValueContainer>();
-        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
-        parameters.put("investigationIds",  new ValueContainer(investigationIds));
-        parameters.put("datasetIds",        new ValueContainer(datasetIds));
-        parameters.put("datafileIds",       new ValueContainer(datafileIds));
-        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
-
-        this.requestService.handle(RequestType.DELETE, parameters);
+        var handler = new DeleteHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
+        handler.handle();
     }
 
     @PreDestroy

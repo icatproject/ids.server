@@ -15,7 +15,6 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.services.ServiceProvider;
 import org.slf4j.Logger;
@@ -70,6 +69,11 @@ public class PreparedDataController extends DataControllerBase {
     @Override
     public boolean mustZip(boolean zip, DataSelectionBase dataSelection) {
         return zip;
+    }
+
+    @Override
+    public String getOperationId() {
+        return this.preparedId;
     }
 
 }

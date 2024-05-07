@@ -80,4 +80,9 @@ public class UnpreparedDataController extends DataControllerBase {
     public boolean mustZip(boolean zip, DataSelectionBase dataSelection) {
         return zip ? true : dataSelection.mustZip();
     }
+
+    @Override
+    public String getOperationId() {
+        return this.sessionId;
+    }
 }
