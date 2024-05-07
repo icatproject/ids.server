@@ -15,7 +15,6 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
 import org.icatproject.ids.requestHandlers.GetServiceStatusHandler;
 import org.icatproject.ids.requestHandlers.IsPreparedHandler;
 import org.icatproject.ids.requestHandlers.IsReadOnlyHandler;
@@ -149,7 +148,6 @@ public class RequestHandlerService {
                 this.registerHandler(new GetSizeHandlerForPreparedData());
                 this.registerHandler(new GetSizeHandlerForUnpreparedData());
 
-                this.registerHandler(new GetIcatUrlHandler()); 
                 this.registerHandler(new GetServiceStatusHandler());
                 this.registerHandler(new IsPreparedHandler());
                 this.registerHandler(new IsReadOnlyHandler());

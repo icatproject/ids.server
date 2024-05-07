@@ -49,6 +49,7 @@ import org.icatproject.ids.requestHandlers.ArchiveHandler;
 import org.icatproject.ids.requestHandlers.DeleteHandler;
 import org.icatproject.ids.requestHandlers.GetDataFileIdsHandler;
 import org.icatproject.ids.requestHandlers.GetDataHandler;
+import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
 import org.icatproject.ids.requestHandlers.GetStatusHandler;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.services.IcatReader;
@@ -261,10 +262,8 @@ public class IdsService {
     @Produces(MediaType.TEXT_PLAIN)
     public String getIcatUrl(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("ip",new ValueContainer(request.getRemoteAddr()) );
-        
-        return this.requestService.handle(RequestType.GETICATURL, parameters).getString();
+        var handler = new GetIcatUrlHandler(request.getRemoteAddr());
+        return handler.handle().getString();
     }
 
     /**
