@@ -23,7 +23,12 @@ public abstract class DataRequestHandler extends RequestHandlerBase2 {
         super(requestType, ip);
 
         this.dataController = new UnpreparedDataController(sessionId, investigationIds, datasetIds, datafileIds);
+    }
 
+    protected DataRequestHandler(RequestType requestType, String ip, String preparedId) {
+        super(requestType, ip);
+
+        this.dataController = new PreparedDataController(preparedId);
     }
 
     protected DataRequestHandler(RequestType requestType, String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds) {

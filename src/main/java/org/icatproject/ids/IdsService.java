@@ -52,6 +52,7 @@ import org.icatproject.ids.requestHandlers.GetDataHandler;
 import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
 import org.icatproject.ids.requestHandlers.GetServiceStatusHandler;
 import org.icatproject.ids.requestHandlers.GetStatusHandler;
+import org.icatproject.ids.requestHandlers.IsPreparedHandler;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
@@ -420,11 +421,8 @@ public class IdsService {
     public boolean isPrepared(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId)
             throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
-        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
-
-        return this.requestService.handle(RequestType.ISPREPARED, parameters).getBool();
+        var handler = new IsPreparedHandler(request.getRemoteAddr(), preparedId);
+        return handler.handle().getBool();
     }
 
     /**
