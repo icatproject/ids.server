@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -46,6 +47,7 @@ import org.icatproject.ids.helpers.Constants;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.ArchiveHandler;
 import org.icatproject.ids.requestHandlers.GetDataHandler;
+import org.icatproject.ids.requestHandlers.GetStatusHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
@@ -386,15 +388,25 @@ public class IdsService {
                             @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
             throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
-        parameters.put(RequestIdNames.sessionId,    new ValueContainer(sessionId));
-        parameters.put("investigationIds",      new ValueContainer(investigationIds));
-        parameters.put("datasetIds",            new ValueContainer(datasetIds));
-        parameters.put("datafileIds",           new ValueContainer(datafileIds));
-        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+        // special case for getStatus request: getting status is possible without authentification
+        if (sessionId == null && preparedId == null) {
+            try {
+                sessionId = ServiceProvider.getInstance().getIcatReader().getSessionId();
+            } catch (IcatException_Exception e) {
+                throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+            }
+        }
 
-        return this.requestService.handle(RequestType.GETSTATUS, parameters).getString();
+        // handle
+        GetStatusHandler handler;
+        if(sessionId != null) {
+            handler = new GetStatusHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
+        }
+        else {
+            handler = new GetStatusHandler(request.getRemoteAddr(), preparedId);
+        }
+
+        return handler.handle().getString();
     }
 
     @PostConstruct
