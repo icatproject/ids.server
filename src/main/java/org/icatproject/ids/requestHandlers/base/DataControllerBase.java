@@ -10,6 +10,7 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.services.ServiceProvider;
 
 import jakarta.json.stream.JsonGenerator;
 
@@ -34,6 +35,13 @@ public abstract class DataControllerBase {
     public abstract String getOperationId();
 
     /**
+     * returns the current sessionId. If it's null or not defined it should be created
+     * @return
+     * @throws InternalException 
+     */
+    public abstract String forceGetSessionId() throws InternalException;
+
+    /**
      * Provides a validity check for UUIDs
      * @param thing You can give here a name of the prameter or whatever has been checked here (to provide a qualified error message if needed).
      * @param id The String which has to be checked if it is a valid UUID
@@ -42,6 +50,16 @@ public abstract class DataControllerBase {
     public static void validateUUID(String thing, String id) throws BadRequestException {
         if (id == null || !uuidRegExp.matcher(id).matches())
             throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
+    }
+
+    protected String createSessionId() throws InternalException {
+        String sessionId;
+        try {
+            sessionId = ServiceProvider.getInstance().getIcatReader().getSessionId();
+        } catch (IcatException_Exception e) {
+            throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
+        }
+        return sessionId;
     }
 
 }

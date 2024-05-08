@@ -15,10 +15,10 @@ import jakarta.json.stream.JsonGenerator;
 
 public class UnpreparedDataController extends DataControllerBase {
 
-    String sessionId;
-    String investigationIds;
-    String datasetIds;
-    String datafileIds;
+    public String sessionId;
+    public String investigationIds;
+    public String datasetIds;
+    public String datafileIds;
 
     public UnpreparedDataController(String sessionId, String investigationIds, String datasetIds, String datafileIds) {
         this.sessionId = sessionId;
@@ -83,6 +83,15 @@ public class UnpreparedDataController extends DataControllerBase {
 
     @Override
     public String getOperationId() {
+        return this.sessionId;
+    }
+
+    @Override
+    public String forceGetSessionId() throws InternalException {
+        if (this.sessionId == null) {
+            this.sessionId = this.createSessionId();
+        }
+        
         return this.sessionId;
     }
 }

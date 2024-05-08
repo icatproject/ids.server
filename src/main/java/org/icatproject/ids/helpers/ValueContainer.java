@@ -199,6 +199,8 @@ public class ValueContainer {
 
     public boolean isNull() { return this.value == null; }
 
+    public boolean isInvalid() { return this.isNull(); }
+
     
 
 

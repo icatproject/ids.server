@@ -58,6 +58,8 @@ import org.icatproject.ids.requestHandlers.PutHandler;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.requestHandlers.RestoreHandler;
 import org.icatproject.ids.requestHandlers.WriteHandler;
+import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandler;
+import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForFastProcessing;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
@@ -327,15 +329,21 @@ public class IdsService {
             throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
 
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.preparedId,   new ValueContainer(preparedId));
-        parameters.put(RequestIdNames.sessionId,    new ValueContainer(sessionId));
-        parameters.put("investigationIds",      new ValueContainer(investigationIds));
-        parameters.put("datasetIds",            new ValueContainer(datasetIds));
-        parameters.put("datafileIds",           new ValueContainer(datafileIds));
-        parameters.put("ip",                    new ValueContainer(request.getRemoteAddr()));
+        var result = ValueContainer.getInvalid();
 
-        return this.requestService.handle(RequestType.GETSIZE, parameters).getLong();
+        // trying fast computation
+        if(sessionId != null) {
+            var fastHandler = new GetSizeHandlerForFastProcessing(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
+            result = fastHandler.handle();
+        }
+
+        // otherwise normal computation
+        if(result.isInvalid()) {
+            var handler = new GetSizeHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
+            result = handler.handle();
+        }
+
+        return result.getLong();
     }
 
     /**

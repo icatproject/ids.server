@@ -76,4 +76,9 @@ public class PreparedDataController extends DataControllerBase {
         return this.preparedId;
     }
 
+    @Override
+    public String forceGetSessionId() throws InternalException {
+        return this.createSessionId();
+    }
+
 }

@@ -16,8 +16,6 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
-import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPreparedData;
-import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,9 +134,6 @@ public class RequestHandlerService {
                 for(var operationIdType : OperationIdTypes.values()) {
                     this.handlers.put(operationIdType, new HashMap<RequestType, RequestHandlerBase>());
                 }
-
-                this.registerHandler(new GetSizeHandlerForPreparedData());
-                this.registerHandler(new GetSizeHandlerForUnpreparedData());
 
                 logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
                 for(var handlerMap : this.handlers.values()) {
