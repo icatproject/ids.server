@@ -39,7 +39,7 @@ import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.requestHandlers.base.DataControllerBase;
-import org.icatproject.ids.requestHandlers.base.RequestHandlerBase2;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
@@ -49,7 +49,7 @@ import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.ws.rs.core.Response;
 
-public class PutHandler extends RequestHandlerBase2 {
+public class PutHandler extends RequestHandlerBase {
 
     String sessionId;
     InputStream body;

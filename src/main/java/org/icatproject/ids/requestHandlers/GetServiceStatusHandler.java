@@ -13,12 +13,12 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.requestHandlers.base.RequestHandlerBase2;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 
 import jakarta.json.stream.JsonGenerator;
 
-public class GetServiceStatusHandler extends RequestHandlerBase2 {
+public class GetServiceStatusHandler extends RequestHandlerBase {
 
     private Set<String> rootUserNames;
     private String sessionId;

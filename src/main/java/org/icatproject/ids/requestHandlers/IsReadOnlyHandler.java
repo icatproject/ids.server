@@ -9,9 +9,9 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.requestHandlers.base.RequestHandlerBase2;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 
-public class IsReadOnlyHandler extends RequestHandlerBase2 {
+public class IsReadOnlyHandler extends RequestHandlerBase {
     
     public IsReadOnlyHandler(String ip) {
         super(RequestType.ISREADONLY, ip);

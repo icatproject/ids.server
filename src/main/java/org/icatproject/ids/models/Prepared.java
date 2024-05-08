@@ -9,7 +9,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.requestHandlers.base.RequestHandlerBase2;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ import jakarta.json.stream.JsonGenerator;
 /* This is a POJO with only package access so don't make data private */
 public class Prepared {
 
-    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase2.class);
+    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
 
     
     public SortedMap<Long, DataInfoBase> dsInfos;

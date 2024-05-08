@@ -14,7 +14,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import jakarta.json.stream.JsonGenerator;
 
 
-public abstract class DataRequestHandler extends RequestHandlerBase2 {
+public abstract class DataRequestHandler extends RequestHandlerBase {
 
     protected DataControllerBase dataController;
 

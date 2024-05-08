@@ -14,13 +14,13 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.requestHandlers.base.RequestHandlerBase2;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.requestHandlers.base.UnpreparedDataController;
 import org.icatproject.ids.services.ServiceProvider;
 
 import jakarta.json.stream.JsonGenerator;
 
-public class GetSizeHandlerForFastProcessing extends RequestHandlerBase2 {
+public class GetSizeHandlerForFastProcessing extends RequestHandlerBase {
 
     UnpreparedDataController dataController;
 

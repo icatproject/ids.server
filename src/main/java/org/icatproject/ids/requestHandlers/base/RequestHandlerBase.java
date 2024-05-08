@@ -33,9 +33,9 @@ import org.icatproject.ids.services.ServiceProvider;
  * This base class represents all common properties and methods which are needed by each request handler.
  * Request handlers schould be added to the internal request handler list in RequestHandlerService, to be able to be called.
  */
-public abstract class RequestHandlerBase2 {
+public abstract class RequestHandlerBase {
 
-    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase2.class);
+    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
     protected Path preparedDir;
     protected boolean twoLevel;
     protected StorageUnit storageUnit;
@@ -50,7 +50,7 @@ public abstract class RequestHandlerBase2 {
             .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
 
-    protected RequestHandlerBase2(RequestType requestType, String ip ) {
+    protected RequestHandlerBase(RequestType requestType, String ip ) {
         this.requestType = requestType;
         this.ip = ip;
 
