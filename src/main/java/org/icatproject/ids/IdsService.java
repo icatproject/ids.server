@@ -53,6 +53,8 @@ import org.icatproject.ids.requestHandlers.GetIcatUrlHandler;
 import org.icatproject.ids.requestHandlers.GetServiceStatusHandler;
 import org.icatproject.ids.requestHandlers.GetStatusHandler;
 import org.icatproject.ids.requestHandlers.IsPreparedHandler;
+import org.icatproject.ids.requestHandlers.IsReadOnlyHandler;
+import org.icatproject.ids.requestHandlers.IsTwoLevelHandler;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
@@ -444,10 +446,8 @@ public class IdsService {
     @Produces(MediaType.TEXT_PLAIN)
     public boolean isReadOnly(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
-
-        return this.requestService.handle(RequestType.ISREADONLY, parameters).getBool();
+        var handler = new IsReadOnlyHandler(request.getRemoteAddr());
+        return handler.handle().getBool();
     }
 
     /**
@@ -469,10 +469,8 @@ public class IdsService {
     @Produces(MediaType.TEXT_PLAIN)
     public boolean isTwoLevel(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put("ip", new ValueContainer(request.getRemoteAddr()));
-
-        return this.requestService.handle(RequestType.ISTWOLEVEL, parameters).getBool();
+        var handler = new IsTwoLevelHandler(request.getRemoteAddr());
+        return handler.handle().getBool();
     }
 
     /**
