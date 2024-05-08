@@ -39,7 +39,7 @@ public abstract class DataControllerBase {
      * @param id The String which has to be checked if it is a valid UUID
      * @throws BadRequestException
      */
-    protected static void validateUUID(String thing, String id) throws BadRequestException {
+    public static void validateUUID(String thing, String id) throws BadRequestException {
         if (id == null || !uuidRegExp.matcher(id).matches())
             throw new BadRequestException("The " + thing + " parameter '" + id + "' is not a valid UUID");
     }
