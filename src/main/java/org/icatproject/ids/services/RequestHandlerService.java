@@ -16,8 +16,6 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
-import org.icatproject.ids.requestHandlers.RestoreHandler;
-import org.icatproject.ids.requestHandlers.WriteHandler;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForPreparedData;
 import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForUnpreparedData;
 import org.slf4j.Logger;
@@ -141,9 +139,6 @@ public class RequestHandlerService {
 
                 this.registerHandler(new GetSizeHandlerForPreparedData());
                 this.registerHandler(new GetSizeHandlerForUnpreparedData());
-
-                this.registerHandler(new RestoreHandler());
-                this.registerHandler(new WriteHandler());
 
                 logger.info("Initializing " + this.handlers.size() + " RequestHandlers...");
                 for(var handlerMap : this.handlers.values()) {

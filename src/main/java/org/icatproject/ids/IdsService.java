@@ -4,9 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -58,6 +56,8 @@ import org.icatproject.ids.requestHandlers.IsTwoLevelHandler;
 import org.icatproject.ids.requestHandlers.PrepareDataHandler;
 import org.icatproject.ids.requestHandlers.PutHandler;
 import org.icatproject.ids.requestHandlers.ResetHandler;
+import org.icatproject.ids.requestHandlers.RestoreHandler;
+import org.icatproject.ids.requestHandlers.WriteHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
@@ -723,14 +723,8 @@ public class IdsService {
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
-        parameters.put("investigationIds",  new ValueContainer(investigationIds));
-        parameters.put("datasetIds",        new ValueContainer(datasetIds));
-        parameters.put("datafileIds",       new ValueContainer(datafileIds));
-        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
-
-        this.requestService.handle(RequestType.RESTORE, parameters);
+        var handler = new RestoreHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
+        handler.handle();
     }
 
 
@@ -762,13 +756,7 @@ public class IdsService {
             throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
-        parameters.put("investigationIds",  new ValueContainer(investigationIds));
-        parameters.put("datasetIds",        new ValueContainer(datasetIds));
-        parameters.put("datafileIds",       new ValueContainer(datafileIds));
-        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
-
-        this.requestService.handle(RequestType.WRITE, parameters);
+        var handler = new WriteHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
+        handler.handle();
     }
 }
