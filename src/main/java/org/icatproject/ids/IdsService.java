@@ -55,6 +55,7 @@ import org.icatproject.ids.requestHandlers.GetStatusHandler;
 import org.icatproject.ids.requestHandlers.IsPreparedHandler;
 import org.icatproject.ids.requestHandlers.IsReadOnlyHandler;
 import org.icatproject.ids.requestHandlers.IsTwoLevelHandler;
+import org.icatproject.ids.requestHandlers.PrepareDataHandler;
 import org.icatproject.ids.requestHandlers.ResetHandler;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
@@ -526,16 +527,8 @@ public class IdsService {
                               @FormParam("zip") boolean zip)
             throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException, DataNotOnlineException {
 
-        var parameters = new HashMap<String, ValueContainer>();
-        parameters.put(RequestIdNames.sessionId,new ValueContainer(sessionId));
-        parameters.put("investigationIds",  new ValueContainer(investigationIds));
-        parameters.put("datasetIds",        new ValueContainer(datasetIds));
-        parameters.put("datafileIds",       new ValueContainer(datafileIds));
-        parameters.put("compress",          new ValueContainer(compress));
-        parameters.put("zip",               new ValueContainer(zip));
-        parameters.put("ip",                new ValueContainer(request.getRemoteAddr()));
-
-        return this.requestService.handle(RequestType.PREPAREDATA, parameters).getString();
+        var handler = new PrepareDataHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds, compress, zip);
+        return handler.handle().getString();
     }
 
     /**
