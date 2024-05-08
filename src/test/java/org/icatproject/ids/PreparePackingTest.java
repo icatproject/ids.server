@@ -17,9 +17,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.models.Prepared;
 import org.junit.Test;
 
@@ -37,14 +37,14 @@ public class PreparePackingTest {
         long dsid2 = 18L;
         long invId = 15L;
         long facilityId = 45L;
-        dfInfos.put(5L, new DataFileInfo(5L, "dfName", "dfLocation", "createId", "modId", dsid1));
+        dfInfos.put(5L, new DatafileInfo(5L, "dfName", "dfLocation", "createId", "modId", dsid1));
 
-        dfInfos.put(51L, new DataFileInfo(51L, "dfName2", null, "createId", "modId", dsid1));
+        dfInfos.put(51L, new DatafileInfo(51L, "dfName2", null, "createId", "modId", dsid1));
 
-        dsInfos.put(dsid1, new DataSetInfo(dsid1, "dsName", "dsLocation", invId, "invName",
+        dsInfos.put(dsid1, new DatasetInfo(dsid1, "dsName", "dsLocation", invId, "invName",
                 "visitId", facilityId, "facilityName"));
 
-        dsInfos.put(dsid2, new DataSetInfo(dsid2, "dsName2", null, invId, "invName", "visitId",
+        dsInfos.put(dsid2, new DatasetInfo(dsid2, "dsName2", null, invId, "invName", "visitId",
                 facilityId, "facilityName"));
 
         emptyDatasets.add(dsid2);
@@ -69,7 +69,7 @@ public class PreparePackingTest {
             } else {
                 fail();
             }
-            var dfInfo = (DataFileInfo) dataInfo;
+            var dfInfo = (DatafileInfo) dataInfo;
             assertEquals("createId", dfInfo.getCreateId());
             assertEquals("modId", dfInfo.getModId());
             assertEquals(dsid1, dfInfo.getDsId());
@@ -88,7 +88,7 @@ public class PreparePackingTest {
                 fail();
             }
 
-            var dsInfo = (DataSetInfo) value;
+            var dsInfo = (DatasetInfo) value;
 
             assertEquals((Long) invId, dsInfo.getInvId());
             assertEquals("invName", dsInfo.getInvName());

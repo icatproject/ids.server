@@ -14,9 +14,9 @@ import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.helpers.LocationHelper;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,13 +106,13 @@ public class UnfinishedWorkService {
     private DataInfoBase loadDataInfo(StorageUnit storageUnit, long id) throws IcatException_Exception, InsufficientPrivilegesException, InternalException {
         if(storageUnit == StorageUnit.DATASET) {
             Dataset ds = (Dataset) ServiceProvider.getInstance().getIcatReader().get("Dataset ds INCLUDE ds.investigation.facility", id);
-            return new DataSetInfo(ds);
+            return new DatasetInfo(ds);
         }
 
         if(storageUnit == StorageUnit.DATAFILE) {
             Datafile df = (Datafile) ServiceProvider.getInstance().getIcatReader().get("Datafile ds INCLUDE ds.dataset", id);
             String location = LocationHelper.getLocation(df.getId(), df.getLocation());
-            return new DataFileInfo(id, df.getName(), location, df.getCreateId(), df.getModId(), df.getDataset().getId());
+            return new DatafileInfo(id, df.getName(), location, df.getCreateId(), df.getModId(), df.getDataset().getId());
         }
 
         return null;

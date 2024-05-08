@@ -17,9 +17,9 @@ import java.util.TimerTask;
 import org.icatproject.Dataset;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
@@ -55,7 +55,7 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
 
     public void queue(DataInfoBase dataInfo, DeferredOp deferredOp) throws InternalException {
 
-        var dfInfo = (DataFileInfo) dataInfo;
+        var dfInfo = (DatafileInfo) dataInfo;
         if(dfInfo == null) throw new InternalException("DataInfoBase object could not be casted into a DataFileInfo. Did you handed over a DataSetInfo instead?");
 
         logger.info("Requesting " + deferredOp + " of datafile " + dfInfo);
@@ -128,10 +128,10 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                     if (processOpsTime != null && System.currentTimeMillis() > processOpsTime && !deferredOpsQueue.isEmpty()) {
                         processOpsTime = null;
                         logger.debug("deferredDfOpsQueue has " + deferredOpsQueue.size() + " entries");
-                        List<DataFileInfo> writes = new ArrayList<>();
-                        List<DataFileInfo> archives = new ArrayList<>();
-                        List<DataFileInfo> restores = new ArrayList<>();
-                        List<DataFileInfo> deletes = new ArrayList<>();
+                        List<DatafileInfo> writes = new ArrayList<>();
+                        List<DatafileInfo> archives = new ArrayList<>();
+                        List<DatafileInfo> restores = new ArrayList<>();
+                        List<DatafileInfo> deletes = new ArrayList<>();
                         Map<Long, Lock> writeLocks = new HashMap<>();
                         Map<Long, Lock> archiveLocks = new HashMap<>();
                         Map<Long, Lock> restoreLocks = new HashMap<>();
@@ -141,15 +141,15 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                         final Iterator<Entry<DataInfoBase, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
                         while (it.hasNext()) {
                             Entry<DataInfoBase, RequestedState> opEntry = it.next();
-                            var dfInfo = (DataFileInfo) opEntry.getKey();
+                            var dfInfo = (DatafileInfo) opEntry.getKey();
 
                             if(dfInfo == null) throw new RuntimeException("Could not cast DataInfoBase to DataFileInfo. Did you handed over another sub type?");
 
                             Long dsId = dfInfo.getDsId();
-                            DataSetInfo dsInfo;
+                            DatasetInfo dsInfo;
                             try {
                                 Dataset ds = (Dataset) reader.get("Dataset ds INCLUDE ds.investigation.facility", dsId);
-                                dsInfo = new DataSetInfo(ds);
+                                dsInfo = new DatasetInfo(ds);
                             } catch (Exception e) {
                                 logger.error("Could not get dsInfo {}: {}.", dsId, e.getMessage());
                                 continue;

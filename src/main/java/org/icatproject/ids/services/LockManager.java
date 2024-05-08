@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.MainStorageInterface;
 
@@ -131,7 +131,7 @@ public class LockManager {
         logger.debug("LockManager initialized.");
     }
 
-    public Lock lock(DataSetInfo ds, LockType type) throws AlreadyLockedException, IOException {
+    public Lock lock(DatasetInfo ds, LockType type) throws AlreadyLockedException, IOException {
         Long id = ds.getDsId();
         assert id != null;
         synchronized (lockMap) {
@@ -160,7 +160,7 @@ public class LockManager {
         LockCollection locks = new LockCollection();
         try {
             for (DataInfoBase dataInfo : datasets) {
-                DataSetInfo ds = (DataSetInfo) dataInfo;
+                DatasetInfo ds = (DatasetInfo) dataInfo;
                 if(ds == null) throw new InternalException("Could not cast " + dataInfo.getClass() + " to DataSetInfo. Did you handed over another sub type of DataInfoBase? ");
                 locks.add(lock(ds, type));
             }

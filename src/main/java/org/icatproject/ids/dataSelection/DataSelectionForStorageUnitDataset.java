@@ -9,7 +9,7 @@ import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.services.ServiceProvider;
 
 public class DataSelectionForStorageUnitDataset extends DataSelectionBase {
@@ -29,7 +29,7 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionBase {
     @Override
     public boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
 
-        var dsInfo = (DataSetInfo) dataInfo;
+        var dsInfo = (DatasetInfo) dataInfo;
         if(dsInfo == null) throw new InternalException("Could not cast DataInfoBase to DataSetInfo. Did you handed over another sub type?");
         
         return emptyDatasets.contains(dataInfo.getId()) || ServiceProvider.getInstance().getMainStorage().exists(dsInfo);

@@ -6,13 +6,13 @@ import org.icatproject.ids.plugin.DfInfo;
  * Contains information about a Datafile. Replaces DsInfo in v3
  * May should implement DfInfo interface
  */
-public class DataFileInfo extends DataInfoBase implements Comparable<DataFileInfo>, DfInfo {
+public class DatafileInfo extends DataInfoBase implements Comparable<DatafileInfo>, DfInfo {
 
     protected String createId;
     protected String modId; 
     protected long datasId;
 
-    public DataFileInfo(Long id, String name, String location, String createId, String modId, Long datasId) {
+    public DatafileInfo(Long id, String name, String location, String createId, String modId, Long datasId) {
         super(id, name, location);
 
         this.createId = createId;
@@ -38,7 +38,7 @@ public class DataFileInfo extends DataInfoBase implements Comparable<DataFileInf
     }
 
     @Override
-    public int compareTo(DataFileInfo o) {
+    public int compareTo(DatafileInfo o) {
         if (this.id > o.getId()) {
             return 1;
         }

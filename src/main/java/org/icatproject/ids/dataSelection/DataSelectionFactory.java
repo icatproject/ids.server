@@ -26,9 +26,9 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.LocationHelper;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.PropertyHandler;
@@ -108,7 +108,7 @@ public class DataSelectionFactory {
 
         for(DataInfoBase dsInfo : prepared.dsInfos.values()) {
             dsids.add(dsInfo.getId());
-            invIds.add( ((DataSetInfo)dsInfo).getInvId() );
+            invIds.add( ((DatasetInfo)dsInfo).getInvId() );
         }
 
         return DataSelectionFactory.getInstance().createSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, invIds, dsids, dfids, prepared.fileLength, prepared.zip, prepared.compress, requestType);
@@ -202,13 +202,13 @@ public class DataSelectionFactory {
                 if (dss.size() == 1) {
                     Dataset ds = (Dataset) dss.get(0);
                     long dsid = ds.getId();
-                    dsInfos.put(dsid, new DataSetInfo(ds));
+                    dsInfos.put(dsid, new DatasetInfo(ds));
                     if (dfWanted) {
                         Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
                         length += df.getFileSize();
                         String location = LocationHelper.getLocation(dfid, df.getLocation());
                         dfInfos.put( df.getId(),
-                                new DataFileInfo(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
+                                new DatafileInfo(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
                     }
                 } else {
                     // Next line may reveal a permissions problem
@@ -219,7 +219,7 @@ public class DataSelectionFactory {
 
             for (Long dsid : dsids) {
                 Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
-                dsInfos.put(dsid, new DataSetInfo(ds));
+                dsInfos.put(dsid, new DatasetInfo(ds));
                 // dataset access for the user has been checked so the REST session for the
                 // reader account can be used if the IDS setting to allow this is enabled
                 String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
@@ -319,7 +319,7 @@ public class DataSelectionFactory {
                     long dfid = tup.getJsonNumber(0).longValueExact();
                     String location = LocationHelper.getLocation(dfid, tup.getString(2, null));
                     dfInfos.put(dfid,
-                            new DataFileInfo(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
+                            new DatafileInfo(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
                 }
             } else {
                 long half = (min + max) / 2;
@@ -363,7 +363,7 @@ public class DataSelectionFactory {
                 for (JsonValue tupV : result) {
                     JsonArray tup = (JsonArray) tupV;
                     long dsid = tup.getJsonNumber(0).longValueExact();
-                    dsInfos.put(dsid, new DataSetInfo(dsid, tup.getString(1), tup.getString(2, null), invid, invName,
+                    dsInfos.put(dsid, new DatasetInfo(dsid, tup.getString(1), tup.getString(2, null), invid, invName,
                             visitId, facilityId, facilityName));
 
                     query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "

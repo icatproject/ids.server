@@ -23,7 +23,7 @@ import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.services.ServiceProvider;
 import org.slf4j.Logger;
@@ -252,7 +252,7 @@ public abstract class DataSelectionBase {
          * subsequent IDS calls.
          */
         for (DataInfoBase dataInfo : this.getDfInfo().values()) {
-            var dfInfo = (DataFileInfo) dataInfo;
+            var dfInfo = (DatafileInfo) dataInfo;
             String location = dataInfo.getLocation();
             try {
                 if ((long) serviceProvider.getIcatReader()

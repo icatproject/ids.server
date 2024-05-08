@@ -37,7 +37,7 @@ import static jakarta.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 public class GetDataHandler extends DataRequestHandler {
 
     private Pattern rangeRe;
-    private static AtomicLong atomicLong = new AtomicLong();
+    private static AtomicLong transferIdCounter = new AtomicLong();
 
     Boolean compress;
     Boolean zip;
@@ -129,7 +129,7 @@ public class GetDataHandler extends DataRequestHandler {
             }
 
             if (ServiceProvider.getInstance().getPropertyHandler().getLogSet().contains(this.getCallType())) {
-                transferId = atomicLong.getAndIncrement();
+                transferId = transferIdCounter.getAndIncrement();
             }
 
             var response = Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)

@@ -34,9 +34,9 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.CheckedWithSizeInputStream;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.requestHandlers.base.DataControllerBase;
 import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
@@ -177,7 +177,7 @@ public class PutHandler extends RequestHandlerBase {
                 throw new InternalException(type + " " + e.getMessage());
             }
 
-            DataSetInfo dsInfo = new DataSetInfo(ds);
+            DatasetInfo dsInfo = new DatasetInfo(ds);
             try (Lock lock = serviceProvider.getLockManager().lock(dsInfo, LockType.SHARED)) {
                 if (storageUnit == StorageUnit.DATASET) {
                     var dfInfos = new TreeMap<Long, DataInfoBase>();
@@ -243,7 +243,7 @@ public class PutHandler extends RequestHandlerBase {
                     } catch (IcatException_Exception e) {
                         throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
                     }
-                    serviceProvider.getFsm().queue(new DataFileInfo(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getId()),
+                    serviceProvider.getFsm().queue(new DatafileInfo(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getId()),
                             DeferredOp.WRITE);
                 }
 

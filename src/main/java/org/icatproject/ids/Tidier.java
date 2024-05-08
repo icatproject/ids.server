@@ -30,8 +30,8 @@ import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.LocationHelper;
-import org.icatproject.ids.models.DataFileInfo;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatafileInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
@@ -80,7 +80,7 @@ public class Tidier {
                                     List<Object> os = reader.search(query);
                                     logger.debug(query + " returns " + os.size() + " datasets");
                                     for (Object o : os) {
-                                        DataSetInfo dsInfoImpl = new DataSetInfo((Dataset) o);
+                                        DatasetInfo dsInfoImpl = new DatasetInfo((Dataset) o);
                                         logger.debug(
                                                 "Requesting archive of " + dsInfoImpl + " to recover main storage");
                                         fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
@@ -132,7 +132,7 @@ public class Tidier {
                                     logger.debug(query + " returns " + os.size() + " datafiles");
                                     for (Object o : os) {
                                         Datafile df = (Datafile) o;
-                                        DataFileInfo dfInfoImpl = new DataFileInfo(df.getId(), df.getName(),
+                                        DatafileInfo dfInfoImpl = new DatafileInfo(df.getId(), df.getName(),
 
                                                 LocationHelper.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
                                                 df.getModId(), df.getDataset().getId());

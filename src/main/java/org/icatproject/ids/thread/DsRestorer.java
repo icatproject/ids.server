@@ -18,7 +18,7 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.LocationHelper;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
@@ -33,7 +33,7 @@ public class DsRestorer implements Runnable {
 
     private final static Logger logger = LoggerFactory.getLogger(DsRestorer.class);
 
-    private DataSetInfo dsInfo;
+    private DatasetInfo dsInfo;
 
     private MainStorageInterface mainStorageInterface;
     private ArchiveStorageInterface archiveStorageInterface;
@@ -46,7 +46,7 @@ public class DsRestorer implements Runnable {
     private ZipMapperInterface zipMapper;
     private Lock lock;
 
-    public DsRestorer(DataSetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
+    public DsRestorer(DatasetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         zipMapper = propertyHandler.getZipMapper();

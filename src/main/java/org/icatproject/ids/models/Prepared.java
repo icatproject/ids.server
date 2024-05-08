@@ -59,7 +59,7 @@ public class Prepared {
 
         gen.writeStartArray("dsInfo");
         for (DataInfoBase dataInfo : dsInfos.values()) {
-            var dsInfo = (DataSetInfo)dataInfo;
+            var dsInfo = (DatasetInfo)dataInfo;
             logger.debug("dsInfo " + dsInfo);
             gen.writeStartObject().write("dsId", dsInfo.getId())
 
@@ -77,7 +77,7 @@ public class Prepared {
 
         gen.writeStartArray("dfInfo");
         for (DataInfoBase dataInfo : dfInfos.values()) {
-            var dfInfo = (DataFileInfo)dataInfo;
+            var dfInfo = (DatafileInfo)dataInfo;
             DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId());
             gen.writeStartObject().write("dsId", dsInfo.getId()).write("dfId", dfInfo.getId())
                     .write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
@@ -120,7 +120,7 @@ public class Prepared {
             JsonObject item = (JsonObject) itemV;
             String dfLocation = item.isNull("dfLocation") ? null : item.getString("dfLocation");
             long dfid = item.getJsonNumber("dfId").longValueExact();
-            dfInfos.put(dfid, new DataFileInfo(dfid, item.getString("dfName"),
+            dfInfos.put(dfid, new DatafileInfo(dfid, item.getString("dfName"),
                     dfLocation, item.getString("createId"), item.getString("modId"),
                     item.getJsonNumber("dsId").longValueExact()));
 
@@ -130,7 +130,7 @@ public class Prepared {
             JsonObject item = (JsonObject) itemV;
             long dsId = item.getJsonNumber("dsId").longValueExact();
             String dsLocation = item.isNull("dsLocation") ? null : item.getString("dsLocation");
-            dsInfos.put(dsId, new DataSetInfo(dsId, item.getString("dsName"), dsLocation,
+            dsInfos.put(dsId, new DatasetInfo(dsId, item.getString("dsName"), dsLocation,
                     item.getJsonNumber("invId").longValueExact(), item.getString("invName"), item.getString("visitId"),
                     item.getJsonNumber("facilityId").longValueExact(), item.getString("facilityName")));
         }
