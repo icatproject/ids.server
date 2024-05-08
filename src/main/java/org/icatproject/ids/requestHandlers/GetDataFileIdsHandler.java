@@ -2,7 +2,6 @@ package org.icatproject.ids.requestHandlers;
 
 import java.io.ByteArrayOutputStream;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -15,6 +14,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.requestHandlers.base.PreparedDataController;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
@@ -26,7 +26,7 @@ public class GetDataFileIdsHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
@@ -34,12 +34,12 @@ public class GetDataFileIdsHandler extends DataRequestHandler {
         try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
 
             if(this.dataController instanceof PreparedDataController) {
-                gen.write("zip", dataSelection.getZip());
-                gen.write("compress", dataSelection.getCompress());
+                gen.write("zip", dataSelectionService.getZip());
+                gen.write("compress", dataSelectionService.getCompress());
             }
 
             gen.writeStartArray("ids");
-            for (DataInfoBase dfInfo : dataSelection.getDfInfo().values()) {
+            for (DataInfoBase dfInfo : dataSelectionService.getDfInfo().values()) {
                 gen.write(dfInfo.getId());
             }
             gen.writeEnd().writeEnd().close();

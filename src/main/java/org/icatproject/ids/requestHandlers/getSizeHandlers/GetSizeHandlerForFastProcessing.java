@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.icatproject.Datafile;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -17,6 +16,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.requestHandlers.base.UnpreparedDataController;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 import jakarta.json.stream.JsonGenerator;
 
@@ -37,9 +37,9 @@ public class GetSizeHandlerForFastProcessing extends RequestHandlerBase {
         this.dataController.validateUUID();
         var serviceProvider = ServiceProvider.getInstance();
 
-        List<Long> dfids = DataSelectionBase.getValidIds("datafileIds", dataController.datafileIds);
-        List<Long> dsids = DataSelectionBase.getValidIds("datasetIds", dataController.datasetIds);
-        List<Long> invids = DataSelectionBase.getValidIds("investigationIds", dataController.investigationIds);
+        List<Long> dfids = DataSelectionService.getValidIds("datafileIds", dataController.datafileIds);
+        List<Long> dsids = DataSelectionService.getValidIds("datasetIds", dataController.datasetIds);
+        List<Long> invids = DataSelectionService.getValidIds("investigationIds", dataController.investigationIds);
 
         
         if (dfids.size() + dsids.size() + invids.size() == 1) {

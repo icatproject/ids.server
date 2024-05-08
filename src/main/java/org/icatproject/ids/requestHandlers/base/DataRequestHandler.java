@@ -1,7 +1,6 @@
 package org.icatproject.ids.requestHandlers.base;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -10,6 +9,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 import jakarta.json.stream.JsonGenerator;
 
@@ -47,8 +47,8 @@ public abstract class DataRequestHandler extends RequestHandlerBase {
 
         this.dataController.validateUUID();
 
-        DataSelectionBase dataSelection = this.dataController.provideDataSelection(this.requestType);
-        ValueContainer result = this.handleDataRequest(dataSelection);
+        DataSelectionService dataSelectionService = this.dataController.provideDataSelectionService(this.requestType);
+        ValueContainer result = this.handleDataRequest(dataSelectionService);
 
         return result;
 
@@ -60,7 +60,7 @@ public abstract class DataRequestHandler extends RequestHandlerBase {
         this.addCustomParametersToTransmitterJSON(gen);
     }
 
-    public abstract ValueContainer handleDataRequest(DataSelectionBase dataSelection) throws NotImplementedException, InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException;
+    public abstract ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws NotImplementedException, InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException;
 
     public String getRequestParametersLogString() {
         return this.dataController.getRequestParametersLogString() + " " + this.getCustomRequestParametersLogString();

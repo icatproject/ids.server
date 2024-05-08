@@ -19,7 +19,6 @@ import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestIdNames;
@@ -43,6 +42,7 @@ import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 import org.icatproject.utils.IcatSecurity;
 
 import jakarta.json.Json;
@@ -200,8 +200,8 @@ public class PutHandler extends RequestHandlerBase {
                     }
                     var dsInfos = new TreeMap<Long, DataInfoBase>();
                     dsInfos.put(dsInfo.getId(), dsInfo);
-                    DataSelectionBase dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets, 0);
-                    dataSelection.checkOnline();
+                    DataSelectionService dataSelectionService = this.getDataSelection(dsInfos, dfInfos, emptyDatasets, 0);
+                    dataSelectionService.checkOnline();
                 }
 
                 CRC32 crc = new CRC32();

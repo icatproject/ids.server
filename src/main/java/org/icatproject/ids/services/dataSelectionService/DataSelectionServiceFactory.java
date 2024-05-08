@@ -1,4 +1,4 @@
-package org.icatproject.ids.dataSelection;
+package org.icatproject.ids.services.dataSelectionService;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -40,11 +40,11 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
 
-public class DataSelectionFactory {
+public class DataSelectionServiceFactory {
 
-    private final static Logger logger = LoggerFactory.getLogger(DataSelectionFactory.class);
+    private final static Logger logger = LoggerFactory.getLogger(DataSelectionServiceFactory.class);
 
-    private static DataSelectionFactory instance = null;
+    private static DataSelectionServiceFactory instance = null;
 
     private PropertyHandler propertyHandler;
     private ICAT icat;
@@ -57,25 +57,25 @@ public class DataSelectionFactory {
         DATASETS, DATASETS_AND_DATAFILES, DATAFILES
     }
 
-    public static DataSelectionFactory getInstance() throws InternalException {
+    public static DataSelectionServiceFactory getInstance() throws InternalException {
         if (instance == null) {
             var serviceProvider = ServiceProvider.getInstance();
-            instance = new DataSelectionFactory(serviceProvider.getPropertyHandler(), serviceProvider.getIcatReader());
+            instance = new DataSelectionServiceFactory(serviceProvider.getPropertyHandler(), serviceProvider.getIcatReader());
         }
         return instance;
     }
 
-    public static DataSelectionFactory getInstanceOnlyForTesting(PropertyHandler propertyHandler, IcatReader reader) throws InternalException {
+    public static DataSelectionServiceFactory getInstanceOnlyForTesting(PropertyHandler propertyHandler, IcatReader reader) throws InternalException {
         if (instance == null) {
-            instance = new DataSelectionFactory(propertyHandler, reader);
+            instance = new DataSelectionServiceFactory(propertyHandler, reader);
         }
         return instance;
     }
 
-    public static DataSelectionBase get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public static DataSelectionService get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                             throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
-        return DataSelectionFactory.getInstance().getSelection(userSessionId, investigationIds, datasetIds, datafileIds, requestType);
+        return DataSelectionServiceFactory.getInstance().getSelectionService(userSessionId, investigationIds, datasetIds, datafileIds, requestType);
     }
 
 
@@ -89,13 +89,13 @@ public class DataSelectionFactory {
      * @return
      * @throws InternalException
      */
-    public static DataSelectionBase get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength, RequestType requestType) throws InternalException {
+    public static DataSelectionService getService(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength, RequestType requestType) throws InternalException {
 
         var prepared = new Prepared(dsInfos, dfInfos, emptyDatasets, fileLength);
-        return DataSelectionFactory.get(prepared, requestType);
+        return DataSelectionServiceFactory.getService(prepared, requestType);
     }
 
-    public static DataSelectionBase get(Prepared prepared, RequestType requestType) throws InternalException {
+    public static DataSelectionService getService(Prepared prepared, RequestType requestType) throws InternalException {
         List<Long> dsids = new ArrayList<Long>(prepared.dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
         List<Long> invIds = new ArrayList<Long>();
@@ -111,10 +111,10 @@ public class DataSelectionFactory {
             invIds.add( ((DatasetInfo)dsInfo).getInvId() );
         }
 
-        return DataSelectionFactory.getInstance().createSelection(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, invIds, dsids, dfids, prepared.fileLength, prepared.zip, prepared.compress, requestType);
+        return DataSelectionServiceFactory.getInstance().createSelectionService(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, invIds, dsids, dfids, prepared.fileLength, prepared.zip, prepared.compress, requestType);
     }
 
-    private DataSelectionFactory(PropertyHandler propertyHandler, IcatReader reader) throws InternalException
+    private DataSelectionServiceFactory(PropertyHandler propertyHandler, IcatReader reader) throws InternalException
     {
         logger.info("### Constructing...");
         this.propertyHandler = propertyHandler;
@@ -128,7 +128,7 @@ public class DataSelectionFactory {
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionBase createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, 
+    private DataSelectionService createSelectionService(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, 
                                         Set<Long> emptyDatasets, List<Long> invids, List<Long> dsids,
                                         List<Long> dfids, long length, Boolean zip, Boolean compress, 
                                         RequestType requestType) throws InternalException {
@@ -136,19 +136,19 @@ public class DataSelectionFactory {
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
         if(storageUnit == null )
-            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
+            return new DataSelectionServiceForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else if (storageUnit == StorageUnit.DATAFILE)
-            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
+            return new DataSelectionServiceForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else if(storageUnit == StorageUnit.DATASET)
-            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
+            return new DataSelectionServiceForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else throw new InternalException("StorageUnit " + storageUnit + " unknown. Maybe you forgot to handle a new StorageUnit here?");
 
     }
 
-    public DataSelectionBase getSelection( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public DataSelectionService getSelectionService( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                     throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
         
         List<Long> dfids = getValidIds("datafileIds", datafileIds);
@@ -181,7 +181,7 @@ public class DataSelectionFactory {
 
     
 
-    private DataSelectionBase prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
+    private DataSelectionService prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
             throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
         var dsInfos = new TreeMap<Long, DataInfoBase>();
         var emptyDatasets = new HashSet<Long>();
@@ -272,7 +272,7 @@ public class DataSelectionFactory {
             emptyDatasets = null;
         }
 
-        return this.createSelection(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, false, false, requestType);
+        return this.createSelectionService(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, false, false, requestType);
     }
     
 

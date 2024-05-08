@@ -1,7 +1,6 @@
 package org.icatproject.ids.requestHandlers;
 
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestType;
@@ -9,6 +8,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class ArchiveHandler extends DataRequestHandler {
 
@@ -17,9 +17,9 @@ public class ArchiveHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection) throws NotImplementedException, InternalException {
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws NotImplementedException, InternalException {
         
-        dataSelection.scheduleTasks(DeferredOp.ARCHIVE);
+        dataSelectionService.scheduleTasks(DeferredOp.ARCHIVE);
         return ValueContainer.getVoid();
     }
 

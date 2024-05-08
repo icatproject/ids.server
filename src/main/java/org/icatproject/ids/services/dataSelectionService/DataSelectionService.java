@@ -1,4 +1,4 @@
-package org.icatproject.ids.dataSelection;
+package org.icatproject.ids.services.dataSelectionService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,24 +25,17 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.DataSelection;
 import org.icatproject.ids.services.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DataSelectionBase {
+public abstract class DataSelectionService {
 
-    protected final static Logger logger = LoggerFactory.getLogger(DataSelectionBase.class);
+    protected final static Logger logger = LoggerFactory.getLogger(DataSelectionService.class);
 
-    protected SortedMap<Long, DataInfoBase> dsInfos;
-    protected SortedMap<Long, DataInfoBase> dfInfos;
-    protected Set<Long> emptyDatasets;
-    protected List<Long> invids;
-    protected List<Long> dsids;
-    protected List<Long> dfids;
+    protected DataSelection dataSelection;
     protected RequestType requestType;
-    protected Boolean zip;
-    protected Boolean compress;
-    private long length;
 
 
     protected static ExecutorService threadPool;
@@ -57,19 +50,12 @@ public abstract class DataSelectionBase {
 
     }
 
-    protected DataSelectionBase(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, 
+    protected DataSelectionService(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, 
         List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, Boolean zip, Boolean compress, RequestType requestType) {
 
-        this.dsInfos = dsInfos;
-        this.dfInfos = dfInfos;
-        this.emptyDatasets = emptyDatasets;
-        this.invids = invids2;
-        this.dsids = dsids;
-        this.dfids = dfids;
-        this.length = length;
+        this.dataSelection = new DataSelection(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, zip, compress);
+
         this.requestType = requestType;
-        this.zip = zip;
-        this.compress = compress;
     }
 
     public abstract boolean isPrepared(String preparedId) throws InternalException;
@@ -94,48 +80,49 @@ public abstract class DataSelectionBase {
     //     }
     // }
 
-
-    public Map<Long, DataInfoBase> getDsInfo() {
-        return dsInfos;
+    public SortedMap<Long, DataInfoBase> getDsInfo() {
+        return this.dataSelection.getDsInfo();
     }
 
 
-    public Map<Long, DataInfoBase> getDfInfo() {
-        return dfInfos;
+    public SortedMap<Long, DataInfoBase> getDfInfo() {
+        return this.dataSelection.getDfInfo();
     }
 
     public Boolean getZip() {
-        return this.zip;
+        return this.dataSelection.getZip();
     }
 
     public Boolean getCompress() {
-        return this.compress;
+        return this.dataSelection.getCompress();
+    }
+
+    public long getLength() {
+        return this.dataSelection.getLength();
     }
 
 
     public boolean mustZip() {
-        // if(this.zip == null) {
-            return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty()
-                    || (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty());
-        // }
-
-        // return this.zip;
+        return this.dataSelection.mustZip();
     }
 
     public boolean isSingleDataset() {
-        return dfids.isEmpty() && dsids.size() == 1 && invids.isEmpty();
+        return this.dataSelection.isSingleDataset();
     }
 
 
     public Set<Long> getEmptyDatasets() {
-        return emptyDatasets;
+        return this.dataSelection.getEmptyDatasets();
     }
 
 
     /**
-     * Checks to see if the investigation, dataset or datafile id list is a
-     * valid comma separated list of longs. No spaces or leading 0's. Also
+     * tries to extract a list of ids from a comma separated id string. No spaces or leading 0's. Also
      * accepts null.
+     * @param thing the name of the id list - for better error message
+     * @param idList a String which shoald contain long numbers seperated by commas
+     * @return list of long numbers - the extracted id values
+     * @throws BadRequestException
      */
     public static List<Long> getValidIds(String thing, String idList) throws BadRequestException {
 
@@ -199,11 +186,11 @@ public abstract class DataSelectionBase {
 
 
     public OptionalLong getFileLength() {
-        if (this.getDfInfo().isEmpty() || mustZip()) {
+        if (this.dataSelection.getDfInfo().isEmpty() || this.dataSelection.mustZip()) {
             return OptionalLong.empty();
         }
 
-        return OptionalLong.of(length);
+        return OptionalLong.of(this.dataSelection.getLength());
     }
 
 
@@ -251,7 +238,7 @@ public abstract class DataSelectionBase {
          * been removed from ICAT so will not be accessible to any
          * subsequent IDS calls.
          */
-        for (DataInfoBase dataInfo : this.getDfInfo().values()) {
+        for (DataInfoBase dataInfo : this.dataSelection.getDfInfo().values()) {
             var dfInfo = (DatafileInfo) dataInfo;
             String location = dataInfo.getLocation();
             try {
@@ -278,10 +265,10 @@ public abstract class DataSelectionBase {
     private class RestoreDataInfoTask implements Callable<Void> {
 
         private Collection<DataInfoBase> dataInfos;
-        private DataSelectionBase dataselection;
+        private DataSelectionService dataselection;
         private boolean checkFailure;
 
-        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionBase dataSelection, boolean checkFailure) {
+        public RestoreDataInfoTask(Collection<DataInfoBase> dataInfos, DataSelectionService dataSelection, boolean checkFailure) {
             this.dataInfos = dataInfos;
             this.dataselection = dataSelection;
             this.checkFailure = checkFailure;

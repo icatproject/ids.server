@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.UUID;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
@@ -19,6 +18,7 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 import jakarta.json.stream.JsonGenerator;
 
@@ -36,15 +36,15 @@ public class PrepareDataHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException { 
 
         preparedId = UUID.randomUUID().toString();
         
-        dataSelection.restoreDataInfos();
+        dataSelectionService.restoreDataInfos();
 
-        if (dataSelection.mustZip()) {
+        if (dataSelectionService.mustZip()) {
             zip = true;
         }
 
@@ -53,10 +53,10 @@ public class PrepareDataHandler extends DataRequestHandler {
             Prepared.pack(  stream, 
                             zip,
                             compress, 
-                            dataSelection.getDsInfo(), 
-                            dataSelection.getDfInfo(), 
-                            dataSelection.getEmptyDatasets(), 
-                            dataSelection.getFileLength().isEmpty() ? 0 : dataSelection.getFileLength().getAsLong()
+                            dataSelectionService.getDsInfo(), 
+                            dataSelectionService.getDfInfo(), 
+                            dataSelectionService.getEmptyDatasets(), 
+                            dataSelectionService.getFileLength().isEmpty() ? 0 : dataSelectionService.getFileLength().getAsLong()
             );
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());

@@ -1,4 +1,4 @@
-package org.icatproject.ids.dataSelection;
+package org.icatproject.ids.services.dataSelectionService;
 
 import java.util.List;
 import java.util.Set;
@@ -9,12 +9,11 @@ import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.services.ServiceProvider;
 
-public class DataSelectionForStorageUnitDataset extends DataSelectionBase {
+public class DataSelectionServiceForStorageUnitDatafile extends DataSelectionService {
 
-    protected DataSelectionForStorageUnitDataset(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
+    protected DataSelectionServiceForStorageUnitDatafile(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
             Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, Boolean zip, Boolean compress, RequestType requestType) {
 
         super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, zip, compress, requestType);
@@ -23,28 +22,24 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionBase {
 
     @Override
     public SortedMap<Long, DataInfoBase> getPrimaryDataInfos() {
-        return this.dsInfos;
+        return this.dataSelection.getDfInfo();
     }
 
     @Override
     public boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
-
-        var dsInfo = (DatasetInfo) dataInfo;
-        if(dsInfo == null) throw new InternalException("Could not cast DataInfoBase to DataSetInfo. Did you handed over another sub type?");
-        
-        return emptyDatasets.contains(dataInfo.getId()) || ServiceProvider.getInstance().getMainStorage().exists(dsInfo);
+        return ServiceProvider.getInstance().getMainStorage().exists(dataInfo.getLocation());
     }
 
 
     @Override
     public boolean isPrepared(String preparedId) throws InternalException {
-        return this.areDataInfosPrepared(preparedId);
+        return areDataInfosPrepared(preparedId);
     }
 
 
     @Override
     public void queueDelete() throws NotImplementedException, InternalException {
-        this.scheduleTasks(DeferredOp.WRITE);
+        this.scheduleTasks(DeferredOp.DELETE);
     }
 
 
@@ -55,6 +50,5 @@ public class DataSelectionForStorageUnitDataset extends DataSelectionBase {
             ServiceProvider.getInstance().getFsm().queue(dataInfo, operation);
         }
     }
-      
-
+    
 }

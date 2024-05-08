@@ -6,8 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
-import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -17,6 +15,8 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +34,7 @@ public class PreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public DataSelectionBase provideDataSelection(RequestType requestType) throws InternalException,
+    public DataSelectionService provideDataSelectionService(RequestType requestType) throws InternalException,
             BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
         
         var preparedDir = ServiceProvider.getInstance().getPropertyHandler().getCacheDir().resolve("prepared");
@@ -48,7 +48,7 @@ public class PreparedDataController extends DataControllerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        return DataSelectionFactory.get(prepared, requestType);
+        return DataSelectionServiceFactory.getService(prepared, requestType);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class PreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public boolean mustZip(boolean zip, DataSelectionBase dataSelection) {
+    public boolean mustZip(boolean zip, DataSelectionService dataSelectionService) {
         return zip;
     }
 

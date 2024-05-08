@@ -3,7 +3,6 @@ package org.icatproject.ids.requestHandlers.base;
 import java.util.regex.Pattern;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -11,6 +10,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 import jakarta.json.stream.JsonGenerator;
 
@@ -22,7 +22,7 @@ public abstract class DataControllerBase {
     public static final Pattern uuidRegExp = Pattern
             .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
-    public abstract DataSelectionBase provideDataSelection(RequestType requestType) throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException;
+    public abstract DataSelectionService provideDataSelectionService(RequestType requestType) throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException;
 
     public abstract void validateUUID() throws BadRequestException;
 
@@ -30,7 +30,7 @@ public abstract class DataControllerBase {
 
     public abstract void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException;
 
-    public abstract boolean mustZip(boolean zip, DataSelectionBase dataSelection);
+    public abstract boolean mustZip(boolean zip, DataSelectionService dataSelectionService);
 
     public abstract String getOperationId();
 

@@ -3,7 +3,6 @@ package org.icatproject.ids.requestHandlers;
 import java.io.IOException;
 import java.util.Map;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestType;
@@ -20,6 +19,7 @@ import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class WriteHandler extends DataRequestHandler {
 
@@ -28,7 +28,7 @@ public class WriteHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
@@ -38,13 +38,13 @@ public class WriteHandler extends DataRequestHandler {
             throw new NotImplementedException("This operation has been configured to be unavailable");
         }
 
-        Map<Long, DataInfoBase> dsInfos = dataSelection.getDsInfo();
+        Map<Long, DataInfoBase> dsInfos = dataSelectionService.getDsInfo();
 
         try (Lock lock = serviceProvider.getLockManager().lock(dsInfos.values(), LockType.SHARED)) {
             if (twoLevel) {
                 boolean maybeOffline = false;
-                for (DataInfoBase dataInfo : dataSelection.getPrimaryDataInfos().values()) {
-                    if (!dataSelection.existsInMainStorage(dataInfo)) {
+                for (DataInfoBase dataInfo : dataSelectionService.getPrimaryDataInfos().values()) {
+                    if (!dataSelectionService.existsInMainStorage(dataInfo)) {
                         maybeOffline = true;
                     }
                 }
@@ -53,7 +53,7 @@ public class WriteHandler extends DataRequestHandler {
                 }
             }
 
-            dataSelection.scheduleTasks(DeferredOp.WRITE);
+            dataSelectionService.scheduleTasks(DeferredOp.WRITE);
 
         } catch (AlreadyLockedException e) {
             logger.debug("Could not acquire lock, write failed");

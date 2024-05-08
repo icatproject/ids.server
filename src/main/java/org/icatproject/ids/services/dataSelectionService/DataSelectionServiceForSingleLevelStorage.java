@@ -1,54 +1,57 @@
-package org.icatproject.ids.dataSelection;
+package org.icatproject.ids.services.dataSelectionService;
 
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.services.ServiceProvider;
 
-public class DataSelectionForStorageUnitDatafile extends DataSelectionBase {
+public class DataSelectionServiceForSingleLevelStorage extends DataSelectionService {
 
-    protected DataSelectionForStorageUnitDatafile(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
+    protected DataSelectionServiceForSingleLevelStorage(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
             Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, Boolean zip, Boolean compress, RequestType requestType) {
-
+                
         super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, zip, compress, requestType);
     }
 
 
     @Override
     public SortedMap<Long, DataInfoBase> getPrimaryDataInfos() {
-        return this.dfInfos;
+        return new TreeMap<Long, DataInfoBase>();
     }
+
 
     @Override
     public boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
-        return ServiceProvider.getInstance().getMainStorage().exists(dataInfo.getLocation());
+        
+        throw new InternalException("This operation is unavailable for single level storage");
     }
 
 
     @Override
     public boolean isPrepared(String preparedId) throws InternalException {
-        return areDataInfosPrepared(preparedId);
+        return true;
     }
 
 
     @Override
     public void queueDelete() throws NotImplementedException, InternalException {
-        this.scheduleTasks(DeferredOp.DELETE);
+        //nothing todo for single level storage
     }
-
+    
 
     @Override
     public void scheduleTasks(DeferredOp operation) throws NotImplementedException, InternalException {
 
-        for (DataInfoBase dataInfo : this.getPrimaryDataInfos().values()) {
-            ServiceProvider.getInstance().getFsm().queue(dataInfo, operation);
-        }
+        throw new NotImplementedException("This operation is unavailable for single level storage");
     }
+
+
+    
     
 }

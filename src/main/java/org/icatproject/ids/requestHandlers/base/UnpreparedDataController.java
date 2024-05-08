@@ -1,8 +1,6 @@
 package org.icatproject.ids.requestHandlers.base;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
-import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -10,6 +8,8 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
 
 import jakarta.json.stream.JsonGenerator;
 
@@ -39,8 +39,8 @@ public class UnpreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public DataSelectionBase provideDataSelection(RequestType requestType) throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
-        return DataSelectionFactory.get(sessionId, investigationIds, datasetIds, datafileIds, requestType);
+    public DataSelectionService provideDataSelectionService(RequestType requestType) throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
+        return DataSelectionServiceFactory.get(sessionId, investigationIds, datasetIds, datafileIds, requestType);
     }
 
     @Override
@@ -55,21 +55,21 @@ public class UnpreparedDataController extends DataControllerBase {
             throws BadRequestException {
         if (investigationIds != null) {
             gen.writeStartArray("investigationIds");
-            for (long invid : DataSelectionBase.getValidIds("investigationIds", investigationIds)) {
+            for (long invid : DataSelectionService.getValidIds("investigationIds", investigationIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();
         }
         if (datasetIds != null) {
             gen.writeStartArray("datasetIds");
-            for (long invid : DataSelectionBase.getValidIds("datasetIds", datasetIds)) {
+            for (long invid : DataSelectionService.getValidIds("datasetIds", datasetIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();
         }
         if (datafileIds != null) {
             gen.writeStartArray("datafileIds");
-            for (long invid : DataSelectionBase.getValidIds("datafileIds", datafileIds)) {
+            for (long invid : DataSelectionService.getValidIds("datafileIds", datafileIds)) {
                 gen.write(invid);
             }
             gen.writeEnd();
@@ -77,8 +77,8 @@ public class UnpreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public boolean mustZip(boolean zip, DataSelectionBase dataSelection) {
-        return zip ? true : dataSelection.mustZip();
+    public boolean mustZip(boolean zip, DataSelectionService dataSelectionService) {
+        return zip ? true : dataSelectionService.mustZip();
     }
 
     @Override

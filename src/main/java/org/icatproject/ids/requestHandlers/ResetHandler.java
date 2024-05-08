@@ -1,6 +1,5 @@
 package org.icatproject.ids.requestHandlers;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -14,6 +13,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 
 public class ResetHandler extends DataRequestHandler {
@@ -23,12 +23,12 @@ public class ResetHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
         FiniteStateMachine fsm = ServiceProvider.getInstance().getFsm();
-        for (DataInfoBase dataInfo : dataSelection.getPrimaryDataInfos().values()) {
+        for (DataInfoBase dataInfo : dataSelectionService.getPrimaryDataInfos().values()) {
             fsm.recordSuccess(dataInfo.getId());
         }
 

@@ -1,6 +1,5 @@
 package org.icatproject.ids.requestHandlers;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.RequestType;
@@ -12,6 +11,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class RestoreHandler extends DataRequestHandler {
 
@@ -20,11 +20,11 @@ public class RestoreHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
-        dataSelection.scheduleTasks(DeferredOp.RESTORE);
+                dataSelectionService.scheduleTasks(DeferredOp.RESTORE);
         return ValueContainer.getVoid();
     }
 

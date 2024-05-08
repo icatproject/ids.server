@@ -8,7 +8,6 @@ import org.icatproject.Datafile;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -25,6 +24,7 @@ import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 
 public class DeleteHandler extends DataRequestHandler {
@@ -34,7 +34,7 @@ public class DeleteHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
@@ -45,14 +45,14 @@ public class DeleteHandler extends DataRequestHandler {
         var serviceProvider = ServiceProvider.getInstance();
 
         // Do it
-        try (Lock lock = serviceProvider.getLockManager().lock(dataSelection.getDsInfo().values(), LockType.EXCLUSIVE)) {
+        try (Lock lock = serviceProvider.getLockManager().lock(dataSelectionService.getDsInfo().values(), LockType.EXCLUSIVE)) {
             if (storageUnit == StorageUnit.DATASET) {
-                dataSelection.checkOnline();
+                dataSelectionService.checkOnline();
             }
 
             /* Now delete from ICAT */
             List<EntityBaseBean> dfs = new ArrayList<>();
-            for (DataInfoBase dfInfo : dataSelection.getDfInfo().values()) {
+            for (DataInfoBase dfInfo : dataSelectionService.getDfInfo().values()) {
                 Datafile df = new Datafile();
                 df.setId(dfInfo.getId());
                 dfs.add(df);
@@ -71,7 +71,7 @@ public class DeleteHandler extends DataRequestHandler {
                 throw new InternalException(type + " " + e.getMessage());
             }
 
-            dataSelection.delete();
+            dataSelectionService.delete();
 
         } catch (AlreadyLockedException e) {
             logger.debug("Could not acquire lock, delete failed");

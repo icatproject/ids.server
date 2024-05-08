@@ -11,7 +11,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -29,6 +28,7 @@ import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 import jakarta.json.stream.JsonGenerator;
 import jakarta.ws.rs.core.Response;
@@ -66,11 +66,11 @@ public class GetDataHandler extends DataRequestHandler {
 
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection) throws InternalException, NotImplementedException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException  {
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws InternalException, NotImplementedException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException  {
 
         if(this.compress == null || this.zip == null) {
-            this.zip = dataSelection.getZip();
-            this.compress = dataSelection.getCompress();
+            this.zip = dataSelectionService.getZip();
+            this.compress = dataSelectionService.getCompress();
         }
 
         long offset = 0;
@@ -84,28 +84,28 @@ public class GetDataHandler extends DataRequestHandler {
             logger.debug("Range " + range + " -> offset " + offset);
         }
 
-        return new ValueContainer(this.getData(dataSelection, offset));
+        return new ValueContainer(this.getData(dataSelectionService, offset));
     }
 
 
-    private Response getData(DataSelectionBase dataSelection, final long offset) throws BadRequestException,
+    private Response getData(DataSelectionService dataSelectionService, final long offset) throws BadRequestException,
             NotFoundException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         long start = System.currentTimeMillis();
         
-        var length = this.zip ? OptionalLong.empty() : dataSelection.getFileLength();
+        var length = this.zip ? OptionalLong.empty() : dataSelectionService.getFileLength();
 
-        final boolean finalZip = this.dataController.mustZip(zip, dataSelection); 
+        final boolean finalZip = this.dataController.mustZip(zip, dataSelectionService); 
 
         Lock lock = null;
         try {
             var serviceProvider = ServiceProvider.getInstance();
-            lock = serviceProvider.getLockManager().lock(dataSelection.getDsInfo().values(), LockType.SHARED);
+            lock = serviceProvider.getLockManager().lock(dataSelectionService.getDsInfo().values(), LockType.SHARED);
 
             if (twoLevel) {
-                dataSelection.checkOnline();
+                dataSelectionService.checkOnline();
             }
-            checkDatafilesPresent(dataSelection.getDfInfo().values());
+            checkDatafilesPresent(dataSelectionService.getDfInfo().values());
 
             /* Construct the name to include in the headers */
             String name;
@@ -113,7 +113,7 @@ public class GetDataHandler extends DataRequestHandler {
                 if (finalZip) {
                     name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
                 } else {
-                    name = dataSelection.getDfInfo().values().iterator().next().getName();
+                    name = dataSelectionService.getDfInfo().values().iterator().next().getName();
                 }
             } else {
                 if (finalZip) {
@@ -133,7 +133,7 @@ public class GetDataHandler extends DataRequestHandler {
             }
 
             var response = Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-                    .entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lock, transferId, ip, start, serviceProvider))
+                    .entity(new SO(dataSelectionService.getDsInfo(), dataSelectionService.getDfInfo(), offset, finalZip, compress, lock, transferId, ip, start, serviceProvider))
                     .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes");
             length.stream()
                     .map(l -> Math.max(0L, l - offset))

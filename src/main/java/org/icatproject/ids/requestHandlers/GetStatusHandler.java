@@ -2,7 +2,6 @@ package org.icatproject.ids.requestHandlers;
 
 import java.util.Set;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.Status;
@@ -16,6 +15,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class GetStatusHandler extends DataRequestHandler {
 
@@ -24,7 +24,7 @@ public class GetStatusHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
@@ -33,14 +33,14 @@ public class GetStatusHandler extends DataRequestHandler {
 
         Set<DataInfoBase> restoring = serviceProvider.getFsm().getRestoring();
         Set<DataInfoBase> maybeOffline = serviceProvider.getFsm().getMaybeOffline();
-        for (DataInfoBase dataInfo : dataSelection.getPrimaryDataInfos().values()) {
+        for (DataInfoBase dataInfo : dataSelectionService.getPrimaryDataInfos().values()) {
             serviceProvider.getFsm().checkFailure(dataInfo.getId());
             if (restoring.contains(dataInfo)) {
                 status = Status.RESTORING;
             } else if (maybeOffline.contains(dataInfo)) {
                 status = Status.ARCHIVED;
                 break;
-            } else if (!dataSelection.existsInMainStorage(dataInfo)) {
+            } else if (!dataSelectionService.existsInMainStorage(dataInfo)) {
                 status = Status.ARCHIVED;
                 break;
             }

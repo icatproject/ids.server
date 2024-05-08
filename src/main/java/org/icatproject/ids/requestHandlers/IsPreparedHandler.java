@@ -6,7 +6,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -17,6 +16,7 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class IsPreparedHandler extends DataRequestHandler {
 
@@ -34,7 +34,7 @@ public class IsPreparedHandler extends DataRequestHandler {
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
@@ -66,7 +66,7 @@ public class IsPreparedHandler extends DataRequestHandler {
                 }
             }
 
-            prepared = dataSelection.isPrepared(this.dataController.getOperationId());
+            prepared = dataSelectionService.isPrepared(this.dataController.getOperationId());
 
             return new ValueContainer(prepared);
 

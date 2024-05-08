@@ -12,9 +12,7 @@ import org.slf4j.LoggerFactory;
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 
-import org.icatproject.ids.dataSelection.DataSelectionFactory;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -27,6 +25,8 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
 
 
 /**
@@ -81,9 +81,9 @@ public abstract class RequestHandlerBase {
      * @return
      * @throws InternalException
      */
-    public DataSelectionBase getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength) throws InternalException {
+    public DataSelectionService getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength) throws InternalException {
 
-        return DataSelectionFactory.get(dsInfos, dfInfos, emptyDatasets, fileLength, this.getRequestType());
+        return DataSelectionServiceFactory.getService(dsInfos, dfInfos, emptyDatasets, fileLength, this.getRequestType());
     }
 
 
@@ -100,10 +100,10 @@ public abstract class RequestHandlerBase {
      * @throws InsufficientPrivilegesException
      * @throws NotImplementedException
      */
-    public DataSelectionBase getDataSelection(String userSessionId, String investigationIds, String datasetIds, String datafileIds) 
+    public DataSelectionService getDataSelection(String userSessionId, String investigationIds, String datasetIds, String datafileIds) 
                                     throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
-        return DataSelectionFactory.get(userSessionId, investigationIds, datasetIds, datafileIds, this.getRequestType());
+        return DataSelectionServiceFactory.get(userSessionId, investigationIds, datasetIds, datafileIds, this.getRequestType());
     }
 
 

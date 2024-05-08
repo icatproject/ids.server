@@ -3,7 +3,6 @@ package org.icatproject.ids.requestHandlers.getSizeHandlers;
 import java.util.Map;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -16,6 +15,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class GetSizeHandler extends DataRequestHandler {
 
@@ -24,14 +24,14 @@ public class GetSizeHandler extends DataRequestHandler {
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionBase dataSelection)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
         
         logger.debug("Slow computation for normal case");
 
         long size = 0;
-        size = this.updateSizeFromDataInfoIds(size, dataSelection.getDfInfo(), this.dataController.forceGetSessionId());
+        size = this.updateSizeFromDataInfoIds(size, dataSelectionService.getDfInfo(), this.dataController.forceGetSessionId());
 
         return new ValueContainer(size);
     }
