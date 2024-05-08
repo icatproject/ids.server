@@ -21,7 +21,6 @@ import org.icatproject.ids.models.DataFileInfo;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DataSetInfo;
 import org.icatproject.ids.models.Prepared;
-import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.junit.Test;
 
 public class PreparePackingTest {
@@ -52,11 +51,11 @@ public class PreparePackingTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (OutputStream stream = new BufferedOutputStream(baos)) {
-            RequestHandlerBase.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets, 51);
+            Prepared.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets, 51);
         }
         System.out.println(baos.toString());
         InputStream stream = new ByteArrayInputStream(baos.toByteArray());
-        Prepared prepared = RequestHandlerBase.unpack(stream);
+        Prepared prepared = Prepared.unpack(stream);
         assertTrue(prepared.zip);
         assertFalse(prepared.compress);
         assertEquals(prepared.fileLength, 51);

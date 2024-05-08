@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -33,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.RequestIdNames;
-import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
@@ -63,7 +61,6 @@ import org.icatproject.ids.requestHandlers.getSizeHandlers.GetSizeHandlerForFast
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
-import org.icatproject.ids.services.RequestHandlerService;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.Transmitter;
 
@@ -81,9 +78,6 @@ public class IdsService {
 
     @EJB
     private IcatReader reader;
-
-    @EJB
-    private RequestHandlerService requestService;
 
     private FiniteStateMachine fsm = null;
 

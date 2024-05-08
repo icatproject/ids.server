@@ -35,7 +35,7 @@ import org.icatproject.ids.services.ServiceProvider;
  */
 public abstract class RequestHandlerBase2 {
 
-    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
+    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase2.class);
     protected Path preparedDir;
     protected boolean twoLevel;
     protected StorageUnit storageUnit;

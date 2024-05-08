@@ -24,7 +24,7 @@ import jakarta.json.stream.JsonGenerator;
 
 public class PreparedDataController extends DataControllerBase {
 
-    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
+    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase2.class);
 
     String preparedId;
 
