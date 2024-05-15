@@ -9,7 +9,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.services.PropertyHandler;
@@ -26,10 +26,10 @@ public class DfWriter implements Runnable {
     private MainStorageInterface mainStorageInterface;
     private ArchiveStorageInterface archiveStorageInterface;
     private Path markerDir;
-    private List<DataFileInfo> dataFileInfos;
+    private List<DatafileInfo> dataFileInfos;
     private Collection<Lock> locks;
 
-    public DfWriter(List<DataFileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
+    public DfWriter(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
         this.dataFileInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -41,7 +41,7 @@ public class DfWriter implements Runnable {
     @Override
     public void run() {
         try {
-            for (DataFileInfo dataFileInfo : dataFileInfos) {
+            for (DatafileInfo dataFileInfo : dataFileInfos) {
                 String dfLocation = dataFileInfo.getDfLocation();
                 try (InputStream is = mainStorageInterface.get(dfLocation, dataFileInfo.getCreateId(), dataFileInfo.getModId())) {
                     archiveStorageInterface.put(is, dfLocation);

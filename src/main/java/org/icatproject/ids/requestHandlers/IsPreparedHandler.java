@@ -1,21 +1,12 @@
 package org.icatproject.ids.requestHandlers;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.OperationIdTypes;
-import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -24,16 +15,13 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.models.Prepared;
-import org.icatproject.ids.services.ServiceProvider;
+import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
-import jakarta.json.Json;
-import jakarta.json.stream.JsonGenerator;
+public class IsPreparedHandler extends DataRequestHandler {
 
-public class IsPreparedHandler extends RequestHandlerBase {
-
-    public IsPreparedHandler() {
-        super(OperationIdTypes.PREPAREDID, RequestType.ISPREPARED);
+    public IsPreparedHandler(String ip, String preparedId) {
+        super(RequestType.ISPREPARED, ip, preparedId);
     }
 
     class PreparedStatus {
@@ -46,36 +34,17 @@ public class IsPreparedHandler extends RequestHandlerBase {
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 
     @Override
-    public ValueContainer handle(HashMap<String, ValueContainer> parameters)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
-        
-        long start = System.currentTimeMillis();
-
-        String preparedId = parameters.get(RequestIdNames.preparedId).getString();
-        String ip = parameters.get("ip").getString();
-
-        logger.info(String.format("New webservice request: isPrepared preparedId=%s", preparedId));
-
-        // Validate
-        validateUUID(RequestIdNames.preparedId, preparedId);
 
         // Do it
         boolean prepared = true;
 
-        Prepared preparedJson;
-        try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
-            preparedJson = unpack(stream);
-        } catch (NoSuchFileException e) {
-            throw new NotFoundException("The preparedId " + preparedId + " is not known");
-        } catch (IOException e) {
-            throw new InternalException(e.getClass() + " " + e.getMessage());
-        }
-
-        PreparedStatus status = preparedStatusMap.computeIfAbsent(preparedId, k -> new PreparedStatus());
+        PreparedStatus status = preparedStatusMap.computeIfAbsent(this.dataController.getOperationId(), k -> new PreparedStatus());
 
         if (!status.lock.tryLock()) {
-            logger.debug("Lock held for evaluation of isPrepared for preparedId {}", preparedId);
+            logger.debug("Lock held for evaluation of isPrepared for preparedId {}", this.dataController.getOperationId());
             return new ValueContainer(false);
         }
         try {
@@ -92,30 +61,22 @@ public class IsPreparedHandler extends RequestHandlerBase {
                         status.future = null;
                     }
                 } else {
-                    logger.debug("Background process still running for preparedId {}", preparedId);
+                    logger.debug("Background process still running for preparedId {}", this.dataController.getOperationId());
                     return new ValueContainer(false);
                 }
             }
 
-            var serviceProvider = ServiceProvider.getInstance();
-            DataSelectionBase dataSelection = this.getDataSelection(preparedJson.dsInfos, preparedJson.dfInfos, preparedJson.emptyDatasets, preparedJson.fileLength);
-
-            prepared = dataSelection.isPrepared(preparedId);
-
-            if (serviceProvider.getLogSet().contains(CallType.INFO)) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                    gen.write(RequestIdNames.preparedId, preparedId);
-                    gen.writeEnd();
-                }
-                String body = baos.toString();
-                serviceProvider.getTransmitter().processMessage("isPrepared", ip, body, start);
-            }
+            prepared = dataSelectionService.isPrepared(this.dataController.getOperationId());
 
             return new ValueContainer(prepared);
 
         } finally {
             status.lock.unlock();
         }
+    }
+
+    @Override
+    public CallType getCallType() {
+        return CallType.INFO;
     }
 }

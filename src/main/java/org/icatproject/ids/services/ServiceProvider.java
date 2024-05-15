@@ -19,12 +19,14 @@ public class ServiceProvider {
     private FiniteStateMachine fsm;
     private LockManager lockManager;
     private IcatReader icatReader;
+    private PropertyHandler propertyHandler;
 
-    private ServiceProvider(Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
+    private ServiceProvider(PropertyHandler propertyHandler, Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
         this.transmitter = transmitter;
         this.fsm = fsm;
         this.lockManager = lockManager;
         this.icatReader = reader;
+        this.propertyHandler = propertyHandler;
     }
 
     /**
@@ -36,9 +38,14 @@ public class ServiceProvider {
      */
     public static void createInstance(Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
 
+        createInstance(PropertyHandler.getInstance(), transmitter, fsm, lockManager, reader);
+    }
+
+    public static void createInstance(PropertyHandler propertyHandler, Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
+
         if(instance != null) return;
 
-        instance = new ServiceProvider(transmitter, fsm, lockManager, reader);
+        instance = new ServiceProvider(propertyHandler, transmitter, fsm, lockManager, reader);
     }
 
     public static ServiceProvider getInstance() {
@@ -65,7 +72,7 @@ public class ServiceProvider {
     }
 
     public PropertyHandler getPropertyHandler() {
-        return PropertyHandler.getInstance();
+        return this.propertyHandler;
     }
 
     public MainStorageInterface getMainStorage() {

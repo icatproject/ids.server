@@ -14,7 +14,7 @@ import java.util.TimerTask;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
@@ -130,7 +130,7 @@ public class FiniteStateMachineForStorageUnitDataset extends FiniteStateMachine 
                     final Iterator<Entry<DataInfoBase, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
                     while (it.hasNext()) {
                         final Entry<DataInfoBase, RequestedState> opEntry = it.next();
-                        final var dsInfo = (DataSetInfo) opEntry.getKey();
+                        final var dsInfo = (DatasetInfo) opEntry.getKey();
 
 
                         if(dsInfo == null) throw new RuntimeException("Could not cast DataInfoBase to DataSetInfo. Did you handed over another sub type?");

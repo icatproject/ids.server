@@ -1,19 +1,14 @@
 package org.icatproject.ids.requestHandlers;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import org.icatproject.Datafile;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.OperationIdTypes;
-import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -25,59 +20,45 @@ import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
-import jakarta.json.Json;
-import jakarta.json.stream.JsonGenerator;
 
-public class DeleteHandler extends RequestHandlerBase {
+public class DeleteHandler extends DataRequestHandler {
 
-    public DeleteHandler() {
-        super(OperationIdTypes.SESSIONID, RequestType.DELETE);
+    public DeleteHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+        super(RequestType.DELETE, ip, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
     @Override
-    public ValueContainer handle(HashMap<String, ValueContainer> parameters)
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
-        
-        long start = System.currentTimeMillis();
-        var serviceProvider = ServiceProvider.getInstance();
-
-        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
-        String investigationIds = parameters.get("investigationIds").getString();
-        String datasetIds = parameters.get("datasetIds").getString();
-        String datafileIds = parameters.get("datafileIds").getString();
-        String ip = parameters.get("ip").getString();
-
-        logger.info("New webservice request: delete " + "investigationIds='" + investigationIds + "' " + "datasetIds='"
-                + datasetIds + "' " + "datafileIds='" + datafileIds + "'");
 
         if (readOnly) {
             throw new NotImplementedException("This operation has been configured to be unavailable");
         }
 
-        validateUUID(RequestIdNames.sessionId, sessionId);
-
-        DataSelectionBase dataSelection = this.getDataSelection( sessionId, investigationIds, datasetIds, datafileIds);
+        var serviceProvider = ServiceProvider.getInstance();
 
         // Do it
-        try (Lock lock = serviceProvider.getLockManager().lock(dataSelection.getDsInfo().values(), LockType.EXCLUSIVE)) {
+        try (Lock lock = serviceProvider.getLockManager().lock(dataSelectionService.getDsInfo().values(), LockType.EXCLUSIVE)) {
             if (storageUnit == StorageUnit.DATASET) {
-                dataSelection.checkOnline();
+                dataSelectionService.checkOnline();
             }
 
             /* Now delete from ICAT */
             List<EntityBaseBean> dfs = new ArrayList<>();
-            for (DataInfoBase dfInfo : dataSelection.getDfInfo().values()) {
+            for (DataInfoBase dfInfo : dataSelectionService.getDfInfo().values()) {
                 Datafile df = new Datafile();
                 df.setId(dfInfo.getId());
                 dfs.add(df);
             }
             try {
-                serviceProvider.getIcat().deleteMany(sessionId, dfs);
+                serviceProvider.getIcat().deleteMany(this.dataController.getOperationId(), dfs);
             } catch (IcatException_Exception e) {
                 IcatExceptionType type = e.getFaultInfo().getType();
 
@@ -90,7 +71,7 @@ public class DeleteHandler extends RequestHandlerBase {
                 throw new InternalException(type + " " + e.getMessage());
             }
 
-            dataSelection.delete();
+            dataSelectionService.delete();
 
         } catch (AlreadyLockedException e) {
             logger.debug("Could not acquire lock, delete failed");
@@ -100,21 +81,11 @@ public class DeleteHandler extends RequestHandlerBase {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
 
-        if (serviceProvider.getLogSet().contains(CallType.WRITE)) {
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                    gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
-                    addIds(gen, investigationIds, datasetIds, datafileIds);
-                    gen.writeEnd();
-                }
-                String body = baos.toString();
-                serviceProvider.getTransmitter().processMessage("delete", ip, body, start);
-            } catch (IcatException_Exception e) {
-                logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-            }
-        }
-
         return ValueContainer.getVoid();
+    }
+
+    @Override
+    public CallType getCallType() {
+        return CallType.WRITE;
     }
 }

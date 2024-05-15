@@ -1,4 +1,4 @@
-package org.icatproject.ids.dataSelection;
+package org.icatproject.ids.services.dataSelectionService;
 
 import java.util.List;
 import java.util.Set;
@@ -11,12 +11,12 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.models.DataInfoBase;
 
-public class DataSelectionForSingleLevelStorage extends DataSelectionBase {
+public class DataSelectionServiceForSingleLevelStorage extends DataSelectionService {
 
-    protected DataSelectionForSingleLevelStorage(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
-            Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) {
+    protected DataSelectionServiceForSingleLevelStorage(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
+            Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, Boolean zip, Boolean compress, RequestType requestType) {
                 
-        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, requestType);
+        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, zip, compress, requestType);
     }
 
 

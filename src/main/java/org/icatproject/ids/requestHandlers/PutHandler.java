@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.security.NoSuchAlgorithmException;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,10 +19,8 @@ import org.icatproject.Dataset;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.DeferredOp;
-import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -36,13 +33,16 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.CheckedWithSizeInputStream;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
+import org.icatproject.ids.requestHandlers.base.DataControllerBase;
+import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 import org.icatproject.utils.IcatSecurity;
 
 import jakarta.json.Json;
@@ -51,6 +51,20 @@ import jakarta.ws.rs.core.Response;
 
 public class PutHandler extends RequestHandlerBase {
 
+    String sessionId;
+    InputStream body;
+    String name;
+    String datafileFormatIdString;
+    String datasetIdString;
+    String description;
+    String doi;
+    String datafileCreateTimeString;
+    String datafileModTimeString;
+    boolean wrap;
+    boolean padding;
+
+    private Long dfId;
+    private ServiceProvider serviceProvider;
     private DatatypeFactory datatypeFactory;
     private static String paddedPrefix;
     private static final String prefix = "<html><script type=\"text/javascript\">window.name='";
@@ -64,13 +78,26 @@ public class PutHandler extends RequestHandlerBase {
         paddedPrefix += "*/window.name='";
     }
 
-    public PutHandler() {
-        super(OperationIdTypes.SESSIONID, RequestType.PUT);
-    }
+    public PutHandler(  String ip, String sessionId, InputStream body, String name, String datafileFormatIdString,
+                        String datasetIdString, String description, String doi, String datafileCreateTimeString,
+                        String datafileModTimeString, boolean wrap, boolean padding) {
+        super(RequestType.PUT, ip);
 
-    public void init() throws InternalException {
-        super.init();
-        
+        this.sessionId = sessionId;
+        this.body = body;
+        this.name = name;
+        this.datafileFormatIdString = datafileFormatIdString;
+        this.datasetIdString = datasetIdString;
+        this.description = description;
+        this.doi = doi;
+        this.datafileCreateTimeString = datafileCreateTimeString;
+        this.datafileModTimeString = datafileModTimeString;
+        this.wrap = wrap;
+        this.padding = padding;
+
+        this.dfId = -1L;
+        this.serviceProvider = ServiceProvider.getInstance();
+
         try {
 
             this.datatypeFactory = DatatypeFactory.newInstance();
@@ -82,38 +109,17 @@ public class PutHandler extends RequestHandlerBase {
     }
 
     @Override
-    public ValueContainer handle(HashMap<String, ValueContainer> parameters)
+    public ValueContainer handleRequest()
             throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
-        
-        long start = System.currentTimeMillis();
-        var serviceProvider = ServiceProvider.getInstance();
-
-        String sessionId = parameters.get(RequestIdNames.sessionId).getString();
-        InputStream body = parameters.get("body").getInputStream();
-        String name = parameters.get("name").getString();
-        String datafileFormatIdString = parameters.get("datafileFormatId").getString();
-        String datasetIdString = parameters.get("datasetId").getString();
-        String description = parameters.get("description").getString();
-        String doi = parameters.get("doi").getString();
-        String datafileCreateTimeString = parameters.get("datafileCreateTime").getString();
-        String datafileModTimeString = parameters.get("datafileModTime").getString();
-        boolean wrap = parameters.get("wrap").getBool();
-        boolean padding = parameters.get("padding").getBool();
-        String ip = parameters.get("ip").getString();
 
         try {
-            // Log and validate
-            logger.info("New webservice request: put " + "name='" + name + "' " + "datafileFormatId='"
-                    + datafileFormatIdString + "' " + "datasetId='" + datasetIdString + "' " + "description='"
-                    + description + "' " + "doi='" + doi + "' " + "datafileCreateTime='" + datafileCreateTimeString
-                    + "' " + "datafileModTime='" + datafileModTimeString + "'");
 
             if (readOnly) {
                 throw new NotImplementedException("This operation has been configured to be unavailable");
             }
 
-            validateUUID(RequestIdNames.sessionId, sessionId);
+            DataControllerBase.validateUUID(RequestIdNames.sessionId, sessionId);
             if (name == null) {
                 throw new BadRequestException("The name parameter must be set");
             }
@@ -171,7 +177,7 @@ public class PutHandler extends RequestHandlerBase {
                 throw new InternalException(type + " " + e.getMessage());
             }
 
-            DataSetInfo dsInfo = new DataSetInfo(ds);
+            DatasetInfo dsInfo = new DatasetInfo(ds);
             try (Lock lock = serviceProvider.getLockManager().lock(dsInfo, LockType.SHARED)) {
                 if (storageUnit == StorageUnit.DATASET) {
                     var dfInfos = new TreeMap<Long, DataInfoBase>();
@@ -194,8 +200,8 @@ public class PutHandler extends RequestHandlerBase {
                     }
                     var dsInfos = new TreeMap<Long, DataInfoBase>();
                     dsInfos.put(dsInfo.getId(), dsInfo);
-                    DataSelectionBase dataSelection = this.getDataSelection(dsInfos, dfInfos, emptyDatasets, 0);
-                    dataSelection.checkOnline();
+                    DataSelectionService dataSelectionService = this.getDataSelection(dsInfos, dfInfos, emptyDatasets, 0);
+                    dataSelectionService.checkOnline();
                 }
 
                 CRC32 crc = new CRC32();
@@ -209,7 +215,7 @@ public class PutHandler extends RequestHandlerBase {
                 is.close();
                 long checksum = crc.getValue();
                 long size = is.getSize();
-                Long dfId;
+                
                 try {
                     dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum, size, ds,
                             description, doi, datafileCreateTime, datafileModTime);
@@ -237,7 +243,7 @@ public class PutHandler extends RequestHandlerBase {
                     } catch (IcatException_Exception e) {
                         throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
                     }
-                    serviceProvider.getFsm().queue(new DataFileInfo(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getId()),
+                    serviceProvider.getFsm().queue(new DatafileInfo(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getId()),
                             DeferredOp.WRITE);
                 }
 
@@ -246,20 +252,6 @@ public class PutHandler extends RequestHandlerBase {
                         .write("location", location.replace("\\", "\\\\").replace("'", "\\'")).write("size", size)
                         .writeEnd().close();
                 String resp = wrap ? prefix + baos.toString() + suffix : baos.toString();
-
-                if (serviceProvider.getLogSet().contains(CallType.WRITE)) {
-                    try {
-                        baos = new ByteArrayOutputStream();
-                        try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                            gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
-                            gen.write("datafileId", dfId);
-                            gen.writeEnd();
-                        }
-                        serviceProvider.getTransmitter().processMessage("put", ip, baos.toString(), start);
-                    } catch (IcatException_Exception e) {
-                        logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-                    }
-                }
 
                 return new ValueContainer(Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build());
 
@@ -353,5 +345,22 @@ public class PutHandler extends RequestHandlerBase {
         } catch (NoSuchAlgorithmException e) {
             throw new InternalException(e.getMessage());
         }
+    }
+
+    public String getRequestParametersLogString() {
+        return "name='" + name + "' " + "datafileFormatId='"
+            + datafileFormatIdString + "' " + "datasetId='" + datasetIdString + "' " + "description='"
+            + description + "' " + "doi='" + doi + "' " + "datafileCreateTime='" + datafileCreateTimeString
+            + "' " + "datafileModTime='" + datafileModTimeString + "'";
+    }
+
+    public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
+        gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
+        gen.write("datafileId", dfId);
+    }
+
+    @Override
+    public CallType getCallType() {
+        return CallType.WRITE;
     }
 }

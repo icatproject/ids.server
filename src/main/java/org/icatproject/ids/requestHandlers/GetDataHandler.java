@@ -1,21 +1,17 @@
-package org.icatproject.ids.requestHandlers.getDataHandlers;
+package org.icatproject.ids.requestHandlers;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.icatproject.IcatException_Exception;
-import org.icatproject.ids.dataSelection.DataSelectionBase;
 import org.icatproject.ids.enums.CallType;
-import org.icatproject.ids.enums.OperationIdTypes;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.exceptions.DataNotOnlineException;
@@ -28,83 +24,88 @@ import org.icatproject.ids.helpers.SO;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.plugin.AlreadyLockedException;
-import org.icatproject.ids.requestHandlers.RequestHandlerBase;
+import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
+import jakarta.json.stream.JsonGenerator;
 import jakarta.ws.rs.core.Response;
 import static jakarta.ws.rs.core.HttpHeaders.CONTENT_LENGTH;
 
-public abstract class GetDataHandler extends RequestHandlerBase {
+public class GetDataHandler extends DataRequestHandler {
 
     private Pattern rangeRe;
-    private static AtomicLong atomicLong = new AtomicLong();
+    private static AtomicLong transferIdCounter = new AtomicLong();
 
+    Boolean compress;
+    Boolean zip;
+    String outname;
+    String range;
+    Long transferId;
 
-    public GetDataHandler(OperationIdTypes operationIdType) {
-        super(operationIdType, RequestType.GETDATA );
+    public GetDataHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds, Boolean compress, Boolean zip, String outname, String range) {
+        super(RequestType.GETDATA, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds );
+
+        this.initializeAdditionallParameters(sessionId, compress, zip, outname, range);
     }
 
-
-    public void init() throws InternalException {
-        logger.info("Initializing GetDataHandler...");
-        super.init();        
+    private void initializeAdditionallParameters(String sessionId, Boolean compress, Boolean zip, String outname, String range) {
+        
+        this.outname = outname;
+        this.range = range;
+        this.transferId = null;
         this.rangeRe = Pattern.compile("bytes=(\\d+)-");
-        logger.info("GetDataHandler initialized");
+
+        if(sessionId != null) {
+            this.compress = compress;
+            this.zip = zip;
+        }
     }
 
 
     @Override
-    public ValueContainer handle(HashMap<String, ValueContainer> parameters) throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException  {
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws InternalException, NotImplementedException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException  {
+
+        if(this.compress == null || this.zip == null) {
+            this.zip = dataSelectionService.getZip();
+            this.compress = dataSelectionService.getCompress();
+        }
 
         long offset = 0;
-        var range = parameters.get("range");
-        if ( range != null && range.getString() != null) {
-            var rangeValue = range.getString();
+        if ( range != null) {
 
-            Matcher m = rangeRe.matcher(rangeValue);
+            Matcher m = rangeRe.matcher(range);
             if (!m.matches()) {
                 throw new BadRequestException("The range must match " + rangeRe.pattern());
             }
             offset = Long.parseLong(m.group(1));
-            logger.debug("Range " + rangeValue + " -> offset " + offset);
+            logger.debug("Range " + range + " -> offset " + offset);
         }
 
-        return new ValueContainer(this.getData(parameters, offset));
+        return new ValueContainer(this.getData(dataSelectionService, offset));
     }
 
-    protected abstract DataSelectionBase provideDataSelection(HashMap<String, ValueContainer> parameters, long offset) throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, NotImplementedException;
 
-    protected abstract ByteArrayOutputStream generateStreamForTransmitter(HashMap<String, ValueContainer> parameters, Long transferId) throws InternalException, IcatException_Exception, BadRequestException;
-
-    protected abstract boolean mustZip(boolean zip, DataSelectionBase dataSelection);
-
-
-    private Response getData(HashMap<String, ValueContainer> parameters, final long offset) throws BadRequestException,
+    private Response getData(DataSelectionService dataSelectionService, final long offset) throws BadRequestException,
             NotFoundException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         long start = System.currentTimeMillis();
+        
+        var length = this.zip ? OptionalLong.empty() : dataSelectionService.getFileLength();
 
-        DataSelectionBase dataSelection = this.provideDataSelection(parameters, offset);
-
-        final boolean zip = parameters.get("zip").getBool();
-        final boolean compress = parameters.get("compress").getBool();
-        String outname = parameters.get("outname").getString();
-        String ip = parameters.get("request").getRequest().getRemoteAddr();
-        var length = zip ? OptionalLong.empty() : dataSelection.getFileLength();
+        final boolean finalZip = this.dataController.mustZip(zip, dataSelectionService); 
 
         Lock lock = null;
         try {
             var serviceProvider = ServiceProvider.getInstance();
-            lock = serviceProvider.getLockManager().lock(dataSelection.getDsInfo().values(), LockType.SHARED);
+            lock = serviceProvider.getLockManager().lock(dataSelectionService.getDsInfo().values(), LockType.SHARED);
 
             if (twoLevel) {
-                dataSelection.checkOnline();
+                dataSelectionService.checkOnline();
             }
-            checkDatafilesPresent(dataSelection.getDfInfo().values());
-
-            final boolean finalZip = this.mustZip(zip, dataSelection); 
+            checkDatafilesPresent(dataSelectionService.getDfInfo().values());
 
             /* Construct the name to include in the headers */
             String name;
@@ -112,7 +113,7 @@ public abstract class GetDataHandler extends RequestHandlerBase {
                 if (finalZip) {
                     name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
                 } else {
-                    name = dataSelection.getDfInfo().values().iterator().next().getName();
+                    name = dataSelectionService.getDfInfo().values().iterator().next().getName();
                 }
             } else {
                 if (finalZip) {
@@ -127,19 +128,12 @@ public abstract class GetDataHandler extends RequestHandlerBase {
                 }
             }
 
-            Long transferId = null;
-            if (serviceProvider.getPropertyHandler().getLogSet().contains(CallType.READ)) {
-                try {
-                    transferId = atomicLong.getAndIncrement();
-                    ByteArrayOutputStream baos = this.generateStreamForTransmitter(parameters, transferId);
-                    serviceProvider.getTransmitter().processMessage("getDataStart", ip, baos.toString(), start);
-                } catch (IcatException_Exception e) {
-                    logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
-                }
+            if (ServiceProvider.getInstance().getPropertyHandler().getLogSet().contains(this.getCallType())) {
+                transferId = transferIdCounter.getAndIncrement();
             }
 
             var response = Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
-                    .entity(new SO(dataSelection.getDsInfo(), dataSelection.getDfInfo(), offset, finalZip, compress, lock, transferId, ip, start, serviceProvider))
+                    .entity(new SO(dataSelectionService.getDsInfo(), dataSelectionService.getDfInfo(), offset, finalZip, compress, lock, transferId, ip, start, serviceProvider))
                     .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes");
             length.stream()
                     .map(l -> Math.max(0L, l - offset))
@@ -197,6 +191,17 @@ public abstract class GetDataHandler extends RequestHandlerBase {
             }
         }
 
+    }
+
+    @Override
+    public CallType getCallType() {
+        return CallType.READ;
+    }
+
+    @Override
+    public void addCustomParametersToTransmitterJSON(JsonGenerator gen) {
+        if(transferId == null) transferId = -1L;
+        gen.write("transferId", transferId);
     }
 
 }

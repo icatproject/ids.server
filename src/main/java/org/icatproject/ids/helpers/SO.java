@@ -10,9 +10,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.slf4j.Logger;
@@ -68,11 +68,11 @@ public class SO implements StreamingOutput {
                 }
 
                 for ( DataInfoBase  dataInfo : dfInfos.values()) {
-                    var dfInfo = (DataFileInfo) dataInfo;
+                    var dfInfo = (DatafileInfo) dataInfo;
                     logger.debug("Adding " + dfInfo + " to zip");
                     transfer = dfInfo;
                     DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId() );
-                    String entryName = this.serviceProvider.getPropertyHandler().getZipMapper().getFullEntryName((DataSetInfo)dsInfo, (DataFileInfo)dfInfo);
+                    String entryName = this.serviceProvider.getPropertyHandler().getZipMapper().getFullEntryName((DatasetInfo)dsInfo, (DatafileInfo)dfInfo);
                     InputStream stream = null;
                     try {
                         zos.putNextEntry(new ZipEntry(entryName));
@@ -91,7 +91,7 @@ public class SO implements StreamingOutput {
                 }
                 zos.close();
             } else {
-                DataFileInfo dfInfo = (DataFileInfo) dfInfos.values().iterator().next();
+                DatafileInfo dfInfo = (DatafileInfo) dfInfos.values().iterator().next();
                 transfer = dfInfo;
                 InputStream stream = this.serviceProvider.getMainStorage().get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
                         dfInfo.getModId());

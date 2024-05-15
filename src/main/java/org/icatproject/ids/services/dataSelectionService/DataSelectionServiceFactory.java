@@ -1,4 +1,4 @@
-package org.icatproject.ids.dataSelection;
+package org.icatproject.ids.services.dataSelectionService;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -26,9 +26,10 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.LocationHelper;
-import org.icatproject.ids.models.DataFileInfo;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
+import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.PropertyHandler;
 import org.icatproject.ids.services.ServiceProvider;
@@ -39,11 +40,11 @@ import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
 
-public class DataSelectionFactory {
+public class DataSelectionServiceFactory {
 
-    private final static Logger logger = LoggerFactory.getLogger(DataSelectionFactory.class);
+    private final static Logger logger = LoggerFactory.getLogger(DataSelectionServiceFactory.class);
 
-    private static DataSelectionFactory instance = null;
+    private static DataSelectionServiceFactory instance = null;
 
     private PropertyHandler propertyHandler;
     private ICAT icat;
@@ -56,25 +57,25 @@ public class DataSelectionFactory {
         DATASETS, DATASETS_AND_DATAFILES, DATAFILES
     }
 
-    public static DataSelectionFactory getInstance() throws InternalException {
+    public static DataSelectionServiceFactory getInstance() throws InternalException {
         if (instance == null) {
             var serviceProvider = ServiceProvider.getInstance();
-            instance = new DataSelectionFactory(serviceProvider.getPropertyHandler(), serviceProvider.getIcatReader());
+            instance = new DataSelectionServiceFactory(serviceProvider.getPropertyHandler(), serviceProvider.getIcatReader());
         }
         return instance;
     }
 
-    public static DataSelectionFactory getInstanceOnlyForTesting(PropertyHandler propertyHandler, IcatReader reader) throws InternalException {
+    public static DataSelectionServiceFactory getInstanceOnlyForTesting(PropertyHandler propertyHandler, IcatReader reader) throws InternalException {
         if (instance == null) {
-            instance = new DataSelectionFactory(propertyHandler, reader);
+            instance = new DataSelectionServiceFactory(propertyHandler, reader);
         }
         return instance;
     }
 
-    public static DataSelectionBase get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public static DataSelectionService get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                             throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
-        return DataSelectionFactory.getInstance().getSelection(userSessionId, investigationIds, datasetIds, datafileIds, requestType);
+        return DataSelectionServiceFactory.getInstance().getSelectionService(userSessionId, investigationIds, datasetIds, datafileIds, requestType);
     }
 
 
@@ -88,27 +89,32 @@ public class DataSelectionFactory {
      * @return
      * @throws InternalException
      */
-    public static DataSelectionBase get(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength, RequestType requestType) throws InternalException {
-        List<Long> dsids = new ArrayList<Long>(dsInfos.keySet());
+    public static DataSelectionService getService(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength, RequestType requestType) throws InternalException {
+
+        var prepared = new Prepared(dsInfos, dfInfos, emptyDatasets, fileLength);
+        return DataSelectionServiceFactory.getService(prepared, requestType);
+    }
+
+    public static DataSelectionService getService(Prepared prepared, RequestType requestType) throws InternalException {
+        List<Long> dsids = new ArrayList<Long>(prepared.dsInfos.keySet());
         List<Long> dfids = new ArrayList<Long>();
         List<Long> invIds = new ArrayList<Long>();
         var dataFileInfos = new HashMap<Long, DataInfoBase>();
-        for(DataInfoBase dfInfo: dfInfos.values()) {
+        for(DataInfoBase dfInfo: prepared.dfInfos.values()) {
             dfids.add(dfInfo.getId());
             dataFileInfos.put(dfInfo.getId(), dfInfo);
             dfids.add(dfInfo.getId());
         }
 
-        for(DataInfoBase dsInfo : dsInfos.values()) {
+        for(DataInfoBase dsInfo : prepared.dsInfos.values()) {
             dsids.add(dsInfo.getId());
-            invIds.add( ((DataSetInfo)dsInfo).getInvId() );
+            invIds.add( ((DatasetInfo)dsInfo).getInvId() );
         }
 
-        //giving -1 as length here to indicate that no length where calculated
-        return DataSelectionFactory.getInstance().createSelection(dsInfos, dfInfos, emptyDatasets, invIds, dsids, dfids, fileLength, requestType);
+        return DataSelectionServiceFactory.getInstance().createSelectionService(prepared.dsInfos, prepared.dfInfos, prepared.emptyDatasets, invIds, dsids, dfids, prepared.fileLength, prepared.zip, prepared.compress, requestType);
     }
 
-    private DataSelectionFactory(PropertyHandler propertyHandler, IcatReader reader) throws InternalException
+    private DataSelectionServiceFactory(PropertyHandler propertyHandler, IcatReader reader) throws InternalException
     {
         logger.info("### Constructing...");
         this.propertyHandler = propertyHandler;
@@ -122,24 +128,27 @@ public class DataSelectionFactory {
         logger.info("### Constructing finished");
     }
 
-    private DataSelectionBase createSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, List<Long> invids, List<Long> dsids, List<Long> dfids, long length, RequestType requestType) throws InternalException {
+    private DataSelectionService createSelectionService(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, 
+                                        Set<Long> emptyDatasets, List<Long> invids, List<Long> dsids,
+                                        List<Long> dfids, long length, Boolean zip, Boolean compress, 
+                                        RequestType requestType) throws InternalException {
 
         StorageUnit storageUnit = this.propertyHandler.getStorageUnit();
 
         if(storageUnit == null )
-            return new DataSelectionForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+            return new DataSelectionServiceForSingleLevelStorage(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else if (storageUnit == StorageUnit.DATAFILE)
-            return new DataSelectionForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+            return new DataSelectionServiceForStorageUnitDatafile(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else if(storageUnit == StorageUnit.DATASET)
-            return new DataSelectionForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+            return new DataSelectionServiceForStorageUnitDataset(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, zip, compress, requestType);
 
         else throw new InternalException("StorageUnit " + storageUnit + " unknown. Maybe you forgot to handle a new StorageUnit here?");
 
     }
 
-    public DataSelectionBase getSelection( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public DataSelectionService getSelectionService( String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                     throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
         
         List<Long> dfids = getValidIds("datafileIds", datafileIds);
@@ -172,7 +181,7 @@ public class DataSelectionFactory {
 
     
 
-    private DataSelectionBase prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
+    private DataSelectionService prepareFromIds(boolean dfWanted, boolean dsWanted, List<Long> dfids, List<Long> dsids, List<Long> invids, String userSessionId, Session restSessionToUse, Session userRestSession, RequestType requestType)
             throws NotFoundException, InsufficientPrivilegesException, InternalException, BadRequestException {
         var dsInfos = new TreeMap<Long, DataInfoBase>();
         var emptyDatasets = new HashSet<Long>();
@@ -193,13 +202,13 @@ public class DataSelectionFactory {
                 if (dss.size() == 1) {
                     Dataset ds = (Dataset) dss.get(0);
                     long dsid = ds.getId();
-                    dsInfos.put(dsid, new DataSetInfo(ds));
+                    dsInfos.put(dsid, new DatasetInfo(ds));
                     if (dfWanted) {
                         Datafile df = (Datafile) icat.get(userSessionId, "Datafile", dfid);
                         length += df.getFileSize();
                         String location = LocationHelper.getLocation(dfid, df.getLocation());
                         dfInfos.put( df.getId(),
-                                new DataFileInfo(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
+                                new DatafileInfo(dfid, df.getName(), location, df.getCreateId(), df.getModId(), dsid));
                     }
                 } else {
                     // Next line may reveal a permissions problem
@@ -210,7 +219,7 @@ public class DataSelectionFactory {
 
             for (Long dsid : dsids) {
                 Dataset ds = (Dataset) icat.get(userSessionId, "Dataset ds INCLUDE ds.investigation.facility", dsid);
-                dsInfos.put(dsid, new DataSetInfo(ds));
+                dsInfos.put(dsid, new DatasetInfo(ds));
                 // dataset access for the user has been checked so the REST session for the
                 // reader account can be used if the IDS setting to allow this is enabled
                 String query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "
@@ -263,7 +272,7 @@ public class DataSelectionFactory {
             emptyDatasets = null;
         }
 
-        return this.createSelection(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, requestType);
+        return this.createSelectionService(dsInfos, dfInfos, emptyDatasets, invids, dsids, dfids, length, false, false, requestType);
     }
     
 
@@ -310,7 +319,7 @@ public class DataSelectionFactory {
                     long dfid = tup.getJsonNumber(0).longValueExact();
                     String location = LocationHelper.getLocation(dfid, tup.getString(2, null));
                     dfInfos.put(dfid,
-                            new DataFileInfo(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
+                            new DatafileInfo(dfid, tup.getString(1), location, tup.getString(3), tup.getString(4), dsid));
                 }
             } else {
                 long half = (min + max) / 2;
@@ -354,7 +363,7 @@ public class DataSelectionFactory {
                 for (JsonValue tupV : result) {
                     JsonArray tup = (JsonArray) tupV;
                     long dsid = tup.getJsonNumber(0).longValueExact();
-                    dsInfos.put(dsid, new DataSetInfo(dsid, tup.getString(1), tup.getString(2, null), invid, invName,
+                    dsInfos.put(dsid, new DatasetInfo(dsid, tup.getString(1), tup.getString(2, null), invid, invName,
                             visitId, facilityId, facilityName));
 
                     query = "SELECT min(df.id), max(df.id), count(df.id) FROM Datafile df WHERE df.dataset.id = "

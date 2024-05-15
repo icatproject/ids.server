@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.services.PropertyHandler;
 import org.icatproject.ids.services.LockManager.Lock;
@@ -16,14 +16,14 @@ import org.icatproject.ids.services.LockManager.Lock;
  */
 public class DsArchiver implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(DsArchiver.class);
-    private DataSetInfo dsInfo;
+    private DatasetInfo dsInfo;
 
     private MainStorageInterface mainStorageInterface;
     private FiniteStateMachine fsm;
     private Path markerDir;
     private Lock lock;
 
-    public DsArchiver(DataSetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, Lock lock) {
+    public DsArchiver(DatasetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         mainStorageInterface = propertyHandler.getMainStorage();

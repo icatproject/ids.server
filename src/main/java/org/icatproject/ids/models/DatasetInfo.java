@@ -10,7 +10,7 @@ import org.icatproject.ids.plugin.DsInfo;
  * Contains information about a Dataset. Replaces DsInfo in v3.
  * May should implement DsInfo interface
  */
-public class DataSetInfo extends DataInfoBase implements DsInfo {
+public class DatasetInfo extends DataInfoBase implements DsInfo {
 
     protected Long facilityId;
     protected String facilityName;
@@ -19,7 +19,7 @@ public class DataSetInfo extends DataInfoBase implements DsInfo {
     protected String visitId;
 
 
-    public DataSetInfo(Dataset ds) throws InsufficientPrivilegesException {
+    public DatasetInfo(Dataset ds) throws InsufficientPrivilegesException {
         super(ds.getId(), ds.getName(), ds.getLocation()); 
 
         Investigation investigation = ds.getInvestigation();
@@ -42,7 +42,7 @@ public class DataSetInfo extends DataInfoBase implements DsInfo {
     }
 
 
-    public DataSetInfo(Long id, String name, String location, Long investigationId, String investigationName, String visitId, Long facilityId, String facilityName) {
+    public DatasetInfo(Long id, String name, String location, Long investigationId, String investigationName, String visitId, Long facilityId, String facilityName) {
         super(id, name, location);
 
         this.facilityId = facilityId;

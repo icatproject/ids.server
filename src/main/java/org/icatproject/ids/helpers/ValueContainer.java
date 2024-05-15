@@ -197,7 +197,11 @@ public class ValueContainer {
         }
     }
 
-    public boolean isNull() { return this.value == null; }
+    public boolean isNull() { return this.isInvalid() && this.value == null; }
+
+    public boolean isInvalid() { return this.type == ValueContainerType.INVALID; }
+
+    public boolean isVoid() { return this.type == ValueContainerType.VOID; }
 
     
 

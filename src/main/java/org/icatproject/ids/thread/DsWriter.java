@@ -16,8 +16,8 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.LocationHelper;
-import org.icatproject.ids.models.DataFileInfo;
-import org.icatproject.ids.models.DataSetInfo;
+import org.icatproject.ids.models.DatafileInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
@@ -32,7 +32,7 @@ public class DsWriter implements Runnable {
 
     private final static Logger logger = LoggerFactory.getLogger(DsWriter.class);
     private static final int BUFSIZ = 1024;
-    private DataSetInfo dsInfo;
+    private DatasetInfo dsInfo;
 
     private FiniteStateMachine fsm;
     private MainStorageInterface mainStorageInterface;
@@ -43,7 +43,7 @@ public class DsWriter implements Runnable {
     private ZipMapperInterface zipMapper;
     private Lock lock;
 
-    public DsWriter(DataSetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
+    public DsWriter(DatasetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         this.zipMapper = propertyHandler.getZipMapper();
@@ -77,7 +77,7 @@ public class DsWriter implements Runnable {
                     InputStream is = null;
                     try {
                         zos.putNextEntry(new ZipEntry(
-                                zipMapper.getFullEntryName(dsInfo, new DataFileInfo(datafile.getId(), datafile.getName(),
+                                zipMapper.getFullEntryName(dsInfo, new DatafileInfo(datafile.getId(), datafile.getName(),
                                         location, datafile.getCreateId(), datafile.getModId(), 0L))));
                         is = mainStorageInterface.get(location, datafile.getCreateId(), datafile.getModId());
                         int bytesRead = 0;
