@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -21,12 +23,12 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,7 @@ import org.icatproject.ids.services.LockManager;
 import org.icatproject.ids.services.PropertyHandler;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.Transmitter;
+import org.icatproject.ids.services.UnfinishedWorkService;
 
 @Path("/")
 @Stateless
@@ -80,6 +83,70 @@ public class IdsService {
     private IcatReader reader;
 
     private FiniteStateMachine fsm = null;
+
+    private static Boolean inited = false;
+    private final Object lock = new Object();
+
+    private UnfinishedWorkService unfinishedWorkService;
+
+
+    @PostConstruct
+    private void init() {
+
+        try {
+            synchronized (lock) {
+
+                logger.info("creating IdsService");
+
+                FiniteStateMachine.createInstance(reader, lockManager, PropertyHandler.getInstance().getStorageUnit());
+                this.fsm = FiniteStateMachine.getInstance();
+                this.fsm.init();
+                ServiceProvider.createInstance(transmitter, fsm, lockManager, reader);
+
+                var propertyHandler = ServiceProvider.getInstance().getPropertyHandler();
+                var archiveStorage = propertyHandler.getArchiveStorage();
+                var twoLevel = archiveStorage != null;
+                var preparedDir = propertyHandler.getCacheDir().resolve("prepared");
+
+                Files.createDirectories(preparedDir);
+                this.unfinishedWorkService = new UnfinishedWorkService();
+
+                String key = "";
+                if (!inited) {
+                    key = propertyHandler.getKey();
+                    logger.info("Key is " + (key == null ? "not set" : "set"));
+                    this.unfinishedWorkService.cleanPreparedDir(preparedDir);
+                }
+
+                java.nio.file.Path datasetDir;
+                if (twoLevel) {
+                    datasetDir = propertyHandler.getCacheDir().resolve("dataset");
+                    var markerDir = propertyHandler.getCacheDir().resolve("marker");
+                    if (!inited) {
+                        Files.createDirectories(datasetDir);
+                        Files.createDirectories(markerDir);
+                        this.unfinishedWorkService.restartUnfinishedWork(markerDir, key);
+                        this.unfinishedWorkService.cleanDatasetCache(datasetDir);
+                    }
+                }
+
+                inited = true;
+
+                logger.info("created IdsService");
+            }
+        } catch (Throwable e) {
+            logger.error("Won't start ", e);
+            throw new RuntimeException("IdsService reports " + e.getClass() + " " + e.getMessage());
+        }
+    }
+
+
+    @PreDestroy
+    private void exit() {
+        this.fsm.exit();
+        logger.info("destroyed IdsService");
+    }
+
 
     /**
      * Archive data specified by the investigationIds, datasetIds and
@@ -142,11 +209,6 @@ public class IdsService {
         handler.handle();
     }
 
-    @PreDestroy
-    private void exit() {
-        this.fsm.exit();
-        logger.info("destroyed IdsService");
-    }
 
     /**
      * Return the version of the server
@@ -387,17 +449,6 @@ public class IdsService {
         return handler.handle().getString();
     }
 
-    @PostConstruct
-    private void init() {
-        logger.info("creating IdsService");
-
-        FiniteStateMachine.createInstance(reader, lockManager, PropertyHandler.getInstance().getStorageUnit());
-        this.fsm = FiniteStateMachine.getInstance();
-        this.fsm.init();
-        ServiceProvider.createInstance(transmitter, fsm, lockManager, reader);
-
-        logger.info("created IdsService");
-    }
 
     /**
      * Returns true if all the data files are ready to be downloaded. As a side

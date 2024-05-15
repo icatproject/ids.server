@@ -65,7 +65,7 @@ public class UnfinishedWorkService {
     }
 
 
-    public static void cleanPreparedDir(Path preparedDir) {
+    public void cleanPreparedDir(Path preparedDir) {
         for (File file : preparedDir.toFile().listFiles()) {
             Path path = file.toPath();
             String pf = path.getFileName().toString();
@@ -89,7 +89,7 @@ public class UnfinishedWorkService {
     }
 
 
-    static void cleanDatasetCache(Path datasetDir) {
+    public void cleanDatasetCache(Path datasetDir) {
         for (File dsFile : datasetDir.toFile().listFiles()) {
             Path path = dsFile.toPath();
             try {
