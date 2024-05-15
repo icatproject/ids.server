@@ -200,6 +200,7 @@ public class GetDataHandler extends DataRequestHandler {
 
     @Override
     public void addCustomParametersToTransmitterJSON(JsonGenerator gen) {
+        if(transferId == null) transferId = -1L;
         gen.write("transferId", transferId);
     }
 

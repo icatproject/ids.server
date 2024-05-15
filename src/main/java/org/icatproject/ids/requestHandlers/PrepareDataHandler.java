@@ -74,6 +74,7 @@ public class PrepareDataHandler extends DataRequestHandler {
 
     @Override
     public void addCustomParametersToTransmitterJSON(JsonGenerator gen) {
+        if(preparedId == null) preparedId = "";
         gen.write(RequestIdNames.preparedId, preparedId);
     }
 
