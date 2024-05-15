@@ -127,24 +127,34 @@ public abstract class RequestHandlerBase {
         ValueContainer result = this.handleRequest();
 
         // transmitting information about the current request
+        this.transmit(start);
+
+        return result;
+
+    }
+
+
+    private void transmit(long start) throws BadRequestException {
         if (ServiceProvider.getInstance().getLogSet().contains(this.getCallType())) {
             try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
-                    this.addParametersToTransmitterJSON(gen);
-                    gen.writeEnd();
-                }
-                String body = baos.toString();
+                String body = this.provideTransmissionBody();
                 ServiceProvider.getInstance().getTransmitter().processMessage("archive", ip, body, start);
             } catch (IcatException_Exception e) {
                 logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
             }
         }
-
-
-        return result;
-
     }
+
+    public String provideTransmissionBody() throws BadRequestException, IcatException_Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+            this.addParametersToTransmitterJSON(gen);
+            gen.writeEnd();
+        }
+        return baos.toString();
+    }
+
+
     /**
      * Override to add additional parameters to the log output for the current request
      * @return
