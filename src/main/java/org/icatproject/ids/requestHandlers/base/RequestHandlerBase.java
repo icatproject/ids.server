@@ -119,7 +119,7 @@ public abstract class RequestHandlerBase {
      * Override to add additional parameters to the log output for the current request
      * @return
      */
-    public String getRequestParametersLogString() { return ""; }
+    protected String getRequestParametersLogString() { return ""; }
 
     /**
      * Override to add additional parameters to the transmitter JSON
@@ -127,7 +127,7 @@ public abstract class RequestHandlerBase {
      * @throws IcatException_Exception
      * @throws BadRequestException
      */
-    public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {}
+    protected void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {}
 
     /**
      * The core method of each request handler. It has to be overwritten in the concrete implementation to provide an individual request handling
@@ -139,12 +139,12 @@ public abstract class RequestHandlerBase {
      * @throws DataNotOnlineException
      * @throws NotImplementedException
      */
-    public abstract ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
+    protected abstract ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
 
     /**
      * each handler should provide its own CallType which is needed to create the Transmitter message
      * @return the Calltype of the request
      */
-    public abstract CallType getCallType();
-    
+    protected abstract CallType getCallType();
+
 }

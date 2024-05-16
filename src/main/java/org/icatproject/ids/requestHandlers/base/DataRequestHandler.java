@@ -43,7 +43,7 @@ public abstract class DataRequestHandler extends RequestHandlerBase {
     }
 
     @Override
-    public ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+    protected ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         this.dataController.validateUUID();
 
@@ -55,14 +55,14 @@ public abstract class DataRequestHandler extends RequestHandlerBase {
     }
 
     @Override
-    public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
+    protected void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
         this.dataController.addParametersToTransmitterJSON(gen);
         this.addCustomParametersToTransmitterJSON(gen);
     }
 
-    public abstract ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws NotImplementedException, InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException;
+    protected abstract ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws NotImplementedException, InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException;
 
-    public String getRequestParametersLogString() {
+    protected String getRequestParametersLogString() {
         return this.dataController.getRequestParametersLogString() + " " + this.getCustomRequestParametersLogString();
     }
 
@@ -70,10 +70,10 @@ public abstract class DataRequestHandler extends RequestHandlerBase {
      * Override this method in your concrete DataRequestHandler to add custom parameters to the JSON which will be transmitted.
      * @param gen
      */
-    public void addCustomParametersToTransmitterJSON(JsonGenerator gen) {}
+    protected void addCustomParametersToTransmitterJSON(JsonGenerator gen) {}
 
     /**
      * Override this method in your concrete DataRequestHandler to add custom parameters to the log output.
      */
-    public String getCustomRequestParametersLogString() { return "";}
+    protected String getCustomRequestParametersLogString() { return "";}
 }

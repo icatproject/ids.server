@@ -40,7 +40,7 @@ public class UnpreparedDataController extends DataControllerBase {
 
     @Override
     public DataSelectionService provideDataSelectionService(RequestType requestType) throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
-        return DataSelectionServiceFactory.get(sessionId, investigationIds, datasetIds, datafileIds, requestType);
+        return DataSelectionServiceFactory.getService(sessionId, investigationIds, datasetIds, datafileIds, requestType);
     }
 
     @Override

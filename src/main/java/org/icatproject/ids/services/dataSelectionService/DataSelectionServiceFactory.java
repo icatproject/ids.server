@@ -72,7 +72,7 @@ public class DataSelectionServiceFactory {
         return instance;
     }
 
-    public static DataSelectionService get(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
+    public static DataSelectionService getService(String userSessionId, String investigationIds, String datasetIds, String datafileIds, RequestType requestType) 
                                             throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
 
         return DataSelectionServiceFactory.getInstance().getSelectionService(userSessionId, investigationIds, datasetIds, datafileIds, requestType);
