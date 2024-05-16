@@ -43,6 +43,7 @@ import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
 import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
 import org.icatproject.utils.IcatSecurity;
 
 import jakarta.json.Json;
@@ -200,7 +201,7 @@ public class PutHandler extends RequestHandlerBase {
                     }
                     var dsInfos = new TreeMap<Long, DataInfoBase>();
                     dsInfos.put(dsInfo.getId(), dsInfo);
-                    DataSelectionService dataSelectionService = this.getDataSelection(dsInfos, dfInfos, emptyDatasets, 0);
+                    DataSelectionService dataSelectionService = DataSelectionServiceFactory.getService(dsInfos, dfInfos, emptyDatasets, 0, this.getRequestType());
                     dataSelectionService.checkOnline();
                 }
 

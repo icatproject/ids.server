@@ -2,8 +2,6 @@ package org.icatproject.ids.requestHandlers.base;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
-import java.util.Set;
-import java.util.SortedMap;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -23,10 +21,7 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
-import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.services.ServiceProvider;
-import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
-import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
 
 
 /**
@@ -71,41 +66,6 @@ public abstract class RequestHandlerBase {
     public RequestType getRequestType() {
         return this.requestType;
     }
-
-
-    /**
-     * Creates a DataSelection depending on the RequestType. It Uses the DataSelectionFactory which is creating the DataSelection depending on the configured StorageUnit.
-     * @param dsInfos A ready to use Map of DataSetInfos
-     * @param dfInfos A ready to use Map of DataFileInfos
-     * @param emptyDatasets A list of data set IDs of empty data sets
-     * @return
-     * @throws InternalException
-     */
-    public DataSelectionService getDataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength) throws InternalException {
-
-        return DataSelectionServiceFactory.getService(dsInfos, dfInfos, emptyDatasets, fileLength, this.getRequestType());
-    }
-
-
-    /**
-     * provides a suitable DataSelection depending on the RequestType. It Uses the DataSelectionFactory which is creating the DataSelection depending on the configured StorageUnit.
-     * @param userSessionId The current session id
-     * @param investigationIds A String which contains investigation IDs
-     * @param datasetIds A String which contains data set IDs
-     * @param datafileIds A String which contains data file IDs
-     * @return
-     * @throws InternalException
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException
-     */
-    public DataSelectionService getDataSelection(String userSessionId, String investigationIds, String datasetIds, String datafileIds) 
-                                    throws InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
-
-        return DataSelectionServiceFactory.get(userSessionId, investigationIds, datasetIds, datafileIds, this.getRequestType());
-    }
-
 
     /**
      * The core method of each request handler. It has to be overwritten in the concrete implementation to provide an individual request handling
@@ -181,10 +141,10 @@ public abstract class RequestHandlerBase {
      */
     public abstract ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
 
+    /**
+     * each handler should provide its own CallType which is needed to create the Transmitter message
+     * @return the Calltype of the request
+     */
     public abstract CallType getCallType();
-
     
-
-    
-
 }
