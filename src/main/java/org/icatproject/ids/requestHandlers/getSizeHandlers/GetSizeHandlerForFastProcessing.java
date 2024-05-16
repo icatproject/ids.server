@@ -81,7 +81,7 @@ public class GetSizeHandlerForFastProcessing extends RequestHandlerBase {
         return CallType.INFO;
     }
 
-    public String getRequestParametersLogString() { return this.dataController.getRequestParametersLogString(); }
+    public String addParametersToLogString() { return this.dataController.addParametersToLogString(); }
 
     public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
         this.dataController.addParametersToTransmitterJSON(gen);

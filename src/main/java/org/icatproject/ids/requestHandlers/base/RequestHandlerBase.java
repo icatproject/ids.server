@@ -81,7 +81,7 @@ public abstract class RequestHandlerBase {
 
         // some preprocessing
         long start = System.currentTimeMillis();
-        logger.info("New webservice request: " + this.requestType.toString().toLowerCase() + " " + this.getRequestParametersLogString());
+        logger.info("New webservice request: " + this.requestType.toString().toLowerCase() + " " + this.addParametersToLogString());
 
         // Do it
         ValueContainer result = this.handleRequest();
@@ -119,7 +119,7 @@ public abstract class RequestHandlerBase {
      * Override to add additional parameters to the log output for the current request
      * @return
      */
-    protected String getRequestParametersLogString() { return ""; }
+    protected String addParametersToLogString() { return ""; }
 
     /**
      * Override to add additional parameters to the transmitter JSON

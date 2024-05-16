@@ -57,7 +57,7 @@ public class PreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public String getRequestParametersLogString() {
+    public String addParametersToLogString() {
         return "preparedId = '" + preparedId;
     }
 

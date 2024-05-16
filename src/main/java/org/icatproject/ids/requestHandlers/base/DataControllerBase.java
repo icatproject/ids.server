@@ -26,7 +26,7 @@ public abstract class DataControllerBase {
 
     public abstract void validateUUID() throws BadRequestException;
 
-    public abstract String getRequestParametersLogString();
+    public abstract String addParametersToLogString();
 
     public abstract void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException;
 

@@ -68,7 +68,7 @@ public class PrepareDataHandler extends DataRequestHandler {
     }
 
     @Override
-    public String getCustomRequestParametersLogString() { 
+    public String addCustomParametersToLogString() { 
         return "zip='" + this.zip + "'' compress='" + compress + "'";
     }
 

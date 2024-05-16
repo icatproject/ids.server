@@ -62,8 +62,9 @@ public abstract class DataRequestHandler extends RequestHandlerBase {
 
     protected abstract ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws NotImplementedException, InternalException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException;
 
-    protected String getRequestParametersLogString() {
-        return this.dataController.getRequestParametersLogString() + " " + this.getCustomRequestParametersLogString();
+    @Override
+    protected String addParametersToLogString() {
+        return this.dataController.addParametersToLogString() + " " + this.addCustomParametersToLogString();
     }
 
     /**
@@ -75,5 +76,5 @@ public abstract class DataRequestHandler extends RequestHandlerBase {
     /**
      * Override this method in your concrete DataRequestHandler to add custom parameters to the log output.
      */
-    protected String getCustomRequestParametersLogString() { return "";}
+    protected String addCustomParametersToLogString() { return "";}
 }

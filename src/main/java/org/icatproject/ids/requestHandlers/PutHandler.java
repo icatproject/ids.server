@@ -348,7 +348,7 @@ public class PutHandler extends RequestHandlerBase {
         }
     }
 
-    public String getRequestParametersLogString() {
+    public String addParametersToLogString() {
         return "name='" + name + "' " + "datafileFormatId='"
             + datafileFormatIdString + "' " + "datasetId='" + datasetIdString + "' " + "description='"
             + description + "' " + "doi='" + doi + "' " + "datafileCreateTime='" + datafileCreateTimeString
