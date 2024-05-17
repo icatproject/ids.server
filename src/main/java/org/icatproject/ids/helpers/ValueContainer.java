@@ -5,7 +5,6 @@ import java.io.InputStream;
 import org.icatproject.ids.enums.ValueContainerType;
 import org.icatproject.ids.exceptions.InternalException;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 
 /**
@@ -79,14 +78,6 @@ public class ValueContainer {
     }
 
     /**
-     * Creates a ValueContainer of type Request
-     * @param value the value contained by the container
-     */
-    public ValueContainer(HttpServletRequest value) {
-        this(value, ValueContainerType.REQUEST);
-    }
-
-    /**
      * Creates a ValueContainer of type Response
      * @param value the value contained by the container
      */
@@ -151,16 +142,6 @@ public class ValueContainer {
     }
 
     /**
-     * Tries to return the value of the type Request.
-     * @return
-     * @throws InternalException if the container has another type an exception will be thrown
-     */
-    public HttpServletRequest getRequest() throws InternalException {
-        this.checkType(ValueContainerType.REQUEST);
-        return (HttpServletRequest) this.value;
-    }
-
-    /**
      * Tries to return the value of the type Response.
      * @return
      * @throws InternalException if the container has another type an exception will be thrown
@@ -189,7 +170,6 @@ public class ValueContainer {
             case LONG: return ""+this.value;
             case BOOL: return ((boolean)this.value ? "true" : "false"); 
             case STRING: return (String)this.value; 
-            case REQUEST: return "HttpServletRequest: " + ((HttpServletRequest) this.value).getQueryString();
             case RESPONSE: return "Response " + ((Response) this.value).toString();
             case INPUTSTREAM: return "An InputStream which will be printed here to prevent it from closing (and maybe it is too long).";
             default:

@@ -4,13 +4,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
+
 import org.icatproject.ids.enums.ValueContainerType;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.junit.Test;
 
-public class TestValueContainer {
 
+public class TestValueContainer {
 
     @Test
     public void testInvalidValueContainer() throws Exception {
@@ -65,7 +71,7 @@ public class TestValueContainer {
 
         assertEquals(vc.getBool(), true);
 
-        vc.getInt();
+        vc.getString();
     }
 
     @Test(expected = InternalException.class)
@@ -80,4 +86,26 @@ public class TestValueContainer {
 
         vc.getBool();
     }
+
+    @Test(expected = InternalException.class)
+    public void testInputStreamValueContainer() throws Exception {
+        
+        String s = "test InputStream";
+        var inputStream = new ByteArrayInputStream(s.getBytes());
+        var vc = new ValueContainer(inputStream);
+        assertFalse(vc.isVoid());
+        assertFalse(vc.isInvalid());
+        assertFalse(vc.isNull());
+
+        assertEquals(vc.getInputStream(), inputStream);
+        
+        var ISReader = new InputStreamReader(vc.getInputStream(), StandardCharsets.UTF_8);
+        var BReader = new BufferedReader(ISReader);
+        String textFromStream = BReader.lines().collect(Collectors.joining());
+        BReader.close();
+        assertEquals(textFromStream, s);
+
+        vc.getString();
+    }
+
 }
