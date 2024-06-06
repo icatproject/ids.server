@@ -13,7 +13,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>https://repo.icatproject.org/repo</repoUrl>
         <project.scm.id>github</project.scm.id>
-        <plugin.prettier.goal>write</plugin.prettier.goal>
+        <plugin.prettier.goal>check</plugin.prettier.goal>
     </properties>
 
     <repositories>
@@ -432,17 +432,8 @@
                 <version>0.22</version>
                 <configuration>
                     <prettierJavaVersion>2.0.0</prettierJavaVersion>
-                    <printWidth>80</printWidth>
-                    <tabWidth>4</tabWidth>
-                    <useTabs>false</useTabs>
-                    <ignoreConfigFile>true</ignoreConfigFile>
+                    <ignoreConfigFile>false</ignoreConfigFile>
                     <ignoreEditorConfig>true</ignoreEditorConfig>
-                    <!-- Use <inputGlobs> to override the default input patterns -->
-                    <inputGlobs>
-                    <!-- These are the default patterns, you can omit <inputGlobs> entirely unless you want to override them -->
-                    <inputGlob>src/main/java/**/*.java</inputGlob>
-                    <inputGlob>src/test/java/**/*.java</inputGlob>
-                    </inputGlobs>
                 </configuration>
                 <executions>
                     <execution>
@@ -457,21 +448,6 @@
         </plugins>
 
     </build>
-
-    <profiles>
-        <profile>
-            <id>travis</id>
-            <activation>
-            <property>
-                <name>env.TRAVIS</name>
-            </property>
-            </activation>
-            <properties>
-            <!-- But in our CI environment we want to validate that code is formatted -->
-            <plugin.prettier.goal>check</plugin.prettier.goal>
-            </properties>
-        </profile>
-    </profiles>
 
     <reporting>
         <plugins>
