@@ -454,7 +454,7 @@
             <id>cibuild</id>
             <activation>
             <property>
-                <name>env.build_and_test</name>
+                <name>env.CIBUILD</name>
             </property>
             </activation>
             <properties>
