@@ -13,7 +13,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>https://repo.icatproject.org/repo</repoUrl>
         <project.scm.id>github</project.scm.id>
-        <plugin.prettier.goal>check</plugin.prettier.goal>
+        <plugin.prettier.goal>write</plugin.prettier.goal>
     </properties>
 
     <repositories>
@@ -448,6 +448,21 @@
         </plugins>
 
     </build>
+
+    <profiles>
+        <profile>
+            <id>cibuild</id>
+            <activation>
+            <property>
+                <name>env.build_and_test</name>
+            </property>
+            </activation>
+            <properties>
+            <!-- But in our CI environment we want to validate that code is formatted -->
+            <plugin.prettier.goal>check</plugin.prettier.goal>
+            </properties>
+        </profile>
+    </profiles>
 
     <reporting>
         <plugins>
