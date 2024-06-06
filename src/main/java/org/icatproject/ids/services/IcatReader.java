@@ -1,16 +1,19 @@
 package org.icatproject.ids.services;
 
+import java.util.List;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Singleton;
-import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.icatproject.EntityBaseBean;
 import org.icatproject.ICAT;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
 import org.icatproject.Login.Credentials.Entry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Singleton
 public class IcatReader {
@@ -19,14 +22,14 @@ public class IcatReader {
 
     private String sessionId;
 
-    private static final Logger logger = LoggerFactory.getLogger(
-        IcatReader.class
-    );
+    private final static Logger logger = LoggerFactory.getLogger(IcatReader.class);
 
     private PropertyHandler propertyHandler;
 
     // required for injection when other constructors exist
-    public IcatReader() {}
+    public IcatReader() {
+
+    }
 
     // primarily required for testing to make it possible to use a mocked PropertyHandler
     public IcatReader(PropertyHandler propertyHandler) {
@@ -40,9 +43,7 @@ public class IcatReader {
             login();
             logger.info("Reader started");
         } catch (Exception e) {
-            throw new RuntimeException(
-                "Reader reports " + e.getClass() + " " + e.getMessage()
-            );
+            throw new RuntimeException("Reader reports " + e.getClass() + " " + e.getMessage());
         }
     }
 
@@ -53,6 +54,7 @@ public class IcatReader {
         icat = propertyHandler.getIcatService();
         List<String> creds = propertyHandler.getReader();
         if (creds != null) {
+
             Credentials credentials = new Credentials();
             List<Entry> entries = credentials.getEntry();
             for (int i = 1; i < creds.size(); i += 2) {
@@ -65,8 +67,7 @@ public class IcatReader {
         }
     }
 
-    public EntityBaseBean get(String query, long id)
-        throws IcatException_Exception {
+    public EntityBaseBean get(String query, long id) throws IcatException_Exception {
         try {
             return icat.get(sessionId, query, id);
         } catch (IcatException_Exception e) {
@@ -105,4 +106,5 @@ public class IcatReader {
             }
         }
     }
+
 }

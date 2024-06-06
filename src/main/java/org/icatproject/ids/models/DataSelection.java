@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.SortedMap;
 
 public class DataSelection {
-
     protected SortedMap<Long, DataInfoBase> dsInfos;
     protected SortedMap<Long, DataInfoBase> dfInfos;
     protected Set<Long> emptyDatasets;
@@ -16,17 +15,11 @@ public class DataSelection {
     protected Boolean compress;
     private long length;
 
-    public DataSelection(
-        SortedMap<Long, DataInfoBase> dsInfos,
-        SortedMap<Long, DataInfoBase> dfInfos,
-        Set<Long> emptyDatasets,
-        List<Long> invids2,
-        List<Long> dsids,
-        List<Long> dfids,
-        long length,
-        Boolean zip,
-        Boolean compress
-    ) {
+
+
+    public DataSelection(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, 
+        List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, Boolean zip, Boolean compress) {
+
         this.dsInfos = dsInfos;
         this.dfInfos = dfInfos;
         this.emptyDatasets = emptyDatasets;
@@ -38,9 +31,11 @@ public class DataSelection {
         this.compress = compress;
     }
 
+
     public SortedMap<Long, DataInfoBase> getDsInfo() {
         return dsInfos;
     }
+
 
     public SortedMap<Long, DataInfoBase> getDfInfo() {
         return dfInfos;
@@ -58,14 +53,11 @@ public class DataSelection {
         return this.length;
     }
 
+
     public boolean mustZip() {
         // if(this.zip == null) {
-        return (
-            dfids.size() > 1L ||
-            !dsids.isEmpty() ||
-            !invids.isEmpty() ||
-            (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty())
-        );
+            return dfids.size() > 1L || !dsids.isEmpty() || !invids.isEmpty()
+                    || (dfids.isEmpty() && dsids.isEmpty() && invids.isEmpty());
         // }
 
         // return this.zip;
@@ -74,6 +66,7 @@ public class DataSelection {
     public boolean isSingleDataset() {
         return dfids.isEmpty() && dsids.size() == 1 && invids.isEmpty();
     }
+
 
     public Set<Long> getEmptyDatasets() {
         return emptyDatasets;

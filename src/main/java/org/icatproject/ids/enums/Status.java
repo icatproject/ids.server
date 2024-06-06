@@ -5,7 +5,5 @@ package org.icatproject.ids.enums;
  *  They are only used when returning status to the client, nowhere else.
  */
 public enum Status {
-    ONLINE,
-    RESTORING,
-    ARCHIVED,
+    ONLINE, RESTORING, ARCHIVED
 }

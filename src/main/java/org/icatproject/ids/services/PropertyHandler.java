@@ -1,7 +1,5 @@
 package org.icatproject.ids.services;
 
-import jakarta.json.Json;
-import jakarta.json.JsonReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +13,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.CallType;
@@ -24,8 +29,6 @@ import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.CheckedProperties.CheckedPropertyException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /*
  * Load the properties specified in the properties file ids.properties.
@@ -33,11 +36,9 @@ import org.slf4j.LoggerFactory;
 public class PropertyHandler {
 
     private static PropertyHandler instance = null;
-    private static final Logger logger = LoggerFactory.getLogger(
-        PropertyHandler.class
-    );
+    private static final Logger logger = LoggerFactory.getLogger(PropertyHandler.class);
 
-    public static synchronized PropertyHandler getInstance() {
+    public synchronized static PropertyHandler getInstance() {
         if (instance == null) {
             instance = new PropertyHandler();
         }
@@ -80,6 +81,7 @@ public class PropertyHandler {
 
     @SuppressWarnings("unchecked")
     private PropertyHandler() {
+
         CheckedProperties props = new CheckedProperties();
 
         try {
@@ -94,21 +96,12 @@ public class PropertyHandler {
             }
 
             preparedCount = props.getPositiveInt("preparedCount");
-            processQueueIntervalSeconds =
-                props.getPositiveLong("processQueueIntervalSeconds");
-            rootUserNames =
-                new HashSet<>(
-                    Arrays.asList(
-                        props.getString("rootUserNames").trim().split("\\s+")
-                    )
-                );
+            processQueueIntervalSeconds = props.getPositiveLong("processQueueIntervalSeconds");
+            rootUserNames = new HashSet<>(Arrays.asList(props.getString("rootUserNames").trim().split("\\s+")));
 
-            reader =
-                Arrays.asList(props.getString("reader").trim().split("\\s+"));
+            reader = Arrays.asList(props.getString("reader").trim().split("\\s+"));
             if (reader.size() % 2 != 1) {
-                throw new IllegalStateException(
-                    "reader must have an odd number of words"
-                );
+                throw new IllegalStateException("reader must have an odd number of words");
             }
 
             readOnly = props.getBoolean("readOnly", false);
@@ -118,131 +111,82 @@ public class PropertyHandler {
                 enableWrite = !readOnly;
             }
 
-            sizeCheckIntervalMillis =
-                props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
+            sizeCheckIntervalMillis = props.getPositiveInt("sizeCheckIntervalSeconds") * 1000L;
 
             if (props.has("key")) {
                 key = props.getString("key");
             }
 
             try {
-                Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class.forName(
-                    props.getString("plugin.zipMapper.class")
-                );
+                Class<ZipMapperInterface> klass = (Class<ZipMapperInterface>) Class
+                        .forName(props.getString("plugin.zipMapper.class"));
                 zipMapper = klass.getConstructor().newInstance();
                 logger.debug("ZipMapper initialised");
-            } catch (
-                ClassNotFoundException
-                | InstantiationException
-                | IllegalAccessException
-                | IllegalArgumentException
-                | InvocationTargetException
-                | NoSuchMethodException
-                | SecurityException e
-            ) {
+
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException
+                     | InvocationTargetException | NoSuchMethodException | SecurityException e) {
                 abort(e.getClass() + " " + e.getMessage());
             }
 
             // Now get simple properties to pass to the plugins
             Properties simpleProps = new Properties();
-            try (
-                InputStream is = getClass()
-                    .getClassLoader()
-                    .getResourceAsStream("run.properties")
-            ) {
+            try (InputStream is = getClass().getClassLoader().getResourceAsStream("run.properties")) {
                 simpleProps.load(is);
             } catch (IOException e) {
                 abort(e.getClass() + " " + e.getMessage());
             }
 
             try {
-                Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class.forName(
-                    props.getString("plugin.main.class")
-                );
-                mainStorage =
-                    klass
-                        .getConstructor(Properties.class)
-                        .newInstance(simpleProps);
+                Class<MainStorageInterface> klass = (Class<MainStorageInterface>) Class
+                        .forName(props.getString("plugin.main.class"));
+                mainStorage = klass.getConstructor(Properties.class).newInstance(simpleProps);
                 logger.debug("mainStorage initialised");
-            } catch (
-                ClassNotFoundException
-                | InstantiationException
-                | IllegalAccessException
-                | IllegalArgumentException
-                | InvocationTargetException
-                | NoSuchMethodException
-                | SecurityException e
-            ) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IllegalArgumentException
+                     | InvocationTargetException | NoSuchMethodException | SecurityException e) {
                 logger.error("Plugin failed...", e);
                 abort(e.getClass() + " " + e.getMessage());
             }
 
             if (!props.has("plugin.archive.class")) {
-                logger.info(
-                    "Property plugin.archive.class not set, single storage enabled."
-                );
+                logger.info("Property plugin.archive.class not set, single storage enabled.");
             } else {
                 try {
-                    Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class.forName(
-                        props.getString("plugin.archive.class")
-                    );
-                    archiveStorage =
-                        klass
-                            .getConstructor(Properties.class)
-                            .newInstance(simpleProps);
+                    Class<ArchiveStorageInterface> klass = (Class<ArchiveStorageInterface>) Class
+                            .forName(props.getString("plugin.archive.class"));
+                    archiveStorage = klass.getConstructor(Properties.class).newInstance(simpleProps);
                     logger.debug("archiveStorage initialised");
-                } catch (
-                    ClassNotFoundException
-                    | InstantiationException
-                    | IllegalAccessException
-                    | IllegalArgumentException
-                    | InvocationTargetException
-                    | NoSuchMethodException
-                    | SecurityException e
-                ) {
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                         | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+                         | SecurityException e) {
                     logger.error("Plugin failed...", e);
                     abort(e.getClass() + " " + e.getMessage());
                 }
-                startArchivingLevel =
-                    props.getPositiveLong("startArchivingLevel1024bytes") *
-                    1024;
-                stopArchivingLevel =
-                    props.getPositiveLong("stopArchivingLevel1024bytes") * 1024;
+                startArchivingLevel = props.getPositiveLong("startArchivingLevel1024bytes") * 1024;
+                stopArchivingLevel = props.getPositiveLong("stopArchivingLevel1024bytes") * 1024;
                 if (stopArchivingLevel >= startArchivingLevel) {
-                    abort(
-                        "startArchivingLevel1024bytes must be greater than stopArchivingLevel1024bytes"
-                    );
+                    abort("startArchivingLevel1024bytes must be greater than stopArchivingLevel1024bytes");
                 }
 
                 try {
                     String storageUnitName = props.getString("storageUnit");
-                    storageUnit =
-                        StorageUnit.valueOf(storageUnitName.toUpperCase());
+                    storageUnit = StorageUnit.valueOf(storageUnitName.toUpperCase());
                 } catch (IllegalArgumentException e) {
                     List<String> vs = new ArrayList<>();
                     for (StorageUnit s : StorageUnit.values()) {
                         vs.add(s.name());
                     }
-                    abort(
-                        "storageUnit value " +
-                        props.getString("storageUnit") +
-                        " must be taken from " +
-                        vs
-                    );
+                    abort("storageUnit value " + props.getString("storageUnit") + " must be taken from " + vs);
                 }
                 if (storageUnit == StorageUnit.DATASET) {
-                    delayDatasetWrites =
-                        props.getPositiveLong("delayDatasetWritesSeconds");
+                    delayDatasetWrites = props.getPositiveLong("delayDatasetWritesSeconds");
                 } else if (storageUnit == StorageUnit.DATAFILE) {
-                    delayDatafileOperations =
-                        props.getPositiveLong("delayDatafileOperationsSeconds");
+                    delayDatafileOperations = props.getPositiveLong("delayDatafileOperationsSeconds");
                 }
                 tidyBlockSize = props.getPositiveInt("tidyBlockSize");
             }
 
             try {
-                cacheDir =
-                    props.getFile("cache.dir").getCanonicalFile().toPath();
+                cacheDir = props.getFile("cache.dir").getCanonicalFile().toPath();
             } catch (IOException e) {
                 abort("IOException " + e.getMessage());
             }
@@ -253,39 +197,26 @@ public class PropertyHandler {
             maxIdsInQuery = props.getPositiveInt("maxIdsInQuery");
 
             /* JMS stuff */
-            jmsTopicConnectionFactory =
-                props.getString(
-                    "jms.topicConnectionFactory",
-                    "java:comp/DefaultJMSConnectionFactory"
-                );
+            jmsTopicConnectionFactory = props.getString("jms.topicConnectionFactory",
+                    "java:comp/DefaultJMSConnectionFactory");
 
             /* Call logging categories */
             if (props.has("log.list")) {
-                for (String callTypeString : props
-                    .getString("log.list")
-                    .split("\\s+")) {
+                for (String callTypeString : props.getString("log.list").split("\\s+")) {
                     try {
-                        logSet.add(
-                            CallType.valueOf(callTypeString.toUpperCase())
-                        );
+                        logSet.add(CallType.valueOf(callTypeString.toUpperCase()));
                     } catch (IllegalArgumentException e) {
-                        abort(
-                            "Value " +
-                            callTypeString +
-                            " in log.list must be chosen from " +
-                            Arrays.asList(CallType.values())
-                        );
+                        abort("Value " + callTypeString + " in log.list must be chosen from "
+                                + Arrays.asList(CallType.values()));
                     }
                 }
                 logger.info("log.list: " + logSet);
             } else {
-                logger.info(
-                    "'log.list' entry not present so no JMS call logging will be performed"
-                );
+                logger.info("'log.list' entry not present so no JMS call logging will be performed");
             }
 
-            useReaderForPerformance =
-                props.getBoolean("useReaderForPerformance", false);
+            useReaderForPerformance = props.getBoolean("useReaderForPerformance", false);
+
         } catch (CheckedPropertyException e) {
             abort(e.getMessage());
         }
@@ -316,13 +247,8 @@ public class PropertyHandler {
             try {
                 icatService = ICATGetter.getService(icatUrl);
             } catch (IcatException_Exception e) {
-                String msg =
-                    "Problem finding ICAT API version at " +
-                    icatUrl +
-                    ": " +
-                    e.getFaultInfo().getType() +
-                    " " +
-                    e.getMessage();
+                String msg = "Problem finding ICAT API version at " + icatUrl + ": " + e.getFaultInfo().getType() + " "
+                        + e.getMessage();
                 logger.error(msg);
                 try {
                     Thread.sleep(10000);
@@ -359,30 +285,15 @@ public class PropertyHandler {
         // will produce an error message.
         while (maxEntities == null) {
             try {
-                org.icatproject.icat.client.ICAT ricat = new org.icatproject.icat.client.ICAT(
-                    icatUrl
-                );
+                org.icatproject.icat.client.ICAT ricat = new org.icatproject.icat.client.ICAT(icatUrl);
 
-                try (
-                    JsonReader parser = Json.createReader(
-                        new ByteArrayInputStream(
-                            ricat.getProperties().getBytes()
-                        )
-                    )
-                ) {
+                try (JsonReader parser = Json
+                        .createReader(new ByteArrayInputStream(ricat.getProperties().getBytes()))) {
                     maxEntities = parser.readObject().getInt("maxEntities");
-                    logger.info(
-                        "maxEntities from the ICAT.server {} version {} is {}",
-                        icatUrl,
-                        ricat.getVersion(),
-                        maxEntities
-                    );
+                    logger.info("maxEntities from the ICAT.server {} version {} is {}", icatUrl, ricat.getVersion(),
+                            maxEntities);
                 } catch (Exception e) {
-                    String msg =
-                        "Problem finding 1 ICAT API version " +
-                        e.getClass() +
-                        " " +
-                        e.getMessage();
+                    String msg = "Problem finding 1 ICAT API version " + e.getClass() + " " + e.getMessage();
                     logger.error(msg);
                     try {
                         Thread.sleep(10000);
@@ -391,11 +302,7 @@ public class PropertyHandler {
                     }
                 }
             } catch (URISyntaxException e) {
-                String msg =
-                    "Problem finding 2 ICAT API version " +
-                    e.getClass() +
-                    " " +
-                    e.getMessage();
+                String msg = "Problem finding 2 ICAT API version " + e.getClass() + " " + e.getMessage();
                 logger.error(msg);
                 throw new IllegalStateException(msg);
             }

@@ -6,4 +6,5 @@ public class InternalException extends IdsException {
     public InternalException(String msg) {
         super(msg);
     }
+
 }

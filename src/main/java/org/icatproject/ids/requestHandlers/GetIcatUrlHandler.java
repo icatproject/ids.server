@@ -12,6 +12,7 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 import org.icatproject.ids.services.ServiceProvider;
 
+
 public class GetIcatUrlHandler extends RequestHandlerBase {
 
     public GetIcatUrlHandler(String ip) {
@@ -20,10 +21,10 @@ public class GetIcatUrlHandler extends RequestHandlerBase {
 
     @Override
     public ValueContainer handleRequest()
-        throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
-        var propertyHandler = ServiceProvider
-            .getInstance()
-            .getPropertyHandler();
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
+            DataNotOnlineException, NotImplementedException {
+
+        var propertyHandler = ServiceProvider.getInstance().getPropertyHandler();
         return new ValueContainer(propertyHandler.getIcatUrl());
     }
 
@@ -31,4 +32,5 @@ public class GetIcatUrlHandler extends RequestHandlerBase {
     public CallType getCallType() {
         return CallType.INFO;
     }
+
 }

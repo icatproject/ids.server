@@ -6,4 +6,5 @@ public class BadRequestException extends IdsException {
     public BadRequestException(String msg) {
         super(msg);
     }
+
 }

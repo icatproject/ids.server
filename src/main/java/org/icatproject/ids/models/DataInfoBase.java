@@ -9,7 +9,7 @@ public abstract class DataInfoBase {
     protected String name;
     protected String location;
 
-    protected DataInfoBase(long id, String name, String location) {
+    protected DataInfoBase(long id, String name, String location){
         this.name = name;
         this.id = id;
         this.location = location;
@@ -42,4 +42,5 @@ public abstract class DataInfoBase {
         }
         return this.id == ((DataInfoBase) obj).getId();
     }
+    
 }

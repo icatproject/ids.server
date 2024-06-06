@@ -3,6 +3,10 @@ package org.icatproject.ids.integration.twodf;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.UUID;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.DatasetType;
@@ -13,8 +17,6 @@ import org.icatproject.ids.integration.util.client.BadRequestException;
 import org.icatproject.ids.integration.util.client.DataNotOnlineException;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InsufficientPrivilegesException;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class WriteTest extends BaseTest {
 
@@ -30,6 +32,7 @@ public class WriteTest extends BaseTest {
      */
     @Test
     public void restoreThenWriteDataset() throws Exception {
+
         Long dsId = datasetIds.get(0);
         Path dirOnFastStorage = getDirOnFastStorage(dsId);
         DataSelection selection = new DataSelection().addDataset(dsId);
@@ -39,6 +42,7 @@ public class WriteTest extends BaseTest {
         checkPresent(dirOnFastStorage);
 
         testingClient.write(sessionId, selection, 204);
+
     }
 
     /**
@@ -48,17 +52,12 @@ public class WriteTest extends BaseTest {
      */
     @Test
     public void storeThenWrite() throws Exception {
+
         long timestamp = System.currentTimeMillis();
 
-        Investigation inv = (Investigation) icatWS.get(
-            sessionId,
-            "Investigation INCLUDE Facility",
-            investigationId
-        );
+        Investigation inv = (Investigation) icatWS.get(sessionId, "Investigation INCLUDE Facility", investigationId);
         String invLoc = inv.getId() + "/";
-        DatasetType dsType = (DatasetType) icatWS
-            .search(sessionId, "DatasetType")
-            .get(0);
+        DatasetType dsType = (DatasetType) icatWS.search(sessionId, "DatasetType").get(0);
 
         Dataset ds = new Dataset();
         ds.setName("dsWrite_" + timestamp);
@@ -72,11 +71,7 @@ public class WriteTest extends BaseTest {
         df.setName("dfWrite_" + timestamp);
         df.setLocation(dsLoc + UUID.randomUUID());
         df.setDataset(ds);
-        writeToFile(
-            df,
-            "some really boring datafile test content",
-            setup.getKey()
-        );
+        writeToFile(df, "some really boring datafile test content", setup.getKey());
 
         Long dsId = ds.getId();
         Path dirOnFastStorage = getDirOnFastStorage(dsId);
@@ -88,6 +83,7 @@ public class WriteTest extends BaseTest {
         testingClient.write(sessionId, selection, 204);
         waitForIds();
         checkPresent(dirOnArchiveStorage);
+
     }
 
     /**
@@ -106,11 +102,8 @@ public class WriteTest extends BaseTest {
 
     @Test(expected = BadRequestException.class)
     public void badSessionIdFormatTest() throws Exception {
-        testingClient.write(
-            "bad sessionId format",
-            new DataSelection().addDatafiles(Arrays.asList(1L, 2L)),
-            400
-        );
+        testingClient.write("bad sessionId format",
+                new DataSelection().addDatafiles(Arrays.asList(1L, 2L)), 400);
     }
 
     @Test
@@ -120,10 +113,8 @@ public class WriteTest extends BaseTest {
 
     @Test(expected = InsufficientPrivilegesException.class)
     public void nonExistingSessionIdTest() throws Exception {
-        testingClient.write(
-            "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-            new DataSelection().addDatafiles(Arrays.asList(1L, 2L)),
-            403
-        );
+        testingClient.write("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                new DataSelection().addDatafiles(Arrays.asList(1L, 2L)), 403);
     }
+
 }

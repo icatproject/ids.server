@@ -7,7 +7,6 @@ package org.icatproject.ids.exceptions;
  */
 @SuppressWarnings("serial")
 public class IdsException extends Exception {
-
     private int httpStatusCode;
     private String message;
 
@@ -27,4 +26,5 @@ public class IdsException extends Exception {
     public String getMessage() {
         return "(" + httpStatusCode + ") : " + message;
     }
+
 }

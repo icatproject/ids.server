@@ -8,4 +8,5 @@ public class NotImplementedException extends IdsException {
     public NotImplementedException(String message) {
         super(HttpURLConnection.HTTP_NOT_IMPLEMENTED, message);
     }
+
 }

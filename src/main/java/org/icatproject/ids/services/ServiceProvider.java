@@ -1,6 +1,7 @@
 package org.icatproject.ids.services;
 
 import java.util.Set;
+
 import org.icatproject.ICAT;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
@@ -20,13 +21,7 @@ public class ServiceProvider {
     private IcatReader icatReader;
     private PropertyHandler propertyHandler;
 
-    private ServiceProvider(
-        PropertyHandler propertyHandler,
-        Transmitter transmitter,
-        FiniteStateMachine fsm,
-        LockManager lockManager,
-        IcatReader reader
-    ) {
+    private ServiceProvider(PropertyHandler propertyHandler, Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
         this.transmitter = transmitter;
         this.fsm = fsm;
         this.lockManager = lockManager;
@@ -41,45 +36,21 @@ public class ServiceProvider {
      * @param lockManager
      * @param reader
      */
-    public static void createInstance(
-        Transmitter transmitter,
-        FiniteStateMachine fsm,
-        LockManager lockManager,
-        IcatReader reader
-    ) {
-        createInstance(
-            PropertyHandler.getInstance(),
-            transmitter,
-            fsm,
-            lockManager,
-            reader
-        );
+    public static void createInstance(Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
+
+        createInstance(PropertyHandler.getInstance(), transmitter, fsm, lockManager, reader);
     }
 
-    public static void createInstance(
-        PropertyHandler propertyHandler,
-        Transmitter transmitter,
-        FiniteStateMachine fsm,
-        LockManager lockManager,
-        IcatReader reader
-    ) {
-        if (instance != null) return;
+    public static void createInstance(PropertyHandler propertyHandler, Transmitter transmitter, FiniteStateMachine fsm, LockManager lockManager, IcatReader reader) {
 
-        instance =
-            new ServiceProvider(
-                propertyHandler,
-                transmitter,
-                fsm,
-                lockManager,
-                reader
-            );
+        if(instance != null) return;
+
+        instance = new ServiceProvider(propertyHandler, transmitter, fsm, lockManager, reader);
     }
 
     public static ServiceProvider getInstance() {
-        if (instance == null) {
-            throw new RuntimeException(
-                "ServiceProvider is not yet instantiated, please call createInstance at first."
-            );
+        if(instance == null) {
+            throw new RuntimeException("ServiceProvider is not yet instantiated, please call createInstance at first.");
         }
         return instance;
     }
@@ -115,4 +86,6 @@ public class ServiceProvider {
     public Set<CallType> getLogSet() {
         return PropertyHandler.getInstance().getLogSet();
     }
+
+
 }

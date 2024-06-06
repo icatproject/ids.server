@@ -1,11 +1,12 @@
 package org.icatproject.ids.integration.one;
 
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.NotImplementedException;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class WriteTest extends BaseTest {
 
@@ -17,10 +18,7 @@ public class WriteTest extends BaseTest {
 
     @Test(expected = NotImplementedException.class)
     public void writeNotAvailableTest() throws Exception {
-        testingClient.write(
-            sessionId,
-            new DataSelection().addDataset(datasetIds.get(0)),
-            501
-        );
+        testingClient.write(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 501);
     }
+
 }

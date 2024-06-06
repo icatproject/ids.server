@@ -1,7 +1,5 @@
 package org.icatproject.ids.finiteStateMachine;
 
-import jakarta.json.Json;
-import jakarta.json.stream.JsonGenerator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,18 +12,23 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.icatproject.ids.enums.DeferredOp;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.LockManager;
-import org.icatproject.ids.services.LockManager.LockInfo;
 import org.icatproject.ids.services.PropertyHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.icatproject.ids.services.LockManager.LockInfo;
 
 public abstract class FiniteStateMachine {
+
 
     private static FiniteStateMachine instance;
 
@@ -36,57 +39,36 @@ public abstract class FiniteStateMachine {
         this.lockManager = lockManager;
     }
 
-    public static void createInstance(
-        IcatReader reader,
-        LockManager lockManager,
-        StorageUnit storageUnit
-    ) {
-        if (instance == null) {
-            if (storageUnit == StorageUnit.DATAFILE) instance =
-                new FiniteStateMachineForStorageUnitDatafile(
-                    reader,
-                    lockManager
-                ); else if (storageUnit == StorageUnit.DATASET) instance =
-                new FiniteStateMachineForStorageUnitDataset(
-                    reader,
-                    lockManager
-                ); else instance =
-                new FiniteStateMachineForSingleLevelStorage(
-                    reader,
-                    lockManager
-                );
+    public static void createInstance(IcatReader reader, LockManager lockManager, StorageUnit storageUnit) {
+
+        if(instance == null) {
+            if(storageUnit == StorageUnit.DATAFILE)
+                instance = new FiniteStateMachineForStorageUnitDatafile(reader, lockManager);
+            else if(storageUnit == StorageUnit.DATASET)
+                instance = new FiniteStateMachineForStorageUnitDataset(reader, lockManager);
+            else
+                instance = new FiniteStateMachineForSingleLevelStorage(reader, lockManager);
         }
     }
 
     public static FiniteStateMachine getInstance() {
-        if (instance != null) {
+        if(instance != null) {
             return instance;
         }
 
         // If this assert was executed: Instance of FiniteStateMachine is not created. At First createInstance() has to be called at least once.
-        throw new RuntimeException(
-            "Instance of FiniteStateMachine is not created. At First createInstance() has to be called at least once."
-        );
+        throw new RuntimeException("Instance of FiniteStateMachine is not created. At First createInstance() has to be called at least once.");
     }
 
-    public abstract void queue(DataInfoBase dataInfo, DeferredOp deferredOp)
-        throws InternalException;
-
+    public abstract void queue(DataInfoBase dataInfo, DeferredOp deferredOp) throws InternalException;
     protected abstract void scheduleTimer();
-
     protected abstract void addDataInfoJson(JsonGenerator gen);
 
     public enum RequestedState {
-        ARCHIVE_REQUESTED,
-        DELETE_REQUESTED,
-        RESTORE_REQUESTED,
-        WRITE_REQUESTED,
-        WRITE_THEN_ARCHIVE_REQUESTED,
+        ARCHIVE_REQUESTED, DELETE_REQUESTED, RESTORE_REQUESTED, WRITE_REQUESTED, WRITE_THEN_ARCHIVE_REQUESTED
     }
 
-    protected static Logger logger = LoggerFactory.getLogger(
-        FiniteStateMachine.class
-    );
+    protected static Logger logger = LoggerFactory.getLogger(FiniteStateMachine.class);
 
     /*
      * Note that the veriable processOpsDelayMillis is used to either delay all deferred
@@ -163,32 +145,23 @@ public abstract class FiniteStateMachine {
         gen.writeStartArray("opsQueue");
         for (Entry<DataInfoBase, RequestedState> entry : union.entrySet()) {
             DataInfoBase item = entry.getKey();
-            gen
-                .writeStartObject()
-                .write("data", item.toString())
-                .write("request", entry.getValue().name())
-                .writeEnd();
+            gen.writeStartObject().write("data", item.toString()).write("request", entry.getValue().name())
+                    .writeEnd();
         }
         gen.writeEnd(); // end Array("opsQueue")
     }
 
     public String getServiceStatus() throws InternalException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (
-            JsonGenerator gen = Json.createGenerator(baos).writeStartObject()
-        ) {
+        try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+            
             this.addDataInfoJson(gen);
 
             Collection<LockInfo> lockInfo = lockManager.getLockInfo();
             gen.write("lockCount", lockInfo.size());
             gen.writeStartArray("locks");
             for (LockInfo li : lockInfo) {
-                gen
-                    .writeStartObject()
-                    .write("id", li.id)
-                    .write("type", li.type.name())
-                    .write("count", li.count)
-                    .writeEnd();
+                gen.writeStartObject().write("id", li.id).write("type", li.type.name()).write("count", li.count).writeEnd();
             }
             gen.writeEnd(); // end Array("locks")
 
@@ -203,30 +176,26 @@ public abstract class FiniteStateMachine {
         return baos.toString();
     }
 
+
     public void init() {
+
         try {
             synchronized (inited) {
-                if (!inited) {
+                if(!inited) {
                     propertyHandler = PropertyHandler.getInstance();
-                    processQueueIntervalMillis =
-                        propertyHandler.getProcessQueueIntervalSeconds() *
-                        1000L;
+                    processQueueIntervalMillis = propertyHandler.getProcessQueueIntervalSeconds() * 1000L;
 
                     this.scheduleTimer();
-
+                        
                     markerDir = propertyHandler.getCacheDir().resolve("marker");
                     Files.createDirectories(markerDir);
                     inited = true;
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException(
-                "FiniteStateMachine reports " +
-                e.getClass() +
-                " " +
-                e.getMessage()
-            );
+            throw new RuntimeException("FiniteStateMachine reports " + e.getClass() + " " + e.getMessage());
         }
+
     }
 
     public void removeFromChanging(DataInfoBase dfInfo) {
@@ -252,4 +221,5 @@ public abstract class FiniteStateMachine {
             throw new InternalException("Restore failed");
         }
     }
+
 }

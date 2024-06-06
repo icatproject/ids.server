@@ -1,9 +1,10 @@
 package org.icatproject.ids;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+
+import static org.junit.Assert.assertEquals;
+
 import org.icatproject.ids.helpers.RangeOutputStream;
 import org.junit.Test;
 
@@ -48,11 +49,7 @@ public class RangeOutputStreamTest {
                 os.flush();
             }
             os.close();
-            assertEquals(
-                "m is " + m,
-                "ABCDEFGHIJKLMONPQRSTUVWXYZ",
-                baos.toString()
-            );
+            assertEquals("m is " + m, "ABCDEFGHIJKLMONPQRSTUVWXYZ", baos.toString());
         }
     }
 
@@ -70,6 +67,7 @@ public class RangeOutputStreamTest {
             assertEquals("m is " + m, "ABCDEFGHIJKLM", baos.toString());
         }
     }
+
 
     @Test
     public void t5() throws Exception {

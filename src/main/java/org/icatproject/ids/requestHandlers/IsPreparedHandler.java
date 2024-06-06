@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
+
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -24,32 +25,26 @@ public class IsPreparedHandler extends DataRequestHandler {
     }
 
     class PreparedStatus {
-
         public ReentrantLock lock = new ReentrantLock();
         public Long fromElement;
         public Future<?> future;
+
     }
 
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 
     @Override
-    public ValueContainer handleDataRequest(
-        DataSelectionService dataSelectionService
-    )
-        throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
+            DataNotOnlineException, NotImplementedException {
+
         // Do it
         boolean prepared = true;
 
-        PreparedStatus status = preparedStatusMap.computeIfAbsent(
-            this.dataController.getOperationId(),
-            k -> new PreparedStatus()
-        );
+        PreparedStatus status = preparedStatusMap.computeIfAbsent(this.dataController.getOperationId(), k -> new PreparedStatus());
 
         if (!status.lock.tryLock()) {
-            logger.debug(
-                "Lock held for evaluation of isPrepared for preparedId {}",
-                this.dataController.getOperationId()
-            );
+            logger.debug("Lock held for evaluation of isPrepared for preparedId {}", this.dataController.getOperationId());
             return new ValueContainer(false);
         }
         try {
@@ -59,29 +54,22 @@ public class IsPreparedHandler extends DataRequestHandler {
                     try {
                         future.get();
                     } catch (ExecutionException e) {
-                        throw new InternalException(
-                            e.getClass() + " " + e.getMessage()
-                        );
+                        throw new InternalException(e.getClass() + " " + e.getMessage());
                     } catch (InterruptedException e) {
                         // Ignore
                     } finally {
                         status.future = null;
                     }
                 } else {
-                    logger.debug(
-                        "Background process still running for preparedId {}",
-                        this.dataController.getOperationId()
-                    );
+                    logger.debug("Background process still running for preparedId {}", this.dataController.getOperationId());
                     return new ValueContainer(false);
                 }
             }
 
-            prepared =
-                dataSelectionService.isPrepared(
-                    this.dataController.getOperationId()
-                );
+            prepared = dataSelectionService.isPrepared(this.dataController.getOperationId());
 
             return new ValueContainer(prepared);
+
         } finally {
             status.lock.unlock();
         }

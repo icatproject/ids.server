@@ -6,4 +6,5 @@ public class NotFoundException extends IdsException {
     public NotFoundException(String msg) {
         super(msg);
     }
+
 }

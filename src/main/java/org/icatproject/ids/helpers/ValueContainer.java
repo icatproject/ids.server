@@ -1,9 +1,11 @@
 package org.icatproject.ids.helpers;
 
-import jakarta.ws.rs.core.Response;
 import java.io.InputStream;
+
 import org.icatproject.ids.enums.ValueContainerType;
 import org.icatproject.ids.exceptions.InternalException;
+
+import jakarta.ws.rs.core.Response;
 
 /**
  * This class provides a container vor carrying different types of values
@@ -23,15 +25,8 @@ public class ValueContainer {
      * @param typeToCheck the type to be checked if the contained value is of
      * @throws InternalException if the types don't match an exception is thrown
      */
-    private void checkType(ValueContainerType typeToCheck)
-        throws InternalException {
-        if (this.type != typeToCheck) throw new InternalException(
-            "This ValueContainer ist not of the needed type " +
-            typeToCheck +
-            " its type is " +
-            this.type +
-            "."
-        );
+    private void checkType(ValueContainerType typeToCheck) throws InternalException {
+        if(this.type != typeToCheck) throw new InternalException("This ValueContainer ist not of the needed type " + typeToCheck + " its type is " + this.type + ".");
     }
 
     public static ValueContainer getInvalid() {
@@ -88,8 +83,8 @@ public class ValueContainer {
      */
     public ValueContainer(Response value) {
         this(value, ValueContainerType.RESPONSE);
-    }
-
+    } 
+    
     /**
      * Creates a ValueContainer of type InputStream
      * @param value the value contained by the container
@@ -168,41 +163,27 @@ public class ValueContainer {
 
     @Override
     public String toString() {
-        switch (this.type) {
-            case INVALID:
-                return "" + ValueContainerType.INVALID;
-            case VOID:
-                return "" + ValueContainerType.VOID;
-            case INT:
-                return "" + this.value;
-            case LONG:
-                return "" + this.value;
-            case BOOL:
-                return ((boolean) this.value ? "true" : "false");
-            case STRING:
-                return (String) this.value;
-            case RESPONSE:
-                return "Response " + ((Response) this.value).toString();
-            case INPUTSTREAM:
-                return "An InputStream which will be printed here to prevent it from closing (and maybe it is too long).";
+        switch(this.type) {
+            case INVALID: return ""+ValueContainerType.INVALID; 
+            case VOID: return ""+ValueContainerType.VOID;
+            case INT: return ""+this.value;
+            case LONG: return ""+this.value;
+            case BOOL: return ((boolean)this.value ? "true" : "false"); 
+            case STRING: return (String)this.value; 
+            case RESPONSE: return "Response " + ((Response) this.value).toString();
+            case INPUTSTREAM: return "An InputStream which will be printed here to prevent it from closing (and maybe it is too long).";
             default:
-                throw new RuntimeException(
-                    "Doesn't know how to make a String vom ValueContainer of type " +
-                    this.type +
-                    ". Please implement a new case is ValueContainer.toString()."
-                );
+                throw new RuntimeException("Doesn't know how to make a String vom ValueContainer of type " + this.type + ". Please implement a new case is ValueContainer.toString().");
         }
     }
 
-    public boolean isNull() {
-        return this.isInvalid() && this.value == null;
-    }
+    public boolean isNull() { return this.isInvalid() && this.value == null; }
 
-    public boolean isInvalid() {
-        return this.type == ValueContainerType.INVALID;
-    }
+    public boolean isInvalid() { return this.type == ValueContainerType.INVALID; }
 
-    public boolean isVoid() {
-        return this.type == ValueContainerType.VOID;
-    }
+    public boolean isVoid() { return this.type == ValueContainerType.VOID; }
+
+    
+
+
 }

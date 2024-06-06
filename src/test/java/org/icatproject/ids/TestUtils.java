@@ -2,6 +2,7 @@ package org.icatproject.ids;
 
 import java.util.Arrays;
 import java.util.List;
+
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.Login.Credentials;
@@ -19,8 +20,7 @@ public class TestUtils {
      * @return an ICAT session ID
      * @throws IcatException_Exception if the login fails
      */
-    public static String login(ICAT icatService, String credsString)
-        throws IcatException_Exception {
+    public static String login(ICAT icatService, String credsString) throws IcatException_Exception {
         List<String> creds = Arrays.asList(credsString.trim().split("\\s+"));
         Credentials credentials = new Credentials();
         List<Entry> entries = credentials.getEntry();
@@ -32,4 +32,5 @@ public class TestUtils {
         }
         return icatService.login(creds.get(0), credentials);
     }
+
 }
