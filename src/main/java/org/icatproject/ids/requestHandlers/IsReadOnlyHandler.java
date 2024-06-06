@@ -12,17 +12,14 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.requestHandlers.base.RequestHandlerBase;
 
 public class IsReadOnlyHandler extends RequestHandlerBase {
-    
+
     public IsReadOnlyHandler(String ip) {
         super(RequestType.ISREADONLY, ip);
-
     }
 
     @Override
     public ValueContainer handleRequest()
-            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
-            DataNotOnlineException, NotImplementedException {
-
+        throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
         return new ValueContainer(this.readOnly);
     }
 

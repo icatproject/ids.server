@@ -1,30 +1,30 @@
 package org.icatproject.ids.services;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.ejb.Singleton;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Singleton
 public class LockManager {
 
     public enum LockType {
-        SHARED, EXCLUSIVE
+        SHARED,
+        EXCLUSIVE,
     }
 
     public class LockInfo {
+
         public final Long id;
         public final LockType type;
         public final int count;
@@ -37,6 +37,7 @@ public class LockManager {
     }
 
     private class LockEntry {
+
         final Long id;
         final LockType type;
         int count;
@@ -65,6 +66,7 @@ public class LockManager {
      * Define the common interface of SingleLock and LockCollection
      */
     public abstract class Lock implements AutoCloseable {
+
         public abstract void release();
 
         public void close() {
@@ -73,6 +75,7 @@ public class LockManager {
     }
 
     private class SingleLock extends Lock {
+
         private final Long id;
         private boolean isValid;
         private AutoCloseable storageLock;
@@ -92,7 +95,11 @@ public class LockManager {
                         try {
                             storageLock.close();
                         } catch (Exception e) {
-                            logger.error("Error while closing lock on {} in the storage plugin: {}.", id, e.getMessage());
+                            logger.error(
+                                "Error while closing lock on {} in the storage plugin: {}.",
+                                id,
+                                e.getMessage()
+                            );
                         }
                     }
                     logger.debug("Released a lock on {}.", id);
@@ -102,6 +109,7 @@ public class LockManager {
     }
 
     private class LockCollection extends Lock {
+
         private ArrayList<Lock> locks;
 
         LockCollection() {
@@ -131,7 +139,8 @@ public class LockManager {
         logger.debug("LockManager initialized.");
     }
 
-    public Lock lock(DatasetInfo ds, LockType type) throws AlreadyLockedException, IOException {
+    public Lock lock(DatasetInfo ds, LockType type)
+        throws AlreadyLockedException, IOException {
         Long id = ds.getDsId();
         assert id != null;
         synchronized (lockMap) {
@@ -139,7 +148,9 @@ public class LockManager {
             if (le == null) {
                 le = new LockEntry(id, type);
             } else {
-                if (type == LockType.EXCLUSIVE || le.type == LockType.EXCLUSIVE) {
+                if (
+                    type == LockType.EXCLUSIVE || le.type == LockType.EXCLUSIVE
+                ) {
                     throw new AlreadyLockedException();
                 }
             }
@@ -156,12 +167,17 @@ public class LockManager {
         }
     }
 
-    public Lock lock(Collection<DataInfoBase> datasets, LockType type) throws AlreadyLockedException, IOException, InternalException {
+    public Lock lock(Collection<DataInfoBase> datasets, LockType type)
+        throws AlreadyLockedException, IOException, InternalException {
         LockCollection locks = new LockCollection();
         try {
             for (DataInfoBase dataInfo : datasets) {
                 DatasetInfo ds = (DatasetInfo) dataInfo;
-                if(ds == null) throw new InternalException("Could not cast " + dataInfo.getClass() + " to DataSetInfo. Did you handed over another sub type of DataInfoBase? ");
+                if (ds == null) throw new InternalException(
+                    "Could not cast " +
+                    dataInfo.getClass() +
+                    " to DataSetInfo. Did you handed over another sub type of DataInfoBase? "
+                );
                 locks.add(lock(ds, type));
             }
         } catch (AlreadyLockedException | IOException e) {
@@ -180,5 +196,4 @@ public class LockManager {
             return lockInfo;
         }
     }
-
 }

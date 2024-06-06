@@ -5,22 +5,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.services.PropertyHandler;
 import org.icatproject.ids.services.LockManager.Lock;
+import org.icatproject.ids.services.PropertyHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Copies datafiles from main to archive
  */
 public class DfWriter implements Runnable {
 
-    private final static Logger logger = LoggerFactory.getLogger(DfWriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(
+        DfWriter.class
+    );
 
     private FiniteStateMachine fsm;
     private MainStorageInterface mainStorageInterface;
@@ -29,7 +30,12 @@ public class DfWriter implements Runnable {
     private List<DatafileInfo> dataFileInfos;
     private Collection<Lock> locks;
 
-    public DfWriter(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
+    public DfWriter(
+        List<DatafileInfo> dfInfos,
+        PropertyHandler propertyHandler,
+        FiniteStateMachine fsm,
+        Collection<Lock> locks
+    ) {
         this.dataFileInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -43,14 +49,29 @@ public class DfWriter implements Runnable {
         try {
             for (DatafileInfo dataFileInfo : dataFileInfos) {
                 String dfLocation = dataFileInfo.getDfLocation();
-                try (InputStream is = mainStorageInterface.get(dfLocation, dataFileInfo.getCreateId(), dataFileInfo.getModId())) {
+                try (
+                    InputStream is = mainStorageInterface.get(
+                        dfLocation,
+                        dataFileInfo.getCreateId(),
+                        dataFileInfo.getModId()
+                    )
+                ) {
                     archiveStorageInterface.put(is, dfLocation);
-                    Path marker = markerDir.resolve(Long.toString(dataFileInfo.getDfId()));
+                    Path marker = markerDir.resolve(
+                        Long.toString(dataFileInfo.getDfId())
+                    );
                     Files.deleteIfExists(marker);
                     logger.debug("Removed marker " + marker);
                     logger.debug("Write of " + dataFileInfo + " completed");
                 } catch (Exception e) {
-                    logger.error("Write of " + dataFileInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+                    logger.error(
+                        "Write of " +
+                        dataFileInfo +
+                        " failed due to " +
+                        e.getClass() +
+                        " " +
+                        e.getMessage()
+                    );
                 } finally {
                     fsm.removeFromChanging(dataFileInfo);
                 }

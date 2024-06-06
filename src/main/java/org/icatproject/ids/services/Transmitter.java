@@ -1,8 +1,5 @@
 package org.icatproject.ids.services;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.ejb.Singleton;
@@ -13,7 +10,8 @@ import jakarta.jms.TextMessage;
 import jakarta.jms.Topic;
 import jakarta.jms.TopicConnection;
 import jakarta.jms.TopicConnectionFactory;
-
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -23,7 +21,7 @@ import org.slf4j.MarkerFactory;
 public class Transmitter {
 
     private static Logger logger = LoggerFactory.getLogger(Transmitter.class);
-    private final static Marker fatal = MarkerFactory.getMarker("FATAL");
+    private static final Marker fatal = MarkerFactory.getMarker("FATAL");
 
     private Topic topic;
 
@@ -31,12 +29,12 @@ public class Transmitter {
 
     @PostConstruct
     private void init() {
-
         try {
             PropertyHandler propertyHandler = PropertyHandler.getInstance();
             InitialContext ic = new InitialContext();
-            TopicConnectionFactory topicConnectionFactory = (TopicConnectionFactory) ic
-                    .lookup(propertyHandler.getJmsTopicConnectionFactory());
+            TopicConnectionFactory topicConnectionFactory = (TopicConnectionFactory) ic.lookup(
+                propertyHandler.getJmsTopicConnectionFactory()
+            );
             topicConnection = topicConnectionFactory.createTopicConnection();
             topic = (Topic) ic.lookup("jms/IDS/log");
             logger.info("Notification Transmitter created");
@@ -44,10 +42,9 @@ public class Transmitter {
             logger.error(fatal, "Problem with JMS " + e);
             throw new IllegalStateException(e.getMessage());
         }
-
     }
 
-    @PreDestroy()
+    @PreDestroy
     private void exit() {
         try {
             if (topicConnection != null) {
@@ -59,12 +56,25 @@ public class Transmitter {
         }
     }
 
-    public void processMessage(String operation, String ip, String body, long startMillis) {
-        try (Session jmsSession = topicConnection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
+    public void processMessage(
+        String operation,
+        String ip,
+        String body,
+        long startMillis
+    ) {
+        try (
+            Session jmsSession = topicConnection.createSession(
+                false,
+                Session.AUTO_ACKNOWLEDGE
+            )
+        ) {
             TextMessage jmsg = jmsSession.createTextMessage(body);
             jmsg.setStringProperty("operation", operation);
             jmsg.setStringProperty("ip", ip);
-            jmsg.setLongProperty("millis", System.currentTimeMillis() - startMillis);
+            jmsg.setLongProperty(
+                "millis",
+                System.currentTimeMillis() - startMillis
+            );
             jmsg.setLongProperty("start", startMillis);
             MessageProducer jmsProducer = jmsSession.createProducer(topic);
             jmsProducer.send(jmsg);
@@ -73,5 +83,4 @@ public class Transmitter {
             logger.error("Failed to send jms message " + operation + " " + ip);
         }
     }
-
 }

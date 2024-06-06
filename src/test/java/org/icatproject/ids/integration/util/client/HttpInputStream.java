@@ -2,7 +2,6 @@ package org.icatproject.ids.integration.util.client;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 
@@ -17,8 +16,10 @@ public class HttpInputStream extends FilterInputStream {
      * @param httpclient the CloseableHttpClient to close
      * @param response   the response to use and ultimately close
      */
-    public HttpInputStream(CloseableHttpClient httpclient, CloseableHttpResponse response)
-            throws IllegalStateException, IOException {
+    public HttpInputStream(
+        CloseableHttpClient httpclient,
+        CloseableHttpResponse response
+    ) throws IllegalStateException, IOException {
         super(response.getEntity().getContent());
         this.response = response;
         this.httpclient = httpclient;
@@ -53,5 +54,4 @@ public class HttpInputStream extends FilterInputStream {
             throw exception;
         }
     }
-
 }

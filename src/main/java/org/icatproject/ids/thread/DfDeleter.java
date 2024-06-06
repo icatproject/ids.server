@@ -2,28 +2,34 @@ package org.icatproject.ids.thread;
 
 import java.util.Collection;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.services.PropertyHandler;
 import org.icatproject.ids.services.LockManager.Lock;
+import org.icatproject.ids.services.PropertyHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Delete datafiles from archive
  */
 public class DfDeleter implements Runnable {
 
-    private final static Logger logger = LoggerFactory.getLogger(DfDeleter.class);
+    private static final Logger logger = LoggerFactory.getLogger(
+        DfDeleter.class
+    );
 
     private FiniteStateMachine fsm;
     private ArchiveStorageInterface archiveStorageInterface;
     private List<DatafileInfo> dfInfos;
     private Collection<Lock> locks;
 
-    public DfDeleter(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
+    public DfDeleter(
+        List<DatafileInfo> dfInfos,
+        PropertyHandler propertyHandler,
+        FiniteStateMachine fsm,
+        Collection<Lock> locks
+    ) {
         this.dfInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -39,7 +45,14 @@ public class DfDeleter implements Runnable {
                     archiveStorageInterface.delete(dfLocation);
                     logger.debug("Delete of " + dfInfo + " completed");
                 } catch (Exception e) {
-                    logger.error("Delete of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+                    logger.error(
+                        "Delete of " +
+                        dfInfo +
+                        " failed due to " +
+                        e.getClass() +
+                        " " +
+                        e.getMessage()
+                    );
                 } finally {
                     fsm.removeFromChanging(dfInfo);
                 }

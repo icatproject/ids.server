@@ -6,5 +6,4 @@ public class InsufficientStorageException extends IdsException {
     public InsufficientStorageException(String msg) {
         super(msg);
     }
-
 }

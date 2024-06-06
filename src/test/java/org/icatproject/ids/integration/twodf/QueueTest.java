@@ -1,15 +1,14 @@
 package org.icatproject.ids.integration.twodf;
 
+import static org.junit.Assert.assertTrue;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import static org.junit.Assert.assertTrue;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class QueueTest extends BaseTest {
 
@@ -36,11 +35,16 @@ public class QueueTest extends BaseTest {
         waitForIds();
         assertTrue(Files.exists(dirOnFastStorage));
 
-        testingClient.put(sessionId, Files.newInputStream(newFileLocation),
-                "uploaded_file_" + timestamp, dsId, supportedDatafileFormat.getId(),
-                "A rather splendid datafile", 201);
+        testingClient.put(
+            sessionId,
+            Files.newInputStream(newFileLocation),
+            "uploaded_file_" + timestamp,
+            dsId,
+            supportedDatafileFormat.getId(),
+            "A rather splendid datafile",
+            201
+        );
         testingClient.archive(sessionId, selection, 204);
         waitForIds();
     }
-
 }

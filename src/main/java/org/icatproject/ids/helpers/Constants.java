@@ -5,12 +5,13 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class Constants {
+
     public static String API_VERSION;
 
     static {
-
-        InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(
-                "app.properties");
+        InputStream inputStream =
+            Constants.class.getClassLoader()
+                .getResourceAsStream("app.properties");
         Properties p = new Properties();
 
         try {
@@ -19,6 +20,5 @@ public class Constants {
         } catch (IOException e) {
             // API Version will be null
         }
-
     }
 }

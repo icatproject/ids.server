@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.zip.Checksum;
 
 public class CheckedWithSizeInputStream extends FilterInputStream {
+
     private Checksum cksum;
     private long size;
 

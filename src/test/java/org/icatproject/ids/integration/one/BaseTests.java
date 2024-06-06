@@ -1,10 +1,9 @@
 package org.icatproject.ids.integration.one;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class BaseTests extends BaseTest {
 
@@ -38,5 +37,4 @@ public class BaseTests extends BaseTest {
     public void cloningTest() throws Exception {
         super.cloningTest();
     }
-
 }

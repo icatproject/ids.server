@@ -31,12 +31,12 @@ public class RangeOutputStream extends FilterOutputStream {
         super(os);
         this.min = min;
         this.max = count == null ? Long.MAX_VALUE : min + count;
-        if (min < 0)
-            throw new IllegalArgumentException(
-                    "min must be a non-negative long");
-        if (count != null && count < 0)
-            throw new IllegalArgumentException(
-                    "count must be a non-negative long");
+        if (min < 0) throw new IllegalArgumentException(
+            "min must be a non-negative long"
+        );
+        if (count != null && count < 0) throw new IllegalArgumentException(
+            "count must be a non-negative long"
+        );
     }
 
     /*
@@ -61,8 +61,13 @@ public class RangeOutputStream extends FilterOutputStream {
     public void write(byte[] b, int off, final int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if ((off < 0) || (off > b.length) || (len < 0)
-                || ((off + len) > b.length) || ((off + len) < 0)) {
+        } else if (
+            (off < 0) ||
+            (off > b.length) ||
+            (len < 0) ||
+            ((off + len) > b.length) ||
+            ((off + len) < 0)
+        ) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
             return;
@@ -80,5 +85,4 @@ public class RangeOutputStream extends FilterOutputStream {
         }
         pos += len;
     }
-
 }

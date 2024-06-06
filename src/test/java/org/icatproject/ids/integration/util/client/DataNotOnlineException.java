@@ -6,5 +6,4 @@ public class DataNotOnlineException extends IdsException {
     public DataNotOnlineException(String msg) {
         super(msg);
     }
-
 }

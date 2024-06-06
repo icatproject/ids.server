@@ -1,15 +1,10 @@
 package org.icatproject.ids.requestHandlers.base;
 
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import jakarta.json.Json;
-import jakarta.json.stream.JsonGenerator;
-
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
@@ -22,7 +17,8 @@ import org.icatproject.ids.exceptions.NotFoundException;
 import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.services.ServiceProvider;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This base class represents all common properties and methods which are needed by each request handler.
@@ -30,7 +26,9 @@ import org.icatproject.ids.services.ServiceProvider;
  */
 public abstract class RequestHandlerBase {
 
-    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
+    protected static final Logger logger = LoggerFactory.getLogger(
+        RequestHandlerBase.class
+    );
     protected Path preparedDir;
     protected boolean twoLevel;
     protected StorageUnit storageUnit;
@@ -41,11 +39,11 @@ public abstract class RequestHandlerBase {
     /**
      * matches standard UUID format of 8-4-4-4-12 hexadecimal digits
      */
-    public static final Pattern uuidRegExp = Pattern
-            .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
+    public static final Pattern uuidRegExp = Pattern.compile(
+        "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+    );
 
-
-    protected RequestHandlerBase(RequestType requestType, String ip ) {
+    protected RequestHandlerBase(RequestType requestType, String ip) {
         this.requestType = requestType;
         this.ip = ip;
 
@@ -57,7 +55,6 @@ public abstract class RequestHandlerBase {
         this.twoLevel = archiveStorage != null;
         this.readOnly = propertyHandler.getReadOnly();
     }
-
 
     /**
      * Informs about the RequestType the handler ist providing a handling for.
@@ -77,11 +74,16 @@ public abstract class RequestHandlerBase {
      * @throws DataNotOnlineException
      * @throws NotImplementedException
      */
-    public ValueContainer handle() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
-
+    public ValueContainer handle()
+        throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
         // some preprocessing
         long start = System.currentTimeMillis();
-        logger.info("New webservice request: " + this.requestType.toString().toLowerCase() + " " + this.addParametersToLogString());
+        logger.info(
+            "New webservice request: " +
+            this.requestType.toString().toLowerCase() +
+            " " +
+            this.addParametersToLogString()
+        );
 
         // Do it
         ValueContainer result = this.handleRequest();
@@ -90,36 +92,51 @@ public abstract class RequestHandlerBase {
         this.transmit(start);
 
         return result;
-
     }
 
-
     private void transmit(long start) throws BadRequestException {
-        if (ServiceProvider.getInstance().getLogSet().contains(this.getCallType())) {
+        if (
+            ServiceProvider
+                .getInstance()
+                .getLogSet()
+                .contains(this.getCallType())
+        ) {
             try {
                 String body = this.provideTransmissionBody();
-                ServiceProvider.getInstance().getTransmitter().processMessage("archive", ip, body, start);
+                ServiceProvider
+                    .getInstance()
+                    .getTransmitter()
+                    .processMessage("archive", ip, body, start);
             } catch (IcatException_Exception e) {
-                logger.error("Failed to prepare jms message " + e.getClass() + " " + e.getMessage());
+                logger.error(
+                    "Failed to prepare jms message " +
+                    e.getClass() +
+                    " " +
+                    e.getMessage()
+                );
             }
         }
     }
 
-    public String provideTransmissionBody() throws BadRequestException, IcatException_Exception {
+    public String provideTransmissionBody()
+        throws BadRequestException, IcatException_Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+        try (
+            JsonGenerator gen = Json.createGenerator(baos).writeStartObject()
+        ) {
             this.addParametersToTransmitterJSON(gen);
             gen.writeEnd();
         }
         return baos.toString();
     }
 
-
     /**
      * Override to add additional parameters to the log output for the current request
      * @return
      */
-    protected String addParametersToLogString() { return ""; }
+    protected String addParametersToLogString() {
+        return "";
+    }
 
     /**
      * Override to add additional parameters to the transmitter JSON
@@ -127,7 +144,8 @@ public abstract class RequestHandlerBase {
      * @throws IcatException_Exception
      * @throws BadRequestException
      */
-    protected void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {}
+    protected void addParametersToTransmitterJSON(JsonGenerator gen)
+        throws IcatException_Exception, BadRequestException {}
 
     /**
      * The core method of each request handler. It has to be overwritten in the concrete implementation to provide an individual request handling
@@ -139,12 +157,12 @@ public abstract class RequestHandlerBase {
      * @throws DataNotOnlineException
      * @throws NotImplementedException
      */
-    protected abstract ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
+    protected abstract ValueContainer handleRequest()
+        throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
 
     /**
      * each handler should provide its own CallType which is needed to create the Transmitter message
      * @return the Calltype of the request
      */
     protected abstract CallType getCallType();
-
 }

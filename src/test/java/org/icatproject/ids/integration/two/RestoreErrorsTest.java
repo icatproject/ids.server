@@ -1,5 +1,8 @@
 package org.icatproject.ids.integration.two;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 /*
  * Test various error conditions in the DsRestorer caused by ZIP files
  * in archive storage having unexpected content.
@@ -11,17 +14,13 @@ import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.InternalException;
 import org.icatproject.ids.integration.util.client.TestingClient.Status;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class RestoreErrorsTest extends BaseTest {
 
@@ -37,14 +36,25 @@ public class RestoreErrorsTest extends BaseTest {
      * occur.
      */
     private enum Defect {
-        NONE, MISSING_ENTRY, SPURIOUS_ENTRY, DUPLICATE_ENTRY
+        NONE,
+        MISSING_ENTRY,
+        SPURIOUS_ENTRY,
+        DUPLICATE_ENTRY,
     }
 
     private void cloneZip(Path archivepath, Defect defect) throws IOException {
         Path savepath = archivepath.getParent().resolve(".sav");
         Files.move(archivepath, savepath);
-        try (ZipOutputStream zipout = new ZipOutputStream(Files.newOutputStream(archivepath))) {
-            try (ZipInputStream zipin = new ZipInputStream(Files.newInputStream(savepath))) {
+        try (
+            ZipOutputStream zipout = new ZipOutputStream(
+                Files.newOutputStream(archivepath)
+            )
+        ) {
+            try (
+                ZipInputStream zipin = new ZipInputStream(
+                    Files.newInputStream(savepath)
+                )
+            ) {
                 ZipEntry entry = zipin.getNextEntry();
                 boolean first = true;
                 String entryName = "";

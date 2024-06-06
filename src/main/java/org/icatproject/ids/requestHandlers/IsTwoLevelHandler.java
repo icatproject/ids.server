@@ -19,9 +19,7 @@ public class IsTwoLevelHandler extends RequestHandlerBase {
 
     @Override
     public ValueContainer handleRequest()
-            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
-            DataNotOnlineException, NotImplementedException {
-        
+        throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
         return new ValueContainer(twoLevel);
     }
 

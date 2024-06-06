@@ -5,15 +5,13 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
 import org.icatproject.ids.integration.util.client.TestingClient.Flag;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class PerformanceTest extends BaseTest {
 
@@ -29,7 +27,12 @@ public class PerformanceTest extends BaseTest {
         int n = 100000;
 
         start = System.currentTimeMillis();
-        try (OutputStream f = Files.newOutputStream(infile, StandardOpenOption.CREATE)) {
+        try (
+            OutputStream f = Files.newOutputStream(
+                infile,
+                StandardOpenOption.CREATE
+            )
+        ) {
             for (int i = 0; i < n; i++) {
                 f.write(junk);
             }
@@ -50,12 +53,26 @@ public class PerformanceTest extends BaseTest {
     public void putOneFileTest() throws Exception {
         byte[] junk = new byte[1000];
         start = System.currentTimeMillis();
-        Long dfid = testingClient.put(sessionId, Files.newInputStream(infile), "big_" + timestamp, datasetIds.get(0),
-                supportedDatafileFormat.getId(), "A big datafile", 201);
+        Long dfid = testingClient.put(
+            sessionId,
+            Files.newInputStream(infile),
+            "big_" + timestamp,
+            datasetIds.get(0),
+            supportedDatafileFormat.getId(),
+            "A big datafile",
+            201
+        );
         ts("store file (put)");
 
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(dfid), Flag.NONE, 0,
-                null)) {
+        try (
+            InputStream stream = testingClient.getData(
+                sessionId,
+                new DataSelection().addDatafile(dfid),
+                Flag.NONE,
+                0,
+                null
+            )
+        ) {
             boolean first = true;
             while (stream.read(junk) > 0) {
                 if (first) {
@@ -77,14 +94,31 @@ public class PerformanceTest extends BaseTest {
     public void putAsPostOneFileTest() throws Exception {
         byte[] junk = new byte[1000];
         start = System.currentTimeMillis();
-        Long dfid = testingClient.putAsPost(sessionId, Files.newInputStream(infile), "big2_" + timestamp,
-                datasetIds.get(0), supportedDatafileFormat.getId(), "A rather splendid datafile", null, null, null,
-                true, 201);
+        Long dfid = testingClient.putAsPost(
+            sessionId,
+            Files.newInputStream(infile),
+            "big2_" + timestamp,
+            datasetIds.get(0),
+            supportedDatafileFormat.getId(),
+            "A rather splendid datafile",
+            null,
+            null,
+            null,
+            true,
+            201
+        );
         ts("store file (post)");
 
         int ntot = 0;
-        try (InputStream stream = testingClient.getData(sessionId, new DataSelection().addDatafile(dfid), Flag.NONE, 0,
-                null)) {
+        try (
+            InputStream stream = testingClient.getData(
+                sessionId,
+                new DataSelection().addDatafile(dfid),
+                Flag.NONE,
+                0,
+                null
+            )
+        ) {
             boolean first = true;
             int n;
 

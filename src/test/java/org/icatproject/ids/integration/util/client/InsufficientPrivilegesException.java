@@ -6,5 +6,4 @@ public class InsufficientPrivilegesException extends IdsException {
     public InsufficientPrivilegesException(String msg) {
         super(msg);
     }
-
 }

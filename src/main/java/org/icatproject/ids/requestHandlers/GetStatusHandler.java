@@ -1,7 +1,6 @@
 package org.icatproject.ids.requestHandlers;
 
 import java.util.Set;
-
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.Status;
@@ -19,21 +18,40 @@ import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class GetStatusHandler extends DataRequestHandler {
 
-    public GetStatusHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
-        super(RequestType.GETSTATUS, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds);
+    public GetStatusHandler(
+        String ip,
+        String preparedId,
+        String sessionId,
+        String investigationIds,
+        String datasetIds,
+        String datafileIds
+    ) {
+        super(
+            RequestType.GETSTATUS,
+            ip,
+            preparedId,
+            sessionId,
+            investigationIds,
+            datasetIds,
+            datafileIds
+        );
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
-            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
-            DataNotOnlineException, NotImplementedException {
-
+    public ValueContainer handleDataRequest(
+        DataSelectionService dataSelectionService
+    )
+        throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
         Status status = Status.ONLINE;
         var serviceProvider = ServiceProvider.getInstance();
 
         Set<DataInfoBase> restoring = serviceProvider.getFsm().getRestoring();
-        Set<DataInfoBase> maybeOffline = serviceProvider.getFsm().getMaybeOffline();
-        for (DataInfoBase dataInfo : dataSelectionService.getPrimaryDataInfos().values()) {
+        Set<DataInfoBase> maybeOffline = serviceProvider
+            .getFsm()
+            .getMaybeOffline();
+        for (DataInfoBase dataInfo : dataSelectionService
+            .getPrimaryDataInfos()
+            .values()) {
             serviceProvider.getFsm().checkFailure(dataInfo.getId());
             if (restoring.contains(dataInfo)) {
                 status = Status.RESTORING;

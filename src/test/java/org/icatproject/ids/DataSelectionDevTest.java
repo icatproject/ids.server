@@ -1,24 +1,16 @@
 package org.icatproject.ids;
 
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
+
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-
-import jakarta.json.Json;
-import jakarta.json.JsonReader;
-
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import static org.mockito.Mockito.when;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.icat.client.IcatException;
@@ -28,6 +20,12 @@ import org.icatproject.ids.services.IcatReader;
 import org.icatproject.ids.services.PropertyHandler;
 import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond
@@ -74,7 +72,11 @@ public class DataSelectionDevTest {
     @Before
     public void setup() throws Exception {
         testProps = new Properties();
-        testProps.load(new FileInputStream("src/test/resources/DataSelectionDevTest.properties"));
+        testProps.load(
+            new FileInputStream(
+                "src/test/resources/DataSelectionDevTest.properties"
+            )
+        );
         // set up the SOAP and REST ICAT clients
         icatUrl = ICATGetter.getCleanUrl(testProps.getProperty("icat.url"));
         icatService = ICATGetter.getService(icatUrl);
@@ -83,37 +85,64 @@ public class DataSelectionDevTest {
         String userCredsString = testProps.getProperty("login.user");
         userSessionId = TestUtils.login(icatService, userCredsString);
         System.out.println("userSessionId = " + userSessionId);
-        List<String> readerCreds = Arrays.asList(testProps.getProperty("login.reader").trim().split("\\s+"));
+        List<String> readerCreds = Arrays.asList(
+            testProps.getProperty("login.reader").trim().split("\\s+")
+        );
         this.readerCreds = readerCreds;
         investigationIds = testProps.getProperty("investigation.ids");
         datasetIds = testProps.getProperty("dataset.ids");
         datafileIds = testProps.getProperty("datafile.ids");
-        useReaderForPerformance = testProps.getProperty("useReaderForPerformance").equalsIgnoreCase("true");
+        useReaderForPerformance =
+            testProps
+                .getProperty("useReaderForPerformance")
+                .equalsIgnoreCase("true");
         // set up a mocked version of the PropertyHandler
         setupPropertyHandler();
         icatReader = new IcatReader(mockedPropertyHandler);
     }
 
     private void setupPropertyHandler()
-            throws URISyntaxException, IcatException_Exception, IcatException {
-        JsonReader parser = Json.createReader(new ByteArrayInputStream(restIcat.getProperties().getBytes()));
+        throws URISyntaxException, IcatException_Exception, IcatException {
+        JsonReader parser = Json.createReader(
+            new ByteArrayInputStream(restIcat.getProperties().getBytes())
+        );
         maxEntities = parser.readObject().getInt("maxEntities");
         when(mockedPropertyHandler.getMaxEntities()).thenReturn(maxEntities);
         when(mockedPropertyHandler.getIcatService()).thenReturn(icatService);
         when(mockedPropertyHandler.getRestIcat()).thenReturn(restIcat);
         when(mockedPropertyHandler.getReader()).thenReturn(readerCreds);
-        when(mockedPropertyHandler.getUseReaderForPerformance()).thenReturn(useReaderForPerformance);
+        when(mockedPropertyHandler.getUseReaderForPerformance())
+            .thenReturn(useReaderForPerformance);
     }
 
-    @Ignore("Test requires a specific ICAT setup to produce meaningful results. See class javadoc comment.")
+    @Ignore(
+        "Test requires a specific ICAT setup to produce meaningful results. See class javadoc comment."
+    )
     @Test
     public void testCreateDataSelection() throws Exception {
         long startMs = System.currentTimeMillis();
-        var dataSelectionFactory = DataSelectionServiceFactory.getInstanceOnlyForTesting(mockedPropertyHandler, icatReader);
-        DataSelectionService dataSelectionService = dataSelectionFactory.getSelectionService(userSessionId,investigationIds, datasetIds, datafileIds, RequestType.GETSIZE);
-        System.out.println("Creating DataSelection took " + (System.currentTimeMillis() - startMs) + " ms");
-        System.out.println("DsInfo size: " + dataSelectionService.getDsInfo().size());
-        System.out.println("DfInfo size: " + dataSelectionService.getDfInfo().size());
+        var dataSelectionFactory = DataSelectionServiceFactory.getInstanceOnlyForTesting(
+            mockedPropertyHandler,
+            icatReader
+        );
+        DataSelectionService dataSelectionService = dataSelectionFactory.getSelectionService(
+            userSessionId,
+            investigationIds,
+            datasetIds,
+            datafileIds,
+            RequestType.GETSIZE
+        );
+        System.out.println(
+            "Creating DataSelection took " +
+            (System.currentTimeMillis() - startMs) +
+            " ms"
+        );
+        System.out.println(
+            "DsInfo size: " + dataSelectionService.getDsInfo().size()
+        );
+        System.out.println(
+            "DfInfo size: " + dataSelectionService.getDfInfo().size()
+        );
         // there must be at least one Datafile in the DataSelection
         assertTrue("message", dataSelectionService.getDfInfo().size() > 0);
     }

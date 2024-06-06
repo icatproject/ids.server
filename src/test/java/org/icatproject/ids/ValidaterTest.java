@@ -2,10 +2,10 @@ package org.icatproject.ids;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
 import org.icatproject.ids.exceptions.BadRequestException;
 import org.icatproject.ids.requestHandlers.base.DataControllerBase;
+import org.junit.Test;
 
 public class ValidaterTest {
 
@@ -28,8 +28,5 @@ public class ValidaterTest {
             System.out.println(e.getMessage());
             assertFalse(b);
         }
-
     }
-
 }
-
