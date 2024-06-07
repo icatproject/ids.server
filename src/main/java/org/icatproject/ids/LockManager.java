@@ -37,11 +37,13 @@ public class LockManager {
 	private class LockEntry {
 		final Long id;
 		final LockType type;
+		final AutoCloseable storageLock;
 		int count;
 
-		LockEntry(Long id, LockType type) {
+		LockEntry(Long id, LockType type, AutoCloseable storageLock) {
 			this.id = id;
 			this.type = type;
+			this.storageLock = storageLock;
 			this.count = 0;
 			lockMap.put(id, this);
 		}
@@ -55,6 +57,13 @@ public class LockManager {
 			count -= 1;
 			if (count == 0) {
 				lockMap.remove(id);
+				if (storageLock != null) {
+					try {
+						storageLock.close();
+					} catch (Exception e) {
+						logger.error("Error while closing lock on {} in the storage plugin: {}.", id, e.getMessage());
+					}
+				}
 			}
 		}
 	}
@@ -73,11 +82,9 @@ public class LockManager {
 	private class SingleLock extends Lock {
 		private final Long id;
 		private boolean isValid;
-		private AutoCloseable storageLock;
-		SingleLock(Long id, AutoCloseable storageLock) {
+		SingleLock(Long id) {
 			this.id = id;
 			this.isValid = true;
-			this.storageLock = storageLock;
 		}
 
 		public void release() {
@@ -85,13 +92,6 @@ public class LockManager {
 				if (isValid) {
 					lockMap.get(id).dec();
 					isValid = false;
-					if (storageLock != null) {
-						try {
-							storageLock.close();
-						} catch (Exception e) {
-							logger.error("Error while closing lock on {} in the storage plugin: {}.", id, e.getMessage());
-						}
-					}
 					logger.debug("Released a lock on {}.", id);
 				}
 			}
@@ -134,22 +134,21 @@ public class LockManager {
 		synchronized (lockMap) {
 			LockEntry le = lockMap.get(id);
 			if (le == null) {
-				le = new LockEntry(id, type);
+				AutoCloseable storageLock;
+				try {
+					storageLock = mainStorage.lock(ds, type == LockType.SHARED);
+				} catch (AlreadyLockedException | IOException e) {
+					throw e;
+				}
+				le = new LockEntry(id, type, storageLock);
 			} else {
 				if (type == LockType.EXCLUSIVE || le.type == LockType.EXCLUSIVE) {
 					throw new AlreadyLockedException();
 				}
 			}
 			le.inc();
-			AutoCloseable storageLock;
-			try {
-				storageLock = mainStorage.lock(ds, type == LockType.SHARED);
-			} catch (AlreadyLockedException | IOException e) {
-				le.dec();
-				throw e;
-			}
 			logger.debug("Acquired a {} lock on {}.", type, id);
-			return new SingleLock(id, storageLock);
+			return new SingleLock(id);
 		}
 	}
 
