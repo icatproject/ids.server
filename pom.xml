@@ -13,6 +13,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>https://repo.icatproject.org/repo</repoUrl>
         <project.scm.id>github</project.scm.id>
+        <formatter.goal>format</formatter.goal>
     </properties>
 
     <repositories>
@@ -437,7 +438,7 @@
                 <executions>
                     <execution>
                         <goals>
-                        <goal>format</goal>
+                        <goal>${formatter.goal}</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -445,6 +446,21 @@
         </plugins>
 
     </build>
+
+    <profiles>
+        <profile>
+            <id>cibuild</id>
+            <activation>
+                <property>
+                    <name>env.CIBUILD</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- But in our CI environment we want to validate that code is formatted -->
+                <formatter.goal>validate</formatter.goal>
+            </properties>
+        </profile>
+    </profiles>
 
     <reporting>
         <plugins>
