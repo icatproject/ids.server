@@ -28,6 +28,11 @@
             <name>MireDot Releases</name>
             <url>https://secure-nexus.miredot.com/content/repositories/miredot</url>
         </pluginRepository>
+        <pluginRepository>
+            <id>net.revelc.code.formatter</id>
+            <name>formatter-maven-plugin Repo</name>
+            <url>https://mvnrepository.com/artifact/net.revelc.code.formatter/</url>
+        </pluginRepository>
     </pluginRepositories>
 
     <scm>
@@ -129,10 +134,11 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/net.revelc.code.formatter/formatter-maven-plugin -->
         <dependency>
-            <groupId>com.hubspot.maven.plugins</groupId>
-            <artifactId>prettier-maven-plugin</artifactId>
-            <version>0.22</version>
+            <groupId>net.revelc.code.formatter</groupId>
+            <artifactId>formatter-maven-plugin</artifactId>
+            <version>2.24.1</version>
         </dependency>
 
     </dependencies>
@@ -419,6 +425,22 @@
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                     <arguments>-Dmaven.javadoc.skip=true</arguments>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>net.revelc.code.formatter</groupId>
+                <artifactId>formatter-maven-plugin</artifactId>
+                <version>2.23.0</version>
+                <configuration>
+                    <configFile>${project.basedir}/eclipse-formatter-config.xml</configFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                        <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 
