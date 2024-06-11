@@ -13,17 +13,12 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>https://repo.icatproject.org/repo</repoUrl>
         <project.scm.id>github</project.scm.id>
-        <plugin.prettier.goal>write</plugin.prettier.goal>
     </properties>
 
     <repositories>
         <repository>
             <id>ICAT Repo</id>
             <url>https://repo.icatproject.org/repo</url>
-        </repository>
-        <repository>
-            <id>com.hubspot.maven.plugins Repo</id>
-            <url>https://mvnrepository.com/artifact/com.hubspot.maven.plugins/</url>
         </repository>
     </repositories>
 
@@ -425,44 +420,9 @@
                     <arguments>-Dmaven.javadoc.skip=true</arguments>
                 </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>com.hubspot.maven.plugins</groupId>
-                <artifactId>prettier-maven-plugin</artifactId>
-                <version>0.22</version>
-                <configuration>
-                    <prettierJavaVersion>2.0.0</prettierJavaVersion>
-                    <ignoreConfigFile>false</ignoreConfigFile>
-                    <ignoreEditorConfig>true</ignoreEditorConfig>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>${plugin.prettier.goal}</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
 
     </build>
-
-    <profiles>
-        <profile>
-            <id>cibuild</id>
-            <activation>
-            <property>
-                <name>env.CIBUILD</name>
-            </property>
-            </activation>
-            <properties>
-            <!-- But in our CI environment we want to validate that code is formatted -->
-            <plugin.prettier.goal>check</plugin.prettier.goal>
-            </properties>
-        </profile>
-    </profiles>
 
     <reporting>
         <plugins>
