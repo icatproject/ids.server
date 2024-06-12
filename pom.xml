@@ -13,6 +13,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>https://repo.icatproject.org/repo</repoUrl>
         <project.scm.id>github</project.scm.id>
+        <spotless.goal>apply</spotless.goal>
     </properties>
 
     <repositories>
@@ -27,6 +28,11 @@
             <id>miredot</id>
             <name>MireDot Releases</name>
             <url>https://secure-nexus.miredot.com/content/repositories/miredot</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>com.diffplug.spotless</id>
+            <name>spotless-maven-plugin Repo</name>
+            <url>https://mvnrepository.com/artifact/com.diffplug.spotless/</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -127,6 +133,13 @@
             <artifactId>parsson</artifactId>
             <version>1.1.0</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.diffplug.spotless/spotless-maven-plugin -->
+        <dependency>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <version>2.43.0</version>
         </dependency>
 
     </dependencies>
@@ -415,9 +428,51 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.43.0</version>
+                <configuration>
+                    <java>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                        </includes>
+                        <eclipse>
+                            <file>${project.basedir}/eclipse-formatter.xml</file>
+                        </eclipse>
+                        <importOrder>
+                            <order>java|jakarta|org|org.icatproject|org.icatproject.ids</order>
+                        </importOrder>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                        <goal>${spotless.goal}</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
 
     </build>
+
+    <profiles>
+        <profile>
+            <id>cibuild</id>
+            <activation>
+                <property>
+                    <name>env.CIBUILD</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- But in our CI environment we want to validate that code is formatted -->
+                <spotless.goal>check</spotless.goal>
+            </properties>
+        </profile>
+    </profiles>
 
     <reporting>
         <plugins>
