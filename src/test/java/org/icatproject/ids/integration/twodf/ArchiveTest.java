@@ -1,11 +1,12 @@
 package org.icatproject.ids.integration.twodf;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,13 +31,15 @@ public class ArchiveTest extends BaseTest {
 
         assertFalse(Files.exists(dirOnFastStorage));
 
-        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
+        testingClient.restore(sessionId,
+                new DataSelection().addDataset(datasetIds.get(0)), 204);
 
         waitForIds();
 
         assertTrue(Files.exists(dirOnFastStorage));
 
-        testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
+        testingClient.archive(sessionId,
+                new DataSelection().addDataset(datasetIds.get(0)), 204);
 
         waitForIds();
         assertFalse(Files.exists(dirOnFastStorage));

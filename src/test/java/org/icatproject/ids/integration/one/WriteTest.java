@@ -18,7 +18,8 @@ public class WriteTest extends BaseTest {
 
     @Test(expected = NotImplementedException.class)
     public void writeNotAvailableTest() throws Exception {
-        testingClient.write(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 501);
+        testingClient.write(sessionId,
+                new DataSelection().addDataset(datasetIds.get(0)), 501);
     }
 
 }

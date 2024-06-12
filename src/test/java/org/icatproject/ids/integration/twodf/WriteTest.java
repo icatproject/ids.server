@@ -11,6 +11,7 @@ import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.DatasetType;
 import org.icatproject.Investigation;
+
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.BadRequestException;
@@ -27,8 +28,8 @@ public class WriteTest extends BaseTest {
     }
 
     /**
-     * In principle, it's always possible to do a write call on
-     * existing datasets, but it will have no visible effect.
+     * In principle, it's always possible to do a write call on existing
+     * datasets, but it will have no visible effect.
      */
     @Test
     public void restoreThenWriteDataset() throws Exception {
@@ -46,18 +47,19 @@ public class WriteTest extends BaseTest {
     }
 
     /**
-     * Create a dataset in ICAT, store the files in main storage,
-     * then do a write call to IDS to get the dataset written to
-     * archive storage.
+     * Create a dataset in ICAT, store the files in main storage, then do a
+     * write call to IDS to get the dataset written to archive storage.
      */
     @Test
     public void storeThenWrite() throws Exception {
 
         long timestamp = System.currentTimeMillis();
 
-        Investigation inv = (Investigation) icatWS.get(sessionId, "Investigation INCLUDE Facility", investigationId);
+        Investigation inv = (Investigation) icatWS.get(sessionId,
+                "Investigation INCLUDE Facility", investigationId);
         String invLoc = inv.getId() + "/";
-        DatasetType dsType = (DatasetType) icatWS.search(sessionId, "DatasetType").get(0);
+        DatasetType dsType = (DatasetType) icatWS
+                .search(sessionId, "DatasetType").get(0);
 
         Dataset ds = new Dataset();
         ds.setName("dsWrite_" + timestamp);
@@ -71,7 +73,8 @@ public class WriteTest extends BaseTest {
         df.setName("dfWrite_" + timestamp);
         df.setLocation(dsLoc + UUID.randomUUID());
         df.setDataset(ds);
-        writeToFile(df, "some really boring datafile test content", setup.getKey());
+        writeToFile(df, "some really boring datafile test content",
+                setup.getKey());
 
         Long dsId = ds.getId();
         Path dirOnFastStorage = getDirOnFastStorage(dsId);

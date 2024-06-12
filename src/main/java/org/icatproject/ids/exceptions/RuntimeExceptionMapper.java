@@ -14,9 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Provider
-public class RuntimeExceptionMapper implements ExceptionMapper<RuntimeException> {
+public class RuntimeExceptionMapper
+        implements ExceptionMapper<RuntimeException> {
 
-    private final static Logger logger = LoggerFactory.getLogger(RuntimeExceptionMapper.class);
+    private final static Logger logger = LoggerFactory
+            .getLogger(RuntimeExceptionMapper.class);
 
     @Override
     public Response toResponse(RuntimeException e) {
@@ -27,8 +29,9 @@ public class RuntimeExceptionMapper implements ExceptionMapper<RuntimeException>
         baos.reset();
         JsonGenerator gen = Json.createGenerator(baos);
         gen.writeStartObject().write("code", "InternalException")
-                .write("message", e.getClass() + " " + e.getMessage()).writeEnd().close();
-        return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR).entity(baos.toString())
-                .build();
+                .write("message", e.getClass() + " " + e.getMessage())
+                .writeEnd().close();
+        return Response.status(HttpURLConnection.HTTP_INTERNAL_ERROR)
+                .entity(baos.toString()).build();
     }
 }

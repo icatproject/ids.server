@@ -1,8 +1,9 @@
 package org.icatproject.ids.integration.one;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,15 +26,17 @@ public class GetDataForPreparedIdTest extends BaseTest {
 
     @Test(expected = BadRequestException.class)
     public void badPreparedIdFormatTest() throws Exception {
-        try (InputStream z = testingClient.getData("bad preparedId format", 0L, 400)) {
+        try (InputStream z = testingClient.getData("bad preparedId format", 0L,
+                400)) {
         }
     }
 
     @Test(expected = BadRequestException.class)
     public void badOffsetFormatTest() throws Exception {
 
-        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
-                Flag.NONE, 200);
+        String preparedId = testingClient.prepareData(sessionId,
+                new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE,
+                200);
 
         do {
             Thread.sleep(500);
@@ -45,7 +48,8 @@ public class GetDataForPreparedIdTest extends BaseTest {
 
     @Test(expected = NotFoundException.class)
     public void nonExistentPreparedIdTest() throws Exception {
-        try (InputStream z = testingClient.getData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 0L, 404)) {
+        try (InputStream z = testingClient
+                .getData("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 0L, 404)) {
         }
     }
 
@@ -55,13 +59,15 @@ public class GetDataForPreparedIdTest extends BaseTest {
         for (Flag flag : Flag.values()) {
 
             String preparedId = testingClient.prepareData(sessionId,
-                    new DataSelection().addDatafile(datafileIds.get(0)), flag, 200);
+                    new DataSelection().addDatafile(datafileIds.get(0)), flag,
+                    200);
 
             while (!testingClient.isPrepared(preparedId, 200)) {
                 Thread.sleep(1000);
             }
 
-            try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
+            try (InputStream stream = testingClient.getData(preparedId, 0,
+                    200)) {
                 if (flag == Flag.NONE || flag == Flag.COMPRESS) {
                     checkStream(stream, datafileIds.get(0));
                 } else if (flag == Flag.ZIP) {
@@ -74,9 +80,10 @@ public class GetDataForPreparedIdTest extends BaseTest {
     }
 
     @Test
-    public void correctBehaviourNoOffsetMultipleDatafilesTest() throws Exception {
-        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafiles(datafileIds),
-                Flag.NONE, 200);
+    public void correctBehaviourNoOffsetMultipleDatafilesTest()
+            throws Exception {
+        String preparedId = testingClient.prepareData(sessionId,
+                new DataSelection().addDatafiles(datafileIds), Flag.NONE, 200);
 
         while (!testingClient.isPrepared(preparedId, 200)) {
             Thread.sleep(1000);
@@ -90,8 +97,9 @@ public class GetDataForPreparedIdTest extends BaseTest {
     @Test
     public void correctBehaviourNoOffsetWithDatasetTest() throws Exception {
 
-        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0)),
-                Flag.NONE, 200);
+        String preparedId = testingClient.prepareData(sessionId,
+                new DataSelection().addDataset(datasetIds.get(0)), Flag.NONE,
+                200);
 
         while (!testingClient.isPrepared(preparedId, 200)) {
             Thread.sleep(1000);
@@ -102,10 +110,13 @@ public class GetDataForPreparedIdTest extends BaseTest {
     }
 
     @Test
-    public void correctBehaviourNoOffsetWithDatasetAndDatafileTest() throws Exception {
+    public void correctBehaviourNoOffsetWithDatasetAndDatafileTest()
+            throws Exception {
 
-        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDataset(datasetIds.get(0))
-                .addDatafiles(datafileIds), Flag.NONE, 200);
+        String preparedId = testingClient.prepareData(sessionId,
+                new DataSelection().addDataset(datasetIds.get(0))
+                        .addDatafiles(datafileIds),
+                Flag.NONE, 200);
 
         while (!testingClient.isPrepared(preparedId, 200)) {
             Thread.sleep(1000);
@@ -122,7 +133,8 @@ public class GetDataForPreparedIdTest extends BaseTest {
         for (Flag flag : Flag.values()) {
 
             String preparedId = testingClient.prepareData(sessionId,
-                    new DataSelection().addDatafile(datafileIds.get(0)), flag, 200);
+                    new DataSelection().addDatafile(datafileIds.get(0)), flag,
+                    200);
 
             do {
                 Thread.sleep(1000);
@@ -130,13 +142,16 @@ public class GetDataForPreparedIdTest extends BaseTest {
 
             // request the file twice, with and without an offset
             byte[] out = getOutput(testingClient.getData(preparedId, 0, 200));
-            byte[] outOffset = getOutput(testingClient.getData(preparedId, goodOffset, 206));
+            byte[] outOffset = getOutput(
+                    testingClient.getData(preparedId, goodOffset, 206));
 
             // compare the two zip files byte by byte taking into account the
             // offset
-            System.out.println(flag + ": " + out.length + " " + outOffset.length);
+            System.out
+                    .println(flag + ": " + out.length + " " + outOffset.length);
             for (int i = 0; i < outOffset.length; i++) {
-                assertEquals("Byte offset: " + i, (byte) outOffset[i], (byte) out[i + goodOffset]);
+                assertEquals("Byte offset: " + i, (byte) outOffset[i],
+                        (byte) out[i + goodOffset]);
             }
         }
 

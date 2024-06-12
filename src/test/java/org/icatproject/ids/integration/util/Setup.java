@@ -10,10 +10,11 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 import org.icatproject.ICAT;
-import org.icatproject.ids.TestUtils;
-import org.icatproject.ids.services.ICATGetter;
 import org.icatproject.utils.CheckedProperties;
 import org.icatproject.utils.ShellCommand;
+
+import org.icatproject.ids.TestUtils;
+import org.icatproject.ids.services.ICATGetter;
 
 /*
  * Setup the test environment for the IDS. This is done by reading property
@@ -57,11 +58,13 @@ public class Setup {
 
         // Start by reading the test properties
         Properties testProps = new Properties();
-        InputStream is = Setup.class.getClassLoader().getResourceAsStream("test.properties");
+        InputStream is = Setup.class.getClassLoader()
+                .getResourceAsStream("test.properties");
         try {
             testProps.load(is);
         } catch (Exception e) {
-            System.err.println("Problem loading test.properties: " + e.getClass() + " " + e.getMessage());
+            System.err.println("Problem loading test.properties: "
+                    + e.getClass() + " " + e.getMessage());
         }
 
         setReliability(1.);
@@ -72,16 +75,18 @@ public class Setup {
 
         String containerHome = System.getProperty("containerHome");
         if (containerHome == null) {
-            System.err.println("containerHome is not defined as a system property");
+            System.err.println(
+                    "containerHome is not defined as a system property");
         }
 
         long time = System.currentTimeMillis();
 
-        ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py", "src/test/resources/" + runPropertyFile,
-                home.toString(), containerHome, serverUrl);
+        ShellCommand sc = new ShellCommand("src/test/scripts/prepare_test.py",
+                "src/test/resources/" + runPropertyFile, home.toString(),
+                containerHome, serverUrl);
         System.out.println(sc.getStdout() + " " + sc.getStderr());
-        System.out.println(
-                "Setting up " + runPropertyFile + " took " + (System.currentTimeMillis() - time) / 1000. + "seconds");
+        System.out.println("Setting up " + runPropertyFile + " took "
+                + (System.currentTimeMillis() - time) / 1000. + "seconds");
 
         // Having set up the ids.properties file read it find other things
         CheckedProperties runProperties = new CheckedProperties();
@@ -92,8 +97,10 @@ public class Setup {
         updownDir = home.resolve(testProps.getProperty("updownDir"));
         icatUrl = runProperties.getURL("icat.url");
         ICAT icat = ICATGetter.getService(icatUrl.toString());
-        rootSessionId = TestUtils.login(icat, testProps.getProperty("login.root"));
-        forbiddenSessionId = TestUtils.login(icat, testProps.getProperty("login.unauthorized"));
+        rootSessionId = TestUtils.login(icat,
+                testProps.getProperty("login.root"));
+        forbiddenSessionId = TestUtils.login(icat,
+                testProps.getProperty("login.unauthorized"));
 
         storageDir = runProperties.getPath("plugin.main.dir");
 

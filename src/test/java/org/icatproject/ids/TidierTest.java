@@ -1,13 +1,14 @@
 package org.icatproject.ids;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -85,13 +86,16 @@ public class TidierTest {
     @Test
     public void testAddStringConstraint() throws Exception {
         StringBuilder sb1 = new StringBuilder();
-        Tidier.addStringConstraint(sb1, "df.location", "/path/to/normal/file", false);
+        Tidier.addStringConstraint(sb1, "df.location", "/path/to/normal/file",
+                false);
         assertEquals(" df.location = '/path/to/normal/file'", sb1.toString());
 
         /* Fix error where a file path contains an apostrophe */
         StringBuilder sb2 = new StringBuilder();
-        Tidier.addStringConstraint(sb2, "df.location", "/path/to/Person's Files/myscript.py", false);
-        assertEquals(" df.location = '/path/to/Person''s Files/myscript.py'", sb2.toString());
+        Tidier.addStringConstraint(sb2, "df.location",
+                "/path/to/Person's Files/myscript.py", false);
+        assertEquals(" df.location = '/path/to/Person''s Files/myscript.py'",
+                sb2.toString());
     }
 
     @Test

@@ -10,17 +10,18 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
-import org.icatproject.ids.models.DatafileInfo;
-import org.icatproject.ids.models.DataInfoBase;
-import org.icatproject.ids.models.DatasetInfo;
-import org.icatproject.ids.services.ServiceProvider;
-import org.icatproject.ids.services.LockManager.Lock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.ws.rs.core.StreamingOutput;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.icatproject.ids.models.DataInfoBase;
+import org.icatproject.ids.models.DatafileInfo;
+import org.icatproject.ids.models.DatasetInfo;
+import org.icatproject.ids.services.LockManager.Lock;
+import org.icatproject.ids.services.ServiceProvider;
 
 public class SO implements StreamingOutput {
 
@@ -38,8 +39,10 @@ public class SO implements StreamingOutput {
     private static final int BUFSIZ = 2048;
     private final static Logger logger = LoggerFactory.getLogger(SO.class);
 
-    public SO(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos, long offset, boolean zip, boolean compress,
-       Lock lock, Long transferId, String ip, long start, ServiceProvider serviceProvider) {
+    public SO(Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos,
+            long offset, boolean zip, boolean compress, Lock lock,
+            Long transferId, String ip, long start,
+            ServiceProvider serviceProvider) {
         this.offset = offset;
         this.zip = zip;
         this.dsInfos = dsInfos;
@@ -62,21 +65,27 @@ public class SO implements StreamingOutput {
             }
             byte[] bytes = new byte[BUFSIZ];
             if (zip) {
-                ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(output));
+                ZipOutputStream zos = new ZipOutputStream(
+                        new BufferedOutputStream(output));
                 if (!compress) {
                     zos.setLevel(0); // Otherwise use default compression
                 }
 
-                for ( DataInfoBase  dataInfo : dfInfos.values()) {
+                for (DataInfoBase dataInfo : dfInfos.values()) {
                     var dfInfo = (DatafileInfo) dataInfo;
                     logger.debug("Adding " + dfInfo + " to zip");
                     transfer = dfInfo;
-                    DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId() );
-                    String entryName = this.serviceProvider.getPropertyHandler().getZipMapper().getFullEntryName((DatasetInfo)dsInfo, (DatafileInfo)dfInfo);
+                    DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId());
+                    String entryName = this.serviceProvider.getPropertyHandler()
+                            .getZipMapper()
+                            .getFullEntryName((DatasetInfo) dsInfo,
+                                    (DatafileInfo) dfInfo);
                     InputStream stream = null;
                     try {
                         zos.putNextEntry(new ZipEntry(entryName));
-                        stream = this.serviceProvider.getMainStorage().get(dfInfo.getLocation(), dfInfo.getCreateId(), dfInfo.getModId());
+                        stream = this.serviceProvider.getMainStorage().get(
+                                dfInfo.getLocation(), dfInfo.getCreateId(),
+                                dfInfo.getModId());
                         int length;
                         while ((length = stream.read(bytes)) >= 0) {
                             zos.write(bytes, 0, length);
@@ -91,9 +100,11 @@ public class SO implements StreamingOutput {
                 }
                 zos.close();
             } else {
-                DatafileInfo dfInfo = (DatafileInfo) dfInfos.values().iterator().next();
+                DatafileInfo dfInfo = (DatafileInfo) dfInfos.values().iterator()
+                        .next();
                 transfer = dfInfo;
-                InputStream stream = this.serviceProvider.getMainStorage().get(dfInfo.getDfLocation(), dfInfo.getCreateId(),
+                InputStream stream = this.serviceProvider.getMainStorage().get(
+                        dfInfo.getDfLocation(), dfInfo.getCreateId(),
                         dfInfo.getModId());
                 int length;
                 while ((length = stream.read(bytes)) >= 0) {
@@ -105,23 +116,28 @@ public class SO implements StreamingOutput {
 
             if (transferId != null) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+                try (JsonGenerator gen = Json.createGenerator(baos)
+                        .writeStartObject()) {
                     gen.write("transferId", transferId);
                     gen.writeEnd();
                 }
-                this.serviceProvider.getTransmitter().processMessage("getData", ip, baos.toString(), start);
+                this.serviceProvider.getTransmitter().processMessage("getData",
+                        ip, baos.toString(), start);
             }
 
         } catch (IOException e) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (JsonGenerator gen = Json.createGenerator(baos).writeStartObject()) {
+            try (JsonGenerator gen = Json.createGenerator(baos)
+                    .writeStartObject()) {
                 gen.write("transferId", transferId);
                 gen.write("exceptionClass", e.getClass().toString());
                 gen.write("exceptionMessage", e.getMessage());
                 gen.writeEnd();
             }
-            this.serviceProvider.getTransmitter().processMessage("getData", ip, baos.toString(), start);
-            logger.error("Failed to stream " + transfer + " due to " + e.getMessage());
+            this.serviceProvider.getTransmitter().processMessage("getData", ip,
+                    baos.toString(), start);
+            logger.error("Failed to stream " + transfer + " due to "
+                    + e.getMessage());
             throw e;
         } finally {
             lock.release();
