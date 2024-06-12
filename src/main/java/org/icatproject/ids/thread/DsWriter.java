@@ -30,7 +30,8 @@ import org.icatproject.ids.services.LockManager.Lock;
  */
 public class DsWriter implements Runnable {
 
-    private final static Logger logger = LoggerFactory.getLogger(DsWriter.class);
+    private final static Logger logger = LoggerFactory
+            .getLogger(DsWriter.class);
     private static final int BUFSIZ = 1024;
     private DatasetInfo dsInfo;
 
@@ -43,7 +44,8 @@ public class DsWriter implements Runnable {
     private ZipMapperInterface zipMapper;
     private Lock lock;
 
-    public DsWriter(DatasetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
+    public DsWriter(DatasetInfo dsInfo, PropertyHandler propertyHandler,
+            FiniteStateMachine fsm, IcatReader reader, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         this.zipMapper = propertyHandler.getZipMapper();
@@ -59,27 +61,35 @@ public class DsWriter implements Runnable {
     public void run() {
         try {
             if (!mainStorageInterface.exists(dsInfo)) {
-                logger.info("No files present in main storage for " + dsInfo + " - will delete archive");
+                logger.info("No files present in main storage for " + dsInfo
+                        + " - will delete archive");
                 archiveStorageInterface.delete(dsInfo);
             } else {
-                Path datasetCachePath = Files.createTempFile(datasetCache, null, null);
+                Path datasetCachePath = Files.createTempFile(datasetCache, null,
+                        null);
                 logger.debug("Creating " + datasetCachePath);
-                List<Datafile> datafiles = ((Dataset) reader.get("Dataset INCLUDE Datafile", dsInfo.getDsId()))
+                List<Datafile> datafiles = ((Dataset) reader
+                        .get("Dataset INCLUDE Datafile", dsInfo.getDsId()))
                         .getDatafiles();
 
-                ZipOutputStream zos = new ZipOutputStream(
-                        Files.newOutputStream(datasetCachePath, StandardOpenOption.CREATE));
+                ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(
+                        datasetCachePath, StandardOpenOption.CREATE));
                 for (Datafile datafile : datafiles) {
                     if (datafile.getLocation() == null) {
                         continue;
                     }
-                    String location = LocationHelper.getLocation(datafile.getId(), datafile.getLocation());
+                    String location = LocationHelper.getLocation(
+                            datafile.getId(), datafile.getLocation());
                     InputStream is = null;
                     try {
-                        zos.putNextEntry(new ZipEntry(
-                                zipMapper.getFullEntryName(dsInfo, new DatafileInfo(datafile.getId(), datafile.getName(),
-                                        location, datafile.getCreateId(), datafile.getModId(), 0L))));
-                        is = mainStorageInterface.get(location, datafile.getCreateId(), datafile.getModId());
+                        zos.putNextEntry(
+                                new ZipEntry(zipMapper.getFullEntryName(dsInfo,
+                                        new DatafileInfo(datafile.getId(),
+                                                datafile.getName(), location,
+                                                datafile.getCreateId(),
+                                                datafile.getModId(), 0L))));
+                        is = mainStorageInterface.get(location,
+                                datafile.getCreateId(), datafile.getModId());
                         int bytesRead = 0;
                         byte[] buffer = new byte[BUFSIZ];
                         while ((bytesRead = is.read(buffer)) > 0) {
@@ -105,7 +115,8 @@ public class DsWriter implements Runnable {
             logger.debug("Removed marker " + marker);
             logger.debug("Write of " + dsInfo + " completed");
         } catch (Exception e) {
-            logger.error("Write of " + dsInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+            logger.error("Write of " + dsInfo + " failed due to " + e.getClass()
+                    + " " + e.getMessage());
         } finally {
             fsm.removeFromChanging(dsInfo);
             lock.release();

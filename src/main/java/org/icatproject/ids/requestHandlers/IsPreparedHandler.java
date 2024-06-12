@@ -34,17 +34,23 @@ public class IsPreparedHandler extends DataRequestHandler {
     private Map<String, PreparedStatus> preparedStatusMap = new ConcurrentHashMap<>();
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
-            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
+    public ValueContainer handleDataRequest(
+            DataSelectionService dataSelectionService)
+            throws BadRequestException, InternalException,
+            InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
         // Do it
         boolean prepared = true;
 
-        PreparedStatus status = preparedStatusMap.computeIfAbsent(this.dataController.getOperationId(), k -> new PreparedStatus());
+        PreparedStatus status = preparedStatusMap.computeIfAbsent(
+                this.dataController.getOperationId(),
+                k -> new PreparedStatus());
 
         if (!status.lock.tryLock()) {
-            logger.debug("Lock held for evaluation of isPrepared for preparedId {}", this.dataController.getOperationId());
+            logger.debug(
+                    "Lock held for evaluation of isPrepared for preparedId {}",
+                    this.dataController.getOperationId());
             return new ValueContainer(false);
         }
         try {
@@ -54,19 +60,23 @@ public class IsPreparedHandler extends DataRequestHandler {
                     try {
                         future.get();
                     } catch (ExecutionException e) {
-                        throw new InternalException(e.getClass() + " " + e.getMessage());
+                        throw new InternalException(
+                                e.getClass() + " " + e.getMessage());
                     } catch (InterruptedException e) {
                         // Ignore
                     } finally {
                         status.future = null;
                     }
                 } else {
-                    logger.debug("Background process still running for preparedId {}", this.dataController.getOperationId());
+                    logger.debug(
+                            "Background process still running for preparedId {}",
+                            this.dataController.getOperationId());
                     return new ValueContainer(false);
                 }
             }
 
-            prepared = dataSelectionService.isPrepared(this.dataController.getOperationId());
+            prepared = dataSelectionService
+                    .isPrepared(this.dataController.getOperationId());
 
             return new ValueContainer(prepared);
 

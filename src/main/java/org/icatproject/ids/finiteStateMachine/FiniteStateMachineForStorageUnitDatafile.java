@@ -32,38 +32,43 @@ import org.icatproject.ids.thread.DfWriter;
 
 import jakarta.json.stream.JsonGenerator;
 
-public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine {
+public class FiniteStateMachineForStorageUnitDatafile
+        extends FiniteStateMachine {
 
-    protected FiniteStateMachineForStorageUnitDatafile(IcatReader icatReader, LockManager lockManager) {
+    protected FiniteStateMachineForStorageUnitDatafile(IcatReader icatReader,
+            LockManager lockManager) {
         super(icatReader, lockManager);
     }
 
-
     @Override
     protected void scheduleTimer() {
-        processOpsDelayMillis = propertyHandler.getDelayDatafileOperations() * 1000L;
+        processOpsDelayMillis = propertyHandler.getDelayDatafileOperations()
+                * 1000L;
         timer.schedule(new DfProcessQueue(), processQueueIntervalMillis);
-        logger.info("DfProcessQueue scheduled to run in " + processQueueIntervalMillis + " milliseconds");
+        logger.info("DfProcessQueue scheduled to run in "
+                + processQueueIntervalMillis + " milliseconds");
     }
-
 
     @Override
     protected void addDataInfoJson(JsonGenerator gen) {
         this.addDataInfoJsonFromDeferredOpsQueue(gen);
     }
 
-
-    public void queue(DataInfoBase dataInfo, DeferredOp deferredOp) throws InternalException {
+    public void queue(DataInfoBase dataInfo, DeferredOp deferredOp)
+            throws InternalException {
 
         var dfInfo = (DatafileInfo) dataInfo;
-        if(dfInfo == null) throw new InternalException("DataInfoBase object could not be casted into a DataFileInfo. Did you handed over a DataSetInfo instead?");
+        if (dfInfo == null)
+            throw new InternalException(
+                    "DataInfoBase object could not be casted into a DataFileInfo. Did you handed over a DataSetInfo instead?");
 
         logger.info("Requesting " + deferredOp + " of datafile " + dfInfo);
 
         synchronized (deferredOpsQueue) {
 
             if (processOpsTime == null) {
-                processOpsTime = System.currentTimeMillis() + processOpsDelayMillis;
+                processOpsTime = System.currentTimeMillis()
+                        + processOpsDelayMillis;
                 final Date d = new Date(processOpsTime);
                 logger.debug("Requesting delay operations till " + d);
             }
@@ -72,52 +77,62 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
             if (state == null) {
                 if (deferredOp == DeferredOp.WRITE) {
                     try {
-                        Path marker = markerDir.resolve(Long.toString(dfInfo.getId()));
+                        Path marker = markerDir
+                                .resolve(Long.toString(dfInfo.getId()));
                         Files.createFile(marker);
                         logger.debug("Created marker " + marker);
                     } catch (FileAlreadyExistsException e) {
                         // Pass will ignore this
                     } catch (IOException e) {
-                        throw new InternalException(e.getClass() + " " + e.getMessage());
+                        throw new InternalException(
+                                e.getClass() + " " + e.getMessage());
                     }
-                    deferredOpsQueue.put(dfInfo, RequestedState.WRITE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.WRITE_REQUESTED);
                 } else if (deferredOp == DeferredOp.ARCHIVE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.ARCHIVE_REQUESTED);
                 } else if (deferredOp == DeferredOp.RESTORE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.RESTORE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.RESTORE_REQUESTED);
                 } else if (deferredOp == DeferredOp.DELETE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.DELETE_REQUESTED);
                 }
             } else if (state == RequestedState.ARCHIVE_REQUESTED) {
                 if (deferredOp == DeferredOp.RESTORE) {
                     deferredOpsQueue.remove(dfInfo);
                 } else if (deferredOp == DeferredOp.DELETE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.DELETE_REQUESTED);
                 }
             } else if (state == RequestedState.DELETE_REQUESTED) {
                 // No way out
             } else if (state == RequestedState.RESTORE_REQUESTED) {
                 if (deferredOp == DeferredOp.DELETE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.DELETE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.DELETE_REQUESTED);
                 } else if (deferredOp == DeferredOp.ARCHIVE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.ARCHIVE_REQUESTED);
                 }
             } else if (state == RequestedState.WRITE_REQUESTED) {
                 if (deferredOp == DeferredOp.DELETE) {
                     deferredOpsQueue.remove(dfInfo);
                 } else if (deferredOp == DeferredOp.ARCHIVE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.WRITE_THEN_ARCHIVE_REQUESTED);
                 }
             } else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
                 if (deferredOp == DeferredOp.DELETE) {
                     deferredOpsQueue.remove(dfInfo);
                 } else if (deferredOp == DeferredOp.RESTORE) {
-                    deferredOpsQueue.put(dfInfo, RequestedState.WRITE_REQUESTED);
+                    deferredOpsQueue.put(dfInfo,
+                            RequestedState.WRITE_REQUESTED);
                 }
             }
         }
     }
-
 
     private class DfProcessQueue extends TimerTask {
 
@@ -125,9 +140,12 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
         public void run() {
             try {
                 synchronized (deferredOpsQueue) {
-                    if (processOpsTime != null && System.currentTimeMillis() > processOpsTime && !deferredOpsQueue.isEmpty()) {
+                    if (processOpsTime != null
+                            && System.currentTimeMillis() > processOpsTime
+                            && !deferredOpsQueue.isEmpty()) {
                         processOpsTime = null;
-                        logger.debug("deferredDfOpsQueue has " + deferredOpsQueue.size() + " entries");
+                        logger.debug("deferredDfOpsQueue has "
+                                + deferredOpsQueue.size() + " entries");
                         List<DatafileInfo> writes = new ArrayList<>();
                         List<DatafileInfo> archives = new ArrayList<>();
                         List<DatafileInfo> restores = new ArrayList<>();
@@ -138,20 +156,27 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                         Map<Long, Lock> deleteLocks = new HashMap<>();
 
                         Map<DataInfoBase, RequestedState> newOps = new HashMap<>();
-                        final Iterator<Entry<DataInfoBase, RequestedState>> it = deferredOpsQueue.entrySet().iterator();
+                        final Iterator<Entry<DataInfoBase, RequestedState>> it = deferredOpsQueue
+                                .entrySet().iterator();
                         while (it.hasNext()) {
-                            Entry<DataInfoBase, RequestedState> opEntry = it.next();
+                            Entry<DataInfoBase, RequestedState> opEntry = it
+                                    .next();
                             var dfInfo = (DatafileInfo) opEntry.getKey();
 
-                            if(dfInfo == null) throw new RuntimeException("Could not cast DataInfoBase to DataFileInfo. Did you handed over another sub type?");
+                            if (dfInfo == null)
+                                throw new RuntimeException(
+                                        "Could not cast DataInfoBase to DataFileInfo. Did you handed over another sub type?");
 
                             Long dsId = dfInfo.getDsId();
                             DatasetInfo dsInfo;
                             try {
-                                Dataset ds = (Dataset) reader.get("Dataset ds INCLUDE ds.investigation.facility", dsId);
+                                Dataset ds = (Dataset) reader.get(
+                                        "Dataset ds INCLUDE ds.investigation.facility",
+                                        dsId);
                                 dsInfo = new DatasetInfo(ds);
                             } catch (Exception e) {
-                                logger.error("Could not get dsInfo {}: {}.", dsId, e.getMessage());
+                                logger.error("Could not get dsInfo {}: {}.",
+                                        dsId, e.getMessage());
                                 continue;
                             }
                             if (!dataInfoChanging.containsKey(dfInfo)) {
@@ -160,12 +185,20 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                 if (state == RequestedState.WRITE_REQUESTED) {
                                     if (!writeLocks.containsKey(dsId)) {
                                         try {
-                                            writeLocks.put(dsId, lockManager.lock(dsInfo, LockType.SHARED));
+                                            writeLocks.put(dsId,
+                                                    lockManager.lock(dsInfo,
+                                                            LockType.SHARED));
                                         } catch (AlreadyLockedException e) {
-                                            logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+                                            logger.debug(
+                                                    "Could not acquire lock on "
+                                                            + dsId
+                                                            + ", hold back "
+                                                            + state);
                                             continue;
                                         } catch (IOException e) {
-                                            logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+                                            logger.error("I/O exception "
+                                                    + e.getMessage()
+                                                    + " locking " + dsId);
                                             continue;
                                         }
                                     }
@@ -175,28 +208,46 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                 } else if (state == RequestedState.WRITE_THEN_ARCHIVE_REQUESTED) {
                                     if (!writeLocks.containsKey(dsId)) {
                                         try {
-                                            writeLocks.put(dsId, lockManager.lock(dsInfo, LockType.SHARED));
+                                            writeLocks.put(dsId,
+                                                    lockManager.lock(dsInfo,
+                                                            LockType.SHARED));
                                         } catch (AlreadyLockedException e) {
-                                            logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+                                            logger.debug(
+                                                    "Could not acquire lock on "
+                                                            + dsId
+                                                            + ", hold back "
+                                                            + state);
                                             continue;
                                         } catch (IOException e) {
-                                            logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+                                            logger.error("I/O exception "
+                                                    + e.getMessage()
+                                                    + " locking " + dsId);
                                             continue;
                                         }
                                     }
                                     it.remove();
-                                    dataInfoChanging.put(dfInfo, RequestedState.WRITE_REQUESTED);
+                                    dataInfoChanging.put(dfInfo,
+                                            RequestedState.WRITE_REQUESTED);
                                     writes.add(dfInfo);
-                                    newOps.put(dfInfo, RequestedState.ARCHIVE_REQUESTED);
+                                    newOps.put(dfInfo,
+                                            RequestedState.ARCHIVE_REQUESTED);
                                 } else if (state == RequestedState.ARCHIVE_REQUESTED) {
                                     if (!archiveLocks.containsKey(dsId)) {
                                         try {
-                                            archiveLocks.put(dsId, lockManager.lock(dsInfo, LockType.EXCLUSIVE));
+                                            archiveLocks.put(dsId,
+                                                    lockManager.lock(dsInfo,
+                                                            LockType.EXCLUSIVE));
                                         } catch (AlreadyLockedException e) {
-                                            logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+                                            logger.debug(
+                                                    "Could not acquire lock on "
+                                                            + dsId
+                                                            + ", hold back "
+                                                            + state);
                                             continue;
                                         } catch (IOException e) {
-                                            logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+                                            logger.error("I/O exception "
+                                                    + e.getMessage()
+                                                    + " locking " + dsId);
                                             continue;
                                         }
                                     }
@@ -206,12 +257,20 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                 } else if (state == RequestedState.RESTORE_REQUESTED) {
                                     if (!restoreLocks.containsKey(dsId)) {
                                         try {
-                                            restoreLocks.put(dsId, lockManager.lock(dsInfo, LockType.EXCLUSIVE));
+                                            restoreLocks.put(dsId,
+                                                    lockManager.lock(dsInfo,
+                                                            LockType.EXCLUSIVE));
                                         } catch (AlreadyLockedException e) {
-                                            logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+                                            logger.debug(
+                                                    "Could not acquire lock on "
+                                                            + dsId
+                                                            + ", hold back "
+                                                            + state);
                                             continue;
                                         } catch (IOException e) {
-                                            logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+                                            logger.error("I/O exception "
+                                                    + e.getMessage()
+                                                    + " locking " + dsId);
                                             continue;
                                         }
                                     }
@@ -221,12 +280,20 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                 } else if (state == RequestedState.DELETE_REQUESTED) {
                                     if (!deleteLocks.containsKey(dsId)) {
                                         try {
-                                            deleteLocks.put(dsId, lockManager.lock(dsInfo, LockType.EXCLUSIVE));
+                                            deleteLocks.put(dsId,
+                                                    lockManager.lock(dsInfo,
+                                                            LockType.EXCLUSIVE));
                                         } catch (AlreadyLockedException e) {
-                                            logger.debug("Could not acquire lock on " + dsId + ", hold back " + state);
+                                            logger.debug(
+                                                    "Could not acquire lock on "
+                                                            + dsId
+                                                            + ", hold back "
+                                                            + state);
                                             continue;
                                         } catch (IOException e) {
-                                            logger.error("I/O exception " + e.getMessage() + " locking " + dsId);
+                                            logger.error("I/O exception "
+                                                    + e.getMessage()
+                                                    + " locking " + dsId);
                                             continue;
                                         }
                                     }
@@ -234,41 +301,61 @@ public class FiniteStateMachineForStorageUnitDatafile extends FiniteStateMachine
                                     dataInfoChanging.put(dfInfo, state);
                                     deletes.add(dfInfo);
                                 } else {
-                                    throw new AssertionError("Impossible state");
+                                    throw new AssertionError(
+                                            "Impossible state");
                                 }
                             }
                         }
                         if (!newOps.isEmpty()) {
                             deferredOpsQueue.putAll(newOps);
-                            logger.debug("Adding {} operations to be scheduled next time round", newOps.size());
+                            logger.debug(
+                                    "Adding {} operations to be scheduled next time round",
+                                    newOps.size());
                         }
                         if (!deferredOpsQueue.isEmpty()) {
                             processOpsTime = 0L;
                         }
                         if (!writes.isEmpty()) {
-                            logger.debug("Launch thread to process " + writes.size() + " writes");
-                            Thread w = new Thread(new DfWriter(writes, propertyHandler, FiniteStateMachineForStorageUnitDatafile.this, writeLocks.values()));
+                            logger.debug("Launch thread to process "
+                                    + writes.size() + " writes");
+                            Thread w = new Thread(new DfWriter(writes,
+                                    propertyHandler,
+                                    FiniteStateMachineForStorageUnitDatafile.this,
+                                    writeLocks.values()));
                             w.start();
                         }
                         if (!archives.isEmpty()) {
-                            logger.debug("Launch thread to process " + archives.size() + " archives");
-                            Thread w = new Thread(new DfArchiver(archives, propertyHandler, FiniteStateMachineForStorageUnitDatafile.this, archiveLocks.values()));
+                            logger.debug("Launch thread to process "
+                                    + archives.size() + " archives");
+                            Thread w = new Thread(new DfArchiver(archives,
+                                    propertyHandler,
+                                    FiniteStateMachineForStorageUnitDatafile.this,
+                                    archiveLocks.values()));
                             w.start();
                         }
                         if (!restores.isEmpty()) {
-                            logger.debug("Launch thread to process " + restores.size() + " restores");
-                            Thread w = new Thread(new DfRestorer(restores, propertyHandler, FiniteStateMachineForStorageUnitDatafile.this, restoreLocks.values()));
+                            logger.debug("Launch thread to process "
+                                    + restores.size() + " restores");
+                            Thread w = new Thread(new DfRestorer(restores,
+                                    propertyHandler,
+                                    FiniteStateMachineForStorageUnitDatafile.this,
+                                    restoreLocks.values()));
                             w.start();
                         }
                         if (!deletes.isEmpty()) {
-                            logger.debug("Launch thread to process " + deletes.size() + " deletes");
-                            Thread w = new Thread(new DfDeleter(deletes, propertyHandler, FiniteStateMachineForStorageUnitDatafile.this, deleteLocks.values()));
+                            logger.debug("Launch thread to process "
+                                    + deletes.size() + " deletes");
+                            Thread w = new Thread(new DfDeleter(deletes,
+                                    propertyHandler,
+                                    FiniteStateMachineForStorageUnitDatafile.this,
+                                    deleteLocks.values()));
                             w.start();
                         }
                     }
                 }
             } finally {
-                timer.schedule(new DfProcessQueue(), processQueueIntervalMillis);
+                timer.schedule(new DfProcessQueue(),
+                        processQueueIntervalMillis);
             }
 
         }

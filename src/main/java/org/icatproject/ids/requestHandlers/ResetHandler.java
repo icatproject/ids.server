@@ -15,20 +15,24 @@ import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
-
 public class ResetHandler extends DataRequestHandler {
 
-    public ResetHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
-        super(RequestType.RESET, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds);
+    public ResetHandler(String ip, String preparedId, String sessionId,
+            String investigationIds, String datasetIds, String datafileIds) {
+        super(RequestType.RESET, ip, preparedId, sessionId, investigationIds,
+                datasetIds, datafileIds);
     }
 
     @Override
-    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
-            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
+    public ValueContainer handleDataRequest(
+            DataSelectionService dataSelectionService)
+            throws BadRequestException, InternalException,
+            InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
         FiniteStateMachine fsm = ServiceProvider.getInstance().getFsm();
-        for (DataInfoBase dataInfo : dataSelectionService.getPrimaryDataInfos().values()) {
+        for (DataInfoBase dataInfo : dataSelectionService.getPrimaryDataInfos()
+                .values()) {
             fsm.recordSuccess(dataInfo.getId());
         }
 
@@ -39,7 +43,5 @@ public class ResetHandler extends DataRequestHandler {
     public CallType getCallType() {
         return CallType.MIGRATE;
     }
-    
 
-    
 }

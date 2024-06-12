@@ -49,7 +49,8 @@ public class RangeOutputStreamTest {
                 os.flush();
             }
             os.close();
-            assertEquals("m is " + m, "ABCDEFGHIJKLMONPQRSTUVWXYZ", baos.toString());
+            assertEquals("m is " + m, "ABCDEFGHIJKLMONPQRSTUVWXYZ",
+                    baos.toString());
         }
     }
 
@@ -67,7 +68,6 @@ public class RangeOutputStreamTest {
             assertEquals("m is " + m, "ABCDEFGHIJKLM", baos.toString());
         }
     }
-
 
     @Test
     public void t5() throws Exception {

@@ -12,14 +12,18 @@ import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.services.ServiceProvider;
 
-public class DataSelectionServiceForStorageUnitDataset extends DataSelectionService {
+public class DataSelectionServiceForStorageUnitDataset
+        extends DataSelectionService {
 
-    protected DataSelectionServiceForStorageUnitDataset(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos,
-            Set<Long> emptyDatasets, List<Long> invids2, List<Long> dsids, List<Long> dfids, long length, Boolean zip, Boolean compress, RequestType requestType) {
+    protected DataSelectionServiceForStorageUnitDataset(
+            SortedMap<Long, DataInfoBase> dsInfos,
+            SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets,
+            List<Long> invids2, List<Long> dsids, List<Long> dfids, long length,
+            Boolean zip, Boolean compress, RequestType requestType) {
 
-        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length, zip, compress, requestType);
+        super(dsInfos, dfInfos, emptyDatasets, invids2, dsids, dfids, length,
+                zip, compress, requestType);
     }
-
 
     @Override
     public SortedMap<Long, DataInfoBase> getPrimaryDataInfos() {
@@ -27,34 +31,37 @@ public class DataSelectionServiceForStorageUnitDataset extends DataSelectionServ
     }
 
     @Override
-    public boolean existsInMainStorage(DataInfoBase dataInfo) throws InternalException {
+    public boolean existsInMainStorage(DataInfoBase dataInfo)
+            throws InternalException {
 
         var dsInfo = (DatasetInfo) dataInfo;
-        if(dsInfo == null) throw new InternalException("Could not cast DataInfoBase to DataSetInfo. Did you handed over another sub type?");
-        
-        return this.dataSelection.getEmptyDatasets().contains(dataInfo.getId()) || ServiceProvider.getInstance().getMainStorage().exists(dsInfo);
-    }
+        if (dsInfo == null)
+            throw new InternalException(
+                    "Could not cast DataInfoBase to DataSetInfo. Did you handed over another sub type?");
 
+        return this.dataSelection.getEmptyDatasets().contains(dataInfo.getId())
+                || ServiceProvider.getInstance().getMainStorage()
+                        .exists(dsInfo);
+    }
 
     @Override
     public boolean isPrepared(String preparedId) throws InternalException {
         return this.areDataInfosPrepared(preparedId);
     }
 
-
     @Override
-    public void queueDelete() throws NotImplementedException, InternalException {
+    public void queueDelete()
+            throws NotImplementedException, InternalException {
         this.scheduleTasks(DeferredOp.WRITE);
     }
 
-
     @Override
-    public void scheduleTasks(DeferredOp operation) throws NotImplementedException, InternalException {
+    public void scheduleTasks(DeferredOp operation)
+            throws NotImplementedException, InternalException {
 
         for (DataInfoBase dataInfo : this.getPrimaryDataInfos().values()) {
             ServiceProvider.getInstance().getFsm().queue(dataInfo, operation);
         }
     }
-      
 
 }

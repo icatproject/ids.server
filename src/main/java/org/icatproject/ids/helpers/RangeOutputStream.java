@@ -21,10 +21,10 @@ public class RangeOutputStream extends FilterOutputStream {
      * fixed number of bytes following some offset.
      *
      * @param os    the stream to wrap
-     * @param min   the number of bytes to skip. It may larger than the number of
-     *              bytes in the stream.
-     * @param count restrict to transmit only this number of bytes. The value null
-     *              indicates that all bytes after the offset should be
+     * @param min   the number of bytes to skip. It may larger than the number
+     *              of bytes in the stream.
+     * @param count restrict to transmit only this number of bytes. The value
+     *              null indicates that all bytes after the offset should be
      *              transmitted.
      */
     public RangeOutputStream(OutputStream os, long min, Long count) {

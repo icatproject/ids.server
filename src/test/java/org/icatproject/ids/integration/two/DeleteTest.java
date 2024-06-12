@@ -20,7 +20,8 @@ public class DeleteTest extends BaseTest {
 
     @Test(expected = DataNotOnlineException.class)
     public void deleteFromUnrestoredDataset() throws Exception {
-        testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 503);
+        testingClient.delete(sessionId,
+                new DataSelection().addDataset(datasetIds.get(0)), 503);
     }
 
     @Test
@@ -29,11 +30,13 @@ public class DeleteTest extends BaseTest {
         Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(1));
         Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(1));
 
-        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 204);
+        testingClient.restore(sessionId,
+                new DataSelection().addDataset(datasetIds.get(1)), 204);
         waitForIds();
         checkPresent(dirOnFastStorage);
 
-        testingClient.delete(sessionId, new DataSelection().addDatafile(datafileIds.get(3)), 204);
+        testingClient.delete(sessionId,
+                new DataSelection().addDatafile(datafileIds.get(3)), 204);
         waitForIds();
 
         checkZipFile(fileOnArchiveStorage, datafileIds.subList(2, 3), 36);
@@ -44,12 +47,14 @@ public class DeleteTest extends BaseTest {
         Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(1));
         Path fileOnArchiveStorage = getFileOnArchiveStorage(datasetIds.get(1));
 
-        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 204);
+        testingClient.restore(sessionId,
+                new DataSelection().addDataset(datasetIds.get(1)), 204);
         waitForIds();
         checkPresent(dirOnFastStorage);
         checkPresent(fileOnArchiveStorage);
 
-        testingClient.delete(sessionId, new DataSelection().addDataset(datasetIds.get(1)), 204);
+        testingClient.delete(sessionId,
+                new DataSelection().addDataset(datasetIds.get(1)), 204);
         waitForIds();
         checkAbsent(dirOnFastStorage);
         checkAbsent(fileOnArchiveStorage);

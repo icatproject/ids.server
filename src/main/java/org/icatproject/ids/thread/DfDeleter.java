@@ -16,14 +16,17 @@ import org.icatproject.ids.services.LockManager.Lock;
  */
 public class DfDeleter implements Runnable {
 
-    private final static Logger logger = LoggerFactory.getLogger(DfDeleter.class);
+    private final static Logger logger = LoggerFactory
+            .getLogger(DfDeleter.class);
 
     private FiniteStateMachine fsm;
     private ArchiveStorageInterface archiveStorageInterface;
     private List<DatafileInfo> dfInfos;
     private Collection<Lock> locks;
 
-    public DfDeleter(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
+    public DfDeleter(List<DatafileInfo> dfInfos,
+            PropertyHandler propertyHandler, FiniteStateMachine fsm,
+            Collection<Lock> locks) {
         this.dfInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -39,7 +42,8 @@ public class DfDeleter implements Runnable {
                     archiveStorageInterface.delete(dfLocation);
                     logger.debug("Delete of " + dfInfo + " completed");
                 } catch (Exception e) {
-                    logger.error("Delete of " + dfInfo + " failed due to " + e.getClass() + " " + e.getMessage());
+                    logger.error("Delete of " + dfInfo + " failed due to "
+                            + e.getClass() + " " + e.getMessage());
                 } finally {
                     fsm.removeFromChanging(dfInfo);
                 }

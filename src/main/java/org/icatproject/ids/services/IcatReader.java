@@ -22,7 +22,8 @@ public class IcatReader {
 
     private String sessionId;
 
-    private final static Logger logger = LoggerFactory.getLogger(IcatReader.class);
+    private final static Logger logger = LoggerFactory
+            .getLogger(IcatReader.class);
 
     private PropertyHandler propertyHandler;
 
@@ -31,7 +32,8 @@ public class IcatReader {
 
     }
 
-    // primarily required for testing to make it possible to use a mocked PropertyHandler
+    // primarily required for testing to make it possible to use a mocked
+    // PropertyHandler
     public IcatReader(PropertyHandler propertyHandler) {
         this.propertyHandler = propertyHandler;
         init();
@@ -43,7 +45,8 @@ public class IcatReader {
             login();
             logger.info("Reader started");
         } catch (Exception e) {
-            throw new RuntimeException("Reader reports " + e.getClass() + " " + e.getMessage());
+            throw new RuntimeException(
+                    "Reader reports " + e.getClass() + " " + e.getMessage());
         }
     }
 
@@ -67,7 +70,8 @@ public class IcatReader {
         }
     }
 
-    public EntityBaseBean get(String query, long id) throws IcatException_Exception {
+    public EntityBaseBean get(String query, long id)
+            throws IcatException_Exception {
         try {
             return icat.get(sessionId, query, id);
         } catch (IcatException_Exception e) {

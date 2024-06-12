@@ -23,8 +23,8 @@ public class LocationHelper {
         }
     }
 
-
-    public static String getLocationFromDigest(long id, String locationWithHash, String key)
+    public static String getLocationFromDigest(long id, String locationWithHash,
+            String key)
             throws InternalException, InsufficientPrivilegesException {
         int i = locationWithHash.lastIndexOf(' ');
         try {
@@ -32,11 +32,13 @@ public class LocationHelper {
             String hash = locationWithHash.substring(i + 1);
             if (!hash.equals(IcatSecurity.digest(id, location, key))) {
                 throw new InsufficientPrivilegesException(
-                        "Location \"" + locationWithHash + "\" does not contain a valid hash.");
+                        "Location \"" + locationWithHash
+                                + "\" does not contain a valid hash.");
             }
             return location;
         } catch (IndexOutOfBoundsException e) {
-            throw new InsufficientPrivilegesException("Location \"" + locationWithHash + "\" does not contain hash.");
+            throw new InsufficientPrivilegesException("Location \""
+                    + locationWithHash + "\" does not contain hash.");
         } catch (NoSuchAlgorithmException e) {
             throw new InternalException(e.getMessage());
         }

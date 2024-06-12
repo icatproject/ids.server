@@ -10,17 +10,20 @@ public class TestICATGetter {
 
     @Test
     public void testGFUrl() throws Exception {
-        assertEquals("http://localhost", ICATGetter.getCleanUrl("http://localhost/ICATService/ICAT?wsdl"));
+        assertEquals("http://localhost", ICATGetter
+                .getCleanUrl("http://localhost/ICATService/ICAT?wsdl"));
     }
 
     @Test
     public void testSlash() throws Exception {
-        assertEquals("http://localhost", ICATGetter.getCleanUrl("http://localhost/"));
+        assertEquals("http://localhost",
+                ICATGetter.getCleanUrl("http://localhost/"));
     }
 
     @Test
     public void testClean() throws Exception {
-        assertEquals("http://localhost", ICATGetter.getCleanUrl("http://localhost"));
+        assertEquals("http://localhost",
+                ICATGetter.getCleanUrl("http://localhost"));
     }
 
     @Test

@@ -24,44 +24,58 @@ public class GetSizeHandlerForFastProcessing extends RequestHandlerBase {
 
     UnpreparedDataController dataController;
 
-    public GetSizeHandlerForFastProcessing(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+    public GetSizeHandlerForFastProcessing(String ip, String sessionId,
+            String investigationIds, String datasetIds, String datafileIds) {
         super(RequestType.GETSIZE, ip);
 
-        this.dataController = new UnpreparedDataController(sessionId, investigationIds, datasetIds, datafileIds);
+        this.dataController = new UnpreparedDataController(sessionId,
+                investigationIds, datasetIds, datafileIds);
     }
 
     @Override
-    public ValueContainer handleRequest() throws BadRequestException, InternalException,
-            InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
-        
+    public ValueContainer handleRequest() throws BadRequestException,
+            InternalException, InsufficientPrivilegesException,
+            NotFoundException, DataNotOnlineException, NotImplementedException {
+
         this.dataController.validateUUID();
         var serviceProvider = ServiceProvider.getInstance();
 
-        List<Long> dfids = DataSelectionService.getValidIds("datafileIds", dataController.datafileIds);
-        List<Long> dsids = DataSelectionService.getValidIds("datasetIds", dataController.datasetIds);
-        List<Long> invids = DataSelectionService.getValidIds("investigationIds", dataController.investigationIds);
+        List<Long> dfids = DataSelectionService.getValidIds("datafileIds",
+                dataController.datafileIds);
+        List<Long> dsids = DataSelectionService.getValidIds("datasetIds",
+                dataController.datasetIds);
+        List<Long> invids = DataSelectionService.getValidIds("investigationIds",
+                dataController.investigationIds);
 
-        
         if (dfids.size() + dsids.size() + invids.size() == 1) {
 
             long size = 0;
-            size = getSizeFor(dataController.getOperationId(), invids, "df.dataset.investigation.id")
-                    + getSizeFor(dataController.getOperationId(), dsids, "df.dataset.id") 
-                    + getSizeFor(dataController.getOperationId(), dfids, "df.id");
+            size = getSizeFor(dataController.getOperationId(), invids,
+                    "df.dataset.investigation.id")
+                    + getSizeFor(dataController.getOperationId(), dsids,
+                            "df.dataset.id")
+                    + getSizeFor(dataController.getOperationId(), dfids,
+                            "df.id");
             logger.debug("Fast computation for simple case");
             if (size == 0) {
                 try {
                     if (dfids.size() != 0) {
-                        Datafile datafile = (Datafile) serviceProvider.getIcat().get(dataController.getOperationId(), "Datafile", dfids.get(0));
+                        Datafile datafile = (Datafile) serviceProvider.getIcat()
+                                .get(dataController.getOperationId(),
+                                        "Datafile", dfids.get(0));
                         if (datafile.getLocation() == null) {
                             throw new NotFoundException("Datafile not found");
                         }
                     }
                     if (dsids.size() != 0) {
-                        serviceProvider.getIcat().get(dataController.getOperationId(), "Dataset", dsids.get(0));
+                        serviceProvider.getIcat().get(
+                                dataController.getOperationId(), "Dataset",
+                                dsids.get(0));
                     }
                     if (invids.size() != 0) {
-                        serviceProvider.getIcat().get(dataController.getOperationId(), "Investigation", invids.get(0));
+                        serviceProvider.getIcat().get(
+                                dataController.getOperationId(),
+                                "Investigation", invids.get(0));
                     }
                 } catch (IcatException_Exception e) {
                     throw new NotFoundException(e.getMessage());
@@ -70,10 +84,10 @@ public class GetSizeHandlerForFastProcessing extends RequestHandlerBase {
 
             return new ValueContainer(size);
         }
-        
-        return ValueContainer.getInvalid(); //is case of fast computation is not the right way.
 
-        
+        return ValueContainer.getInvalid(); // is case of fast computation is
+                                            // not the right way.
+
     }
 
     @Override
@@ -81,13 +95,17 @@ public class GetSizeHandlerForFastProcessing extends RequestHandlerBase {
         return CallType.INFO;
     }
 
-    public String addParametersToLogString() { return this.dataController.addParametersToLogString(); }
+    public String addParametersToLogString() {
+        return this.dataController.addParametersToLogString();
+    }
 
-    public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
+    public void addParametersToTransmitterJSON(JsonGenerator gen)
+            throws IcatException_Exception, BadRequestException {
         this.dataController.addParametersToTransmitterJSON(gen);
     }
 
-    private long getSizeFor(String sessionId, List<Long> ids, String where) throws InternalException {
+    private long getSizeFor(String sessionId, List<Long> ids, String where)
+            throws InternalException {
 
         long size = 0;
         if (ids != null) {
@@ -112,16 +130,19 @@ public class GetSizeHandlerForFastProcessing extends RequestHandlerBase {
         return size;
     }
 
-    private long evalSizeFor(String sessionId, String where, StringBuilder sb) throws InternalException {
-        String query = "SELECT SUM(df.fileSize) from Datafile df WHERE " + where + " IN (" + sb.toString() + ") AND df.location IS NOT NULL";
+    private long evalSizeFor(String sessionId, String where, StringBuilder sb)
+            throws InternalException {
+        String query = "SELECT SUM(df.fileSize) from Datafile df WHERE " + where
+                + " IN (" + sb.toString() + ") AND df.location IS NOT NULL";
         logger.debug("icat query for size: {}", query);
         try {
-            return (Long) ServiceProvider.getInstance().getIcat().search(sessionId, query).get(0);
+            return (Long) ServiceProvider.getInstance().getIcat()
+                    .search(sessionId, query).get(0);
         } catch (IcatException_Exception e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         } catch (IndexOutOfBoundsException e) {
             return 0L;
         }
     }
-    
+
 }
