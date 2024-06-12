@@ -1,11 +1,5 @@
 package org.icatproject.ids;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,12 +11,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DatafileInfo;
+import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.models.Prepared;
+import org.junit.Test;
 
 public class PreparePackingTest {
 
@@ -38,24 +37,21 @@ public class PreparePackingTest {
         long dsid2 = 18L;
         long invId = 15L;
         long facilityId = 45L;
-        dfInfos.put(5L, new DatafileInfo(5L, "dfName", "dfLocation", "createId",
-                "modId", dsid1));
+        dfInfos.put(5L, new DatafileInfo(5L, "dfName", "dfLocation", "createId", "modId", dsid1));
 
-        dfInfos.put(51L, new DatafileInfo(51L, "dfName2", null, "createId",
-                "modId", dsid1));
+        dfInfos.put(51L, new DatafileInfo(51L, "dfName2", null, "createId", "modId", dsid1));
 
-        dsInfos.put(dsid1, new DatasetInfo(dsid1, "dsName", "dsLocation", invId,
-                "invName", "visitId", facilityId, "facilityName"));
+        dsInfos.put(dsid1, new DatasetInfo(dsid1, "dsName", "dsLocation", invId, "invName",
+                "visitId", facilityId, "facilityName"));
 
-        dsInfos.put(dsid2, new DatasetInfo(dsid2, "dsName2", null, invId,
-                "invName", "visitId", facilityId, "facilityName"));
+        dsInfos.put(dsid2, new DatasetInfo(dsid2, "dsName2", null, invId, "invName", "visitId",
+                facilityId, "facilityName"));
 
         emptyDatasets.add(dsid2);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (OutputStream stream = new BufferedOutputStream(baos)) {
-            Prepared.pack(stream, zip, compress, dsInfos, dfInfos,
-                    emptyDatasets, 51);
+            Prepared.pack(stream, zip, compress, dsInfos, dfInfos, emptyDatasets, 51);
         }
         System.out.println(baos.toString());
         InputStream stream = new ByteArrayInputStream(baos.toByteArray());

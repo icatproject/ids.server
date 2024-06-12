@@ -15,20 +15,16 @@ import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class RestoreHandler extends DataRequestHandler {
 
-    public RestoreHandler(String ip, String sessionId, String investigationIds,
-            String datasetIds, String datafileIds) {
-        super(RequestType.RESTORE, ip, sessionId, investigationIds, datasetIds,
-                datafileIds);
+    public RestoreHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+        super(RequestType.RESTORE, ip, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
     @Override
-    public ValueContainer handleDataRequest(
-            DataSelectionService dataSelectionService)
-            throws BadRequestException, InternalException,
-            InsufficientPrivilegesException, NotFoundException,
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
-        dataSelectionService.scheduleTasks(DeferredOp.RESTORE);
+                dataSelectionService.scheduleTasks(DeferredOp.RESTORE);
         return ValueContainer.getVoid();
     }
 

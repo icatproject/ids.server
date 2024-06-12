@@ -59,15 +59,12 @@ public class Transmitter {
         }
     }
 
-    public void processMessage(String operation, String ip, String body,
-            long startMillis) {
-        try (Session jmsSession = topicConnection.createSession(false,
-                Session.AUTO_ACKNOWLEDGE)) {
+    public void processMessage(String operation, String ip, String body, long startMillis) {
+        try (Session jmsSession = topicConnection.createSession(false, Session.AUTO_ACKNOWLEDGE)) {
             TextMessage jmsg = jmsSession.createTextMessage(body);
             jmsg.setStringProperty("operation", operation);
             jmsg.setStringProperty("ip", ip);
-            jmsg.setLongProperty("millis",
-                    System.currentTimeMillis() - startMillis);
+            jmsg.setLongProperty("millis", System.currentTimeMillis() - startMillis);
             jmsg.setLongProperty("start", startMillis);
             MessageProducer jmsProducer = jmsSession.createProducer(topic);
             jmsProducer.send(jmsg);

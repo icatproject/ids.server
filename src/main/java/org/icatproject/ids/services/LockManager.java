@@ -11,7 +11,6 @@ import jakarta.ejb.Singleton;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.models.DatasetInfo;
@@ -93,9 +92,7 @@ public class LockManager {
                         try {
                             storageLock.close();
                         } catch (Exception e) {
-                            logger.error(
-                                    "Error while closing lock on {} in the storage plugin: {}.",
-                                    id, e.getMessage());
+                            logger.error("Error while closing lock on {} in the storage plugin: {}.", id, e.getMessage());
                         }
                     }
                     logger.debug("Released a lock on {}.", id);
@@ -134,8 +131,7 @@ public class LockManager {
         logger.debug("LockManager initialized.");
     }
 
-    public Lock lock(DatasetInfo ds, LockType type)
-            throws AlreadyLockedException, IOException {
+    public Lock lock(DatasetInfo ds, LockType type) throws AlreadyLockedException, IOException {
         Long id = ds.getDsId();
         assert id != null;
         synchronized (lockMap) {
@@ -143,8 +139,7 @@ public class LockManager {
             if (le == null) {
                 le = new LockEntry(id, type);
             } else {
-                if (type == LockType.EXCLUSIVE
-                        || le.type == LockType.EXCLUSIVE) {
+                if (type == LockType.EXCLUSIVE || le.type == LockType.EXCLUSIVE) {
                     throw new AlreadyLockedException();
                 }
             }
@@ -161,16 +156,12 @@ public class LockManager {
         }
     }
 
-    public Lock lock(Collection<DataInfoBase> datasets, LockType type)
-            throws AlreadyLockedException, IOException, InternalException {
+    public Lock lock(Collection<DataInfoBase> datasets, LockType type) throws AlreadyLockedException, IOException, InternalException {
         LockCollection locks = new LockCollection();
         try {
             for (DataInfoBase dataInfo : datasets) {
                 DatasetInfo ds = (DatasetInfo) dataInfo;
-                if (ds == null)
-                    throw new InternalException("Could not cast "
-                            + dataInfo.getClass()
-                            + " to DataSetInfo. Did you handed over another sub type of DataInfoBase? ");
+                if(ds == null) throw new InternalException("Could not cast " + dataInfo.getClass() + " to DataSetInfo. Did you handed over another sub type of DataInfoBase? ");
                 locks.add(lock(ds, type));
             }
         } catch (AlreadyLockedException | IOException e) {

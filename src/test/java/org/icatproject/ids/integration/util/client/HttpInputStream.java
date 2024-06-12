@@ -17,8 +17,7 @@ public class HttpInputStream extends FilterInputStream {
      * @param httpclient the CloseableHttpClient to close
      * @param response   the response to use and ultimately close
      */
-    public HttpInputStream(CloseableHttpClient httpclient,
-            CloseableHttpResponse response)
+    public HttpInputStream(CloseableHttpClient httpclient, CloseableHttpResponse response)
             throws IllegalStateException, IOException {
         super(response.getEntity().getContent());
         this.response = response;

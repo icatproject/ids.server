@@ -1,9 +1,8 @@
 package org.icatproject.ids.integration.one;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -41,20 +40,17 @@ public class GetStatusExplicitTest extends BaseTest {
 
     @Test(expected = NotFoundException.class)
     public void notFoundDatafileIdsTest() throws Exception {
-        testingClient.getStatus(sessionId, new DataSelection()
-                .addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
+        testingClient.getStatus(sessionId, new DataSelection().addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
     }
 
     @Test(expected = NotFoundException.class)
     public void notFoundDatafileIdsTestAnon() throws Exception {
-        testingClient.getStatus(null, new DataSelection()
-                .addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
+        testingClient.getStatus(null, new DataSelection().addDatasets(Arrays.asList(1L, 2L, 3L, 9999999L)), 404);
     }
 
     @Test(expected = InsufficientPrivilegesException.class)
     public void forbiddenTest() throws Exception {
-        testingClient.getStatus(setup.getForbiddenSessionId(),
-                new DataSelection().addDatafiles(datafileIds), 403);
+        testingClient.getStatus(setup.getForbiddenSessionId(), new DataSelection().addDatafiles(datafileIds), 403);
     }
 
     @Test
@@ -63,8 +59,7 @@ public class GetStatusExplicitTest extends BaseTest {
         Status status;
         do {
             Thread.sleep(1000);
-            status = testingClient.getStatus(sessionId,
-                    new DataSelection().addDatafiles(datafileIds), 200);
+            status = testingClient.getStatus(sessionId, new DataSelection().addDatafiles(datafileIds), 200);
             System.out.println("*" + status + "*");
         } while (status != Status.ONLINE);
 
@@ -72,10 +67,8 @@ public class GetStatusExplicitTest extends BaseTest {
 
     @Test
     public void getStatusPreparedIdTest() throws Exception {
-        DataSelection selection = new DataSelection()
-                .addDatafile(datafileIds.get(0));
-        String preparedId = testingClient.prepareData(sessionId, selection,
-                Flag.NONE, 200);
+        DataSelection selection = new DataSelection().addDatafile(datafileIds.get(0));
+        String preparedId = testingClient.prepareData(sessionId, selection, Flag.NONE, 200);
         while (!testingClient.isPrepared(preparedId, 200)) {
             Thread.sleep(1000);
         }

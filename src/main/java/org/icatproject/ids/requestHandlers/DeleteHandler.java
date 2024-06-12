@@ -8,7 +8,6 @@ import org.icatproject.Datafile;
 import org.icatproject.EntityBaseBean;
 import org.icatproject.IcatExceptionType;
 import org.icatproject.IcatException_Exception;
-
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
@@ -22,57 +21,48 @@ import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.models.DataInfoBase;
 import org.icatproject.ids.plugin.AlreadyLockedException;
 import org.icatproject.ids.requestHandlers.base.DataRequestHandler;
+import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.LockManager.LockType;
-import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
+
 
 public class DeleteHandler extends DataRequestHandler {
 
-    public DeleteHandler(String ip, String sessionId, String investigationIds,
-            String datasetIds, String datafileIds) {
-        super(RequestType.DELETE, ip, sessionId, investigationIds, datasetIds,
-                datafileIds);
+    public DeleteHandler(String ip, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+        super(RequestType.DELETE, ip, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
     @Override
-    public ValueContainer handleDataRequest(
-            DataSelectionService dataSelectionService)
-            throws BadRequestException, InternalException,
-            InsufficientPrivilegesException, NotFoundException,
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
 
         if (readOnly) {
-            throw new NotImplementedException(
-                    "This operation has been configured to be unavailable");
+            throw new NotImplementedException("This operation has been configured to be unavailable");
         }
 
         var serviceProvider = ServiceProvider.getInstance();
 
         // Do it
-        try (Lock lock = serviceProvider.getLockManager().lock(
-                dataSelectionService.getDsInfo().values(),
-                LockType.EXCLUSIVE)) {
+        try (Lock lock = serviceProvider.getLockManager().lock(dataSelectionService.getDsInfo().values(), LockType.EXCLUSIVE)) {
             if (storageUnit == StorageUnit.DATASET) {
                 dataSelectionService.checkOnline();
             }
 
             /* Now delete from ICAT */
             List<EntityBaseBean> dfs = new ArrayList<>();
-            for (DataInfoBase dfInfo : dataSelectionService.getDfInfo()
-                    .values()) {
+            for (DataInfoBase dfInfo : dataSelectionService.getDfInfo().values()) {
                 Datafile df = new Datafile();
                 df.setId(dfInfo.getId());
                 dfs.add(df);
             }
             try {
-                serviceProvider.getIcat()
-                        .deleteMany(this.dataController.getOperationId(), dfs);
+                serviceProvider.getIcat().deleteMany(this.dataController.getOperationId(), dfs);
             } catch (IcatException_Exception e) {
                 IcatExceptionType type = e.getFaultInfo().getType();
 
-                if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-                        || type == IcatExceptionType.SESSION) {
+                if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
                     throw new InsufficientPrivilegesException(e.getMessage());
                 }
                 if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {

@@ -2,7 +2,6 @@ package org.icatproject.ids;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -33,3 +32,4 @@ public class ValidaterTest {
     }
 
 }
+

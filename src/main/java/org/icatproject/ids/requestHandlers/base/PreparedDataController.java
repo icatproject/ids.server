@@ -5,13 +5,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
-import jakarta.json.stream.JsonGenerator;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.icatproject.IcatException_Exception;
-
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -23,11 +17,14 @@ import org.icatproject.ids.models.Prepared;
 import org.icatproject.ids.services.ServiceProvider;
 import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import jakarta.json.stream.JsonGenerator;
 
 public class PreparedDataController extends DataControllerBase {
 
-    protected final static Logger logger = LoggerFactory
-            .getLogger(RequestHandlerBase.class);
+    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
 
     String preparedId;
 
@@ -37,21 +34,16 @@ public class PreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public DataSelectionService provideDataSelectionService(
-            RequestType requestType)
-            throws InternalException, BadRequestException, NotFoundException,
-            InsufficientPrivilegesException, NotImplementedException {
-
-        var preparedDir = ServiceProvider.getInstance().getPropertyHandler()
-                .getCacheDir().resolve("prepared");
+    public DataSelectionService provideDataSelectionService(RequestType requestType) throws InternalException,
+            BadRequestException, NotFoundException, InsufficientPrivilegesException, NotImplementedException {
+        
+        var preparedDir = ServiceProvider.getInstance().getPropertyHandler().getCacheDir().resolve("prepared");
 
         Prepared prepared;
-        try (InputStream stream = Files
-                .newInputStream(preparedDir.resolve(preparedId))) {
+        try (InputStream stream = Files.newInputStream(preparedDir.resolve(preparedId))) {
             prepared = Prepared.unpack(stream);
         } catch (NoSuchFileException e) {
-            throw new NotFoundException(
-                    "The preparedId " + preparedId + " is not known");
+            throw new NotFoundException("The preparedId " + preparedId + " is not known");
         } catch (IOException e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         }
@@ -70,14 +62,12 @@ public class PreparedDataController extends DataControllerBase {
     }
 
     @Override
-    public void addParametersToTransmitterJSON(JsonGenerator gen)
-            throws IcatException_Exception, BadRequestException {
+    public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
         gen.write(RequestIdNames.preparedId, this.preparedId);
     }
 
     @Override
-    public boolean mustZip(boolean zip,
-            DataSelectionService dataSelectionService) {
+    public boolean mustZip(boolean zip, DataSelectionService dataSelectionService) {
         return zip;
     }
 

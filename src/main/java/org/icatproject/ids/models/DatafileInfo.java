@@ -3,18 +3,16 @@ package org.icatproject.ids.models;
 import org.icatproject.ids.plugin.DfInfo;
 
 /**
- * Contains information about a Datafile. Replaces DsInfo in v3 May should
- * implement DfInfo interface
+ * Contains information about a Datafile. Replaces DsInfo in v3
+ * May should implement DfInfo interface
  */
-public class DatafileInfo extends DataInfoBase
-        implements Comparable<DatafileInfo>, DfInfo {
+public class DatafileInfo extends DataInfoBase implements Comparable<DatafileInfo>, DfInfo {
 
     protected String createId;
-    protected String modId;
+    protected String modId; 
     protected long datasId;
 
-    public DatafileInfo(Long id, String name, String location, String createId,
-            String modId, Long datasId) {
+    public DatafileInfo(Long id, String name, String location, String createId, String modId, Long datasId) {
         super(id, name, location);
 
         this.createId = createId;
@@ -52,17 +50,9 @@ public class DatafileInfo extends DataInfoBase
 
     // implementing DfInfo
     @Override
-    public Long getDfId() {
-        return this.getId();
-    }
-
+    public Long getDfId() { return this.getId(); }
     @Override
-    public String getDfLocation() {
-        return this.getLocation();
-    }
-
+    public String getDfLocation() { return this.getLocation(); }
     @Override
-    public String getDfName() {
-        return this.getName();
-    }
+    public String getDfName() { return this.getName(); }
 }

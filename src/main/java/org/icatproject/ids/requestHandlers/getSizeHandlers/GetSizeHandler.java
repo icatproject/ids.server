@@ -3,7 +3,6 @@ package org.icatproject.ids.requestHandlers.getSizeHandlers;
 import java.util.Map;
 
 import org.icatproject.IcatException_Exception;
-
 import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.exceptions.BadRequestException;
@@ -20,32 +19,25 @@ import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
 
 public class GetSizeHandler extends DataRequestHandler {
 
-    public GetSizeHandler(String ip, String preparedId, String sessionId,
-            String investigationIds, String datasetIds, String datafileIds) {
-        super(RequestType.GETSIZE, ip, preparedId, sessionId, investigationIds,
-                datasetIds, datafileIds);
+    public GetSizeHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds) {
+        super(RequestType.GETSIZE, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds);
     }
 
     @Override
-    public ValueContainer handleDataRequest(
-            DataSelectionService dataSelectionService)
-            throws BadRequestException, InternalException,
-            InsufficientPrivilegesException, NotFoundException,
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService)
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
             DataNotOnlineException, NotImplementedException {
-
+        
         logger.debug("Slow computation for normal case");
 
         long size = 0;
-        size = this.updateSizeFromDataInfoIds(size,
-                dataSelectionService.getDfInfo(),
-                this.dataController.forceGetSessionId());
+        size = this.updateSizeFromDataInfoIds(size, dataSelectionService.getDfInfo(), this.dataController.forceGetSessionId());
 
         return new ValueContainer(size);
     }
 
-    protected long updateSizeFromDataInfoIds(long size,
-            Map<Long, DataInfoBase> dataInfos, String sessionId)
-            throws InternalException {
+
+    protected long updateSizeFromDataInfoIds(long size, Map<Long, DataInfoBase> dataInfos, String sessionId) throws InternalException {
         StringBuilder sb = new StringBuilder();
         int n = 0;
         for (DataInfoBase dataInfo : dataInfos.values()) {
@@ -66,13 +58,11 @@ public class GetSizeHandler extends DataRequestHandler {
         return size;
     }
 
-    private long getSizeFor(String sessionId, StringBuilder sb)
-            throws InternalException {
-        String query = "SELECT SUM(df.fileSize) from Datafile df WHERE df.id IN ("
-                + sb.toString() + ") AND df.location IS NOT NULL";
+
+    private long getSizeFor(String sessionId, StringBuilder sb) throws InternalException {
+        String query = "SELECT SUM(df.fileSize) from Datafile df WHERE df.id IN (" + sb.toString() + ") AND df.location IS NOT NULL";
         try {
-            return (Long) ServiceProvider.getInstance().getIcat()
-                    .search(sessionId, query).get(0);
+            return (Long) ServiceProvider.getInstance().getIcat().search(sessionId, query).get(0);
         } catch (IcatException_Exception e) {
             throw new InternalException(e.getClass() + " " + e.getMessage());
         } catch (IndexOutOfBoundsException e) {
@@ -84,5 +74,5 @@ public class GetSizeHandler extends DataRequestHandler {
     public CallType getCallType() {
         return CallType.INFO;
     }
-
+    
 }

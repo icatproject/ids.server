@@ -1,21 +1,19 @@
 package org.icatproject.ids.integration.twodf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeFactory;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.icatproject.Datafile;
-
 import org.icatproject.ids.integration.BaseTest;
 import org.icatproject.ids.integration.util.Setup;
 import org.icatproject.ids.integration.util.client.DataSelection;
@@ -33,9 +31,8 @@ public class PutTest extends BaseTest {
     @Test
     // Works fine for datafile storage
     public void putToUnrestoredDataset() throws Exception {
-        testingClient.put(sessionId, Files.newInputStream(newFileLocation),
-                "uploaded_file1_" + timestamp, datasetIds.get(0),
-                supportedDatafileFormat.getId(), null, 201);
+        testingClient.put(sessionId, Files.newInputStream(newFileLocation), "uploaded_file1_"
+                + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(), null, 201);
     }
 
     @Test
@@ -43,18 +40,15 @@ public class PutTest extends BaseTest {
         Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
         assertFalse(Files.exists(dirOnFastStorage));
-        testingClient.restore(sessionId,
-                new DataSelection().addDataset(datasetIds.get(0)), 204);
+        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
         waitForIds();
 
         assertTrue(Files.exists(dirOnFastStorage));
 
-        Long dfid = testingClient.put(sessionId,
-                Files.newInputStream(newFileLocation),
-                "uploaded_file2_" + timestamp, datasetIds.get(0),
-                supportedDatafileFormat.getId(), "A rather splendid datafile",
-                201);
+        Long dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
+                "uploaded_file2_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
+                "A rather splendid datafile", 201);
 
         waitForIds();
 
@@ -64,11 +58,9 @@ public class PutTest extends BaseTest {
         assertNull(df.getDatafileCreateTime());
         assertNull(df.getDatafileModTime());
 
-        dfid = testingClient.put(sessionId,
-                Files.newInputStream(newFileLocation),
-                "uploaded_file3_" + timestamp, datasetIds.get(0),
-                supportedDatafileFormat.getId(), "An even better datafile",
-                "7.1.3", new Date(420000), new Date(42000), 201);
+        dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
+                "uploaded_file3_" + timestamp, datasetIds.get(0), supportedDatafileFormat.getId(),
+                "An even better datafile", "7.1.3", new Date(420000), new Date(42000), 201);
         df = (Datafile) icatWS.get(sessionId, "Datafile", dfid);
         assertEquals("An even better datafile", df.getDescription());
         assertEquals("7.1.3", df.getDoi());
@@ -86,8 +78,7 @@ public class PutTest extends BaseTest {
 
         assertTrue(Files.exists(dirOnFastStorage));
 
-        testingClient.archive(sessionId,
-                new DataSelection().addDataset(datasetIds.get(0)), 204);
+        testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
 
         waitForIds();
 

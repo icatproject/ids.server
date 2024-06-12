@@ -1,10 +1,9 @@
 package org.icatproject.ids.integration.twodf;
 
-import static org.junit.Assert.assertTrue;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -23,8 +22,9 @@ public class QueueTest extends BaseTest {
     }
 
     /*
-     * Arrange for multiple different operations, requiring conflicting locks on
-     * the same dataset to be processed at the same time. This triggers Bug #82.
+     * Arrange for multiple different operations, requiring conflicting
+     * locks on the same dataset to be processed at the same time.  This
+     * triggers Bug #82.
      */
     @Test
     public void multiOperationTest() throws Exception {
@@ -37,9 +37,8 @@ public class QueueTest extends BaseTest {
         assertTrue(Files.exists(dirOnFastStorage));
 
         testingClient.put(sessionId, Files.newInputStream(newFileLocation),
-                "uploaded_file_" + timestamp, dsId,
-                supportedDatafileFormat.getId(), "A rather splendid datafile",
-                201);
+                "uploaded_file_" + timestamp, dsId, supportedDatafileFormat.getId(),
+                "A rather splendid datafile", 201);
         testingClient.archive(sessionId, selection, 204);
         waitForIds();
     }

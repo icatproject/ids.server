@@ -1,10 +1,9 @@
 package org.icatproject.ids.integration.one;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.InputStream;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -42,20 +41,17 @@ public class MiscTest extends BaseTest {
 
     @Test
     public void correctBehaviourNoOffsetTest() throws Exception {
-        String preparedId = testingClient.prepareData(sessionId,
-                new DataSelection().addDatafile(datafileIds.get(0)), Flag.NONE,
-                200);
+        String preparedId = testingClient.prepareData(sessionId, new DataSelection().addDatafile(datafileIds.get(0)),
+                Flag.NONE, 200);
 
         while (!testingClient.isPrepared(preparedId, 200)) {
             Thread.sleep(1000);
         }
 
-        assertTrue(testingClient.getServiceStatus(sessionId, 200).getOpItems()
-                .isEmpty());
+        assertTrue(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
 
         waitForIds();
-        assertTrue(testingClient.getServiceStatus(sessionId, 200).getOpItems()
-                .isEmpty());
+        assertTrue(testingClient.getServiceStatus(sessionId, 200).getOpItems().isEmpty());
 
         try (InputStream stream = testingClient.getData(preparedId, 0, 200)) {
             checkStream(stream, datafileIds.get(0));
@@ -64,15 +60,13 @@ public class MiscTest extends BaseTest {
 
     @Test(expected = NotImplementedException.class)
     public void restoreNotAvailableTest() throws Exception {
-        testingClient.restore(sessionId,
-                new DataSelection().addDataset(datasetIds.get(0)), 501);
+        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 501);
         waitForIds();
     }
 
     @Test(expected = NotImplementedException.class)
     public void archiveNotAvailableTest() throws Exception {
-        testingClient.archive(sessionId,
-                new DataSelection().addDataset(datasetIds.get(0)), 501);
+        testingClient.archive(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 501);
         waitForIds();
     }
 

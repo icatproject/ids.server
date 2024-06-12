@@ -9,8 +9,8 @@ public class Constants {
 
     static {
 
-        InputStream inputStream = Constants.class.getClassLoader()
-                .getResourceAsStream("app.properties");
+        InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(
+                "app.properties");
         Properties p = new Properties();
 
         try {

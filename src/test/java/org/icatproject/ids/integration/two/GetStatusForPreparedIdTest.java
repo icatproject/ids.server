@@ -33,20 +33,22 @@ public class GetStatusForPreparedIdTest extends BaseTest {
 
     @Test(expected = NotFoundException.class)
     public void notFoundIdsTest() throws Exception {
-        testingClient.prepareData(sessionId, new DataSelection().addDatafiles(
-                Arrays.asList(1L, 2L, 3L, 99999L)), Flag.NONE, 404);
+        testingClient
+                .prepareData(sessionId,
+                        new DataSelection().addDatafiles(Arrays.asList(1L, 2L, 3L, 99999L)),
+                        Flag.NONE, 404);
     }
 
     @Test(expected = NotFoundException.class)
     public void notFoundSingleIdTest() throws Exception {
-        testingClient.prepareData(sessionId,
-                new DataSelection().addDatafile(99999L), Flag.NONE, 404);
+        testingClient.prepareData(sessionId, new DataSelection().addDatafile(99999L), Flag.NONE,
+                404);
     }
 
     @Test(expected = NotFoundException.class)
     public void notFoundDatasetSingleIdTest() throws Exception {
-        testingClient.prepareData(sessionId,
-                new DataSelection().addDataset(99999L), Flag.NONE, 404);
+        testingClient
+                .prepareData(sessionId, new DataSelection().addDataset(99999L), Flag.NONE, 404);
     }
 
     @Test(expected = InsufficientPrivilegesException.class)

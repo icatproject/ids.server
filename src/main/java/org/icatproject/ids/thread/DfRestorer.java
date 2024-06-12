@@ -8,22 +8,20 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
-import org.icatproject.ids.services.LockManager.Lock;
 import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.Lock;
 
 /*
  * Restores datafiles from the slow to the fast storage.
  */
 public class DfRestorer implements Runnable {
 
-    private final static Logger logger = LoggerFactory
-            .getLogger(DfRestorer.class);
+    private final static Logger logger = LoggerFactory.getLogger(DfRestorer.class);
 
     private MainStorageInterface mainStorageInterface;
     private ArchiveStorageInterface archiveStorageInterface;
@@ -31,9 +29,7 @@ public class DfRestorer implements Runnable {
     private List<DatafileInfo> dataFileInfos;
     private Collection<Lock> locks;
 
-    public DfRestorer(List<DatafileInfo> dfInfos,
-            PropertyHandler propertyHandler, FiniteStateMachine fsm,
-            Collection<Lock> locks) {
+    public DfRestorer(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
         this.dataFileInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -65,14 +61,14 @@ public class DfRestorer implements Runnable {
                 }
             }
 
-            // TODO: This is additional conversion caused by the redesign :-(
+            //TODO: This is additional conversion caused by the redesign :-(
             List<DfInfo> dfInfos = new ArrayList<>();
-            for (DfInfo dfInfo : this.dataFileInfos) {
+            for(DfInfo dfInfo : this.dataFileInfos) {
                 dfInfos.add(dfInfo);
             }
 
-            Set<DfInfo> failures = archiveStorageInterface
-                    .restore(mainStorageInterface, dfInfos);
+
+            Set<DfInfo> failures = archiveStorageInterface.restore(mainStorageInterface, dfInfos);
             for (DatafileInfo dfInfo : dataFileInfos) {
                 if (failures.contains(dfInfo)) {
                     fsm.recordFailure(dfInfo.getDfId());
@@ -85,8 +81,7 @@ public class DfRestorer implements Runnable {
             }
         } catch (Exception e) {
             for (DatafileInfo dfInfo : dataFileInfos) {
-                logger.error("Restore of " + dfInfo + " failed " + e.getClass()
-                        + " " + e.getMessage());
+                logger.error("Restore of " + dfInfo + " failed " + e.getClass() + " " + e.getMessage());
                 fsm.removeFromChanging(dfInfo);
             }
         } finally {
