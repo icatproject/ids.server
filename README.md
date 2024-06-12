@@ -9,7 +9,7 @@ You also can execute the commands manually:
 * `mvn spotless:apply` to update the source code like it is defined in the formatters configuration.
 
 ### Import order
-The import order is also validated and applied by the spotless-maven-plugin. It is defined in its plugin configuration in the `pom.xml`. You can find it in `plugin.configuration.java.importOrder.order`
+The import order is also validated and applied by the spotless-maven-plugin. It is defined in the file `eclipse-importorder.txt` and referenced in `pom.xml`. It is needed that it has a compatible format like the eclipse built-in import order configuration (better its exported file).
 
 ## Further Information
 [![Build Status](https://github.com/icatproject/ids.server/workflows/CI%20Build/badge.svg?branch=master)](https://github.com/icatproject/ids.server/actions?query=workflow%3A%22CI+Build%22)

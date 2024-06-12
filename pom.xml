@@ -442,15 +442,16 @@
                             <file>${project.basedir}/eclipse-formatter.xml</file>
                         </eclipse>
                         <importOrder>
-                            <order>java|jakarta|org|org.icatproject|org.icatproject.ids</order>
+                            <file>${project.basedir}/eclipse-importorder.txt</file>
                         </importOrder>
                     </java>
                 </configuration>
                 <executions>
                     <execution>
                         <goals>
-                        <goal>${spotless.goal}</goal>
+                            <goal>${spotless.goal}</goal>
                         </goals>
+                        <phase>compile</phase>
                     </execution>
                 </executions>
             </plugin>
