@@ -20,8 +20,7 @@ public class RestoreTest extends BaseTest {
     @Test
     public void restoreArchivedDataset() throws Exception {
         Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
-        testingClient.restore(sessionId,
-                new DataSelection().addDataset(datasetIds.get(0)), 204);
+        testingClient.restore(sessionId, new DataSelection().addDataset(datasetIds.get(0)), 204);
         waitForIds();
         checkPresent(dirOnFastStorage);
     }
@@ -30,9 +29,8 @@ public class RestoreTest extends BaseTest {
     public void restoreTwoArchivedDatasets() throws Exception {
         Path dirOnFastStorage1 = getDirOnFastStorage(datasetIds.get(0));
         Path dirOnFastStorage2 = getDirOnFastStorage(datasetIds.get(1));
-        testingClient.restore(sessionId, new DataSelection()
-                .addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)),
-                204);
+        testingClient.restore(sessionId,
+                new DataSelection().addDataset(datasetIds.get(0)).addDataset(datasetIds.get(1)), 204);
 
         waitForIds();
         checkPresent(dirOnFastStorage1);
@@ -44,8 +42,7 @@ public class RestoreTest extends BaseTest {
 
         Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-        testingClient.restore(sessionId,
-                new DataSelection().addDatafile(datafileIds.get(0)), 204);
+        testingClient.restore(sessionId, new DataSelection().addDatafile(datafileIds.get(0)), 204);
         waitForIds();
 
         checkPresent(dirOnFastStorage);
@@ -57,9 +54,8 @@ public class RestoreTest extends BaseTest {
 
         Path dirOnFastStorage = getDirOnFastStorage(datasetIds.get(0));
 
-        testingClient.restore(sessionId, new DataSelection()
-                .addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)),
-                204);
+        testingClient.restore(sessionId,
+                new DataSelection().addDatafile(datafileIds.get(0)).addDataset(datasetIds.get(0)), 204);
 
         waitForIds();
 

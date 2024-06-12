@@ -38,24 +38,21 @@ public class BogusDatafileTest extends BaseTest {
     public void createBogusFiles() throws Exception {
         long timestamp = System.currentTimeMillis();
 
-        Dataset ds1 = (Dataset) icatWS.get(sessionId, "Dataset",
-                datasetIds.get(0));
+        Dataset ds1 = (Dataset) icatWS.get(sessionId, "Dataset", datasetIds.get(0));
         Datafile dfb1 = new Datafile();
         dfb1.setName("dfbogus1_" + timestamp);
         dfb1.setFileSize(42L);
         dfb1.setDataset(ds1);
         dfb1.setId(icatWS.create(sessionId, dfb1));
 
-        Dataset ds2 = (Dataset) icatWS.get(sessionId, "Dataset",
-                datasetIds.get(1));
+        Dataset ds2 = (Dataset) icatWS.get(sessionId, "Dataset", datasetIds.get(1));
         Datafile dfb2 = new Datafile();
         dfb2.setName("dfbogus2_" + timestamp);
         dfb2.setFileSize(42L);
         dfb2.setDataset(ds2);
         dfb2.setId(icatWS.create(sessionId, dfb2));
 
-        Dataset ds3 = (Dataset) icatWS.get(sessionId, "Dataset",
-                datasetIds.get(2));
+        Dataset ds3 = (Dataset) icatWS.get(sessionId, "Dataset", datasetIds.get(2));
         Datafile dfb3 = new Datafile();
         dfb3.setName("dfbogus3_" + timestamp);
         dfb3.setFileSize(42L);
@@ -70,11 +67,9 @@ public class BogusDatafileTest extends BaseTest {
     @Test
     public void getEmptyDataset() throws Exception {
 
-        DataSelection selection = new DataSelection()
-                .addDataset(datasetIds.get(2));
+        DataSelection selection = new DataSelection().addDataset(datasetIds.get(2));
 
-        try (InputStream stream = testingClient.getData(sessionId, selection,
-                Flag.NONE, 0, null)) {
+        try (InputStream stream = testingClient.getData(sessionId, selection, Flag.NONE, 0, null)) {
             checkZipStream(stream, Collections.<Long>emptyList(), 57, 0);
         }
 
@@ -83,8 +78,7 @@ public class BogusDatafileTest extends BaseTest {
     @Test
     public void getSizeEmptyDataset() throws Exception {
 
-        DataSelection selection = new DataSelection()
-                .addDataset(datasetIds.get(2));
+        DataSelection selection = new DataSelection().addDataset(datasetIds.get(2));
         assertEquals(0L, testingClient.getSize(sessionId, selection, 200));
 
     }
@@ -92,11 +86,9 @@ public class BogusDatafileTest extends BaseTest {
     @Test
     public void getNonEmptyDataset() throws Exception {
 
-        DataSelection selection = new DataSelection()
-                .addDataset(datasetIds.get(0));
+        DataSelection selection = new DataSelection().addDataset(datasetIds.get(0));
 
-        try (InputStream stream = testingClient.getData(sessionId, selection,
-                Flag.NONE, 0, null)) {
+        try (InputStream stream = testingClient.getData(sessionId, selection, Flag.NONE, 0, null)) {
             checkZipStream(stream, datafileIds.subList(0, 2), 57, 0);
         }
 
@@ -105,8 +97,7 @@ public class BogusDatafileTest extends BaseTest {
     @Test
     public void getSizeNonEmptyDataset() throws Exception {
 
-        DataSelection selection = new DataSelection()
-                .addDataset(datasetIds.get(0));
+        DataSelection selection = new DataSelection().addDataset(datasetIds.get(0));
         assertEquals(104L, testingClient.getSize(sessionId, selection, 200));
 
     }
@@ -114,11 +105,9 @@ public class BogusDatafileTest extends BaseTest {
     @Test(expected = NotFoundException.class)
     public void getBogusFile() throws Exception {
 
-        DataSelection selection = new DataSelection()
-                .addDatafile(datafileIds.get(5));
+        DataSelection selection = new DataSelection().addDatafile(datafileIds.get(5));
 
-        try (InputStream stream = testingClient.getData(sessionId, selection,
-                Flag.NONE, 0, 404)) {
+        try (InputStream stream = testingClient.getData(sessionId, selection, Flag.NONE, 0, 404)) {
             checkZipStream(stream, Collections.<Long>emptyList(), 57, 0);
         }
 
@@ -127,8 +116,7 @@ public class BogusDatafileTest extends BaseTest {
     @Test(expected = NotFoundException.class)
     public void getSizeBogusFile() throws Exception {
 
-        DataSelection selection = new DataSelection()
-                .addDatafile(datafileIds.get(5));
+        DataSelection selection = new DataSelection().addDatafile(datafileIds.get(5));
         testingClient.getSize(sessionId, selection, 404);
 
     }

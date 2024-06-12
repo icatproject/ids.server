@@ -13,11 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Provider
-public class NotFoundExceptionMapper
-        implements ExceptionMapper<NotFoundException> {
+public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
 
-    private static Logger logger = LoggerFactory
-            .getLogger(NotFoundExceptionMapper.class);
+    private static Logger logger = LoggerFactory.getLogger(NotFoundExceptionMapper.class);
 
     @Override
     public Response toResponse(NotFoundException e) {
@@ -25,10 +23,7 @@ public class NotFoundExceptionMapper
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonGenerator gen = Json.createGenerator(baos);
         gen.writeStartObject().write("code", "NOT_IMPLEMENTED")
-                .write("message",
-                        "Operation not implemented by this IDS server.")
-                .writeEnd().close();
-        return Response.status(Response.Status.NOT_IMPLEMENTED)
-                .entity(baos.toString()).build();
+                .write("message", "Operation not implemented by this IDS server.").writeEnd().close();
+        return Response.status(Response.Status.NOT_IMPLEMENTED).entity(baos.toString()).build();
     }
 }

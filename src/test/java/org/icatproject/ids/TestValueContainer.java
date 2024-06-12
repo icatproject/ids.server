@@ -15,11 +15,12 @@ import org.icatproject.ids.exceptions.InternalException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.junit.Test;
 
+
 public class TestValueContainer {
 
     @Test
     public void testInvalidValueContainer() throws Exception {
-
+        
         var vc = ValueContainer.getInvalid();
         assertFalse(vc.isVoid());
         assertTrue(vc.getType() == ValueContainerType.INVALID);
@@ -27,7 +28,7 @@ public class TestValueContainer {
 
     @Test
     public void testVoidValueContainer() throws Exception {
-
+        
         var vc = ValueContainer.getVoid();
         assertTrue(vc.isVoid());
         assertTrue(vc.getType() == ValueContainerType.VOID);
@@ -36,7 +37,7 @@ public class TestValueContainer {
 
     @Test(expected = InternalException.class)
     public void testIntValueContainer() throws Exception {
-
+        
         var vc = new ValueContainer(1);
         assertFalse(vc.isVoid());
         assertFalse(vc.isInvalid());
@@ -49,7 +50,7 @@ public class TestValueContainer {
 
     @Test(expected = InternalException.class)
     public void testLongValueContainer() throws Exception {
-
+        
         var vc = new ValueContainer(1L);
         assertFalse(vc.isVoid());
         assertFalse(vc.isInvalid());
@@ -62,7 +63,7 @@ public class TestValueContainer {
 
     @Test(expected = InternalException.class)
     public void testBoolValueContainer() throws Exception {
-
+        
         var vc = new ValueContainer(true);
         assertFalse(vc.isVoid());
         assertFalse(vc.isInvalid());
@@ -75,7 +76,7 @@ public class TestValueContainer {
 
     @Test(expected = InternalException.class)
     public void testStringValueContainer() throws Exception {
-
+        
         var vc = new ValueContainer("test");
         assertFalse(vc.isVoid());
         assertFalse(vc.isInvalid());
@@ -88,7 +89,7 @@ public class TestValueContainer {
 
     @Test(expected = InternalException.class)
     public void testInputStreamValueContainer() throws Exception {
-
+        
         String s = "test InputStream";
         var inputStream = new ByteArrayInputStream(s.getBytes());
         var vc = new ValueContainer(inputStream);
@@ -97,9 +98,8 @@ public class TestValueContainer {
         assertFalse(vc.isNull());
 
         assertEquals(vc.getInputStream(), inputStream);
-
-        var ISReader = new InputStreamReader(vc.getInputStream(),
-                StandardCharsets.UTF_8);
+        
+        var ISReader = new InputStreamReader(vc.getInputStream(), StandardCharsets.UTF_8);
         var BReader = new BufferedReader(ISReader);
         String textFromStream = BReader.lines().collect(Collectors.joining());
         BReader.close();

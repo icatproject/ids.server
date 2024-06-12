@@ -23,9 +23,9 @@ import jakarta.json.stream.JsonGenerator;
 /* This is a POJO with only package access so don't make data private */
 public class Prepared {
 
-    protected final static Logger logger = LoggerFactory
-            .getLogger(RequestHandlerBase.class);
+    protected final static Logger logger = LoggerFactory.getLogger(RequestHandlerBase.class);
 
+    
     public SortedMap<Long, DataInfoBase> dsInfos;
     public SortedMap<Long, DataInfoBase> dfInfos;
     public Set<Long> emptyDatasets;
@@ -33,9 +33,7 @@ public class Prepared {
     public boolean zip;
     public boolean compress;
 
-    public Prepared(SortedMap<Long, DataInfoBase> dsInfos,
-            SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets,
-            long fileLength) {
+    public Prepared(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength) {
         this.dsInfos = dsInfos;
         this.dfInfos = dfInfos;
         this.emptyDatasets = emptyDatasets;
@@ -44,17 +42,15 @@ public class Prepared {
         this.compress = false;
     }
 
-    public Prepared(SortedMap<Long, DataInfoBase> dsInfos,
-            SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets,
-            long fileLength, Boolean zip, Boolean compress) {
+    public Prepared(SortedMap<Long, DataInfoBase> dsInfos, SortedMap<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength, Boolean zip, Boolean compress) {
         this(dsInfos, dfInfos, emptyDatasets, fileLength);
         this.zip = zip;
         this.compress = compress;
     }
 
-    public static void pack(OutputStream stream, boolean zip, boolean compress,
-            Map<Long, DataInfoBase> dsInfos, Map<Long, DataInfoBase> dfInfos,
-            Set<Long> emptyDatasets, long fileLength) {
+
+    public static void pack(OutputStream stream, boolean zip, boolean compress, Map<Long, DataInfoBase> dsInfos,
+                        Map<Long, DataInfoBase> dfInfos, Set<Long> emptyDatasets, long fileLength) {
         JsonGenerator gen = Json.createGenerator(stream);
         gen.writeStartObject();
         gen.write("zip", zip);
@@ -63,16 +59,13 @@ public class Prepared {
 
         gen.writeStartArray("dsInfo");
         for (DataInfoBase dataInfo : dsInfos.values()) {
-            var dsInfo = (DatasetInfo) dataInfo;
+            var dsInfo = (DatasetInfo)dataInfo;
             logger.debug("dsInfo " + dsInfo);
             gen.writeStartObject().write("dsId", dsInfo.getId())
 
-                    .write("dsName", dsInfo.getDsName())
-                    .write("facilityId", dsInfo.getFacilityId())
-                    .write("facilityName", dsInfo.getFacilityName())
-                    .write("invId", dsInfo.getInvId())
-                    .write("invName", dsInfo.getInvName())
-                    .write("visitId", dsInfo.getVisitId());
+                    .write("dsName", dsInfo.getDsName()).write("facilityId", dsInfo.getFacilityId())
+                    .write("facilityName", dsInfo.getFacilityName()).write("invId", dsInfo.getInvId())
+                    .write("invName", dsInfo.getInvName()).write("visitId", dsInfo.getVisitId());
             if (dsInfo.getDsLocation() != null) {
                 gen.write("dsLocation", dsInfo.getDsLocation());
             } else {
@@ -84,12 +77,10 @@ public class Prepared {
 
         gen.writeStartArray("dfInfo");
         for (DataInfoBase dataInfo : dfInfos.values()) {
-            var dfInfo = (DatafileInfo) dataInfo;
+            var dfInfo = (DatafileInfo)dataInfo;
             DataInfoBase dsInfo = dsInfos.get(dfInfo.getDsId());
-            gen.writeStartObject().write("dsId", dsInfo.getId())
-                    .write("dfId", dfInfo.getId())
-                    .write("dfName", dfInfo.getDfName())
-                    .write("createId", dfInfo.getCreateId())
+            gen.writeStartObject().write("dsId", dsInfo.getId()).write("dfId", dfInfo.getId())
+                    .write("dfName", dfInfo.getDfName()).write("createId", dfInfo.getCreateId())
                     .write("modId", dfInfo.getModId());
             if (dfInfo.getDfLocation() != null) {
                 gen.write("dfLocation", dfInfo.getDfLocation());
@@ -111,6 +102,7 @@ public class Prepared {
 
     }
 
+
     public static Prepared unpack(InputStream stream) throws InternalException {
 
         JsonObject pd;
@@ -119,42 +111,35 @@ public class Prepared {
         }
         var zip = pd.getBoolean("zip");
         var compress = pd.getBoolean("compress");
-        var fileLength = pd.containsKey("fileLength") ? pd.getInt("fileLength")
-                : 0;
+        var fileLength = pd.containsKey("fileLength") ? pd.getInt("fileLength") : 0;
         SortedMap<Long, DataInfoBase> dsInfos = new TreeMap<>();
         SortedMap<Long, DataInfoBase> dfInfos = new TreeMap<>();
         Set<Long> emptyDatasets = new HashSet<>();
 
         for (JsonValue itemV : pd.getJsonArray("dfInfo")) {
             JsonObject item = (JsonObject) itemV;
-            String dfLocation = item.isNull("dfLocation") ? null
-                    : item.getString("dfLocation");
+            String dfLocation = item.isNull("dfLocation") ? null : item.getString("dfLocation");
             long dfid = item.getJsonNumber("dfId").longValueExact();
-            dfInfos.put(dfid,
-                    new DatafileInfo(dfid, item.getString("dfName"), dfLocation,
-                            item.getString("createId"), item.getString("modId"),
-                            item.getJsonNumber("dsId").longValueExact()));
+            dfInfos.put(dfid, new DatafileInfo(dfid, item.getString("dfName"),
+                    dfLocation, item.getString("createId"), item.getString("modId"),
+                    item.getJsonNumber("dsId").longValueExact()));
 
         }
 
         for (JsonValue itemV : pd.getJsonArray("dsInfo")) {
             JsonObject item = (JsonObject) itemV;
             long dsId = item.getJsonNumber("dsId").longValueExact();
-            String dsLocation = item.isNull("dsLocation") ? null
-                    : item.getString("dsLocation");
-            dsInfos.put(dsId, new DatasetInfo(dsId, item.getString("dsName"),
-                    dsLocation, item.getJsonNumber("invId").longValueExact(),
-                    item.getString("invName"), item.getString("visitId"),
-                    item.getJsonNumber("facilityId").longValueExact(),
-                    item.getString("facilityName")));
+            String dsLocation = item.isNull("dsLocation") ? null : item.getString("dsLocation");
+            dsInfos.put(dsId, new DatasetInfo(dsId, item.getString("dsName"), dsLocation,
+                    item.getJsonNumber("invId").longValueExact(), item.getString("invName"), item.getString("visitId"),
+                    item.getJsonNumber("facilityId").longValueExact(), item.getString("facilityName")));
         }
 
         for (JsonValue itemV : pd.getJsonArray("emptyDs")) {
             emptyDatasets.add(((JsonNumber) itemV).longValueExact());
         }
 
-        return new Prepared(dsInfos, dfInfos, emptyDatasets, fileLength, zip,
-                compress);
+        return new Prepared(dsInfos, dfInfos, emptyDatasets, fileLength, zip, compress);
     }
 
 }

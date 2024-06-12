@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.ejb.EJB;
@@ -70,8 +71,7 @@ import org.icatproject.ids.services.UnfinishedWorkService;
 @Stateless
 public class IdsService {
 
-    private final static Logger logger = LoggerFactory
-            .getLogger(IdsService.class);
+    private final static Logger logger = LoggerFactory.getLogger(IdsService.class);
 
     @EJB
     Transmitter transmitter;
@@ -89,6 +89,7 @@ public class IdsService {
 
     private UnfinishedWorkService unfinishedWorkService;
 
+
     @PostConstruct
     private void init() {
 
@@ -97,19 +98,15 @@ public class IdsService {
 
                 logger.info("creating IdsService");
 
-                FiniteStateMachine.createInstance(reader, lockManager,
-                        PropertyHandler.getInstance().getStorageUnit());
+                FiniteStateMachine.createInstance(reader, lockManager, PropertyHandler.getInstance().getStorageUnit());
                 this.fsm = FiniteStateMachine.getInstance();
                 this.fsm.init();
-                ServiceProvider.createInstance(transmitter, fsm, lockManager,
-                        reader);
+                ServiceProvider.createInstance(transmitter, fsm, lockManager, reader);
 
-                var propertyHandler = ServiceProvider.getInstance()
-                        .getPropertyHandler();
+                var propertyHandler = ServiceProvider.getInstance().getPropertyHandler();
                 var archiveStorage = propertyHandler.getArchiveStorage();
                 var twoLevel = archiveStorage != null;
-                var preparedDir = propertyHandler.getCacheDir()
-                        .resolve("prepared");
+                var preparedDir = propertyHandler.getCacheDir().resolve("prepared");
 
                 Files.createDirectories(preparedDir);
                 this.unfinishedWorkService = new UnfinishedWorkService();
@@ -123,17 +120,13 @@ public class IdsService {
 
                 java.nio.file.Path datasetDir;
                 if (twoLevel) {
-                    datasetDir = propertyHandler.getCacheDir()
-                            .resolve("dataset");
-                    var markerDir = propertyHandler.getCacheDir()
-                            .resolve("marker");
+                    datasetDir = propertyHandler.getCacheDir().resolve("dataset");
+                    var markerDir = propertyHandler.getCacheDir().resolve("marker");
                     if (!inited) {
                         Files.createDirectories(datasetDir);
                         Files.createDirectories(markerDir);
-                        this.unfinishedWorkService
-                                .restartUnfinishedWork(markerDir, key);
-                        this.unfinishedWorkService
-                                .cleanDatasetCache(datasetDir);
+                        this.unfinishedWorkService.restartUnfinishedWork(markerDir, key);
+                        this.unfinishedWorkService.cleanDatasetCache(datasetDir);
                     }
                 }
 
@@ -143,10 +136,10 @@ public class IdsService {
             }
         } catch (Throwable e) {
             logger.error("Won't start ", e);
-            throw new RuntimeException("IdsService reports " + e.getClass()
-                    + " " + e.getMessage());
+            throw new RuntimeException("IdsService reports " + e.getClass() + " " + e.getMessage());
         }
     }
+
 
     @PreDestroy
     private void exit() {
@@ -154,42 +147,36 @@ public class IdsService {
         logger.info("destroyed IdsService");
     }
 
+
     /**
      * Archive data specified by the investigationIds, datasetIds and
      * datafileIds specified along with a sessionId. If two level storage is not
      * in use this has no effect.
      *
      * @title archive
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds If present, a comma separated list of
-     *                         investigation id values
-     * @param datasetIds       If present, a comma separated list of data set id
-     *                         values or null
-     * @param datafileIds      If present, a comma separated list of datafile id
-     *                         values.
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds If present, a comma separated list of investigation id values
+     * @param datasetIds       If present, a comma separated list of data set id values or
+     *                         null
+     * @param datafileIds      If present, a comma separated list of datafile id values.
      * @throws NotImplementedException
      * @throws BadRequestException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @throws DataNotOnlineException
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("archive")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public void archive(@Context HttpServletRequest request,
-            @FormParam(RequestIdNames.sessionId) String sessionId,
-            @FormParam("investigationIds") String investigationIds,
-            @FormParam("datasetIds") String datasetIds,
-            @FormParam("datafileIds") String datafileIds)
-            throws NotImplementedException, BadRequestException,
-            InsufficientPrivilegesException, InternalException,
+    public void archive(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
+                        @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+                        @FormParam("datafileIds") String datafileIds)
+            throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
 
-        var handler = new ArchiveHandler(request.getRemoteAddr(), sessionId,
-                investigationIds, datasetIds, datafileIds);
+        var handler = new ArchiveHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
     }
 
@@ -198,14 +185,11 @@ public class IdsService {
      * specified along with a sessionId.
      *
      * @title delete
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds If present, a comma separated list of
-     *                         investigation id values
-     * @param datasetIds       If present, a comma separated list of data set id
-     *                         values or null
-     * @param datafileIds      If present, a comma separated list of datafile id
-     *                         values.
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds If present, a comma separated list of investigation id values
+     * @param datasetIds       If present, a comma separated list of data set id values or
+     *                         null
+     * @param datafileIds      If present, a comma separated list of datafile id values.
      * @throws NotImplementedException
      * @throws BadRequestException
      * @throws InsufficientPrivilegesException
@@ -216,19 +200,15 @@ public class IdsService {
      */
     @DELETE
     @Path("delete")
-    public void delete(@Context HttpServletRequest request,
-            @QueryParam(RequestIdNames.sessionId) String sessionId,
-            @QueryParam("investigationIds") String investigationIds,
-            @QueryParam("datasetIds") String datasetIds,
-            @QueryParam("datafileIds") String datafileIds)
-            throws NotImplementedException, BadRequestException,
-            InsufficientPrivilegesException, NotFoundException,
-            InternalException, DataNotOnlineException {
+    public void delete(@Context HttpServletRequest request, @QueryParam(RequestIdNames.sessionId) String sessionId,
+                       @QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
+                       @QueryParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
+            InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
 
-        var handler = new DeleteHandler(request.getRemoteAddr(), sessionId,
-                investigationIds, datasetIds, datafileIds);
+        var handler = new DeleteHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
     }
+
 
     /**
      * Return the version of the server
@@ -242,8 +222,7 @@ public class IdsService {
     public String getVersion() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonGenerator gen = Json.createGenerator(baos);
-        gen.writeStartObject().write("version", Constants.API_VERSION)
-                .writeEnd();
+        gen.writeStartObject().write("version", Constants.API_VERSION).writeEnd();
         gen.close();
         return baos.toString();
     }
@@ -255,58 +234,43 @@ public class IdsService {
      * set. If preparedId is set the compress and zip arguments are not used.
      *
      * @title getData
-     * @param preparedId       A valid preparedId returned by a call to
-     *                         prepareData
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds A comma separated list of investigation id
-     *                         values.
+     * @param preparedId       A valid preparedId returned by a call to prepareData
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds A comma separated list of investigation id values.
      * @param datasetIds       A comma separated list of data set id values.
      * @param datafileIds      A comma separated list of data file id values.
-     * @param compress         If true use default compression otherwise no
-     *                         compression. This only applies if preparedId is
-     *                         not set and if the results are being zipped.
-     * @param zip              If true the data should be zipped. If multiple
-     *                         files are requested (or could be because a
-     *                         datasetId or investigationId has been specified)
-     *                         the data are zipped regardless of the
+     * @param compress         If true use default compression otherwise no compression. This
+     *                         only applies if preparedId is not set and if the results are
+     *                         being zipped.
+     * @param zip              If true the data should be zipped. If multiple files are
+     *                         requested (or could be because a datasetId or investigationId
+     *                         has been specified) the data are zipped regardless of the
      *                         specification of this flag.
      * @param outname          The file name to put in the returned header
-     *                         "ContentDisposition". If it does not end in .zip
-     *                         but it is a zip file then a ".zip" will be
-     *                         appended.
-     * @param range            A range header which must match "bytes=(\\d+)-"
-     *                         to specify an offset i.e. to skip a number of
-     *                         bytes.
+     *                         "ContentDisposition". If it does not end in .zip but it is a
+     *                         zip file then a ".zip" will be appended.
+     * @param range            A range header which must match "bytes=(\\d+)-" to specify an
+     *                         offset i.e. to skip a number of bytes.
      * @return a stream of json data.
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
      * @throws InsufficientPrivilegesException
      * @throws DataNotOnlineException
-     * @throws NotImplementedException
+     * @throws NotImplementedException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getData")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public Response getData(@Context HttpServletRequest request,
-            @QueryParam(RequestIdNames.preparedId) String preparedId,
-            @QueryParam(RequestIdNames.sessionId) String sessionId,
-            @QueryParam("investigationIds") String investigationIds,
-            @QueryParam("datasetIds") String datasetIds,
-            @QueryParam("datafileIds") String datafileIds,
-            @QueryParam("compress") boolean compress,
-            @QueryParam("zip") boolean zip,
-            @QueryParam("outname") String outname,
-            @HeaderParam("Range") String range)
-            throws BadRequestException, NotFoundException, InternalException,
-            InsufficientPrivilegesException, DataNotOnlineException,
-            NotImplementedException {
+    public Response getData(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                            @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
+                            @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds,
+                            @QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
+                            @QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
+            NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        var handler = new GetDataHandler(request.getRemoteAddr(), preparedId,
-                sessionId, investigationIds, datasetIds, datafileIds, compress,
-                zip, outname, range);
+        var handler = new GetDataHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds, compress, zip,  outname, range);
         return handler.handle().getResponse();
     }
 
@@ -317,12 +281,9 @@ public class IdsService {
      * set.
      *
      * @title getDatafileIds
-     * @param preparedId       A valid preparedId returned by a call to
-     *                         prepareData
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds A comma separated list of investigation id
-     *                         values.
+     * @param preparedId       A valid preparedId returned by a call to prepareData
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds A comma separated list of investigation id values.
      * @param datasetIds       A comma separated list of data set id values.
      * @param datafileIds      A comma separated list of datafile id values.
      * @return a list of id values
@@ -330,26 +291,19 @@ public class IdsService {
      * @throws InternalException
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getDatafileIds")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getDatafileIds(@Context HttpServletRequest request,
-            @QueryParam(RequestIdNames.preparedId) String preparedId,
-            @QueryParam(RequestIdNames.sessionId) String sessionId,
-            @QueryParam("investigationIds") String investigationIds,
-            @QueryParam("datasetIds") String datasetIds,
-            @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, InternalException, NotFoundException,
-            InsufficientPrivilegesException, DataNotOnlineException,
-            NotImplementedException {
+    public String getDatafileIds(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                                 @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
+                                 @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
+            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        var handler = new GetDataFileIdsHandler(request.getRemoteAddr(),
-                preparedId, sessionId, investigationIds, datasetIds,
-                datafileIds);
+        var handler = new GetDataFileIdsHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
         return handler.handle().getString();
     }
 
@@ -359,21 +313,18 @@ public class IdsService {
      * obtained.
      *
      * @return the url of the icat server
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
-     * @throws NotFoundException
-     * @throws InsufficientPrivilegesException
-     * @throws BadRequestException
-     * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getIcatUrl")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getIcatUrl(@Context HttpServletRequest request)
-            throws InternalException, BadRequestException,
-            InsufficientPrivilegesException, NotFoundException,
-            DataNotOnlineException, NotImplementedException {
+    public String getIcatUrl(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         var handler = new GetIcatUrlHandler(request.getRemoteAddr());
         return handler.handle().getString();
@@ -384,28 +335,24 @@ public class IdsService {
      * privileged to use this call.
      *
      * @title getServiceStatus
-     * @param sessionId A valid ICAT session ID of a user in the IDS
-     *                  rootUserNames set.
+     * @param sessionId A valid ICAT session ID of a user in the IDS rootUserNames
+     *                  set.
      * @return a json string.
      * @throws InternalException
      * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
-     * @throws NotFoundException
-     * @throws BadRequestException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws BadRequestException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getServiceStatus")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getServiceStatus(@Context HttpServletRequest request,
-            @QueryParam(RequestIdNames.sessionId) String sessionId)
-            throws InternalException, InsufficientPrivilegesException,
-            BadRequestException, NotFoundException, DataNotOnlineException,
-            NotImplementedException {
+    public String getServiceStatus(@Context HttpServletRequest request, @QueryParam(RequestIdNames.sessionId) String sessionId)
+            throws InternalException, InsufficientPrivilegesException, BadRequestException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
-        var handler = new GetServiceStatusHandler(request.getRemoteAddr(),
-                sessionId);
+        var handler = new GetServiceStatusHandler(request.getRemoteAddr(), sessionId);
         return handler.handle().getString();
     }
 
@@ -414,53 +361,41 @@ public class IdsService {
      * investigationIds, datasetIds and datafileIds along with a sessionId.
      *
      * @title getSize
-     * @param preparedId       A valid preparedId returned by a call to
-     *                         prepareData
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds If present, a comma separated list of
-     *                         investigation id values
-     * @param datasetIds       If present, a comma separated list of data set id
-     *                         values or null
-     * @param datafileIds      If present, a comma separated list of data file
-     *                         id values.
+     * @param preparedId       A valid preparedId returned by a call to prepareData
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds If present, a comma separated list of investigation id values
+     * @param datasetIds       If present, a comma separated list of data set id values or
+     *                         null
+     * @param datafileIds      If present, a comma separated list of data file id values.
      * @return the size in bytes
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getSize")
     @Produces(MediaType.TEXT_PLAIN)
-    public long getSize(@Context HttpServletRequest request,
-            @QueryParam(RequestIdNames.preparedId) String preparedId,
-            @QueryParam(RequestIdNames.sessionId) String sessionId,
-            @QueryParam("investigationIds") String investigationIds,
-            @QueryParam("datasetIds") String datasetIds,
-            @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, NotFoundException,
-            InsufficientPrivilegesException, InternalException,
-            DataNotOnlineException, NotImplementedException {
+    public long getSize(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                        @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
+                        @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
+            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
+
 
         var result = ValueContainer.getInvalid();
 
         // trying fast computation
-        if (sessionId != null) {
-            var fastHandler = new GetSizeHandlerForFastProcessing(
-                    request.getRemoteAddr(), sessionId, investigationIds,
-                    datasetIds, datafileIds);
+        if(sessionId != null) {
+            var fastHandler = new GetSizeHandlerForFastProcessing(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
             result = fastHandler.handle();
         }
 
         // otherwise normal computation
-        if (result.isInvalid()) {
-            var handler = new GetSizeHandler(request.getRemoteAddr(),
-                    preparedId, sessionId, investigationIds, datasetIds,
-                    datafileIds);
+        if(result.isInvalid()) {
+            var handler = new GetSizeHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
             result = handler.handle();
         }
 
@@ -472,60 +407,48 @@ public class IdsService {
      * investigationIds, datasetIds and datafileIds along with a sessionId.
      *
      * @title getStatus
-     * @param preparedId       A valid preparedId returned by a call to
-     *                         prepareData
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server. If the sessionId is omitted or null the
-     *                         ids reader account will be used which has read
-     *                         access to all data.
-     * @param investigationIds If present, a comma separated list of
-     *                         investigation id values
-     * @param datasetIds       If present, a comma separated list of data set id
-     *                         values or null
-     * @param datafileIds      If present, a comma separated list of data file
-     *                         id values.
+     * @param preparedId       A valid preparedId returned by a call to prepareData
+     * @param sessionId        A sessionId returned by a call to the icat server. If the
+     *                         sessionId is omitted or null the ids reader account will be
+     *                         used which has read access to all data.
+     * @param investigationIds If present, a comma separated list of investigation id values
+     * @param datasetIds       If present, a comma separated list of data set id values or
+     *                         null
+     * @param datafileIds      If present, a comma separated list of data file id values.
      * @return a string with "ONLINE" if all data are online, "RESTORING" if one
-     *         or more files are in the process of being restored but none are
-     *         archived and no restoration has been requested or "ARCHIVED" if
-     *         one or more files are archived and and no restoration has been
-     *         requested.
+     * or more files are in the process of being restored but none are
+     * archived and no restoration has been requested or "ARCHIVED" if
+     * one or more files are archived and and no restoration has been
+     * requested.
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getStatus")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getStatus(@Context HttpServletRequest request,
-            @QueryParam(RequestIdNames.preparedId) String preparedId,
-            @QueryParam(RequestIdNames.sessionId) String sessionId,
-            @QueryParam("investigationIds") String investigationIds,
-            @QueryParam("datasetIds") String datasetIds,
-            @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, NotFoundException,
-            InsufficientPrivilegesException, InternalException,
-            DataNotOnlineException, NotImplementedException {
+    public String getStatus(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
+                            @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
+                            @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
+            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
 
-        // special case for getStatus request: getting status is possible
-        // without authentification
+        // special case for getStatus request: getting status is possible without authentification
         if (sessionId == null && preparedId == null) {
             try {
-                sessionId = ServiceProvider.getInstance().getIcatReader()
-                        .getSessionId();
+                sessionId = ServiceProvider.getInstance().getIcatReader().getSessionId();
             } catch (IcatException_Exception e) {
-                throw new InternalException(
-                        e.getFaultInfo().getType() + " " + e.getMessage());
+                throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
             }
         }
 
-        var handler = new GetStatusHandler(request.getRemoteAddr(), preparedId,
-                sessionId, investigationIds, datasetIds, datafileIds);
+        var handler = new GetStatusHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
         return handler.handle().getString();
     }
+
 
     /**
      * Returns true if all the data files are ready to be downloaded. As a side
@@ -544,46 +467,39 @@ public class IdsService {
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
-     * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws InsufficientPrivilegesException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isPrepared")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isPrepared(@Context HttpServletRequest request,
-            @QueryParam(RequestIdNames.preparedId) String preparedId)
-            throws BadRequestException, NotFoundException, InternalException,
-            InsufficientPrivilegesException, DataNotOnlineException,
-            NotImplementedException {
+    public boolean isPrepared(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId)
+            throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        var handler = new IsPreparedHandler(request.getRemoteAddr(),
-                preparedId);
+        var handler = new IsPreparedHandler(request.getRemoteAddr(), preparedId);
         return handler.handle().getBool();
     }
 
     /**
-     * An ids server can be configured to be read only. This returns thenew
-     * DfProcessQueue() readOnly status of the server.
+     * An ids server can be configured to be read only. This returns thenew DfProcessQueue()
+     * readOnly status of the server.
      *
      * @title isReadOnly
      * @return true if readonly, else false
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
-     * @throws NotFoundException
-     * @throws InsufficientPrivilegesException
-     * @throws BadRequestException
-     * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isReadOnly")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isReadOnly(@Context HttpServletRequest request)
-            throws InternalException, BadRequestException,
-            InsufficientPrivilegesException, NotFoundException,
-            DataNotOnlineException, NotImplementedException {
+    public boolean isReadOnly(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         var handler = new IsReadOnlyHandler(request.getRemoteAddr());
         return handler.handle().getBool();
@@ -595,21 +511,18 @@ public class IdsService {
      *
      * @title isTwoLevel
      * @return true if twoLevel, else false
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
-     * @throws NotFoundException
-     * @throws InsufficientPrivilegesException
-     * @throws BadRequestException
-     * @throws InternalException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
+     * @throws NotFoundException 
+     * @throws InsufficientPrivilegesException 
+     * @throws BadRequestException 
+     * @throws InternalException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isTwoLevel")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isTwoLevel(@Context HttpServletRequest request)
-            throws InternalException, BadRequestException,
-            InsufficientPrivilegesException, NotFoundException,
-            DataNotOnlineException, NotImplementedException {
+    public boolean isTwoLevel(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         var handler = new IsTwoLevelHandler(request.getRemoteAddr());
         return handler.handle().getBool();
@@ -638,45 +551,37 @@ public class IdsService {
      * omitted, along with a sessionId.
      *
      * @title prepareData
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds A comma separated list of investigation id
-     *                         values.
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds A comma separated list of investigation id values.
      * @param datasetIds       A comma separated list of data set id values.
      * @param datafileIds      A comma separated list of datafile id values.
-     * @param compress         If true use default compression otherwise no
-     *                         compression. This only applies if preparedId is
-     *                         not set and if the results are being zipped.
-     * @param zip              If true the data should be zipped. If multiple
-     *                         files are requested (or could be because a
-     *                         datasetId or investigationId has been specified)
-     *                         the data are zipped regardless of the
+     * @param compress         If true use default compression otherwise no compression. This
+     *                         only applies if preparedId is not set and if the results are
+     *                         being zipped.
+     * @param zip              If true the data should be zipped. If multiple files are
+     *                         requested (or could be because a datasetId or investigationId
+     *                         has been specified) the data are zipped regardless of the
      *                         specification of this flag.
      * @return a string with the preparedId
      * @throws BadRequestException
      * @throws InsufficientPrivilegesException
      * @throws NotFoundException
      * @throws InternalException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("prepareData")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
-    public String prepareData(@Context HttpServletRequest request,
-            @FormParam(RequestIdNames.sessionId) String sessionId,
-            @FormParam("investigationIds") String investigationIds,
-            @FormParam("datasetIds") String datasetIds,
-            @FormParam("datafileIds") String datafileIds,
-            @FormParam("compress") boolean compress,
-            @FormParam("zip") boolean zip) throws BadRequestException,
-            InsufficientPrivilegesException, NotFoundException,
-            InternalException, NotImplementedException, DataNotOnlineException {
+    public String prepareData(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
+                              @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+                              @FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
+                              @FormParam("zip") boolean zip)
+            throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException, DataNotOnlineException {
 
-        var handler = new PrepareDataHandler(request.getRemoteAddr(), sessionId,
-                investigationIds, datasetIds, datafileIds, compress, zip);
+        var handler = new PrepareDataHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds, compress, zip);
         return handler.handle().getString();
     }
 
@@ -685,23 +590,17 @@ public class IdsService {
      *
      * @title put
      * @param body               The contents of the file to be stored
-     * @param sessionId          A sessionId returned by a call to the icat
-     *                           server.
+     * @param sessionId          A sessionId returned by a call to the icat server.
      * @param name               A name to assign to the data file
-     * @param datafileFormatId   The id of the data file format to associate
-     *                           with the data file
-     * @param datasetId          The id of the data set to which the data file
-     *                           should be associated.
-     * @param description        An optional description to associate with the
-     *                           data file
-     * @param doi                An optional description to associate with the
-     *                           data file
-     * @param datafileCreateTime An optional datafileCreateTime to associate
-     *                           with the data file
-     * @param datafileModTime    An optional datafileModTime to associate with
-     *                           the data file
+     * @param datafileFormatId   The id of the data file format to associate with the data file
+     * @param datasetId          The id of the data set to which the data file should be
+     *                           associated.
+     * @param description        An optional description to associate with the data file
+     * @param doi                An optional description to associate with the data file
+     * @param datafileCreateTime An optional datafileCreateTime to associate with the data file
+     * @param datafileModTime    An optional datafileModTime to associate with the data file
      * @return a json object with attributes of "id", "checksum", "location" and
-     *         "size";
+     * "size";
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
@@ -715,21 +614,15 @@ public class IdsService {
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Produces(MediaType.APPLICATION_JSON)
     public Response put(@Context HttpServletRequest request, InputStream body,
-            @QueryParam(RequestIdNames.sessionId) String sessionId,
-            @QueryParam("name") String name,
-            @QueryParam("datafileFormatId") String datafileFormatId,
-            @QueryParam("datasetId") String datasetId,
-            @QueryParam("description") String description,
-            @QueryParam("doi") String doi,
-            @QueryParam("datafileCreateTime") String datafileCreateTime,
-            @QueryParam("datafileModTime") String datafileModTime)
-            throws BadRequestException, NotFoundException, InternalException,
-            InsufficientPrivilegesException, NotImplementedException,
-            DataNotOnlineException {
+                        @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("name") String name,
+                        @QueryParam("datafileFormatId") String datafileFormatId, @QueryParam("datasetId") String datasetId,
+                        @QueryParam("description") String description, @QueryParam("doi") String doi,
+                        @QueryParam("datafileCreateTime") String datafileCreateTime,
+                        @QueryParam("datafileModTime") String datafileModTime) throws BadRequestException, NotFoundException,
+            InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
 
-        var handler = new PutHandler(request.getRemoteAddr(), sessionId, body,
-                name, datafileFormatId, datasetId, description, doi,
-                datafileCreateTime, datafileModTime, false, false);
+        var handler = new PutHandler(request.getRemoteAddr(), sessionId, body, name, datafileFormatId, datasetId, 
+                                description, doi, datafileCreateTime, datafileModTime, false, false);
         return handler.handle().getResponse();
     }
 
@@ -743,7 +636,7 @@ public class IdsService {
      * @title putAsPost
      * @param request
      * @return a json object with attributes of "id", "checksum", "location" and
-     *         "size";
+     * "size";
      * @throws BadRequestException
      * @throws NotFoundException
      * @throws InternalException
@@ -756,73 +649,65 @@ public class IdsService {
     @Path("put")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response putAsPost(@Context HttpServletRequest request)
-            throws BadRequestException, NotFoundException, InternalException,
-            InsufficientPrivilegesException, NotImplementedException,
-            DataNotOnlineException {
-        try {
-            String sessionId = null;
-            String name = null;
-            String datafileFormatId = null;
-            String datasetId = null;
-            String description = null;
-            String doi = null;
-            String datafileCreateTime = null;
-            String datafileModTime = null;
-            Response result = null;
-            boolean wrap = false;
-            boolean padding = false;
-
-            // Parse the request
-            for (Part part : request.getParts()) {
-                String fieldName = part.getName();
-                InputStream stream = part.getInputStream();
-                if (part.getSubmittedFileName() == null) {
-                    String value = new String(stream.readAllBytes(),
-                            StandardCharsets.UTF_8);
-                    if (fieldName.equals("sessionId")) {
-                        sessionId = value;
-                    } else if (fieldName.equals("name")) {
-                        name = value;
-                    } else if (fieldName.equals("datafileFormatId")) {
-                        datafileFormatId = value;
-                    } else if (fieldName.equals("datasetId")) {
-                        datasetId = value;
-                    } else if (fieldName.equals("description")) {
-                        description = value;
-                    } else if (fieldName.equals("doi")) {
-                        doi = value;
-                    } else if (fieldName.equals("datafileCreateTime")) {
-                        datafileCreateTime = value;
-                    } else if (fieldName.equals("datafileModTime")) {
-                        datafileModTime = value;
-                    } else if (fieldName.equals("wrap")) {
-                        wrap = (value != null
-                                && value.toUpperCase().equals("TRUE"));
-                    } else if (fieldName.equals("padding")) {
-                        padding = (value != null
-                                && value.toUpperCase().equals("TRUE"));
-                    } else {
-                        throw new BadRequestException("Form field " + fieldName
-                                + "is not recognised");
+    public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
+            InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
+                try {
+                    String sessionId = null;
+                    String name = null;
+                    String datafileFormatId = null;
+                    String datasetId = null;
+                    String description = null;
+                    String doi = null;
+                    String datafileCreateTime = null;
+                    String datafileModTime = null;
+                    Response result = null;
+                    boolean wrap = false;
+                    boolean padding = false;
+        
+                    // Parse the request
+                    for (Part part : request.getParts()) {
+                        String fieldName = part.getName();
+                        InputStream stream = part.getInputStream();
+                        if (part.getSubmittedFileName() == null) {
+                            String value = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+                            if (fieldName.equals("sessionId")) {
+                                sessionId = value;
+                            } else if (fieldName.equals("name")) {
+                                name = value;
+                            } else if (fieldName.equals("datafileFormatId")) {
+                                datafileFormatId = value;
+                            } else if (fieldName.equals("datasetId")) {
+                                datasetId = value;
+                            } else if (fieldName.equals("description")) {
+                                description = value;
+                            } else if (fieldName.equals("doi")) {
+                                doi = value;
+                            } else if (fieldName.equals("datafileCreateTime")) {
+                                datafileCreateTime = value;
+                            } else if (fieldName.equals("datafileModTime")) {
+                                datafileModTime = value;
+                            } else if (fieldName.equals("wrap")) {
+                                wrap = (value != null && value.toUpperCase().equals("TRUE"));
+                            } else if (fieldName.equals("padding")) {
+                                padding = (value != null && value.toUpperCase().equals("TRUE"));
+                            } else {
+                                throw new BadRequestException("Form field " + fieldName + "is not recognised");
+                            }
+                        } else {
+                            if (name == null) {
+                                name = part.getSubmittedFileName();
+                            }
+                            var handler = new PutHandler(request.getRemoteAddr(), sessionId, stream, name, datafileFormatId, datasetId, description, 
+                                            doi, datafileCreateTime, datafileModTime, wrap, padding);
+                            result = handler.handle().getResponse();
+                        }
                     }
-                } else {
-                    if (name == null) {
-                        name = part.getSubmittedFileName();
-                    }
-                    var handler = new PutHandler(request.getRemoteAddr(),
-                            sessionId, stream, name, datafileFormatId,
-                            datasetId, description, doi, datafileCreateTime,
-                            datafileModTime, wrap, padding);
-                    result = handler.handle().getResponse();
+                    return result;
+                } catch (IOException e) {
+                    throw new InternalException(e.getClass() + " " + e.getMessage());
+                } catch (ServletException e) {
+                    throw new BadRequestException("Multipart content expected");
                 }
-            }
-            return result;
-        } catch (IOException e) {
-            throw new InternalException(e.getClass() + " " + e.getMessage());
-        } catch (ServletException e) {
-            throw new BadRequestException("Multipart content expected");
-        }
     }
 
     /**
@@ -837,12 +722,9 @@ public class IdsService {
      * specified then investigationIds, datasetIds and datafileIds are not used.
      *
      * @title reset
-     * @param preparedId       A valid preparedId returned by a call to
-     *                         prepareData
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds A comma separated list of investigation id
-     *                         values.
+     * @param preparedId       A valid preparedId returned by a call to prepareData
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds A comma separated list of investigation id values.
      * @param datasetIds       A comma separated list of data set id values.
      * @param datafileIds      A comma separated list of data file id values.
      * @return a stream of json data.
@@ -850,24 +732,18 @@ public class IdsService {
      * @throws NotFoundException
      * @throws InternalException
      * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
+     * @throws NotImplementedException 
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("reset")
-    public void reset(@Context HttpServletRequest request,
-            @FormParam(RequestIdNames.preparedId) String preparedId,
-            @FormParam(RequestIdNames.sessionId) String sessionId,
-            @FormParam("investigationIds") String investigationIds,
-            @FormParam("datasetIds") String datasetIds,
-            @FormParam("datafileIds") String datafileIds)
-            throws BadRequestException, InternalException, NotFoundException,
-            InsufficientPrivilegesException, DataNotOnlineException,
-            NotImplementedException {
+    public void reset(@Context HttpServletRequest request, @FormParam(RequestIdNames.preparedId) String preparedId,
+                      @FormParam(RequestIdNames.sessionId) String sessionId, @FormParam("investigationIds") String investigationIds,
+                      @FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
+            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
 
-        var handler = new ResetHandler(request.getRemoteAddr(), preparedId,
-                sessionId, investigationIds, datasetIds, datafileIds);
+        var handler = new ResetHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
 
     }
@@ -878,53 +754,45 @@ public class IdsService {
      * in use this has no effect.
      *
      * @title restore
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds If present, a comma separated list of
-     *                         investigation id values
-     * @param datasetIds       If present, a comma separated list of data set id
-     *                         values or null
-     * @param datafileIds      If present, a comma separated list of datafile id
-     *                         values.
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds If present, a comma separated list of investigation id values
+     * @param datasetIds       If present, a comma separated list of data set id values or
+     *                         null
+     * @param datafileIds      If present, a comma separated list of datafile id values.
      * @throws NotImplementedException
      * @throws BadRequestException
      * @throws InsufficientPrivilegesException
      * @throws InternalException
      * @throws NotFoundException
-     * @throws DataNotOnlineException
+     * @throws DataNotOnlineException 
      * @statuscode 200 To indicate success
      */
     @POST
     @Path("restore")
     @Consumes("application/x-www-form-urlencoded")
-    public void restore(@Context HttpServletRequest request,
-            @FormParam(RequestIdNames.sessionId) String sessionId,
-            @FormParam("investigationIds") String investigationIds,
-            @FormParam("datasetIds") String datasetIds,
-            @FormParam("datafileIds") String datafileIds)
-            throws NotImplementedException, BadRequestException,
-            InsufficientPrivilegesException, InternalException,
+    public void restore(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
+                        @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+                        @FormParam("datafileIds") String datafileIds)
+            throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
 
-        var handler = new RestoreHandler(request.getRemoteAddr(), sessionId,
-                investigationIds, datasetIds, datafileIds);
+        var handler = new RestoreHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
     }
 
+
     /**
-     * Write data specified by the investigationIds, datasetIds and datafileIds
-     * specified along with a sessionId to archive storage. If two level storage
-     * is not in use this has no effect.
+     * Write data specified by the investigationIds, datasetIds
+     * and datafileIds specified along with a sessionId to archive
+     * storage. If two level storage is not in use this has no
+     * effect.
      *
      * @title write
-     * @param sessionId        A sessionId returned by a call to the icat
-     *                         server.
-     * @param investigationIds If present, a comma separated list of
-     *                         investigation id values
-     * @param datasetIds       If present, a comma separated list of data set id
-     *                         values or null
-     * @param datafileIds      If present, a comma separated list of datafile id
-     *                         values.
+     * @param sessionId        A sessionId returned by a call to the icat server.
+     * @param investigationIds If present, a comma separated list of investigation id values
+     * @param datasetIds       If present, a comma separated list of data set id values or
+     *                         null
+     * @param datafileIds      If present, a comma separated list of datafile id values.
      * @throws NotImplementedException
      * @throws BadRequestException
      * @throws InsufficientPrivilegesException
@@ -935,17 +803,13 @@ public class IdsService {
     @POST
     @Path("write")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public void write(@Context HttpServletRequest request,
-            @FormParam(RequestIdNames.sessionId) String sessionId,
-            @FormParam("investigationIds") String investigationIds,
-            @FormParam("datasetIds") String datasetIds,
-            @FormParam("datafileIds") String datafileIds)
-            throws NotImplementedException, BadRequestException,
-            InsufficientPrivilegesException, InternalException,
+    public void write(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
+                      @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
+                      @FormParam("datafileIds") String datafileIds)
+            throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
             NotFoundException, DataNotOnlineException {
 
-        var handler = new WriteHandler(request.getRemoteAddr(), sessionId,
-                investigationIds, datasetIds, datafileIds);
+        var handler = new WriteHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
     }
 }

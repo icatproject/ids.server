@@ -20,8 +20,7 @@ import org.icatproject.ids.services.LockManager.Lock;
  */
 public class DfWriter implements Runnable {
 
-    private final static Logger logger = LoggerFactory
-            .getLogger(DfWriter.class);
+    private final static Logger logger = LoggerFactory.getLogger(DfWriter.class);
 
     private FiniteStateMachine fsm;
     private MainStorageInterface mainStorageInterface;
@@ -30,8 +29,7 @@ public class DfWriter implements Runnable {
     private List<DatafileInfo> dataFileInfos;
     private Collection<Lock> locks;
 
-    public DfWriter(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler,
-            FiniteStateMachine fsm, Collection<Lock> locks) {
+    public DfWriter(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
         this.dataFileInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -45,17 +43,14 @@ public class DfWriter implements Runnable {
         try {
             for (DatafileInfo dataFileInfo : dataFileInfos) {
                 String dfLocation = dataFileInfo.getDfLocation();
-                try (InputStream is = mainStorageInterface.get(dfLocation,
-                        dataFileInfo.getCreateId(), dataFileInfo.getModId())) {
+                try (InputStream is = mainStorageInterface.get(dfLocation, dataFileInfo.getCreateId(), dataFileInfo.getModId())) {
                     archiveStorageInterface.put(is, dfLocation);
-                    Path marker = markerDir
-                            .resolve(Long.toString(dataFileInfo.getDfId()));
+                    Path marker = markerDir.resolve(Long.toString(dataFileInfo.getDfId()));
                     Files.deleteIfExists(marker);
                     logger.debug("Removed marker " + marker);
                     logger.debug("Write of " + dataFileInfo + " completed");
                 } catch (Exception e) {
-                    logger.error("Write of " + dataFileInfo + " failed due to "
-                            + e.getClass() + " " + e.getMessage());
+                    logger.error("Write of " + dataFileInfo + " failed due to " + e.getClass() + " " + e.getMessage());
                 } finally {
                     fsm.removeFromChanging(dataFileInfo);
                 }

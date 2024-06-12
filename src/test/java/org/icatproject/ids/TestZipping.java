@@ -19,14 +19,12 @@ public class TestZipping {
     @Test
     public void testDuplicates() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(
-                new BufferedOutputStream(baos));
+        ZipOutputStream zos = new ZipOutputStream(new BufferedOutputStream(baos));
 
         // zos.setLevel(0);
         List<String> in = new ArrayList<>();
 
-        for (String entryName : Arrays.asList("abcd/qa", "abcd/qw", "abcd/qw",
-                "abcd/qb", "abcd/qc", "abcd/qw")) {
+        for (String entryName : Arrays.asList("abcd/qa", "abcd/qw", "abcd/qw", "abcd/qb", "abcd/qc", "abcd/qw")) {
 
             try {
                 zos.putNextEntry(new ZipEntry(entryName));
@@ -44,8 +42,7 @@ public class TestZipping {
 
         assertEquals(4, in.size());
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(
-                baos.toByteArray());
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ZipInputStream zis = new ZipInputStream(bais);
 
         int off = 0;

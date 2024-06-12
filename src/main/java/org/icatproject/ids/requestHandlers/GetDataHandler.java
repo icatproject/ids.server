@@ -45,48 +45,40 @@ public class GetDataHandler extends DataRequestHandler {
     String range;
     Long transferId;
 
-    public GetDataHandler(String ip, String preparedId, String sessionId,
-            String investigationIds, String datasetIds, String datafileIds,
-            Boolean compress, Boolean zip, String outname, String range) {
-        super(RequestType.GETDATA, ip, preparedId, sessionId, investigationIds,
-                datasetIds, datafileIds);
+    public GetDataHandler(String ip, String preparedId, String sessionId, String investigationIds, String datasetIds, String datafileIds, Boolean compress, Boolean zip, String outname, String range) {
+        super(RequestType.GETDATA, ip, preparedId, sessionId, investigationIds, datasetIds, datafileIds );
 
-        this.initializeAdditionallParameters(sessionId, compress, zip, outname,
-                range);
+        this.initializeAdditionallParameters(sessionId, compress, zip, outname, range);
     }
 
-    private void initializeAdditionallParameters(String sessionId,
-            Boolean compress, Boolean zip, String outname, String range) {
-
+    private void initializeAdditionallParameters(String sessionId, Boolean compress, Boolean zip, String outname, String range) {
+        
         this.outname = outname;
         this.range = range;
         this.transferId = null;
         this.rangeRe = Pattern.compile("bytes=(\\d+)-");
 
-        if (sessionId != null) {
+        if(sessionId != null) {
             this.compress = compress;
             this.zip = zip;
         }
     }
 
-    @Override
-    public ValueContainer handleDataRequest(
-            DataSelectionService dataSelectionService) throws InternalException,
-            NotImplementedException, BadRequestException, NotFoundException,
-            InsufficientPrivilegesException, DataNotOnlineException {
 
-        if (this.compress == null || this.zip == null) {
+    @Override
+    public ValueContainer handleDataRequest(DataSelectionService dataSelectionService) throws InternalException, NotImplementedException, BadRequestException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException  {
+
+        if(this.compress == null || this.zip == null) {
             this.zip = dataSelectionService.getZip();
             this.compress = dataSelectionService.getCompress();
         }
 
         long offset = 0;
-        if (range != null) {
+        if ( range != null) {
 
             Matcher m = rangeRe.matcher(range);
             if (!m.matches()) {
-                throw new BadRequestException(
-                        "The range must match " + rangeRe.pattern());
+                throw new BadRequestException("The range must match " + rangeRe.pattern());
             }
             offset = Long.parseLong(m.group(1));
             logger.debug("Range " + range + " -> offset " + offset);
@@ -95,24 +87,20 @@ public class GetDataHandler extends DataRequestHandler {
         return new ValueContainer(this.getData(dataSelectionService, offset));
     }
 
-    private Response getData(DataSelectionService dataSelectionService,
-            final long offset) throws BadRequestException, NotFoundException,
-            InternalException, InsufficientPrivilegesException,
-            NotFoundException, DataNotOnlineException, NotImplementedException {
+
+    private Response getData(DataSelectionService dataSelectionService, final long offset) throws BadRequestException,
+            NotFoundException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
 
         long start = System.currentTimeMillis();
+        
+        var length = this.zip ? OptionalLong.empty() : dataSelectionService.getFileLength();
 
-        var length = this.zip ? OptionalLong.empty()
-                : dataSelectionService.getFileLength();
-
-        final boolean finalZip = this.dataController.mustZip(zip,
-                dataSelectionService);
+        final boolean finalZip = this.dataController.mustZip(zip, dataSelectionService); 
 
         Lock lock = null;
         try {
             var serviceProvider = ServiceProvider.getInstance();
-            lock = serviceProvider.getLockManager().lock(
-                    dataSelectionService.getDsInfo().values(), LockType.SHARED);
+            lock = serviceProvider.getLockManager().lock(dataSelectionService.getDsInfo().values(), LockType.SHARED);
 
             if (twoLevel) {
                 dataSelectionService.checkOnline();
@@ -123,16 +111,13 @@ public class GetDataHandler extends DataRequestHandler {
             String name;
             if (outname == null) {
                 if (finalZip) {
-                    name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
-                            .format(new Date()) + ".zip";
+                    name = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".zip";
                 } else {
-                    name = dataSelectionService.getDfInfo().values().iterator()
-                            .next().getName();
+                    name = dataSelectionService.getDfInfo().values().iterator().next().getName();
                 }
             } else {
                 if (finalZip) {
-                    String ext = outname.substring(outname.lastIndexOf(".") + 1,
-                            outname.length());
+                    String ext = outname.substring(outname.lastIndexOf(".") + 1, outname.length());
                     if ("zip".equals(ext)) {
                         name = outname;
                     } else {
@@ -143,24 +128,17 @@ public class GetDataHandler extends DataRequestHandler {
                 }
             }
 
-            if (ServiceProvider.getInstance().getPropertyHandler().getLogSet()
-                    .contains(this.getCallType())) {
+            if (ServiceProvider.getInstance().getPropertyHandler().getLogSet().contains(this.getCallType())) {
                 transferId = transferIdCounter.getAndIncrement();
             }
 
-            var response = Response
-                    .status(offset == 0 ? HttpURLConnection.HTTP_OK
-                            : HttpURLConnection.HTTP_PARTIAL)
-                    .entity(new SO(dataSelectionService.getDsInfo(),
-                            dataSelectionService.getDfInfo(), offset, finalZip,
-                            compress, lock, transferId, ip, start,
-                            serviceProvider))
-                    .header("Content-Disposition",
-                            "attachment; filename=\"" + name + "\"")
-                    .header("Accept-Ranges", "bytes");
-            length.stream().map(l -> Math.max(0L, l - offset))
+            var response = Response.status(offset == 0 ? HttpURLConnection.HTTP_OK : HttpURLConnection.HTTP_PARTIAL)
+                    .entity(new SO(dataSelectionService.getDsInfo(), dataSelectionService.getDfInfo(), offset, finalZip, compress, lock, transferId, ip, start, serviceProvider))
+                    .header("Content-Disposition", "attachment; filename=\"" + name + "\"").header("Accept-Ranges", "bytes");
+            length.stream()
+                    .map(l -> Math.max(0L, l - offset))
                     .forEach(l -> response.header(CONTENT_LENGTH, l));
-
+                
             return response.build();
 
         } catch (AlreadyLockedException e) {
@@ -168,7 +146,7 @@ public class GetDataHandler extends DataRequestHandler {
             throw new DataNotOnlineException("Data is busy");
         } catch (IOException e) {
             // if (lock != null) {
-            // lock.release();
+            //     lock.release();
             // }
             logger.error("I/O error " + e.getMessage());
             throw new InternalException(e.getClass() + " " + e.getMessage());
@@ -178,48 +156,38 @@ public class GetDataHandler extends DataRequestHandler {
         }
     }
 
+
     private void checkDatafilesPresent(Collection<DataInfoBase> dfInfos)
             throws NotFoundException, InternalException {
 
         var serviceProvider = ServiceProvider.getInstance();
         /* Check that datafiles have not been deleted before locking */
         int n = 0;
-        StringBuffer sb = new StringBuffer(
-                "SELECT COUNT(df) from Datafile df WHERE (df.id in (");
+        StringBuffer sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
         for (DataInfoBase dfInfo : dfInfos) {
             if (n != 0) {
                 sb.append(',');
             }
             sb.append(dfInfo.getId());
-            if (++n == serviceProvider.getPropertyHandler()
-                    .getMaxIdsInQuery()) {
+            if (++n == serviceProvider.getPropertyHandler().getMaxIdsInQuery()) {
                 try {
-                    if (((Long) serviceProvider.getIcatReader()
-                            .search(sb.append("))").toString()).get(0))
-                            .intValue() != n) {
-                        throw new NotFoundException(
-                                "One of the data files requested has been deleted");
+                    if (((Long) serviceProvider.getIcatReader().search(sb.append("))").toString()).get(0)).intValue() != n) {
+                        throw new NotFoundException("One of the data files requested has been deleted");
                     }
                     n = 0;
-                    sb = new StringBuffer(
-                            "SELECT COUNT(df) from Datafile df WHERE (df.id in (");
+                    sb = new StringBuffer("SELECT COUNT(df) from Datafile df WHERE (df.id in (");
                 } catch (IcatException_Exception e) {
-                    throw new InternalException(
-                            e.getFaultInfo().getType() + " " + e.getMessage());
+                    throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
                 }
             }
         }
         if (n != 0) {
             try {
-                if (((Long) serviceProvider.getIcatReader()
-                        .search(sb.append("))").toString()).get(0))
-                        .intValue() != n) {
-                    throw new NotFoundException(
-                            "One of the datafiles requested has been deleted");
+                if (((Long) serviceProvider.getIcatReader().search(sb.append("))").toString()).get(0)).intValue() != n) {
+                    throw new NotFoundException("One of the datafiles requested has been deleted");
                 }
             } catch (IcatException_Exception e) {
-                throw new InternalException(
-                        e.getFaultInfo().getType() + " " + e.getMessage());
+                throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
             }
         }
 
@@ -232,8 +200,7 @@ public class GetDataHandler extends DataRequestHandler {
 
     @Override
     public void addCustomParametersToTransmitterJSON(JsonGenerator gen) {
-        if (transferId == null)
-            transferId = -1L;
+        if(transferId == null) transferId = -1L;
         gen.write("transferId", transferId);
     }
 

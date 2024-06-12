@@ -79,10 +79,9 @@ public class PutHandler extends RequestHandlerBase {
         paddedPrefix += "*/window.name='";
     }
 
-    public PutHandler(String ip, String sessionId, InputStream body,
-            String name, String datafileFormatIdString, String datasetIdString,
-            String description, String doi, String datafileCreateTimeString,
-            String datafileModTimeString, boolean wrap, boolean padding) {
+    public PutHandler(  String ip, String sessionId, InputStream body, String name, String datafileFormatIdString,
+                        String datasetIdString, String description, String doi, String datafileCreateTimeString,
+                        String datafileModTimeString, boolean wrap, boolean padding) {
         super(RequestType.PUT, ip);
 
         this.sessionId = sessionId;
@@ -106,61 +105,52 @@ public class PutHandler extends RequestHandlerBase {
 
         } catch (Throwable e) {
             logger.error("Won't start ", e);
-            throw new RuntimeException("PutHandler reports " + e.getClass()
-                    + " " + e.getMessage());
+            throw new RuntimeException("PutHandler reports " + e.getClass() + " " + e.getMessage());
         }
     }
 
     @Override
-    public ValueContainer handleRequest() throws BadRequestException,
-            InternalException, InsufficientPrivilegesException,
-            NotFoundException, DataNotOnlineException, NotImplementedException {
+    public ValueContainer handleRequest()
+            throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException,
+            DataNotOnlineException, NotImplementedException {
 
         try {
 
             if (readOnly) {
-                throw new NotImplementedException(
-                        "This operation has been configured to be unavailable");
+                throw new NotImplementedException("This operation has been configured to be unavailable");
             }
 
-            DataControllerBase.validateUUID(RequestIdNames.sessionId,
-                    sessionId);
+            DataControllerBase.validateUUID(RequestIdNames.sessionId, sessionId);
             if (name == null) {
                 throw new BadRequestException("The name parameter must be set");
             }
 
             if (datafileFormatIdString == null) {
-                throw new BadRequestException(
-                        "The datafileFormatId parameter must be set");
+                throw new BadRequestException("The datafileFormatId parameter must be set");
             }
             long datafileFormatId;
             try {
                 datafileFormatId = Long.parseLong(datafileFormatIdString);
             } catch (NumberFormatException e) {
-                throw new BadRequestException(
-                        "The datafileFormatId parameter must be numeric");
+                throw new BadRequestException("The datafileFormatId parameter must be numeric");
             }
 
             if (datasetIdString == null) {
-                throw new BadRequestException(
-                        "The datasetId parameter must be set");
+                throw new BadRequestException("The datasetId parameter must be set");
             }
             long datasetId;
             try {
                 datasetId = Long.parseLong(datasetIdString);
             } catch (NumberFormatException e) {
-                throw new BadRequestException(
-                        "The datasetId parameter must be numeric");
+                throw new BadRequestException("The datasetId parameter must be numeric");
             }
 
             Long datafileCreateTime = null;
             if (datafileCreateTimeString != null) {
                 try {
-                    datafileCreateTime = Long
-                            .parseLong(datafileCreateTimeString);
+                    datafileCreateTime = Long.parseLong(datafileCreateTimeString);
                 } catch (NumberFormatException e) {
-                    throw new BadRequestException(
-                            "The datafileCreateTime parameter must be numeric");
+                    throw new BadRequestException("The datafileCreateTime parameter must be numeric");
                 }
             }
 
@@ -169,20 +159,17 @@ public class PutHandler extends RequestHandlerBase {
                 try {
                     datafileModTime = Long.parseLong(datafileModTimeString);
                 } catch (NumberFormatException e) {
-                    throw new BadRequestException(
-                            "The datafileModTime parameter must be numeric");
+                    throw new BadRequestException("The datafileModTime parameter must be numeric");
                 }
             }
 
             // Do it
             Dataset ds;
             try {
-                ds = (Dataset) serviceProvider.getIcat().get(sessionId,
-                        "Dataset INCLUDE Investigation, Facility", datasetId);
+                ds = (Dataset) serviceProvider.getIcat().get(sessionId, "Dataset INCLUDE Investigation, Facility", datasetId);
             } catch (IcatException_Exception e) {
                 IcatExceptionType type = e.getFaultInfo().getType();
-                if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-                        || type == IcatExceptionType.SESSION) {
+                if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
                     throw new InsufficientPrivilegesException(e.getMessage());
                 }
                 if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
@@ -192,74 +179,59 @@ public class PutHandler extends RequestHandlerBase {
             }
 
             DatasetInfo dsInfo = new DatasetInfo(ds);
-            try (Lock lock = serviceProvider.getLockManager().lock(dsInfo,
-                    LockType.SHARED)) {
+            try (Lock lock = serviceProvider.getLockManager().lock(dsInfo, LockType.SHARED)) {
                 if (storageUnit == StorageUnit.DATASET) {
                     var dfInfos = new TreeMap<Long, DataInfoBase>();
                     Set<Long> emptyDatasets = new HashSet<>();
                     try {
-                        List<Object> counts = serviceProvider.getIcat().search(
-                                sessionId, "COUNT(Datafile) <-> Dataset [id="
-                                        + dsInfo.getId() + "]");
+                        List<Object> counts = serviceProvider.getIcat().search(sessionId,
+                                "COUNT(Datafile) <-> Dataset [id=" + dsInfo.getId() + "]");
                         if ((Long) counts.get(0) == 0) {
                             emptyDatasets.add(dsInfo.getId());
                         }
                     } catch (IcatException_Exception e) {
                         IcatExceptionType type = e.getFaultInfo().getType();
-                        if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-                                || type == IcatExceptionType.SESSION) {
-                            throw new InsufficientPrivilegesException(
-                                    e.getMessage());
+                        if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
+                            throw new InsufficientPrivilegesException(e.getMessage());
                         }
                         if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
                             throw new NotFoundException(e.getMessage());
                         }
-                        throw new InternalException(
-                                type + " " + e.getMessage());
+                        throw new InternalException(type + " " + e.getMessage());
                     }
                     var dsInfos = new TreeMap<Long, DataInfoBase>();
                     dsInfos.put(dsInfo.getId(), dsInfo);
-                    DataSelectionService dataSelectionService = DataSelectionServiceFactory
-                            .getService(dsInfos, dfInfos, emptyDatasets, 0,
-                                    this.getRequestType());
+                    DataSelectionService dataSelectionService = DataSelectionServiceFactory.getService(dsInfos, dfInfos, emptyDatasets, 0, this.getRequestType());
                     dataSelectionService.checkOnline();
                 }
 
                 CRC32 crc = new CRC32();
-                CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(
-                        body, crc);
+                CheckedWithSizeInputStream is = new CheckedWithSizeInputStream(body, crc);
                 String location;
                 try {
-                    location = serviceProvider.getMainStorage().put(dsInfo,
-                            name, is);
+                    location = serviceProvider.getMainStorage().put(dsInfo, name, is);
                 } catch (IllegalArgumentException e) {
-                    throw new BadRequestException(
-                            "Illegal filename or dataset: " + e.getMessage());
+                    throw new BadRequestException("Illegal filename or dataset: " + e.getMessage());
                 }
                 is.close();
                 long checksum = crc.getValue();
                 long size = is.getSize();
-
+                
                 try {
-                    dfId = registerDatafile(sessionId, name, datafileFormatId,
-                            location, checksum, size, ds, description, doi,
-                            datafileCreateTime, datafileModTime);
-                } catch (InsufficientPrivilegesException | NotFoundException
-                        | InternalException | BadRequestException e) {
-                    logger.debug("Problem with registration " + e.getClass()
-                            + " " + e.getMessage()
+                    dfId = registerDatafile(sessionId, name, datafileFormatId, location, checksum, size, ds,
+                            description, doi, datafileCreateTime, datafileModTime);
+                } catch (InsufficientPrivilegesException | NotFoundException | InternalException
+                         | BadRequestException e) {
+                    logger.debug("Problem with registration " + e.getClass() + " " + e.getMessage()
                             + " datafile will now be deleted");
                     String userId = null;
                     try {
-                        userId = serviceProvider.getIcat()
-                                .getUserName(sessionId);
+                        userId = serviceProvider.getIcat().getUserName(sessionId);
                     } catch (IcatException_Exception e1) {
-                        logger.error("Unable to get user name for session "
-                                + sessionId + " so mainStorage.delete of "
+                        logger.error("Unable to get user name for session " + sessionId + " so mainStorage.delete of "
                                 + location + " may fail");
                     }
-                    serviceProvider.getMainStorage().delete(location, userId,
-                            userId);
+                    serviceProvider.getMainStorage().delete(location, userId, userId);
                     throw e;
                 }
 
@@ -268,80 +240,62 @@ public class PutHandler extends RequestHandlerBase {
                 } else if (storageUnit == StorageUnit.DATAFILE) {
                     Datafile df;
                     try {
-                        df = (Datafile) serviceProvider.getIcatReader()
-                                .get("Datafile", dfId);
+                        df = (Datafile) serviceProvider.getIcatReader().get("Datafile", dfId);
                     } catch (IcatException_Exception e) {
-                        throw new InternalException(e.getFaultInfo().getType()
-                                + " " + e.getMessage());
+                        throw new InternalException(e.getFaultInfo().getType() + " " + e.getMessage());
                     }
-                    serviceProvider.getFsm()
-                            .queue(new DatafileInfo(dfId, name, location,
-                                    df.getCreateId(), df.getModId(),
-                                    dsInfo.getId()), DeferredOp.WRITE);
+                    serviceProvider.getFsm().queue(new DatafileInfo(dfId, name, location, df.getCreateId(), df.getModId(), dsInfo.getId()),
+                            DeferredOp.WRITE);
                 }
 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                Json.createGenerator(baos).writeStartObject().write("id", dfId)
-                        .write("checksum", checksum)
-                        .write("location",
-                                location.replace("\\", "\\\\").replace("'",
-                                        "\\'"))
-                        .write("size", size).writeEnd().close();
-                String resp = wrap ? prefix + baos.toString() + suffix
-                        : baos.toString();
+                Json.createGenerator(baos).writeStartObject().write("id", dfId).write("checksum", checksum)
+                        .write("location", location.replace("\\", "\\\\").replace("'", "\\'")).write("size", size)
+                        .writeEnd().close();
+                String resp = wrap ? prefix + baos.toString() + suffix : baos.toString();
 
-                return new ValueContainer(
-                        Response.status(HttpURLConnection.HTTP_CREATED)
-                                .entity(resp).build());
+                return new ValueContainer(Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build());
 
             } catch (AlreadyLockedException e) {
                 logger.debug("Could not acquire lock, put failed");
                 throw new DataNotOnlineException("Data is busy");
             } catch (IOException e) {
-                logger.error("I/O exception " + e.getMessage() + " putting "
-                        + name + " to Dataset with id " + datasetIdString);
-                throw new InternalException(
-                        e.getClass() + " " + e.getMessage());
+                logger.error("I/O exception " + e.getMessage() + " putting " + name + " to Dataset with id "
+                        + datasetIdString);
+                throw new InternalException(e.getClass() + " " + e.getMessage());
             }
         } catch (IdsException e) {
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             JsonGenerator gen = Json.createGenerator(baos);
-            gen.writeStartObject().write("code", e.getClass().getSimpleName())
-                    .write("message", e.getShortMessage());
+            gen.writeStartObject().write("code", e.getClass().getSimpleName()).write("message", e.getShortMessage());
             gen.writeEnd().close();
             if (wrap) {
                 String pre = padding ? paddedPrefix : prefix;
-                return new ValueContainer(Response
-                        .status(e.getHttpStatusCode()).entity(pre
-                                + baos.toString().replace("'", "\\'") + suffix)
+                return new ValueContainer(Response.status(e.getHttpStatusCode()).entity(pre + baos.toString().replace("'", "\\'") + suffix)
                         .build());
             } else {
-                return new ValueContainer(Response.status(e.getHttpStatusCode())
-                        .entity(baos.toString()).build());
+                return new ValueContainer(Response.status(e.getHttpStatusCode()).entity(baos.toString()).build());
             }
         }
     }
 
-    private Long registerDatafile(String sessionId, String name,
-            long datafileFormatId, String location, long checksum, long size,
-            Dataset dataset, String description, String doi,
-            Long datafileCreateTime, Long datafileModTime)
-            throws InsufficientPrivilegesException, NotFoundException,
-            InternalException, BadRequestException {
 
+    private Long registerDatafile(String sessionId, String name, long datafileFormatId, String location, long checksum,
+                                  long size, Dataset dataset, String description, String doi, Long datafileCreateTime, Long datafileModTime)
+            throws InsufficientPrivilegesException, NotFoundException, InternalException, BadRequestException {
+
+        
         var serviceProvider = ServiceProvider.getInstance();
         ICAT icat = serviceProvider.getIcat();
-
+        
         final Datafile df = new Datafile();
         DatafileFormat format;
         try {
-            format = (DatafileFormat) icat.get(sessionId, "DatafileFormat",
-                    datafileFormatId);
+            format = (DatafileFormat) icat.get(sessionId, "DatafileFormat", datafileFormatId);
         } catch (IcatException_Exception e) {
             IcatExceptionType type = e.getFaultInfo().getType();
-            if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-                    || type == IcatExceptionType.SESSION) {
+            if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
                 throw new InsufficientPrivilegesException(e.getMessage());
             }
             if (type == IcatExceptionType.NO_SUCH_OBJECT_FOUND) {
@@ -361,14 +315,12 @@ public class PutHandler extends RequestHandlerBase {
         if (datafileCreateTime != null) {
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
             gregorianCalendar.setTimeInMillis(datafileCreateTime);
-            df.setDatafileCreateTime(
-                    datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
+            df.setDatafileCreateTime(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
         }
         if (datafileModTime != null) {
             GregorianCalendar gregorianCalendar = new GregorianCalendar();
             gregorianCalendar.setTimeInMillis(datafileModTime);
-            df.setDatafileModTime(
-                    datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
+            df.setDatafileModTime(datatypeFactory.newXMLGregorianCalendar(gregorianCalendar));
         }
         try {
             long dfId = icat.create(sessionId, df);
@@ -376,18 +328,15 @@ public class PutHandler extends RequestHandlerBase {
 
             String key = serviceProvider.getPropertyHandler().getKey();
             if (key != null) {
-                df.setLocation(location + " "
-                        + IcatSecurity.digest(dfId, location, key));
+                df.setLocation(location + " " + IcatSecurity.digest(dfId, location, key));
                 icat.update(sessionId, df);
             }
 
-            logger.debug("Registered datafile for dataset {} for {}",
-                    dataset.getId(), name + " at " + location);
+            logger.debug("Registered datafile for dataset {} for {}", dataset.getId(), name + " at " + location);
             return dfId;
         } catch (IcatException_Exception e) {
             IcatExceptionType type = e.getFaultInfo().getType();
-            if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES
-                    || type == IcatExceptionType.SESSION) {
+            if (type == IcatExceptionType.INSUFFICIENT_PRIVILEGES || type == IcatExceptionType.SESSION) {
                 throw new InsufficientPrivilegesException(e.getMessage());
             }
             if (type == IcatExceptionType.VALIDATION) {
@@ -401,15 +350,12 @@ public class PutHandler extends RequestHandlerBase {
 
     public String addParametersToLogString() {
         return "name='" + name + "' " + "datafileFormatId='"
-                + datafileFormatIdString + "' " + "datasetId='"
-                + datasetIdString + "' " + "description='" + description + "' "
-                + "doi='" + doi + "' " + "datafileCreateTime='"
-                + datafileCreateTimeString + "' " + "datafileModTime='"
-                + datafileModTimeString + "'";
+            + datafileFormatIdString + "' " + "datasetId='" + datasetIdString + "' " + "description='"
+            + description + "' " + "doi='" + doi + "' " + "datafileCreateTime='" + datafileCreateTimeString
+            + "' " + "datafileModTime='" + datafileModTimeString + "'";
     }
 
-    public void addParametersToTransmitterJSON(JsonGenerator gen)
-            throws IcatException_Exception, BadRequestException {
+    public void addParametersToTransmitterJSON(JsonGenerator gen) throws IcatException_Exception, BadRequestException {
         gen.write("userName", serviceProvider.getIcat().getUserName(sessionId));
         gen.write("datafileId", dfId);
     }
