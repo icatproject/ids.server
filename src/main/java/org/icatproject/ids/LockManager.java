@@ -135,11 +135,7 @@ public class LockManager {
 			LockEntry le = lockMap.get(id);
 			if (le == null) {
 				AutoCloseable storageLock;
-				try {
-					storageLock = mainStorage.lock(ds, type == LockType.SHARED);
-				} catch (AlreadyLockedException | IOException e) {
-					throw e;
-				}
+				storageLock = mainStorage.lock(ds, type == LockType.SHARED);
 				le = new LockEntry(id, type, storageLock);
 			} else {
 				if (type == LockType.EXCLUSIVE || le.type == LockType.EXCLUSIVE) {
