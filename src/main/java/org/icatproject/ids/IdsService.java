@@ -544,6 +544,7 @@ public class IdsService {
     @Path("put")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
     public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
         try {
