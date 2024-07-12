@@ -41,7 +41,7 @@ public class LockManager {
         final AutoCloseable storageLock;
         int count;
 
-        LockEntry(Long id, LockType type,  AutoCloseable storageLock) {
+        LockEntry(Long id, LockType type, AutoCloseable storageLock) {
             this.id = id;
             this.type = type;
             this.storageLock = storageLock;
