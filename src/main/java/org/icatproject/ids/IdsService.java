@@ -518,7 +518,7 @@ public class IdsService {
                         @QueryParam("datafileModTime") String datafileModTime) throws BadRequestException, NotFoundException,
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
         return idsBean.put(body, sessionId, name, datafileFormatId, datasetId, description, doi, datafileCreateTime,
-                datafileModTime, false, false, request.getRemoteAddr());
+                datafileModTime, request.getRemoteAddr());
     }
 
     /**
