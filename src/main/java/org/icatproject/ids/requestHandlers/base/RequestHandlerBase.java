@@ -15,11 +15,7 @@ import org.icatproject.ids.enums.CallType;
 import org.icatproject.ids.enums.RequestType;
 import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.BadRequestException;
-import org.icatproject.ids.exceptions.DataNotOnlineException;
-import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
-import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.exceptions.NotFoundException;
-import org.icatproject.ids.exceptions.NotImplementedException;
+import org.icatproject.ids.exceptions.IdsException;
 import org.icatproject.ids.helpers.ValueContainer;
 import org.icatproject.ids.services.ServiceProvider;
 
@@ -70,14 +66,9 @@ public abstract class RequestHandlerBase {
     /**
      * The core method of each request handler. It has to be overwritten in the concrete implementation to provide an individual request handling
      * @return A ValueContainer with an indiviadual result type.
-     * @throws BadRequestException
-     * @throws InternalException
-     * @throws InsufficientPrivilegesException
-     * @throws NotFoundException
-     * @throws DataNotOnlineException
-     * @throws NotImplementedException
+     * @throws IdsException
      */
-    public ValueContainer handle() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+    public ValueContainer handle() throws IdsException {
 
         // some preprocessing
         long start = System.currentTimeMillis();
@@ -132,14 +123,9 @@ public abstract class RequestHandlerBase {
     /**
      * The core method of each request handler. It has to be overwritten in the concrete implementation to provide an individual request handling
      * @return A ValueContainer with an indiviadual result type.
-     * @throws BadRequestException
-     * @throws InternalException
-     * @throws InsufficientPrivilegesException
-     * @throws NotFoundException
-     * @throws DataNotOnlineException
-     * @throws NotImplementedException
+     * @throws IdsException
      */
-    protected abstract ValueContainer handleRequest() throws BadRequestException, InternalException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException;
+    protected abstract ValueContainer handleRequest() throws IdsException;
 
     /**
      * each handler should provide its own CallType which is needed to create the Transmitter message

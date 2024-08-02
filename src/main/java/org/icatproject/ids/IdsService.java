@@ -35,11 +35,8 @@ import org.slf4j.LoggerFactory;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.ids.enums.RequestIdNames;
 import org.icatproject.ids.exceptions.BadRequestException;
-import org.icatproject.ids.exceptions.DataNotOnlineException;
-import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
+import org.icatproject.ids.exceptions.IdsException;
 import org.icatproject.ids.exceptions.InternalException;
-import org.icatproject.ids.exceptions.NotFoundException;
-import org.icatproject.ids.exceptions.NotImplementedException;
 import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
 import org.icatproject.ids.helpers.Constants;
 import org.icatproject.ids.helpers.ValueContainer;
@@ -159,12 +156,7 @@ public class IdsService {
      * @param datasetIds       If present, a comma separated list of data set id values or
      *                         null
      * @param datafileIds      If present, a comma separated list of datafile id values.
-     * @throws NotImplementedException
-     * @throws BadRequestException
-     * @throws InsufficientPrivilegesException
-     * @throws InternalException
-     * @throws NotFoundException
-     * @throws DataNotOnlineException 
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @POST
@@ -173,8 +165,7 @@ public class IdsService {
     public void archive(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
                         @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                         @FormParam("datafileIds") String datafileIds)
-            throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-            NotFoundException, DataNotOnlineException {
+            throws IdsException {
 
         var handler = new ArchiveHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
@@ -190,20 +181,14 @@ public class IdsService {
      * @param datasetIds       If present, a comma separated list of data set id values or
      *                         null
      * @param datafileIds      If present, a comma separated list of datafile id values.
-     * @throws NotImplementedException
-     * @throws BadRequestException
-     * @throws InsufficientPrivilegesException
-     * @throws NotFoundException
-     * @throws InternalException
-     * @throws DataNotOnlineException
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @DELETE
     @Path("delete")
     public void delete(@Context HttpServletRequest request, @QueryParam(RequestIdNames.sessionId) String sessionId,
                        @QueryParam("investigationIds") String investigationIds, @QueryParam("datasetIds") String datasetIds,
-                       @QueryParam("datafileIds") String datafileIds) throws NotImplementedException, BadRequestException,
-            InsufficientPrivilegesException, NotFoundException, InternalException, DataNotOnlineException {
+                       @QueryParam("datafileIds") String datafileIds) throws IdsException {
 
         var handler = new DeleteHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
@@ -252,12 +237,7 @@ public class IdsService {
      * @param range            A range header which must match "bytes=(\\d+)-" to specify an
      *                         offset i.e. to skip a number of bytes.
      * @return a stream of json data.
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InternalException
-     * @throws InsufficientPrivilegesException
-     * @throws DataNotOnlineException
-     * @throws NotImplementedException 
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @GET
@@ -267,8 +247,7 @@ public class IdsService {
                             @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                             @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds,
                             @QueryParam("compress") boolean compress, @QueryParam("zip") boolean zip,
-                            @QueryParam("outname") String outname, @HeaderParam("Range") String range) throws BadRequestException,
-            NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+                            @QueryParam("outname") String outname, @HeaderParam("Range") String range) throws IdsException {
 
         var handler = new GetDataHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds, compress, zip,  outname, range);
         return handler.handle().getResponse();
@@ -287,12 +266,7 @@ public class IdsService {
      * @param datasetIds       A comma separated list of data set id values.
      * @param datafileIds      A comma separated list of datafile id values.
      * @return a list of id values
-     * @throws BadRequestException
-     * @throws InternalException
-     * @throws NotFoundException
-     * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
+     * @throws IdsException 
      * @statuscode 200 To indicate success
      */
     @GET
@@ -301,7 +275,7 @@ public class IdsService {
     public String getDatafileIds(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
                                  @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                                  @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+            throws IdsException {
 
         var handler = new GetDataFileIdsHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
         return handler.handle().getString();
@@ -313,18 +287,13 @@ public class IdsService {
      * obtained.
      *
      * @return the url of the icat server
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
-     * @throws NotFoundException 
-     * @throws InsufficientPrivilegesException 
-     * @throws BadRequestException 
-     * @throws InternalException 
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getIcatUrl")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getIcatUrl(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+    public String getIcatUrl(@Context HttpServletRequest request) throws IdsException {
 
         var handler = new GetIcatUrlHandler(request.getRemoteAddr());
         return handler.handle().getString();
@@ -338,19 +307,14 @@ public class IdsService {
      * @param sessionId A valid ICAT session ID of a user in the IDS rootUserNames
      *                  set.
      * @return a json string.
-     * @throws InternalException
-     * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
-     * @throws NotFoundException 
-     * @throws BadRequestException 
+     * @throws IdsException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("getServiceStatus")
     @Produces(MediaType.APPLICATION_JSON)
     public String getServiceStatus(@Context HttpServletRequest request, @QueryParam(RequestIdNames.sessionId) String sessionId)
-            throws InternalException, InsufficientPrivilegesException, BadRequestException, NotFoundException, DataNotOnlineException, NotImplementedException {
+            throws IdsException {
 
         var handler = new GetServiceStatusHandler(request.getRemoteAddr(), sessionId);
         return handler.handle().getString();
@@ -368,12 +332,7 @@ public class IdsService {
      *                         null
      * @param datafileIds      If present, a comma separated list of data file id values.
      * @return the size in bytes
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InsufficientPrivilegesException
-     * @throws InternalException
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
+     * @throws IdsException 
      * @statuscode 200 To indicate success
      */
     @GET
@@ -382,7 +341,7 @@ public class IdsService {
     public long getSize(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
                         @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                         @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
+            throws IdsException {
 
 
         var result = ValueContainer.getInvalid();
@@ -420,12 +379,7 @@ public class IdsService {
      * archived and no restoration has been requested or "ARCHIVED" if
      * one or more files are archived and and no restoration has been
      * requested.
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InsufficientPrivilegesException
-     * @throws InternalException
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @GET
@@ -434,7 +388,7 @@ public class IdsService {
     public String getStatus(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId,
                             @QueryParam(RequestIdNames.sessionId) String sessionId, @QueryParam("investigationIds") String investigationIds,
                             @QueryParam("datasetIds") String datasetIds, @QueryParam("datafileIds") String datafileIds)
-            throws BadRequestException, NotFoundException, InsufficientPrivilegesException, InternalException, DataNotOnlineException, NotImplementedException {
+            throws IdsException {
 
         // special case for getStatus request: getting status is possible without authentification
         if (sessionId == null && preparedId == null) {
@@ -464,19 +418,14 @@ public class IdsService {
      * @title isPrepared
      * @param preparedId A valid preparedId returned by a call to prepareData
      * @return true if all the data files are ready to be downloaded else false.
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InternalException
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
-     * @throws InsufficientPrivilegesException 
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isPrepared")
     @Produces(MediaType.TEXT_PLAIN)
     public boolean isPrepared(@Context HttpServletRequest request, @QueryParam(RequestIdNames.preparedId) String preparedId)
-            throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+            throws IdsException {
 
         var handler = new IsPreparedHandler(request.getRemoteAddr(), preparedId);
         return handler.handle().getBool();
@@ -488,18 +437,13 @@ public class IdsService {
      *
      * @title isReadOnly
      * @return true if readonly, else false
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
-     * @throws NotFoundException 
-     * @throws InsufficientPrivilegesException 
-     * @throws BadRequestException 
-     * @throws InternalException 
+     * @throws IdsException 
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isReadOnly")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isReadOnly(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+    public boolean isReadOnly(@Context HttpServletRequest request) throws IdsException {
 
         var handler = new IsReadOnlyHandler(request.getRemoteAddr());
         return handler.handle().getBool();
@@ -511,18 +455,13 @@ public class IdsService {
      *
      * @title isTwoLevel
      * @return true if twoLevel, else false
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
-     * @throws NotFoundException 
-     * @throws InsufficientPrivilegesException 
-     * @throws BadRequestException 
-     * @throws InternalException 
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @GET
     @Path("isTwoLevel")
     @Produces(MediaType.TEXT_PLAIN)
-    public boolean isTwoLevel(@Context HttpServletRequest request) throws InternalException, BadRequestException, InsufficientPrivilegesException, NotFoundException, DataNotOnlineException, NotImplementedException {
+    public boolean isTwoLevel(@Context HttpServletRequest request) throws IdsException {
 
         var handler = new IsTwoLevelHandler(request.getRemoteAddr());
         return handler.handle().getBool();
@@ -563,12 +502,7 @@ public class IdsService {
      *                         has been specified) the data are zipped regardless of the
      *                         specification of this flag.
      * @return a string with the preparedId
-     * @throws BadRequestException
-     * @throws InsufficientPrivilegesException
-     * @throws NotFoundException
-     * @throws InternalException
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @POST
@@ -579,7 +513,7 @@ public class IdsService {
                               @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                               @FormParam("datafileIds") String datafileIds, @FormParam("compress") boolean compress,
                               @FormParam("zip") boolean zip)
-            throws BadRequestException, InsufficientPrivilegesException, NotFoundException, InternalException, NotImplementedException, DataNotOnlineException {
+            throws IdsException {
 
         var handler = new PrepareDataHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds, compress, zip);
         return handler.handle().getString();
@@ -601,12 +535,7 @@ public class IdsService {
      * @param datafileModTime    An optional datafileModTime to associate with the data file
      * @return a json object with attributes of "id", "checksum", "location" and
      * "size";
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InternalException
-     * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
+     * @throws IdsException
      * @statuscode 201 When object successfully created
      */
     @PUT
@@ -618,8 +547,7 @@ public class IdsService {
                         @QueryParam("datafileFormatId") String datafileFormatId, @QueryParam("datasetId") String datasetId,
                         @QueryParam("description") String description, @QueryParam("doi") String doi,
                         @QueryParam("datafileCreateTime") String datafileCreateTime,
-                        @QueryParam("datafileModTime") String datafileModTime) throws BadRequestException, NotFoundException,
-            InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
+                        @QueryParam("datafileModTime") String datafileModTime) throws IdsException {
 
         var handler = new PutHandler(request.getRemoteAddr(), sessionId, body, name, datafileFormatId, datasetId, 
                                 description, doi, datafileCreateTime, datafileModTime, false, false);
@@ -637,12 +565,7 @@ public class IdsService {
      * @param request
      * @return a json object with attributes of "id", "checksum", "location" and
      * "size";
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InternalException
-     * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException
-     * @throws DataNotOnlineException
+     * @throws IdsException
      * @statuscode 201 When object successfully created
      */
     @POST
@@ -650,8 +573,7 @@ public class IdsService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Deprecated
-    public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
-            InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
+    public Response putAsPost(@Context HttpServletRequest request) throws IdsException {
                 try {
                     String sessionId = null;
                     String name = null;
@@ -729,12 +651,7 @@ public class IdsService {
      * @param datasetIds       A comma separated list of data set id values.
      * @param datafileIds      A comma separated list of data file id values.
      * @return a stream of json data.
-     * @throws BadRequestException
-     * @throws NotFoundException
-     * @throws InternalException
-     * @throws InsufficientPrivilegesException
-     * @throws NotImplementedException 
-     * @throws DataNotOnlineException 
+     * @throws IdsException 
      * @statuscode 200 To indicate success
      */
     @POST
@@ -742,7 +659,7 @@ public class IdsService {
     public void reset(@Context HttpServletRequest request, @FormParam(RequestIdNames.preparedId) String preparedId,
                       @FormParam(RequestIdNames.sessionId) String sessionId, @FormParam("investigationIds") String investigationIds,
                       @FormParam("datasetIds") String datasetIds, @FormParam("datafileIds") String datafileIds)
-            throws BadRequestException, InternalException, NotFoundException, InsufficientPrivilegesException, DataNotOnlineException, NotImplementedException {
+            throws IdsException {
 
         var handler = new ResetHandler(request.getRemoteAddr(), preparedId, sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
@@ -760,12 +677,7 @@ public class IdsService {
      * @param datasetIds       If present, a comma separated list of data set id values or
      *                         null
      * @param datafileIds      If present, a comma separated list of datafile id values.
-     * @throws NotImplementedException
-     * @throws BadRequestException
-     * @throws InsufficientPrivilegesException
-     * @throws InternalException
-     * @throws NotFoundException
-     * @throws DataNotOnlineException 
+     * @throws IdsException 
      * @statuscode 200 To indicate success
      */
     @POST
@@ -774,8 +686,7 @@ public class IdsService {
     public void restore(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
                         @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                         @FormParam("datafileIds") String datafileIds)
-            throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-            NotFoundException, DataNotOnlineException {
+            throws IdsException {
 
         var handler = new RestoreHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
@@ -794,11 +705,7 @@ public class IdsService {
      * @param datasetIds       If present, a comma separated list of data set id values or
      *                         null
      * @param datafileIds      If present, a comma separated list of datafile id values.
-     * @throws NotImplementedException
-     * @throws BadRequestException
-     * @throws InsufficientPrivilegesException
-     * @throws InternalException
-     * @throws NotFoundException
+     * @throws IdsException
      * @statuscode 200 To indicate success
      */
     @POST
@@ -807,8 +714,7 @@ public class IdsService {
     public void write(@Context HttpServletRequest request, @FormParam(RequestIdNames.sessionId) String sessionId,
                       @FormParam("investigationIds") String investigationIds, @FormParam("datasetIds") String datasetIds,
                       @FormParam("datafileIds") String datafileIds)
-            throws NotImplementedException, BadRequestException, InsufficientPrivilegesException, InternalException,
-            NotFoundException, DataNotOnlineException {
+            throws IdsException {
 
         var handler = new WriteHandler(request.getRemoteAddr(), sessionId, investigationIds, datasetIds, datafileIds);
         handler.handle();
