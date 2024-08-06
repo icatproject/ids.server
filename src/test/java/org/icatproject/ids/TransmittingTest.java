@@ -237,7 +237,7 @@ public class TransmittingTest {
         
         setup();
 
-        var handler = new PutHandler(ip, sessionId, new ByteArrayInputStream( "".getBytes() ), "someName", datafileIds , datasetIds, "someDescription", "someDOI", "simeCreateTimeString", "someModTimeString", false, false );
+        var handler = new PutHandler(ip, sessionId, new ByteArrayInputStream( "".getBytes() ), "someName", datafileIds , datasetIds, "someDescription", "someDOI", "simeCreateTimeString", "someModTimeString");
         String body = handler.provideTransmissionBody();
         assertEquals("{\"userName\":\"TestUser\",\"datafileId\":-1}", body);
     }
