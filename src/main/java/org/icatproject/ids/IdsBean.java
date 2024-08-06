@@ -275,23 +275,12 @@ public class IdsBean {
     private static String key;
 
     private final static Logger logger = LoggerFactory.getLogger(IdsBean.class);
-    private static String paddedPrefix;
-    private static final String prefix = "<html><script type=\"text/javascript\">window.name='";
-    private static final String suffix = "';</script></html>";
 
     /**
      * matches standard UUID format of 8-4-4-4-12 hexadecimal digits
      */
     public static final Pattern uuidRegExp = Pattern
             .compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
-
-    static {
-        paddedPrefix = "<html><script type=\"text/javascript\">/*";
-        for (int n = 1; n < 25; n++) {
-            paddedPrefix += " *        \n";
-        }
-        paddedPrefix += "*/window.name='";
-    }
 
     static void cleanDatasetCache(Path datasetDir) {
         for (File dsFile : datasetDir.toFile().listFiles()) {
@@ -1686,7 +1675,7 @@ public class IdsBean {
 
     public Response put(InputStream body, String sessionId, String name, String datafileFormatIdString,
                         String datasetIdString, String description, String doi, String datafileCreateTimeString,
-                        String datafileModTimeString, boolean wrap, boolean padding, String ip)
+                        String datafileModTimeString, String ip)
             throws NotFoundException, DataNotOnlineException, BadRequestException, InsufficientPrivilegesException,
             InternalException, NotImplementedException {
 
@@ -1834,7 +1823,7 @@ public class IdsBean {
                 Json.createGenerator(baos).writeStartObject().write("id", dfId).write("checksum", checksum)
                         .write("location", location.replace("\\", "\\\\").replace("'", "\\'")).write("size", size)
                         .writeEnd().close();
-                String resp = wrap ? prefix + baos.toString() + suffix : baos.toString();
+                String resp = baos.toString();
 
                 if (logSet.contains(CallType.WRITE)) {
                     try {
@@ -1866,13 +1855,7 @@ public class IdsBean {
             JsonGenerator gen = Json.createGenerator(baos);
             gen.writeStartObject().write("code", e.getClass().getSimpleName()).write("message", e.getShortMessage());
             gen.writeEnd().close();
-            if (wrap) {
-                String pre = padding ? paddedPrefix : prefix;
-                return Response.status(e.getHttpStatusCode()).entity(pre + baos.toString().replace("'", "\\'") + suffix)
-                        .build();
-            } else {
-                return Response.status(e.getHttpStatusCode()).entity(baos.toString()).build();
-            }
+	    return Response.status(e.getHttpStatusCode()).entity(baos.toString()).build();
         }
 
     }
