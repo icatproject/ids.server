@@ -691,6 +691,71 @@ public class TestingClient {
 
     }
 
+    public Long putAsPost(String sessionId, InputStream inputStream, String name, long datasetId, long datafileFormatId,
+                          String description, String doi, Date datafileCreateTime, Date datafileModTime, boolean wrap, Integer sc)
+            throws BadRequestException, NotFoundException, InternalException, InsufficientPrivilegesException,
+            NotImplementedException, DataNotOnlineException, InsufficientStorageException {
+
+        if (inputStream == null) {
+            throw new BadRequestException("Input stream is null");
+        }
+        CRC32 crc = new CRC32();
+        inputStream = new CheckedInputStream(inputStream, crc);
+        URI uri = getUri(getUriBuilder("put"));
+
+        MultipartEntityBuilder reqEntityBuilder = MultipartEntityBuilder.create()
+                .addPart(RequestIdNames.sessionId, new StringBody(sessionId, ContentType.TEXT_PLAIN))
+                .addPart("datafileFormatId", new StringBody(Long.toString(datafileFormatId), ContentType.TEXT_PLAIN))
+                .addPart("name", new StringBody(name, ContentType.TEXT_PLAIN))
+                .addPart("datasetId", new StringBody(Long.toString(datasetId), ContentType.TEXT_PLAIN));
+        if (description != null) {
+            reqEntityBuilder.addPart("description", new StringBody(description, ContentType.TEXT_PLAIN));
+        }
+        if (doi != null) {
+            reqEntityBuilder.addPart("doi", new StringBody(doi, ContentType.TEXT_PLAIN));
+        }
+        if (datafileCreateTime != null) {
+            reqEntityBuilder.addPart("datafileCreateTime",
+                    new StringBody(Long.toString(datafileCreateTime.getTime()), ContentType.TEXT_PLAIN));
+        }
+        if (datafileModTime != null) {
+            reqEntityBuilder.addPart("datafileModTime",
+                    new StringBody(Long.toString(datafileModTime.getTime()), ContentType.TEXT_PLAIN));
+        }
+        if (wrap) {
+            reqEntityBuilder.addPart("wrap", new StringBody("true", ContentType.TEXT_PLAIN));
+        }
+        InputStreamBody body = new InputStreamBody(new BufferedInputStream(inputStream),
+                ContentType.APPLICATION_OCTET_STREAM, "unreliable");
+        HttpEntity entity = reqEntityBuilder.addPart("file", body).build();
+
+        CloseableHttpClient httpclient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost(uri);
+        httpPost.setEntity(entity);
+
+        try (CloseableHttpResponse response = httpclient.execute(httpPost)) {
+            checkResponseConformity(response);
+            String result = getString(response, sc);
+            String prefix = "<html><script type=\"text/javascript\">window.name='";
+            String suffix = "';</script></html>";
+            if (result.startsWith(prefix)) {
+                result = result.substring(prefix.length(), result.length() - suffix.length());
+            }
+            try (JsonReader jsonReader = Json.createReader(new StringReader(result))) {
+                JsonObject rootNode = jsonReader.readObject();
+                if (rootNode.getJsonNumber("checksum").longValueExact() != crc.getValue()) {
+                    throw new InternalException("Error uploading - the checksum was not as expected");
+                }
+                return rootNode.getJsonNumber("id").longValueExact();
+            }
+        } catch (IOException e) {
+            throw new InternalException(e.getClass() + " " + e.getMessage());
+        } catch (NumberFormatException e) {
+            throw new InternalException("Web service call did not return a valid Long value");
+        }
+
+    }
+
     public void restore(String sessionId, DataSelection data, Integer sc) throws NotImplementedException,
             BadRequestException, InsufficientPrivilegesException, InternalException, NotFoundException {
 

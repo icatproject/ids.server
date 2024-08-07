@@ -61,14 +61,27 @@ public class PutHandler extends RequestHandlerBase {
     String doi;
     String datafileCreateTimeString;
     String datafileModTimeString;
+    boolean wrap;
+    boolean padding;
 
     private Long dfId;
     private ServiceProvider serviceProvider;
     private DatatypeFactory datatypeFactory;
+    private static String paddedPrefix;
+    private static final String prefix = "<html><script type=\"text/javascript\">window.name='";
+    private static final String suffix = "';</script></html>";
+
+    static {
+        paddedPrefix = "<html><script type=\"text/javascript\">/*";
+        for (int n = 1; n < 25; n++) {
+            paddedPrefix += " *        \n";
+        }
+        paddedPrefix += "*/window.name='";
+    }
 
     public PutHandler(  String ip, String sessionId, InputStream body, String name, String datafileFormatIdString,
                         String datasetIdString, String description, String doi, String datafileCreateTimeString,
-                        String datafileModTimeString) {
+                        String datafileModTimeString, boolean wrap, boolean padding) {
         super(RequestType.PUT, ip);
 
         this.sessionId = sessionId;
@@ -80,6 +93,8 @@ public class PutHandler extends RequestHandlerBase {
         this.doi = doi;
         this.datafileCreateTimeString = datafileCreateTimeString;
         this.datafileModTimeString = datafileModTimeString;
+        this.wrap = wrap;
+        this.padding = padding;
 
         this.dfId = -1L;
         this.serviceProvider = ServiceProvider.getInstance();
@@ -237,7 +252,7 @@ public class PutHandler extends RequestHandlerBase {
                 Json.createGenerator(baos).writeStartObject().write("id", dfId).write("checksum", checksum)
                         .write("location", location.replace("\\", "\\\\").replace("'", "\\'")).write("size", size)
                         .writeEnd().close();
-                String resp = baos.toString();
+                String resp = wrap ? prefix + baos.toString() + suffix : baos.toString();
 
                 return new ValueContainer(Response.status(HttpURLConnection.HTTP_CREATED).entity(resp).build());
 
@@ -255,7 +270,13 @@ public class PutHandler extends RequestHandlerBase {
             JsonGenerator gen = Json.createGenerator(baos);
             gen.writeStartObject().write("code", e.getClass().getSimpleName()).write("message", e.getShortMessage());
             gen.writeEnd().close();
-	    return new ValueContainer(Response.status(e.getHttpStatusCode()).entity(baos.toString()).build());
+            if (wrap) {
+                String pre = padding ? paddedPrefix : prefix;
+                return new ValueContainer(Response.status(e.getHttpStatusCode()).entity(pre + baos.toString().replace("'", "\\'") + suffix)
+                        .build());
+            } else {
+                return new ValueContainer(Response.status(e.getHttpStatusCode()).entity(baos.toString()).build());
+            }
         }
     }
 

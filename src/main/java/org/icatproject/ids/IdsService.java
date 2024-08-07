@@ -622,8 +622,93 @@ public class IdsService {
             InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
 
         var handler = new PutHandler(request.getRemoteAddr(), sessionId, body, name, datafileFormatId, datasetId, 
-                                description, doi, datafileCreateTime, datafileModTime);
+                                description, doi, datafileCreateTime, datafileModTime, false, false);
         return handler.handle().getResponse();
+    }
+
+    /**
+     * This is an alternative to using PUT on the put resource. All the same
+     * arguments appear as form fields. In addition there are two boolean fields
+     * wrap and padding which should be set to true as a CORS work around. These
+     * two fields will be removed shortly as they are only required by the old
+     * (GWT based) topcat.
+     *
+     * @title putAsPost
+     * @param request
+     * @return a json object with attributes of "id", "checksum", "location" and
+     * "size";
+     * @throws BadRequestException
+     * @throws NotFoundException
+     * @throws InternalException
+     * @throws InsufficientPrivilegesException
+     * @throws NotImplementedException
+     * @throws DataNotOnlineException
+     * @statuscode 201 When object successfully created
+     */
+    @POST
+    @Path("put")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
+    public Response putAsPost(@Context HttpServletRequest request) throws BadRequestException, NotFoundException,
+            InternalException, InsufficientPrivilegesException, NotImplementedException, DataNotOnlineException {
+                try {
+                    String sessionId = null;
+                    String name = null;
+                    String datafileFormatId = null;
+                    String datasetId = null;
+                    String description = null;
+                    String doi = null;
+                    String datafileCreateTime = null;
+                    String datafileModTime = null;
+                    Response result = null;
+                    boolean wrap = false;
+                    boolean padding = false;
+        
+                    // Parse the request
+                    for (Part part : request.getParts()) {
+                        String fieldName = part.getName();
+                        InputStream stream = part.getInputStream();
+                        if (part.getSubmittedFileName() == null) {
+                            String value = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+                            if (fieldName.equals("sessionId")) {
+                                sessionId = value;
+                            } else if (fieldName.equals("name")) {
+                                name = value;
+                            } else if (fieldName.equals("datafileFormatId")) {
+                                datafileFormatId = value;
+                            } else if (fieldName.equals("datasetId")) {
+                                datasetId = value;
+                            } else if (fieldName.equals("description")) {
+                                description = value;
+                            } else if (fieldName.equals("doi")) {
+                                doi = value;
+                            } else if (fieldName.equals("datafileCreateTime")) {
+                                datafileCreateTime = value;
+                            } else if (fieldName.equals("datafileModTime")) {
+                                datafileModTime = value;
+                            } else if (fieldName.equals("wrap")) {
+                                wrap = (value != null && value.toUpperCase().equals("TRUE"));
+                            } else if (fieldName.equals("padding")) {
+                                padding = (value != null && value.toUpperCase().equals("TRUE"));
+                            } else {
+                                throw new BadRequestException("Form field " + fieldName + "is not recognised");
+                            }
+                        } else {
+                            if (name == null) {
+                                name = part.getSubmittedFileName();
+                            }
+                            var handler = new PutHandler(request.getRemoteAddr(), sessionId, stream, name, datafileFormatId, datasetId, description, 
+                                            doi, datafileCreateTime, datafileModTime, wrap, padding);
+                            result = handler.handle().getResponse();
+                        }
+                    }
+                    return result;
+                } catch (IOException e) {
+                    throw new InternalException(e.getClass() + " " + e.getMessage());
+                } catch (ServletException e) {
+                    throw new BadRequestException("Multipart content expected");
+                }
     }
 
     /**
