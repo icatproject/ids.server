@@ -1,0 +1,7 @@
+#Organize Import Order
+#Wed Jun 12 08:50:43 CEST 2024
+0=java
+1=jakarta
+2=org
+3=org.icatproject
+4=org.icatproject.ids
