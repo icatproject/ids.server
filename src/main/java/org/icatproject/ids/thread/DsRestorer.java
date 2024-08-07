@@ -16,15 +16,15 @@ import org.slf4j.LoggerFactory;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
-import org.icatproject.ids.FiniteStateMachine;
-import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.IdsBean;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.helpers.LocationHelper;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.Lock;
 
 /*
  * Restores datafiles from the slow to the fast storage.
@@ -33,7 +33,7 @@ public class DsRestorer implements Runnable {
 
     private final static Logger logger = LoggerFactory.getLogger(DsRestorer.class);
 
-    private DsInfo dsInfo;
+    private DatasetInfo dsInfo;
 
     private MainStorageInterface mainStorageInterface;
     private ArchiveStorageInterface archiveStorageInterface;
@@ -46,7 +46,7 @@ public class DsRestorer implements Runnable {
     private ZipMapperInterface zipMapper;
     private Lock lock;
 
-    public DsRestorer(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
+    public DsRestorer(DatasetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         zipMapper = propertyHandler.getZipMapper();
@@ -78,7 +78,7 @@ public class DsRestorer implements Runnable {
                 if (datafile.getLocation() == null) {
                     continue;
                 }
-                nameToLocalMap.put(datafile.getName(), IdsBean.getLocation(datafile.getId(), datafile.getLocation()));
+                nameToLocalMap.put(datafile.getName(), LocationHelper.getLocation(datafile.getId(), datafile.getLocation()));
                 size += datafile.getFileSize();
                 n++;
             }

@@ -14,16 +14,16 @@ import org.slf4j.LoggerFactory;
 
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
-import org.icatproject.ids.DfInfoImpl;
-import org.icatproject.ids.FiniteStateMachine;
-import org.icatproject.ids.IcatReader;
-import org.icatproject.ids.IdsBean;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.helpers.LocationHelper;
+import org.icatproject.ids.models.DatafileInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
 import org.icatproject.ids.plugin.ZipMapperInterface;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.Lock;
 
 /**
  * Copies dataset from main to archive
@@ -32,7 +32,7 @@ public class DsWriter implements Runnable {
 
     private final static Logger logger = LoggerFactory.getLogger(DsWriter.class);
     private static final int BUFSIZ = 1024;
-    private DsInfo dsInfo;
+    private DatasetInfo dsInfo;
 
     private FiniteStateMachine fsm;
     private MainStorageInterface mainStorageInterface;
@@ -43,7 +43,7 @@ public class DsWriter implements Runnable {
     private ZipMapperInterface zipMapper;
     private Lock lock;
 
-    public DsWriter(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
+    public DsWriter(DatasetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, IcatReader reader, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         this.zipMapper = propertyHandler.getZipMapper();
@@ -73,11 +73,11 @@ public class DsWriter implements Runnable {
                     if (datafile.getLocation() == null) {
                         continue;
                     }
-                    String location = IdsBean.getLocation(datafile.getId(), datafile.getLocation());
+                    String location = LocationHelper.getLocation(datafile.getId(), datafile.getLocation());
                     InputStream is = null;
                     try {
                         zos.putNextEntry(new ZipEntry(
-                                zipMapper.getFullEntryName(dsInfo, new DfInfoImpl(datafile.getId(), datafile.getName(),
+                                zipMapper.getFullEntryName(dsInfo, new DatafileInfo(datafile.getId(), datafile.getName(),
                                         location, datafile.getCreateId(), datafile.getModId(), 0L))));
                         is = mainStorageInterface.get(location, datafile.getCreateId(), datafile.getModId());
                         int bytesRead = 0;

@@ -36,7 +36,7 @@ public class QueueTest extends BaseTest {
         waitForIds();
         assertTrue(Files.exists(dirOnFastStorage));
 
-        Long dfid = testingClient.put(sessionId, Files.newInputStream(newFileLocation),
+        testingClient.put(sessionId, Files.newInputStream(newFileLocation),
                 "uploaded_file_" + timestamp, dsId, supportedDatafileFormat.getId(),
                 "A rather splendid datafile", 201);
         testingClient.archive(sessionId, selection, 204);

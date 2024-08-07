@@ -24,11 +24,20 @@ import org.slf4j.LoggerFactory;
 import org.icatproject.Datafile;
 import org.icatproject.Dataset;
 import org.icatproject.IcatException_Exception;
+import org.icatproject.ids.enums.DeferredOp;
+import org.icatproject.ids.enums.StorageUnit;
 import org.icatproject.ids.exceptions.InsufficientPrivilegesException;
 import org.icatproject.ids.exceptions.InternalException;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.helpers.LocationHelper;
+import org.icatproject.ids.models.DatafileInfo;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.DsInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.LockManager;
+import org.icatproject.ids.services.PropertyHandler;
 
 @Singleton
 @Startup
@@ -71,7 +80,7 @@ public class Tidier {
                                     List<Object> os = reader.search(query);
                                     logger.debug(query + " returns " + os.size() + " datasets");
                                     for (Object o : os) {
-                                        DsInfoImpl dsInfoImpl = new DsInfoImpl((Dataset) o);
+                                        DatasetInfo dsInfoImpl = new DatasetInfo((Dataset) o);
                                         logger.debug(
                                                 "Requesting archive of " + dsInfoImpl + " to recover main storage");
                                         fsm.queue(dsInfoImpl, DeferredOp.ARCHIVE);
@@ -123,9 +132,9 @@ public class Tidier {
                                     logger.debug(query + " returns " + os.size() + " datafiles");
                                     for (Object o : os) {
                                         Datafile df = (Datafile) o;
-                                        DfInfoImpl dfInfoImpl = new DfInfoImpl(df.getId(), df.getName(),
+                                        DatafileInfo dfInfoImpl = new DatafileInfo(df.getId(), df.getName(),
 
-                                                IdsBean.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
+                                                LocationHelper.getLocation(df.getId(), df.getLocation()), df.getCreateId(),
                                                 df.getModId(), df.getDataset().getId());
 
 
@@ -206,8 +215,7 @@ public class Tidier {
         }
     }
 
-    @EJB
-    private FiniteStateMachine fsm;
+    private FiniteStateMachine fsm = null;
 
     private MainStorageInterface mainStorage;
 
@@ -215,6 +223,9 @@ public class Tidier {
 
     @EJB
     IcatReader reader;
+
+    @EJB
+    private LockManager lockManager;
 
     private long sizeCheckIntervalMillis;
     private long startArchivingLevel;
@@ -238,7 +249,12 @@ public class Tidier {
     @PostConstruct
     public void init() {
         try {
+
             PropertyHandler propertyHandler = PropertyHandler.getInstance();
+            FiniteStateMachine.createInstance(reader, lockManager, propertyHandler.getStorageUnit());
+            this.fsm = FiniteStateMachine.getInstance();
+            this.fsm.init(); //if not yet initialized by IdsService do it now
+            
             sizeCheckIntervalMillis = propertyHandler.getSizeCheckIntervalMillis();
             preparedCount = propertyHandler.getPreparedCount();
             preparedDir = propertyHandler.getCacheDir().resolve("prepared");

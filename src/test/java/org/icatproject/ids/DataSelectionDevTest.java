@@ -22,6 +22,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.icatproject.ICAT;
 import org.icatproject.IcatException_Exception;
 import org.icatproject.icat.client.IcatException;
+import org.icatproject.ids.enums.RequestType;
+import org.icatproject.ids.services.ICATGetter;
+import org.icatproject.ids.services.IcatReader;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionService;
+import org.icatproject.ids.services.dataSelectionService.DataSelectionServiceFactory;
 
 /**
  * This test was created to fix issue #115 and was run against the Diamond
@@ -103,12 +109,12 @@ public class DataSelectionDevTest {
     @Test
     public void testCreateDataSelection() throws Exception {
         long startMs = System.currentTimeMillis();
-        DataSelection dataSelection = new DataSelection(mockedPropertyHandler, icatReader, userSessionId,
-                investigationIds, datasetIds, datafileIds, DataSelection.Returns.DATASETS_AND_DATAFILES);
+        var dataSelectionFactory = DataSelectionServiceFactory.getInstanceOnlyForTesting(mockedPropertyHandler, icatReader);
+        DataSelectionService dataSelectionService = dataSelectionFactory.getSelectionService(userSessionId,investigationIds, datasetIds, datafileIds, RequestType.GETSIZE);
         System.out.println("Creating DataSelection took " + (System.currentTimeMillis() - startMs) + " ms");
-        System.out.println("DsInfo size: " + dataSelection.getDsInfo().size());
-        System.out.println("DfInfo size: " + dataSelection.getDfInfo().size());
+        System.out.println("DsInfo size: " + dataSelectionService.getDsInfo().size());
+        System.out.println("DfInfo size: " + dataSelectionService.getDfInfo().size());
         // there must be at least one Datafile in the DataSelection
-        assertTrue("message", dataSelection.getDfInfo().size() > 0);
+        assertTrue("message", dataSelectionService.getDfInfo().size() > 0);
     }
 }

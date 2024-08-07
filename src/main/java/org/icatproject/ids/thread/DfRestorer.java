@@ -1,5 +1,6 @@
 package org.icatproject.ids.thread;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -7,13 +8,13 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.icatproject.ids.FiniteStateMachine;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
 import org.icatproject.ids.plugin.DfInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.Lock;
 
 /*
  * Restores datafiles from the slow to the fast storage.
@@ -25,11 +26,11 @@ public class DfRestorer implements Runnable {
     private MainStorageInterface mainStorageInterface;
     private ArchiveStorageInterface archiveStorageInterface;
     private FiniteStateMachine fsm;
-    private List<DfInfo> dfInfos;
+    private List<DatafileInfo> dataFileInfos;
     private Collection<Lock> locks;
 
-    public DfRestorer(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
-        this.dfInfos = dfInfos;
+    public DfRestorer(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
+        this.dataFileInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
 
@@ -51,17 +52,24 @@ public class DfRestorer implements Runnable {
              * generally remove anything from the list of files to restore as
              * pointless restores are normally filtered out earlier.
              */
-            Iterator<DfInfo> iter = dfInfos.iterator();
+            Iterator<DatafileInfo> iter = dataFileInfos.iterator();
             while (iter.hasNext()) {
-                DfInfo dfInfo = iter.next();
+                DatafileInfo dfInfo = iter.next();
                 if (mainStorageInterface.exists(dfInfo.getDfLocation())) {
                     iter.remove();
                     fsm.removeFromChanging(dfInfo);
                 }
             }
 
+            //TODO: This is additional conversion caused by the redesign :-(
+            List<DfInfo> dfInfos = new ArrayList<>();
+            for(DfInfo dfInfo : this.dataFileInfos) {
+                dfInfos.add(dfInfo);
+            }
+
+
             Set<DfInfo> failures = archiveStorageInterface.restore(mainStorageInterface, dfInfos);
-            for (DfInfo dfInfo : dfInfos) {
+            for (DatafileInfo dfInfo : dataFileInfos) {
                 if (failures.contains(dfInfo)) {
                     fsm.recordFailure(dfInfo.getDfId());
                     logger.error("Restore of " + dfInfo + " failed");
@@ -72,7 +80,7 @@ public class DfRestorer implements Runnable {
                 fsm.removeFromChanging(dfInfo);
             }
         } catch (Exception e) {
-            for (DfInfo dfInfo : dfInfos) {
+            for (DatafileInfo dfInfo : dataFileInfos) {
                 logger.error("Restore of " + dfInfo + " failed " + e.getClass() + " " + e.getMessage());
                 fsm.removeFromChanging(dfInfo);
             }

@@ -5,26 +5,25 @@ import java.nio.file.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.icatproject.ids.FiniteStateMachine;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.PropertyHandler;
-import org.icatproject.ids.plugin.DsInfo;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.models.DatasetInfo;
 import org.icatproject.ids.plugin.MainStorageInterface;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.Lock;
 
 /*
  * Removes datasets from the fast storage (doesn't write them to slow storage)
  */
 public class DsArchiver implements Runnable {
     private final static Logger logger = LoggerFactory.getLogger(DsArchiver.class);
-    private DsInfo dsInfo;
+    private DatasetInfo dsInfo;
 
     private MainStorageInterface mainStorageInterface;
     private FiniteStateMachine fsm;
     private Path markerDir;
     private Lock lock;
 
-    public DsArchiver(DsInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, Lock lock) {
+    public DsArchiver(DatasetInfo dsInfo, PropertyHandler propertyHandler, FiniteStateMachine fsm, Lock lock) {
         this.dsInfo = dsInfo;
         this.fsm = fsm;
         mainStorageInterface = propertyHandler.getMainStorage();

@@ -5,12 +5,11 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.icatproject.ids.FiniteStateMachine;
-import org.icatproject.ids.LockManager.Lock;
-import org.icatproject.ids.PropertyHandler;
+import org.icatproject.ids.finiteStateMachine.FiniteStateMachine;
+import org.icatproject.ids.models.DatafileInfo;
 import org.icatproject.ids.plugin.ArchiveStorageInterface;
-import org.icatproject.ids.plugin.DfInfo;
+import org.icatproject.ids.services.PropertyHandler;
+import org.icatproject.ids.services.LockManager.Lock;
 
 /**
  * Delete datafiles from archive
@@ -21,10 +20,10 @@ public class DfDeleter implements Runnable {
 
     private FiniteStateMachine fsm;
     private ArchiveStorageInterface archiveStorageInterface;
-    private List<DfInfo> dfInfos;
+    private List<DatafileInfo> dfInfos;
     private Collection<Lock> locks;
 
-    public DfDeleter(List<DfInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
+    public DfDeleter(List<DatafileInfo> dfInfos, PropertyHandler propertyHandler, FiniteStateMachine fsm, Collection<Lock> locks) {
         this.dfInfos = dfInfos;
         this.fsm = fsm;
         this.locks = locks;
@@ -34,7 +33,7 @@ public class DfDeleter implements Runnable {
     @Override
     public void run() {
         try {
-            for (DfInfo dfInfo : dfInfos) {
+            for (DatafileInfo dfInfo : dfInfos) {
                 try {
                     String dfLocation = dfInfo.getDfLocation();
                     archiveStorageInterface.delete(dfLocation);
