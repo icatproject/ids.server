@@ -438,10 +438,10 @@
                             <include>src/test/java/**/*.java</include>
                         </includes>
                         <eclipse>
-                            <file>${project.basedir}/eclipse-formatter.xml</file>
+                            <file>${project.basedir}/.spotless/eclipse-formatter.xml</file>
                         </eclipse>
                         <importOrder>
-                            <file>${project.basedir}/eclipse-importorder.txt</file>
+                            <file>${project.basedir}/.spotless/eclipse-importorder.txt</file>
                         </importOrder>
                     </java>
                 </configuration>
