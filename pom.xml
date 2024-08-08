@@ -12,7 +12,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>https://repo.icatproject.org/repo</repoUrl>
         <project.scm.id>github</project.scm.id>
-        <spotless.goal>apply</spotless.goal>
+        <spotless.goal>check</spotless.goal>
+        <spotless.check.skip>true</spotless.check.skip>
     </properties>
 
     <repositories>
@@ -468,8 +469,9 @@
                 </property>
             </activation>
             <properties>
-                <!-- But in our CI environment we want to validate that code is formatted -->
-                <spotless.goal>check</spotless.goal>
+                <!-- The default is to skip spotless check, but in CI
+		     environment we want to enforce the checks -->
+                <spotless.check.skip>false</spotless.check.skip>
             </properties>
         </profile>
     </profiles>
