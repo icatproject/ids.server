@@ -14,6 +14,7 @@
         <project.scm.id>github</project.scm.id>
         <spotless.goal>check</spotless.goal>
         <spotless.check.skip>true</spotless.check.skip>
+        <spotless.ratchetFrom>origin/master</spotless.ratchetFrom>
     </properties>
 
     <repositories>
@@ -433,6 +434,7 @@
                 <artifactId>spotless-maven-plugin</artifactId>
                 <version>2.43.0</version>
                 <configuration>
+                    <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
                     <java>
                         <includes>
                             <include>src/main/java/**/*.java</include>
