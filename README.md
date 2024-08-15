@@ -7,7 +7,6 @@ By default, code checks are disabled for local builds, but enforced in the CI bu
 You also can execute the commands manually:
 * `mvn spotless:check -Dspotless.check.skip=false` to validate the source files,
 * `mvn spotless:apply` to directly change the source files according to the linting.
-By default, the linter only checks files that have been changed with respect to the `master` branch. To check all the files, add a `-Dspotless.ratchetFrom=NONE` flag to the manual commands.
 
 ### Import order
 The import order is also validated and applied by the spotless-maven-plugin. It is defined in the file `.spotless/eclipse-importorder.txt` and referenced in `pom.xml`. It is needed that it has a compatible format like the eclipse built-in import order configuration (better its exported file).

@@ -14,7 +14,7 @@
         <project.scm.id>github</project.scm.id>
         <spotless.goal>check</spotless.goal>
         <spotless.check.skip>true</spotless.check.skip>
-        <spotless.ratchetFrom>origin/master</spotless.ratchetFrom>
+        <spotless.ratchetFrom>NONE</spotless.ratchetFrom>
     </properties>
 
     <repositories>
