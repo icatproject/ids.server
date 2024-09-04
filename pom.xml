@@ -12,6 +12,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <repoUrl>https://repo.icatproject.org/repo</repoUrl>
         <project.scm.id>github</project.scm.id>
+        <spotless.goal>check</spotless.goal>
+        <spotless.check.skip>true</spotless.check.skip>
+        <spotless.ratchetFrom>NONE</spotless.ratchetFrom>
     </properties>
 
     <repositories>
@@ -26,6 +29,11 @@
             <id>miredot</id>
             <name>MireDot Releases</name>
             <url>https://secure-nexus.miredot.com/content/repositories/miredot</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>com.diffplug.spotless</id>
+            <name>spotless-maven-plugin Repo</name>
+            <url>https://mvnrepository.com/artifact/com.diffplug.spotless/</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -126,6 +134,13 @@
             <artifactId>parsson</artifactId>
             <version>1.1.3</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.diffplug.spotless/spotless-maven-plugin -->
+        <dependency>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <version>2.43.0</version>
         </dependency>
 
     </dependencies>
@@ -414,9 +429,54 @@
                 </configuration>
             </plugin>
 
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.43.0</version>
+                <configuration>
+                    <ratchetFrom>${spotless.ratchetFrom}</ratchetFrom>
+                    <java>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                        </includes>
+                        <eclipse>
+                            <file>${project.basedir}/.spotless/eclipse-formatter.xml</file>
+                        </eclipse>
+                        <importOrder>
+                            <file>${project.basedir}/.spotless/eclipse-importorder.txt</file>
+                        </importOrder>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>${spotless.goal}</goal>
+                        </goals>
+                        <phase>compile</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
 
     </build>
+
+    <profiles>
+        <profile>
+            <id>cibuild</id>
+            <activation>
+                <property>
+                    <name>env.CIBUILD</name>
+                </property>
+            </activation>
+            <properties>
+                <!-- The default is to skip spotless check, but in CI
+		     environment we want to enforce the checks -->
+                <spotless.check.skip>false</spotless.check.skip>
+            </properties>
+        </profile>
+    </profiles>
 
     <reporting>
         <plugins>
